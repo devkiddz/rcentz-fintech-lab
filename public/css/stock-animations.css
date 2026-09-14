@@ -1,0 +1,182 @@
+/* Stock price change animations */
+@keyframes priceUp {
+    0% {
+        background-color: transparent;
+        transform: scale(1);
+    }
+    50% {
+        background-color: rgba(34, 197, 94, 0.1);
+        transform: scale(1.05);
+    }
+    100% {
+        background-color: transparent;
+        transform: scale(1);
+    }
+}
+
+@keyframes priceDown {
+    0% {
+        background-color: transparent;
+        transform: scale(1);
+    }
+    50% {
+        background-color: rgba(239, 68, 68, 0.1);
+        transform: scale(1.05);
+    }
+    100% {
+        background-color: transparent;
+        transform: scale(1);
+    }
+}
+
+.price-up {
+    animation: priceUp 1s ease-in-out;
+}
+
+.price-down {
+    animation: priceDown 1s ease-in-out;
+}
+
+/* Smooth transitions for price changes */
+.stock-price,
+.portfolio-stock-price {
+    transition: color 0.3s ease;
+}
+
+/* Flash effect for important updates */
+@keyframes flash {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.flash {
+    animation: flash 0.5s ease-in-out;
+}
+
+/* Pulse effect for loading states */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Real-time indicator */
+.real-time-indicator {
+    position: relative;
+}
+
+.real-time-indicator::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 8px;
+    height: 8px;
+    background-color: #10b981;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+/* Market status indicator */
+.market-status {
+    transition: all 0.3s ease;
+}
+
+.market-status.open {
+    background-color: rgba(34, 197, 94, 0.1);
+    color: #059669;
+}
+
+.market-status.closed {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}
+
+/* Stock table row hover effects */
+.stock-row {
+    transition: background-color 0.2s ease;
+}
+
+.stock-row:hover {
+    background-color: rgba(59, 130, 246, 0.05);
+}
+
+/* Portfolio card animations */
+.portfolio-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.portfolio-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading skeleton animation */
+@keyframes shimmer {
+    0% {
+        background-position: -200px 0;
+    }
+    100% {
+        background-position: calc(200px + 100%) 0;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200px 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+/* Chart animations */
+.chart-container {
+    transition: opacity 0.3s ease;
+}
+
+.chart-loading {
+    opacity: 0.6;
+}
+
+/* Notification animations */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.notification-slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+.notification-slide-out {
+    animation: slideOut 0.3s ease-in;
+}

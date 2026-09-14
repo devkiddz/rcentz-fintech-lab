@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Fallback for hosts where the application root is used as the document root.
+    # Preferred deployment: point the subdomain document root directly to /public.
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    RewriteCond %{REQUEST_URI} !^/public(?:/|$)
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# PHP version is intentionally NOT pinned here.
+# Select PHP 8.2+ for this subdomain in cPanel MultiPHP Manager.

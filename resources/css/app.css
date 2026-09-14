@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']),
+    select,
+    textarea {
+        background-color: hsl(var(--background));
+        color: hsl(var(--foreground));
+        border-color: hsl(var(--border));
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: hsl(var(--muted-foreground));
+        opacity: 1;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+        border-color: hsl(var(--ring));
+        outline-color: hsl(var(--ring));
+    }
+
+
+    :root {
+        --background: 210 20% 98%;
+        --foreground: 222 47% 11%;
+        --card: 0 0% 100%;
+        --card-foreground: 222 47% 11%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 222 47% 11%;
+        --primary: 350 85% 42%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 210 20% 96%;
+        --secondary-foreground: 222 47% 11%;
+        --muted: 210 20% 96%;
+        --muted-foreground: 215 16% 47%;
+        --accent: 350 60% 95%;
+        --accent-foreground: 350 72% 30%;
+        --destructive: 0 72% 51%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 214 24% 90%;
+        --input: 214 24% 90%;
+        --ring: 350 85% 42%;
+        --radius: 0.75rem;
+    }
+
+    .dark {
+        --background: 216 28% 7%;
+        --foreground: 210 40% 96%;
+        --card: 215 21% 11%;
+        --card-foreground: 210 40% 96%;
+        --popover: 215 21% 11%;
+        --popover-foreground: 210 40% 96%;
+        --primary: 350 84% 50%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 215 19% 17%;
+        --secondary-foreground: 210 40% 96%;
+        --muted: 215 19% 17%;
+        --muted-foreground: 215 15% 65%;
+        --accent: 350 45% 18%;
+        --accent-foreground: 350 90% 88%;
+        --destructive: 0 63% 43%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 215 19% 20%;
+        --input: 215 19% 20%;
+        --ring: 350 84% 56%;
+    }
+
+    html {
+        color-scheme: light;
+    }
+
+    html.dark {
+        color-scheme: dark;
+    }
+
+    body {
+        @apply bg-background text-foreground antialiased;
+    }
+
+    input,
+    select,
+    textarea {
+        @apply text-foreground;
+    }
+}
+
+@layer components {
+    .ui-panel {
+        @apply rounded-xl border border-border bg-card text-card-foreground shadow-sm;
+    }
+
+    .ui-label {
+        @apply mb-1.5 block text-xs font-medium text-foreground;
+    }
+
+    .ui-input {
+        @apply block w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-tesla-500 focus:ring-2 focus:ring-tesla-500/15;
+    }
+
+    .ui-button-primary {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg bg-tesla-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-tesla-700 focus:outline-none focus:ring-2 focus:ring-tesla-500/30 disabled:pointer-events-none disabled:opacity-50;
+    }
+
+    .ui-button-secondary {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring/20 disabled:pointer-events-none disabled:opacity-50;
+    }
+
+    .ui-section-title {
+        @apply text-lg font-semibold tracking-tight text-foreground;
+    }
+
+    .ui-muted {
+        @apply text-sm text-muted-foreground;
+    }
+}
