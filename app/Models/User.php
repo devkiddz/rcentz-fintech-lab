@@ -108,6 +108,21 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Notification::class);
     }
 
+    public function sentTransfers()
+    {
+        return $this->hasMany(InternalTransfer::class, 'sender_id');
+    }
+
+    public function receivedTransfers()
+    {
+        return $this->hasMany(InternalTransfer::class, 'recipient_id');
+    }
+
+    public function linkedWallets()
+    {
+        return $this->hasMany(LinkedWallet::class);
+    }
+
     public function isAdmin()
     {
         return $this->is_admin;

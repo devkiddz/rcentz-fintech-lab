@@ -177,6 +177,7 @@ class UserController extends Controller
         $user->wallet->transactions()->create([
             'payment_method_id' => $defaultPaymentMethod->id,
             'type' => 'deposit',
+            'direction' => 'credit',
             'amount' => $request->amount,
             'status' => 'completed',
             'description' => $request->description ?: 'Admin funding',
@@ -221,6 +222,7 @@ class UserController extends Controller
         $user->wallet->transactions()->create([
             'payment_method_id' => $defaultPaymentMethod->id,
             'type' => 'withdrawal',
+            'direction' => 'debit',
             'amount' => $request->amount,
             'status' => 'completed',
             'description' => $request->description ?: 'Admin deduction',

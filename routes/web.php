@@ -105,6 +105,12 @@ Route::middleware(['auth', 'verified', 'wallet', 'block.admin'])->group(function
     Route::post('/wallet/deposit/crypto/{transaction}/confirm', [WalletController::class, 'confirmCryptoPayment'])->name('wallet.crypto-payment.confirm');
     Route::get('/wallet/withdraw', [WalletController::class, 'withdraw'])->name('wallet.withdraw');
     Route::post('/wallet/withdraw', [WalletController::class, 'processWithdrawal'])->name('wallet.process-withdrawal');
+    Route::get('/wallet/transfer', [WalletController::class, 'transfer'])->name('wallet.transfer');
+    Route::post('/wallet/transfer', [WalletController::class, 'processTransfer'])->name('wallet.process-transfer');
+    Route::get('/wallet/connections', [WalletController::class, 'connections'])->name('wallet.connections');
+    Route::post('/wallet/connections', [WalletController::class, 'storeConnection'])->name('wallet.connections.store');
+    Route::patch('/wallet/connections/{linkedWallet}/primary', [WalletController::class, 'setPrimaryConnection'])->name('wallet.connections.primary');
+    Route::delete('/wallet/connections/{linkedWallet}', [WalletController::class, 'destroyConnection'])->name('wallet.connections.destroy');
     Route::get('/wallet/transactions', [WalletController::class, 'transactions'])->name('wallet.transactions');
     
     // Investment Plan Routes
@@ -178,7 +184,7 @@ Route::middleware(['auth', 'verified', 'wallet', 'block.admin'])->group(function
 
 
 // Admin Routes
-Route::middleware(['auth', 'verified', 'admin'])
+Route::middleware(['auth', 'admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
@@ -288,6 +294,7 @@ Route::middleware(['auth', 'verified', 'admin'])
         Route::post('/clear-views', [AdminSettingController::class, 'clearViews'])->name('clear-views');
         Route::post('/clear-routes', [AdminSettingController::class, 'clearRoutes'])->name('clear-routes');
         Route::post('/optimize-clear', [AdminSettingController::class, 'optimizeClear'])->name('optimize-clear');
+        Route::post('/test-mail', [AdminSettingController::class, 'testMail'])->name('test-mail');
         Route::post('/reset-defaults', [AdminSettingController::class, 'resetToDefaults'])->name('reset-defaults');
     });
         
@@ -312,7 +319,7 @@ require __DIR__.'/auth.php';
 // Cron setup documentation is restricted to administrators.
 Route::get('/cron-setup', function () {
     return view('cron-setup');
-})->middleware(['auth', 'verified', 'admin'])->name('cron.setup');
+})->middleware(['auth', 'admin'])->name('cron.setup');
 
 // Cron Job Routes - Use token for security
 use App\Http\Controllers\CronController;

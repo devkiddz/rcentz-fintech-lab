@@ -75,6 +75,16 @@ class Wallet extends Model
     {
         return $this->transactions()
             ->where('type', 'investment')
+            ->where(function ($query) {
+                $query->where('direction', 'debit')
+                    ->orWhere(function ($legacy) {
+                        $legacy->whereNull('direction')
+                            ->where(function ($description) {
+                                $description->whereNull('description')
+                                    ->orWhere('description', 'not like', 'Sale of%');
+                            });
+                    });
+            })
             ->where('status', 'completed')
             ->sum('amount');
     }

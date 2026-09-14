@@ -52,6 +52,20 @@ if (!function_exists('site_logo')) {
     }
 }
 
+if (!function_exists('site_logo_light')) {
+    function site_logo_light()
+    {
+        return AppHelper::siteLogoLight();
+    }
+}
+
+if (!function_exists('site_logo_dark')) {
+    function site_logo_dark()
+    {
+        return AppHelper::siteLogoDark();
+    }
+}
+
 if (!function_exists('site_favicon')) {
     /**
      * Get site favicon URL

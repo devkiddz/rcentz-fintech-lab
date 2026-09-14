@@ -45,29 +45,30 @@
             <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-[9998] lg:hidden hidden" onclick="toggleSidebar()"></div>
             
             <!-- Enhanced Sidebar -->
-            <div id="sidebar" class="fixed inset-y-0 left-0 z-[9999] w-72 bg-card shadow-2xl transform -translate-x-full transition-all duration-300 ease-in-out lg:translate-x-0 border-r border-border">
+            <div id="sidebar" class="fixed inset-y-0 left-0 z-[9999] w-72 bg-card shadow-sm transform -translate-x-full transition-all duration-300 ease-in-out lg:translate-x-0 border-r border-border">
                 <div class="flex flex-col h-full">
                     <!-- Enhanced Logo Section -->
                     <div class="flex items-center justify-between h-16 px-6 border-b border-border">
                         <div class="flex items-center">
-                            @if(site_logo())
-                                <img src="{{ site_logo() }}" alt="{{ site_name() }}" class="h-6 w-auto mr-3 dark:filter dark:brightness-0 dark:invert">
+                            @if(site_logo_light() || site_logo_dark())
+                                <img src="{{ site_logo_light() ?? site_logo_dark() }}" alt="{{ site_name() }}" class="h-6 w-auto mr-3 dark:hidden">
+                                <img src="{{ site_logo_dark() ?? site_logo_light() }}" alt="{{ site_name() }}" class="hidden h-6 w-auto mr-3 dark:block">
                             @else
                                 <span class="text-foreground font-bold text-lg">{{ site_name() }}</span>
                             @endif
                         </div>
-                        <button onclick="toggleSidebar()" class="lg:hidden text-gray-600 dark:text-dark-text hover:text-gray-900 dark:hover:text-white p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">
+                        <button onclick="toggleSidebar()" class="lg:hidden text-muted-foreground dark:text-dark-text hover:text-gray-900 dark:hover:text-white p-1.5 rounded-md hover:bg-muted dark:hover:bg-gray-700">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                     </div>
 
                     <!-- Enhanced User Profile Section -->
-                    <div class="px-6 py-4 border-b border-border bg-muted/60 dark:bg-dark-muted/50">
+                    <div class="px-5 py-4 border-b border-border bg-card">
                         <div class="flex items-center space-x-3">
                             <div class="relative">
-                                <div class="w-12 h-12 bg-gradient-to-br from-tesla-400 to-tesla-600 dark:from-tesla-400 dark:to-tesla-600 rounded-xl flex items-center justify-center">
+                                <div class="w-10 h-10 bg-gradient-to-br from-tesla-400 to-tesla-600 dark:from-tesla-400 dark:to-tesla-600 rounded-lg flex items-center justify-center">
                                     @if(auth()->user()->profile_image)
-                                        <img src="{{ asset('storage/' . auth()->user()->profile_image) }}" alt="{{ auth()->user()->name }}" class="w-12 h-12 rounded-xl object-cover">
+                                        <img src="{{ asset('storage/' . auth()->user()->profile_image) }}" alt="{{ auth()->user()->name }}" class="w-10 h-10 rounded-lg object-cover">
                                     @else
                                         <span class="text-white font-medium text-sm">{{ substr(auth()->user()->name, 0, 1) }}</span>
                                     @endif
@@ -89,7 +90,7 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm font-medium text-foreground truncate">{{ auth()->user()->name }}</p>
-                                <p class="text-xs text-gray-600 dark:text-dark-text truncate">{{ auth()->user()->email }}</p>
+                                <p class="text-xs text-muted-foreground dark:text-dark-text truncate">{{ auth()->user()->email }}</p>
                                 <div class="flex items-center mt-1">
                                     @if(auth()->user()->kyc && auth()->user()->kyc->isApproved())
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-500 text-green-800 dark:text-white">
@@ -107,7 +108,7 @@
                                             KYC Rejected
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 dark:bg-dark-card text-gray-700 dark:text-white">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted dark:bg-dark-card text-foreground dark:text-white">
                                             <i data-lucide="user" class="w-3 h-3 mr-1"></i>
                                             KYC Not Submitted
                                         </span>
@@ -117,100 +118,75 @@
                         </div>
                     </div>
 
-                    <!-- Enhanced Navigation -->
-                    <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-                        <!-- Dashboard -->
-                        <a href="{{ route('dashboard') }}" 
-                           class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('dashboard') ? 'bg-tesla-600 text-white' : 'text-gray-700 dark:text-dark-text hover:bg-tesla-50 dark:hover:bg-gray-700 hover:text-tesla-600 dark:hover:text-white' }}">
-                            <i data-lucide="layout-dashboard" class="w-4 h-4 mr-3 {{ request()->routeIs('dashboard') ? 'text-white' : 'text-gray-500 dark:text-dark-text' }}"></i>
-                            <span>Dashboard</span>
+                    <!-- Grouped Navigation (mobile-first reference shell) -->
+                    <nav class="flex-1 px-3 py-3 overflow-y-auto space-y-1">
+                        <a href="{{ route('dashboard') }}" class="flex items-center px-3 py-2.5 rounded-lg text-sm font-medium {{ request()->routeIs('dashboard') ? 'bg-muted text-foreground' : 'text-foreground hover:bg-muted' }}">
+                            <i data-lucide="home" class="w-4 h-4 mr-3"></i><span>Overview</span>
                         </a>
 
-                        <!-- Wallet -->
-                        <a href="{{ route('wallet.index') }}" 
-                           class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('wallet.*') ? 'bg-tesla-600 text-white' : 'text-gray-700 dark:text-dark-text hover:bg-tesla-50 dark:hover:bg-gray-700 hover:text-tesla-600 dark:hover:text-white' }}">
-                            <i data-lucide="wallet" class="w-4 h-4 mr-3 {{ request()->routeIs('wallet.*') ? 'text-white' : 'text-gray-500 dark:text-dark-text' }}"></i>
-                            <span>Wallet</span>
-                        </a>
+                        <details class="group rounded-xl" {{ request()->routeIs('cars.*','dashboard.history') ? 'open' : '' }}>
+                            <summary class="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted">
+                                <span class="flex items-center"><i data-lucide="car" class="w-4 h-4 mr-3"></i>Car Gallery</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
+                            </summary>
+                            <div class="ml-5 mt-1 pl-5 border-l border-border space-y-1">
+                                <a href="{{ route('cars.browse') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="search" class="w-4 h-4 mr-3"></i>Browse Cars</a>
+                                <a href="{{ route('dashboard.history') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="package-check" class="w-4 h-4 mr-3"></i>My Orders</a>
+                            </div>
+                        </details>
 
-                        <!-- Investments -->
-                        <a href="{{ route('investments.index') }}" 
-                           class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('investments.*') ? 'bg-tesla-600 text-white' : 'text-gray-700 dark:text-dark-text hover:bg-tesla-50 dark:hover:bg-gray-700 hover:text-tesla-600 dark:hover:text-white' }}">
-                            <i data-lucide="trending-up" class="w-4 h-4 mr-3 {{ request()->routeIs('investments.*') ? 'text-white' : 'text-gray-500 dark:text-dark-text' }}"></i>
-                            <span>Investments</span>
-                        </a>
+                        <details class="group rounded-xl" {{ request()->routeIs('investments.*','investment.*','portfolio.*','watchlist.*') ? 'open' : '' }}>
+                            <summary class="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted">
+                                <span class="flex items-center"><i data-lucide="gem" class="w-4 h-4 mr-3"></i>Investments</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
+                            </summary>
+                            <div class="ml-5 mt-1 pl-5 border-l border-border space-y-1">
+                                <a href="{{ route('investments.index') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="sparkles" class="w-4 h-4 mr-3"></i>Browse Plans</a>
+                                <a href="{{ route('portfolio.index') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="pie-chart" class="w-4 h-4 mr-3"></i>My Portfolio</a>
+                                <a href="{{ route('watchlist.index') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="bookmark" class="w-4 h-4 mr-3"></i>Watchlist</a>
+                            </div>
+                        </details>
 
-                        <!-- Stocks -->
-                        <a href="{{ route('stocks.index') }}" 
-                           class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('stocks.*') ? 'bg-tesla-600 text-white' : 'text-gray-700 dark:text-dark-text hover:bg-tesla-50 dark:hover:bg-gray-700 hover:text-tesla-600 dark:hover:text-white' }}">
-                            <i data-lucide="bar-chart-3" class="w-4 h-4 mr-3 {{ request()->routeIs('stocks.*') ? 'text-white' : 'text-gray-500 dark:text-dark-text' }}"></i>
-                            <span>Stocks</span>
-                        </a>
+                        <details class="group rounded-xl" {{ request()->routeIs('stocks.*','trading.*') ? 'open' : '' }}>
+                            <summary class="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted">
+                                <span class="flex items-center"><i data-lucide="trending-up" class="w-4 h-4 mr-3"></i>Trading</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
+                            </summary>
+                            <div class="ml-5 mt-1 pl-5 border-l border-border space-y-1">
+                                <a href="{{ route('stocks.index') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="candlestick-chart" class="w-4 h-4 mr-3"></i>Live Markets</a>
+                            </div>
+                        </details>
 
-                        <!-- Portfolio -->
-                        <a href="{{ route('portfolio.index') }}" 
-                           class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('portfolio.*', 'watchlist.*') ? 'bg-tesla-600 text-white' : 'text-gray-700 dark:text-dark-text hover:bg-tesla-50 dark:hover:bg-gray-700 hover:text-tesla-600 dark:hover:text-white' }}">
-                            <i data-lucide="pie-chart" class="w-4 h-4 mr-3 {{ request()->routeIs('portfolio.*', 'watchlist.*') ? 'text-white' : 'text-gray-500 dark:text-dark-text' }}"></i>
-                            <span>Portfolio</span>
-                        </a>
+                        <details class="group rounded-xl" {{ request()->routeIs('wallet.*') ? 'open' : '' }}>
+                            <summary class="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted">
+                                <span class="flex items-center"><i data-lucide="wallet-cards" class="w-4 h-4 mr-3"></i>Wallet & Finance</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
+                            </summary>
+                            <div class="ml-5 mt-1 pl-5 border-l border-border space-y-1">
+                                <a href="{{ route('wallet.deposit') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="circle-plus" class="w-4 h-4 mr-3"></i>Deposit Funds</a>
+                                <a href="{{ route('wallet.withdraw') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="circle-minus" class="w-4 h-4 mr-3"></i>Withdraw Funds</a>
+                                <a href="{{ route('wallet.transfer') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="arrow-right-left" class="w-4 h-4 mr-3"></i>Internal Transfer</a>
+                                <a href="{{ route('wallet.connections') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="link" class="w-4 h-4 mr-3"></i>Connected Wallets</a>
+                            </div>
+                        </details>
 
-                        <!-- Watchlist -->
-                        <a href="{{ route('watchlist.index') }}" 
-                           class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('watchlist.*') ? 'bg-tesla-600 text-white' : 'text-gray-700 dark:text-dark-text hover:bg-tesla-50 dark:hover:bg-gray-700 hover:text-tesla-600 dark:hover:text-white' }}">
-                            <i data-lucide="bookmark" class="w-4 h-4 mr-3 {{ request()->routeIs('watchlist.*') ? 'text-white' : 'text-gray-500 dark:text-dark-text' }}"></i>
-                            <span>Watchlist</span>
-                        </a>
-
-                        <!-- Investment Dashboard -->
-                        <a href="{{ route('investment.dashboard') }}" 
-                           class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('investment.*') ? 'bg-tesla-600 text-white' : 'text-gray-700 dark:text-dark-text hover:bg-tesla-50 dark:hover:bg-gray-700 hover:text-tesla-600 dark:hover:text-white' }}">
-                            <i data-lucide="bar-chart-3" class="w-4 h-4 mr-3 {{ request()->routeIs('investment.*') ? 'text-white' : 'text-gray-500 dark:text-dark-text' }}"></i>
-                            <span>Investment Dashboard</span>
-                        </a>
-
-                        <!-- Browse Cars -->
-                        <a href="{{ route('cars.browse') }}" 
-                           class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('cars.*') ? 'bg-tesla-600 text-white' : 'text-gray-700 dark:text-dark-text hover:bg-tesla-50 dark:hover:bg-gray-700 hover:text-tesla-600 dark:hover:text-white' }}">
-                            <i data-lucide="car" class="w-4 h-4 mr-3 {{ request()->routeIs('cars.*') ? 'text-white' : 'text-gray-500 dark:text-dark-text' }}"></i>
-                            <span>Inventory</span>
-                        </a>
-
-                        <!-- Purchase History -->
-                        <a href="{{ route('dashboard.history') }}" 
-                           class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('dashboard.history') ? 'bg-tesla-600 text-white' : 'text-gray-700 dark:text-dark-text hover:bg-tesla-50 dark:hover:bg-gray-700 hover:text-tesla-600 dark:hover:text-white' }}">
-                            <i data-lucide="receipt" class="w-4 h-4 mr-3 {{ request()->routeIs('dashboard.history') ? 'text-white' : 'text-gray-500 dark:text-dark-text' }}"></i>
-                            <span>Orders</span>
-                        </a>
-
-                        <!-- Profile -->
-                        <a href="{{ route('profile.edit') }}" 
-                           class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('profile.edit') ? 'bg-tesla-600 text-white' : 'text-gray-700 dark:text-dark-text hover:bg-tesla-50 dark:hover:bg-gray-700 hover:text-tesla-600 dark:hover:text-white' }}">
-                            <i data-lucide="user" class="w-4 h-4 mr-3 {{ request()->routeIs('profile.edit') ? 'text-white' : 'text-gray-500 dark:text-dark-text' }}"></i>
-                            <span>Account</span>
-                        </a>
-
-                        <!-- KYC Verification -->
-                        <a href="{{ route('profile.kyc') }}" 
-                           class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('profile.kyc') ? 'bg-tesla-600 text-white' : 'text-gray-700 dark:text-dark-text hover:bg-tesla-50 dark:hover:bg-gray-700 hover:text-tesla-600 dark:hover:text-white' }}">
-                            <i data-lucide="shield-check" class="w-4 h-4 mr-3 {{ request()->routeIs('profile.kyc') ? 'text-white' : 'text-gray-500 dark:text-dark-text' }}"></i>
-                            <span>KYC Verification</span>
-                        </a>
-
-                        <!-- Divider -->
-                        <div class="border-t border-border pt-4 mt-4">
-                            <!-- Support -->
-                            <a href="{{ route('support.index') }}" 
-                               class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {{ request()->routeIs('support.*') ? 'bg-tesla-600 text-white' : 'text-gray-700 dark:text-dark-text hover:bg-tesla-50 dark:hover:bg-gray-700 hover:text-tesla-600 dark:hover:text-white' }} transition-all duration-200">
-                                <i data-lucide="help-circle" class="w-4 h-4 mr-3 {{ request()->routeIs('support.*') ? 'text-white' : 'text-gray-500 dark:text-dark-text' }}"></i>
-                                <span>Support</span>
-                            </a>
-                        </div>
+                        <details class="group rounded-xl" {{ request()->routeIs('profile.*','support.*') ? 'open' : '' }}>
+                            <summary class="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted">
+                                <span class="flex items-center"><i data-lucide="circle-user" class="w-4 h-4 mr-3"></i>Account</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
+                            </summary>
+                            <div class="ml-5 mt-1 pl-5 border-l border-border space-y-1">
+                                <a href="{{ route('profile.edit') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="user-round-cog" class="w-4 h-4 mr-3"></i>Profile Settings</a>
+                                <a href="{{ route('profile.kyc') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="shield-check" class="w-4 h-4 mr-3"></i>Verify Identity @if(!auth()->user()->kyc || !auth()->user()->kyc->isApproved())<span class="ml-auto text-[10px] bg-red-100 text-red-700 rounded-full px-2 py-0.5">Required</span>@endif</a>
+                                <a href="{{ route('support.index') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="headphones" class="w-4 h-4 mr-3"></i>Support Center</a>
+                            </div>
+                        </details>
                     </nav>
 
                     <!-- Enhanced User Menu -->
                     <div class="p-4 border-t border-border">
                         <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium text-gray-700 dark:text-dark-text">Logout</span>
+                            <span class="text-sm font-medium text-foreground dark:text-dark-text">Logout</span>
                             <form method="POST" action="{{ route('logout') }}" class="inline">
                                 @csrf
                                 <button type="submit" class="flex items-center text-sm font-medium text-red-600 dark:text-dark-danger hover:text-red-700 dark:hover:text-red-300 transition-colors p-2 rounded-lg hover:bg-red-50 dark:hover:bg-gray-700" title="Sign Out">
@@ -223,16 +199,16 @@
             </div>
 
             <!-- Main Content -->
-            <div class="flex-1 flex flex-col overflow-hidden lg:ml-72">
+            <div class="flex-1 flex min-w-0 flex-col overflow-hidden lg:ml-72 bg-background">
                 <!-- Enhanced Top Bar -->
-                <header class="bg-card border-b border-border transition-colors duration-200">
-                    <div class="flex items-center justify-between px-6 py-3">
+                <header class="bg-background/95 border-b border-border backdrop-blur transition-colors duration-200">
+                    <div class="mx-auto flex min-h-16 w-full max-w-[1536px] items-center justify-between px-4 sm:px-6 lg:px-8">
                         <div class="flex items-center">
-                            <button onclick="toggleSidebar()" class="lg:hidden text-gray-600 dark:text-dark-text hover:text-gray-900 dark:hover:text-white p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 mr-3">
+                            <button onclick="toggleSidebar()" class="lg:hidden text-muted-foreground dark:text-dark-text hover:text-gray-900 dark:hover:text-white p-1.5 rounded-md hover:bg-muted dark:hover:bg-gray-700 mr-3">
                                 <i data-lucide="menu" class="w-5 h-5"></i>
                             </button>
                             @if (isset($header))
-                                <div class="font-light text-lg text-foreground">
+                                <div class="text-base font-medium tracking-tight text-foreground">
                                     {{ $header }}
                                 </div>
                             @endif
@@ -242,8 +218,8 @@
                         <div class="flex items-center space-x-3">
                             <!-- Theme Toggle Button -->
                             <button 
-                                onclick="toggleTheme()" 
-                                class="p-2 text-gray-600 dark:text-dark-text hover:text-tesla-600 dark:hover:text-dark-accent rounded-lg hover:bg-tesla-50 dark:hover:bg-gray-700 transition-all duration-200 group"
+                                data-theme-toggle onclick="window.AxausTheme.toggle()" 
+                                class="p-2 text-muted-foreground dark:text-dark-text hover:text-tesla-600 dark:hover:text-dark-accent rounded-lg hover:bg-tesla-50 dark:hover:bg-gray-700 transition-all duration-200 group"
                                 title="Toggle Theme"
                             >
                                 <i data-lucide="sun" class="w-5 h-5 hidden dark:block group-hover:rotate-180 transition-transform duration-500"></i>
@@ -261,7 +237,7 @@
                             
                             <!-- Notifications -->
                             <div class="relative">
-                                <button onclick="toggleNotifications()" class="relative p-2 text-gray-600 dark:text-dark-text hover:text-tesla-600 dark:hover:text-dark-accent rounded-lg hover:bg-tesla-50 dark:hover:bg-gray-700 transition-all duration-200">
+                                <button onclick="toggleNotifications()" class="relative p-2 text-muted-foreground dark:text-dark-text hover:text-tesla-600 dark:hover:text-dark-accent rounded-lg hover:bg-tesla-50 dark:hover:bg-gray-700 transition-all duration-200">
                                     <i data-lucide="bell" class="w-5 h-5"></i>
                                     <!-- Notification badge -->
                                     <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center hidden">0</span>
@@ -272,7 +248,7 @@
                                     <div class="p-3 border-b border-border">
                                         <div class="flex items-center justify-between">
                                             <h3 class="text-sm font-medium text-foreground">Notifications</h3>
-                                            <button onclick="markAllNotificationsAsRead()" class="text-xs text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">Mark all read</button>
+                                            <button onclick="markAllNotificationsAsRead()" class="text-xs text-muted-foreground hover:text-gray-900 dark:hover:text-white">Mark all read</button>
                                         </div>
                                     </div>
                                     <div id="notifications-list" class="max-h-64 overflow-y-auto">
@@ -281,7 +257,7 @@
                                             <div class="w-6 h-6 bg-muted rounded-full flex items-center justify-center mx-auto mb-2">
                                                 <i data-lucide="loader-2" class="w-3 h-3 text-gray-400 dark:text-gray-300 animate-spin"></i>
                                             </div>
-                                            <p class="text-xs text-gray-500 dark:text-gray-300">Loading notifications...</p>
+                                            <p class="text-xs text-muted-foreground dark:text-gray-300">Loading notifications...</p>
                                         </div>
                                     </div>
                                     <div class="p-3 border-t border-border">
@@ -343,73 +319,52 @@
                 @endif
 
                 <!-- Page Content -->
-                <main class="flex-1 overflow-y-auto bg-background p-6 pb-20 transition-colors duration-200 lg:pb-6">
+                <main class="flex-1 overflow-y-auto bg-background px-4 py-5 pb-24 transition-colors duration-200 sm:px-6 lg:px-8 lg:py-7 lg:pb-8">
                     {{ $slot }}
                 </main>
             </div>
         </div>
 
-        <!-- Enhanced Mobile Bottom Navigation -->
+        <!-- Mobile Bottom Navigation + Quick Actions -->
         <div class="fixed bottom-0 left-0 right-0 bg-card border-t border-border lg:hidden z-50 shadow-2xl transition-colors duration-200">
-            <div class="flex justify-around px-3 py-2">
-                <!-- Dashboard -->
-                <a href="{{ route('dashboard') }}" class="flex flex-col items-center py-1.5 px-3 rounded-xl transition-all duration-300 {{ request()->routeIs('dashboard') ? 'text-white bg-tesla-600 shadow-lg scale-105' : 'text-gray-600 dark:text-dark-text hover:text-tesla-600 dark:hover:text-tesla-400 hover:bg-tesla-50 dark:hover:bg-gray-700' }}">
-                    <div class="relative">
-                        <i data-lucide="layout-dashboard" class="w-5 h-5 mb-1"></i>
-                        @if(request()->routeIs('dashboard'))
-                            <div class="absolute -top-1 -right-1 w-1.5 h-1.5 bg-white rounded-full"></div>
-                        @endif
-                    </div>
-                    <span class="text-xs font-semibold">Home</span>
-                </a>
+            <div class="grid grid-cols-5 items-end px-2 py-2">
+                <a href="{{ route('dashboard') }}" class="flex flex-col items-center gap-1 py-1 text-xs {{ request()->routeIs('dashboard') ? 'text-tesla-600' : 'text-muted-foreground' }}"><i data-lucide="home" class="w-5 h-5"></i><span>Home</span></a>
+                <a href="{{ route('stocks.index') }}" class="flex flex-col items-center gap-1 py-1 text-xs {{ request()->routeIs('stocks.*','trading.*') ? 'text-tesla-600' : 'text-muted-foreground' }}"><i data-lucide="candlestick-chart" class="w-5 h-5"></i><span>Markets</span></a>
+                <button type="button" onclick="toggleQuickActions()" class="-mt-7 mx-auto w-14 h-14 rounded-full bg-muted text-foreground shadow-xl ring-4 ring-card flex items-center justify-center" aria-label="Open quick actions"><i data-lucide="plus" class="w-6 h-6"></i></button>
+                <a href="{{ route('wallet.index') }}" class="flex flex-col items-center gap-1 py-1 text-xs {{ request()->routeIs('wallet.*') ? 'text-tesla-600' : 'text-muted-foreground' }}"><i data-lucide="wallet" class="w-5 h-5"></i><span>Wallet</span></a>
+                <button type="button" onclick="toggleSidebar()" class="flex flex-col items-center gap-1 py-1 text-xs text-muted-foreground"><i data-lucide="menu" class="w-5 h-5"></i><span>Menu</span></button>
+            </div>
+        </div>
 
-                <!-- Wallet -->
-                <a href="{{ route('wallet.index') }}" class="flex flex-col items-center py-1.5 px-3 rounded-xl transition-all duration-300 {{ request()->routeIs('wallet.*') ? 'text-white bg-tesla-600 shadow-lg scale-105' : 'text-gray-600 dark:text-dark-text hover:text-tesla-600 dark:hover:text-tesla-400 hover:bg-tesla-50 dark:hover:bg-gray-700' }}">
-                    <div class="relative">
-                        <i data-lucide="wallet" class="w-5 h-5 mb-1"></i>
-                        @if(request()->routeIs('wallet.*'))
-                            <div class="absolute -top-1 -right-1 w-1.5 h-1.5 bg-white rounded-full"></div>
-                        @endif
-                    </div>
-                    <span class="text-xs font-semibold">Wallet</span>
-                </a>
-
-                <!-- Investments -->
-                <a href="{{ route('investments.index') }}" class="flex flex-col items-center py-1.5 px-3 rounded-xl transition-all duration-300 {{ request()->routeIs('investments.*') ? 'text-white bg-tesla-600 shadow-lg scale-105' : 'text-gray-600 dark:text-dark-text hover:text-tesla-600 dark:hover:text-tesla-400 hover:bg-tesla-50 dark:hover:bg-gray-700' }}">
-                    <div class="relative">
-                        <i data-lucide="trending-up" class="w-5 h-5 mb-1"></i>
-                        @if(request()->routeIs('investments.*'))
-                            <div class="absolute -top-1 -right-1 w-1.5 h-1.5 bg-white rounded-full"></div>
-                        @endif
-                    </div>
-                    <span class="text-xs font-semibold">Invest</span>
-                </a>
-
-                <!-- Stocks -->
-                <a href="{{ route('stocks.index') }}" class="flex flex-col items-center py-1.5 px-3 rounded-xl transition-all duration-300 {{ request()->routeIs('stocks.*') ? 'text-white bg-tesla-600 shadow-lg scale-105' : 'text-gray-600 dark:text-dark-text hover:text-tesla-600 dark:hover:text-tesla-400 hover:bg-tesla-50 dark:hover:bg-gray-700' }}">
-                    <div class="relative">
-                        <i data-lucide="bar-chart-3" class="w-5 h-5 mb-1"></i>
-                        @if(request()->routeIs('stocks.*'))
-                            <div class="absolute -top-1 -right-1 w-1.5 h-1.5 bg-white rounded-full"></div>
-                        @endif
-                    </div>
-                    <span class="text-xs font-semibold">Stocks</span>
-                </a>
-
-                <!-- Portfolio -->
-                <a href="{{ route('portfolio.index') }}" class="flex flex-col items-center py-1.5 px-3 rounded-xl transition-all duration-300 {{ request()->routeIs('portfolio.*', 'watchlist.*') ? 'text-white bg-tesla-600 shadow-lg scale-105' : 'text-gray-600 dark:text-dark-text hover:text-tesla-600 dark:hover:text-tesla-400 hover:bg-tesla-50 dark:hover:bg-gray-700' }}">
-                    <div class="relative">
-                        <i data-lucide="pie-chart" class="w-5 h-5 mb-1"></i>
-                        @if(request()->routeIs('portfolio.*', 'watchlist.*'))
-                            <div class="absolute -top-1 -right-1 w-1.5 h-1.5 bg-white rounded-full"></div>
-                        @endif
-                    </div>
-                    <span class="text-xs font-semibold">Portfolio</span>
-                </a>
+        <div id="quick-actions-overlay" class="fixed inset-0 z-[10020] hidden lg:hidden">
+            <button type="button" aria-label="Close quick actions" onclick="toggleQuickActions(false)" class="absolute inset-0 bg-black/60 backdrop-blur-[1px]"></button>
+            <div style="bottom:6rem;border-radius:1.5rem" class="absolute left-5 right-5 max-w-sm mx-auto border border-border bg-card shadow-2xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <div><p class="text-xs text-muted-foreground">Quick actions</p><h3 class="text-lg font-semibold text-foreground">What do you want to do?</h3></div>
+                    <button type="button" onclick="toggleQuickActions(false)" class="p-2 rounded-full hover:bg-muted text-muted-foreground"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <a href="{{ route('investments.index') }}" class="rounded-2xl border border-border bg-background p-4 flex flex-col items-center justify-center gap-2 h-24 hover:border-tesla-500"><i data-lucide="trending-up" class="w-7 h-7 text-tesla-500"></i><span class="font-medium">Invest</span></a>
+                    <a href="{{ route('wallet.withdraw') }}" class="rounded-2xl border border-border bg-background p-4 flex flex-col items-center justify-center gap-2 h-24 hover:border-emerald-500"><i data-lucide="wallet-cards" class="w-7 h-7 text-emerald-500"></i><span class="font-medium">Withdraw</span></a>
+                </div>
+                <div class="space-y-1">
+                    <a href="{{ route('wallet.transfer') }}" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted text-left"><i data-lucide="refresh-cw" class="w-5 h-5 text-violet-500"></i><span>Transfer Funds</span></a>
+                    <a href="{{ route('wallet.connections') }}" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted"><i data-lucide="link" class="w-5 h-5 text-indigo-500"></i><span>Connected Wallets</span></a>
+                    <a href="{{ route('support.index') }}" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-muted"><i data-lucide="life-buoy" class="w-5 h-5 text-cyan-500"></i><span>Support</span></a>
+                </div>
             </div>
         </div>
 
         <script>
+            function toggleQuickActions(force) {
+                const el = document.getElementById('quick-actions-overlay');
+                if (!el) return;
+                const shouldOpen = typeof force === 'boolean' ? force : el.classList.contains('hidden');
+                el.classList.toggle('hidden', !shouldOpen);
+                document.body.classList.toggle('overflow-hidden', shouldOpen);
+                if (window.lucide) lucide.createIcons();
+            }
+
             // Initialize Lucide icons
             lucide.createIcons();
             
@@ -461,19 +416,19 @@
                                 <div class="w-6 h-6 bg-muted rounded-full flex items-center justify-center mx-auto mb-2">
                                     <i data-lucide="bell" class="w-3 h-3 text-gray-400 dark:text-gray-300"></i>
                                 </div>
-                                <p class="text-xs text-gray-500 dark:text-gray-300">No notifications</p>
+                                <p class="text-xs text-muted-foreground dark:text-gray-300">No notifications</p>
                             </div>
                         `;
                     } else {
                         notificationsList.innerHTML = data.notifications.map(notification => `
-                            <div class="p-3 border-b border-gray-100 hover:bg-gray-50 ${notification.is_read ? 'opacity-60' : ''}">
+                            <div class="p-3 border-b border-gray-100 hover:bg-muted/30 ${notification.is_read ? 'opacity-60' : ''}">
                                 <div class="flex items-start">
                                     <div class="w-6 h-6 bg-${notification.color}-500 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                                         <i data-lucide="${notification.icon}" class="w-3 h-3 text-white"></i>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <p class="text-xs font-medium text-black">${notification.title}</p>
-                                        <p class="text-xs text-gray-500 dark:text-gray-300">${notification.message}</p>
+                                        <p class="text-xs font-medium text-foreground">${notification.title}</p>
+                                        <p class="text-xs text-muted-foreground dark:text-gray-300">${notification.message}</p>
                                         <p class="text-xs text-gray-400 mt-1">${notification.formatted_time}</p>
                                     </div>
                                 </div>

@@ -13,6 +13,7 @@ class WalletTransaction extends Model
         'wallet_id',
         'payment_method_id',
         'type',
+        'direction',
         'amount',
         'fee',
         'status',
@@ -35,6 +36,26 @@ class WalletTransaction extends Model
     public function paymentMethod()
     {
         return $this->belongsTo(PaymentMethod::class);
+    }
+
+
+    public function getIsCreditAttribute(): bool
+    {
+        if ($this->direction) {
+            return $this->direction === 'credit';
+        }
+
+        if (in_array($this->type, ['deposit', 'refund', 'dividend'], true)) {
+            return true;
+        }
+
+        return $this->type === 'investment'
+            && str_starts_with((string) $this->description, 'Sale of');
+    }
+
+    public function getIsDebitAttribute(): bool
+    {
+        return !$this->is_credit;
     }
 
     public function getFormattedAmountAttribute()

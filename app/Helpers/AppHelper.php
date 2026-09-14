@@ -61,8 +61,19 @@ class AppHelper
      */
     public static function siteLogo()
     {
-        $logo = self::setting('site_logo');
+        return self::siteLogoLight();
+    }
+
+    public static function siteLogoLight()
+    {
+        $logo = self::setting('site_logo_light', self::setting('site_logo'));
         return $logo ? asset('storage/' . $logo) : null;
+    }
+
+    public static function siteLogoDark()
+    {
+        $logo = self::setting('site_logo_dark');
+        return $logo ? asset('storage/' . $logo) : self::siteLogoLight();
     }
 
     /**

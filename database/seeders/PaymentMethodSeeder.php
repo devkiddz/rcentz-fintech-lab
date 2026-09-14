@@ -47,6 +47,14 @@ class PaymentMethodSeeder extends Seeder
                 'allow_deposit' => true,
                 'allow_withdraw' => false,
             ],
+            [
+                'name' => 'Internal Transfer',
+                'type' => 'traditional',
+                'details' => 'Synthetic user-to-user transfer inside the portfolio environment.',
+                'is_active' => true,
+                'allow_deposit' => false,
+                'allow_withdraw' => false,
+            ],
 
             // Cryptocurrency Payment Methods
             [

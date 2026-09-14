@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\InternalTransfer;
+use App\Models\LinkedWallet;
 use App\Models\PaymentMethod;
+use App\Models\User;
 use App\Models\WalletTransaction;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class WalletController extends Controller
@@ -263,6 +267,240 @@ class WalletController extends Controller
             DB::rollBack();
             return back()->withErrors(['error' => 'Failed to process withdrawal. Please try again.']);
         }
+    }
+
+    /**
+     * Show the internal transfer form.
+     */
+    public function transfer()
+    {
+        $user = Auth::user();
+        $wallet = $user->wallet;
+        $recentTransfers = InternalTransfer::with(['sender', 'recipient'])
+            ->where(function ($query) use ($user) {
+                $query->where('sender_id', $user->id)
+                    ->orWhere('recipient_id', $user->id);
+            })
+            ->latest()
+            ->limit(8)
+            ->get();
+
+        return view('wallet.transfer', compact('wallet', 'recentTransfers'));
+    }
+
+    /**
+     * Execute a user-to-user transfer atomically.
+     */
+    public function processTransfer(Request $request)
+    {
+        $user = Auth::user();
+        $wallet = $user->wallet;
+
+        $data = $request->validate([
+            'recipient' => ['required', 'email', 'max:255'],
+            'amount' => ['required', 'numeric', 'min:1', 'max:100000'],
+            'note' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $recipient = User::query()
+            ->whereRaw('LOWER(email) = ?', [strtolower($data['recipient'])])
+            ->where('is_admin', false)
+            ->first();
+
+        if (! $recipient || ! $recipient->wallet) {
+            return back()->withInput()->withErrors([
+                'recipient' => 'No customer account with that email was found.',
+            ]);
+        }
+
+        if ($recipient->id === $user->id) {
+            return back()->withInput()->withErrors([
+                'recipient' => 'You cannot transfer funds to your own wallet.',
+            ]);
+        }
+
+        if (! $wallet->canWithdraw($data['amount'])) {
+            return back()->withInput()->withErrors([
+                'amount' => 'Your wallet does not have enough available balance.',
+            ]);
+        }
+
+        try {
+            $transfer = DB::transaction(function () use ($user, $recipient, $wallet, $data) {
+                // Lock both wallet rows so simultaneous transfers cannot spend the same balance.
+                $senderWallet = $wallet->newQuery()->whereKey($wallet->id)->lockForUpdate()->firstOrFail();
+                $recipientWallet = $recipient->wallet()->lockForUpdate()->firstOrFail();
+
+                if ((float) $senderWallet->balance < (float) $data['amount']) {
+                    throw new \RuntimeException('Insufficient funds.');
+                }
+
+                $reference = (string) Str::uuid();
+                $paymentMethod = PaymentMethod::firstOrCreate(
+                    ['name' => 'Internal Transfer'],
+                    [
+                        'type' => 'traditional',
+                        'details' => 'User-to-user transfer inside the platform.',
+                        'is_active' => true,
+                        'allow_deposit' => false,
+                        'allow_withdraw' => false,
+                    ]
+                );
+
+                $senderWallet->deductFunds($data['amount']);
+                $recipientWallet->addFunds($data['amount']);
+
+                $transfer = InternalTransfer::create([
+                    'reference' => $reference,
+                    'sender_id' => $user->id,
+                    'recipient_id' => $recipient->id,
+                    'amount' => $data['amount'],
+                    'currency' => $senderWallet->currency ?: 'USD',
+                    'status' => 'completed',
+                    'note' => $data['note'] ?? null,
+                ]);
+
+                $senderWallet->transactions()->create([
+                    'payment_method_id' => $paymentMethod->id,
+                    'type' => 'withdrawal',
+                    'amount' => $data['amount'],
+                    'fee' => 0,
+                    'status' => 'completed',
+                    'reference_id' => 'TX-' . $reference,
+                    'description' => 'Internal transfer to ' . $recipient->email,
+                ]);
+
+                $recipientWallet->transactions()->create([
+                    'payment_method_id' => $paymentMethod->id,
+                    'type' => 'deposit',
+                    'amount' => $data['amount'],
+                    'fee' => 0,
+                    'status' => 'completed',
+                    'reference_id' => 'TX-' . $reference,
+                    'description' => 'Internal transfer from ' . $user->email,
+                ]);
+
+                return $transfer;
+            });
+
+            NotificationService::createSystemNotification(
+                $recipient,
+                'Funds received',
+                'You received ' . format_currency($transfer->amount) . ' from ' . $user->name . '.',
+                ['type' => 'internal_transfer', 'reference' => $transfer->reference]
+            );
+
+            NotificationService::createSystemNotification(
+                $user,
+                'Transfer completed',
+                format_currency($transfer->amount) . ' was transferred to ' . $recipient->email . '.',
+                ['type' => 'internal_transfer', 'reference' => $transfer->reference]
+            );
+
+            return redirect()->route('wallet.transfer')
+                ->with('success', 'Transfer completed successfully.');
+        } catch (\Throwable $e) {
+            return back()->withInput()->withErrors([
+                'error' => $e->getMessage() === 'Insufficient funds.'
+                    ? $e->getMessage()
+                    : 'The transfer could not be completed. Please try again.',
+            ]);
+        }
+    }
+
+    /**
+     * Manage external wallet connections.
+     */
+    public function connections()
+    {
+        $wallets = Auth::user()->linkedWallets()
+            ->where('status', 'active')
+            ->latest()
+            ->get();
+
+        return view('wallet.connections', compact('wallets'));
+    }
+
+    /**
+     * Link an external wallet reference to the account.
+     */
+    public function storeConnection(Request $request)
+    {
+        $data = $request->validate([
+            'provider' => ['required', Rule::in(['walletconnect', 'metamask', 'coinbase', 'trust', 'other'])],
+            'network' => ['required', Rule::in(['ethereum', 'bnb', 'polygon', 'solana', 'bitcoin'])],
+            'address' => ['required', 'string', 'min:12', 'max:255'],
+            'label' => ['nullable', 'string', 'max:80'],
+        ]);
+
+        $user = Auth::user();
+
+        $exists = $user->linkedWallets()
+            ->where('network', $data['network'])
+            ->where('address', $data['address'])
+            ->where('status', 'active')
+            ->exists();
+
+        if ($exists) {
+            return back()->withInput()->withErrors([
+                'address' => 'This wallet is already connected to your account.',
+            ]);
+        }
+
+        $linked = DB::transaction(function () use ($user, $data) {
+            $makePrimary = ! $user->linkedWallets()->where('status', 'active')->exists();
+
+            return $user->linkedWallets()->create([
+                ...$data,
+                'is_primary' => $makePrimary,
+                'status' => 'active',
+            ]);
+        });
+
+        NotificationService::createSystemNotification(
+            $user,
+            'Wallet connected',
+            ucfirst($linked->network) . ' wallet ' . $linked->masked_address . ' was connected to your account.',
+            ['type' => 'wallet_connection', 'wallet_id' => $linked->id]
+        );
+
+        return redirect()->route('wallet.connections')
+            ->with('success', 'Wallet connected successfully.');
+    }
+
+    public function setPrimaryConnection(LinkedWallet $linkedWallet)
+    {
+        $user = Auth::user();
+        abort_unless($linkedWallet->user_id === $user->id && $linkedWallet->status === 'active', 403);
+
+        DB::transaction(function () use ($user, $linkedWallet) {
+            $user->linkedWallets()->update(['is_primary' => false]);
+            $linkedWallet->update(['is_primary' => true]);
+        });
+
+        return back()->with('success', 'Primary wallet updated.');
+    }
+
+    public function destroyConnection(LinkedWallet $linkedWallet)
+    {
+        $user = Auth::user();
+        abort_unless($linkedWallet->user_id === $user->id, 403);
+
+        DB::transaction(function () use ($user, $linkedWallet) {
+            $wasPrimary = $linkedWallet->is_primary;
+            $linkedWallet->update(['status' => 'disconnected', 'is_primary' => false]);
+
+            if ($wasPrimary) {
+                $next = $user->linkedWallets()
+                    ->where('status', 'active')
+                    ->whereKeyNot($linkedWallet->id)
+                    ->latest()
+                    ->first();
+                $next?->update(['is_primary' => true]);
+            }
+        });
+
+        return back()->with('success', 'Wallet disconnected.');
     }
 
     /**

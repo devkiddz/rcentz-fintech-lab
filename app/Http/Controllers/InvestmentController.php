@@ -69,6 +69,7 @@ class InvestmentController extends Controller
             $walletTransaction = $wallet->transactions()->create([
                 'payment_method_id' => 1, // Default payment method
                 'type' => 'investment',
+                'direction' => 'debit',
                 'amount' => $totalCost,
                 'fee' => $fee,
                 'status' => 'completed',
@@ -205,6 +206,7 @@ class InvestmentController extends Controller
             $walletTransaction = $user->wallet->transactions()->create([
                 'payment_method_id' => 1, // Default payment method
                 'type' => 'investment',
+                'direction' => 'credit',
                 'amount' => $netAmount,
                 'fee' => $fee,
                 'status' => 'completed',
