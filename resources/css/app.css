@@ -537,3 +537,321 @@
         @apply mb-4 mt-1 text-sm text-muted-foreground;
     }
 }
+
+
+/* Unified authenticated shell primitives */
+@layer components {
+    .shell-topbar {
+        @apply sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80;
+    }
+
+    .shell-topbar-inner {
+        @apply mx-auto flex min-h-16 w-full max-w-[1536px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8;
+    }
+
+    .shell-icon-button {
+        @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-transparent text-muted-foreground transition-colors hover:border-border hover:bg-muted/70 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring/25;
+    }
+
+    .shell-impersonation-pill {
+        @apply inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 px-3 text-xs font-medium text-red-600 transition hover:bg-red-500/15 dark:text-red-400;
+    }
+
+    .shell-alert-stack {
+        @apply mx-auto w-full max-w-[1536px] space-y-2 px-4 pt-3 sm:px-6 lg:px-8;
+    }
+
+    .shell-alert {
+        @apply flex items-center gap-3 rounded-xl border px-4 py-3 shadow-sm;
+    }
+
+    .shell-alert-close {
+        @apply inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md opacity-70 transition hover:bg-black/5 hover:opacity-100 dark:hover:bg-white/5;
+    }
+
+    .shell-alert-success {
+        @apply border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300;
+    }
+
+    .shell-alert-error {
+        @apply border-red-500/20 bg-red-500/10 text-red-700 dark:text-red-300;
+    }
+
+    .shell-alert-warning {
+        @apply border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300;
+    }
+
+    .shell-alert-info {
+        @apply border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300;
+    }
+}
+
+
+/* ============================================================
+   RCENTZ UI SANITIZATION LAYER
+   ------------------------------------------------------------
+   This layer is intentionally scoped to authenticated customer
+   and admin workspaces. It neutralizes legacy hard-coded Blade
+   utilities without changing financial/business logic.
+   ============================================================ */
+
+@layer components {
+    .money-page {
+        @apply mx-auto w-full max-w-[1280px] space-y-5 pb-10 sm:space-y-6;
+    }
+
+    .money-page-header {
+        @apply flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between;
+    }
+
+    .money-page-title {
+        @apply text-2xl font-semibold tracking-tight text-foreground sm:text-3xl;
+    }
+
+    .money-page-copy {
+        @apply mt-1.5 max-w-2xl text-sm leading-6 text-muted-foreground;
+    }
+
+    .money-balance-strip {
+        @apply grid gap-3 sm:grid-cols-2 xl:grid-cols-3;
+    }
+
+    .money-balance-card {
+        @apply rounded-xl border border-border bg-card p-4;
+    }
+
+    .money-balance-card span {
+        @apply block text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground;
+    }
+
+    .money-balance-card strong {
+        @apply mt-2 block text-xl font-semibold tracking-tight text-foreground;
+    }
+
+    .money-workspace {
+        @apply grid gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,.85fr)] lg:items-start;
+    }
+
+    .money-form-card,
+    .money-summary-card {
+        @apply rounded-xl border border-border bg-card;
+    }
+
+    .money-card-head {
+        @apply flex items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6;
+    }
+
+    .money-card-head h2 {
+        @apply text-base font-semibold tracking-tight text-foreground;
+    }
+
+    .money-card-head p {
+        @apply mt-1 text-xs leading-5 text-muted-foreground;
+    }
+
+    .money-card-body {
+        @apply p-5 sm:p-6;
+    }
+
+    .money-method-list {
+        @apply space-y-2.5;
+    }
+
+    .money-method {
+        @apply flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-background p-4 transition hover:bg-muted/40;
+    }
+
+    .money-method:has(input:checked) {
+        @apply border-foreground/30 bg-muted/40 ring-1 ring-foreground/10;
+    }
+
+    .money-method-icon {
+        @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground;
+    }
+
+    .money-summary-row {
+        @apply flex items-center justify-between gap-4 py-2 text-sm;
+    }
+
+    .money-summary-row span:first-child {
+        @apply text-muted-foreground;
+    }
+
+    .money-summary-row strong {
+        @apply font-medium text-foreground;
+    }
+
+    .money-summary-total {
+        @apply mt-2 border-t border-border pt-3;
+    }
+
+    .money-note {
+        @apply rounded-lg border border-border bg-muted/30 p-3 text-xs leading-5 text-muted-foreground;
+    }
+
+    .ui-table-shell {
+        @apply overflow-hidden rounded-xl border border-border bg-card;
+    }
+
+    .ui-table-head {
+        @apply border-b border-border bg-muted/30 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground;
+    }
+
+    .ui-table-row {
+        @apply border-b border-border transition-colors last:border-b-0 hover:bg-muted/20;
+    }
+
+    .ui-form-section {
+        @apply rounded-xl border border-border bg-card p-5 sm:p-6;
+    }
+
+    .ui-form-section-title {
+        @apply text-base font-semibold tracking-tight text-foreground;
+    }
+
+    .ui-form-section-copy {
+        @apply mt-1 text-xs leading-5 text-muted-foreground;
+    }
+
+    .ui-status {
+        @apply inline-flex items-center rounded-md border border-border bg-muted/40 px-2 py-1 text-xs font-medium text-foreground;
+    }
+
+    .ui-status-success {
+        @apply border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400;
+    }
+
+    .ui-status-warning {
+        @apply border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400;
+    }
+
+    .ui-status-danger {
+        @apply border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400;
+    }
+}
+
+/*
+ * Legacy hard-coded Blade compatibility.
+ * Older script pages heavily use Tesla palette, manual gray light/dark
+ * utilities, and gradients. These rules force those surfaces back into
+ * the shared semantic design language while those templates remain live.
+ */
+.customer-workspace [class*="bg-gradient-to-"][class*="from-tesla-"],
+.admin-workspace [class*="bg-gradient-to-"][class*="from-tesla-"] {
+    background-image: none !important;
+    background-color: hsl(var(--card)) !important;
+    color: hsl(var(--foreground)) !important;
+    border-color: hsl(var(--border)) !important;
+    box-shadow: none !important;
+}
+
+.customer-workspace [class*="bg-gradient-to-"][class*="from-gray-"],
+.admin-workspace [class*="bg-gradient-to-"][class*="from-gray-"] {
+    background-image: none !important;
+    background-color: hsl(var(--muted) / .45) !important;
+    color: hsl(var(--foreground)) !important;
+    border-color: hsl(var(--border)) !important;
+}
+
+.customer-workspace .bg-tesla-500,
+.customer-workspace .bg-tesla-600,
+.customer-workspace .bg-tesla-700,
+.customer-workspace .bg-tesla-800,
+.customer-workspace .bg-tesla-900,
+.admin-workspace .bg-tesla-500,
+.admin-workspace .bg-tesla-600,
+.admin-workspace .bg-tesla-700,
+.admin-workspace .bg-tesla-800,
+.admin-workspace .bg-tesla-900 {
+    background-color: hsl(var(--card)) !important;
+}
+
+.customer-workspace .bg-tesla-50,
+.customer-workspace .bg-tesla-100,
+.customer-workspace .bg-tesla-200,
+.customer-workspace .bg-tesla-300,
+.customer-workspace .bg-tesla-400,
+.admin-workspace .bg-tesla-50,
+.admin-workspace .bg-tesla-100,
+.admin-workspace .bg-tesla-200,
+.admin-workspace .bg-tesla-300,
+.admin-workspace .bg-tesla-400 {
+    background-color: hsl(var(--muted) / .45) !important;
+}
+
+.customer-workspace .border-tesla-100,
+.customer-workspace .border-tesla-200,
+.customer-workspace .border-tesla-300,
+.customer-workspace .border-tesla-400,
+.customer-workspace .border-tesla-500,
+.customer-workspace .border-tesla-600,
+.admin-workspace .border-tesla-100,
+.admin-workspace .border-tesla-200,
+.admin-workspace .border-tesla-300,
+.admin-workspace .border-tesla-400,
+.admin-workspace .border-tesla-500,
+.admin-workspace .border-tesla-600 {
+    border-color: hsl(var(--border)) !important;
+}
+
+.customer-workspace .text-tesla-50,
+.customer-workspace .text-tesla-100,
+.customer-workspace .text-tesla-200,
+.customer-workspace .text-tesla-300,
+.customer-workspace .text-tesla-400,
+.admin-workspace .text-tesla-50,
+.admin-workspace .text-tesla-100,
+.admin-workspace .text-tesla-200,
+.admin-workspace .text-tesla-300,
+.admin-workspace .text-tesla-400 {
+    color: hsl(var(--muted-foreground)) !important;
+}
+
+.customer-workspace .text-tesla-500,
+.customer-workspace .text-tesla-600,
+.customer-workspace .text-tesla-700,
+.customer-workspace .text-tesla-800,
+.customer-workspace .text-tesla-900,
+.admin-workspace .text-tesla-500,
+.admin-workspace .text-tesla-600,
+.admin-workspace .text-tesla-700,
+.admin-workspace .text-tesla-800,
+.admin-workspace .text-tesla-900 {
+    color: hsl(var(--foreground)) !important;
+}
+
+/* White text sitting inside an old Tesla surface becomes readable after
+   the surface is neutralized. Buttons are excluded by their own semantic
+   button classes and native button/a background utilities. */
+.customer-workspace .bg-tesla-500 > .text-white,
+.customer-workspace .bg-tesla-600 > .text-white,
+.customer-workspace .bg-tesla-700 > .text-white,
+.customer-workspace .bg-tesla-800 > .text-white,
+.customer-workspace .bg-tesla-900 > .text-white,
+.admin-workspace .bg-tesla-500 > .text-white,
+.admin-workspace .bg-tesla-600 > .text-white,
+.admin-workspace .bg-tesla-700 > .text-white,
+.admin-workspace .bg-tesla-800 > .text-white,
+.admin-workspace .bg-tesla-900 > .text-white {
+    color: hsl(var(--foreground)) !important;
+}
+
+/* Keep form controls and tables from inheriting old fixed light colors. */
+.customer-workspace input:not([type="checkbox"]):not([type="radio"]),
+.customer-workspace select,
+.customer-workspace textarea,
+.admin-workspace input:not([type="checkbox"]):not([type="radio"]),
+.admin-workspace select,
+.admin-workspace textarea {
+    background-color: hsl(var(--background)) !important;
+    color: hsl(var(--foreground)) !important;
+    border-color: hsl(var(--border)) !important;
+}
+
+/* Normalize old script shadows/radii without flattening true modals. */
+.customer-workspace main .shadow-xl:not([role="dialog"]),
+.customer-workspace main .shadow-2xl:not([role="dialog"]),
+.admin-workspace main .shadow-xl:not([role="dialog"]),
+.admin-workspace main .shadow-2xl:not([role="dialog"]) {
+    box-shadow: none !important;
+}

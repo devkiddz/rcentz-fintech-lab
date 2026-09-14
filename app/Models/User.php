@@ -123,6 +123,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(LinkedWallet::class);
     }
 
+    public function financialActivities()
+    {
+        return $this->hasMany(FinancialActivity::class);
+    }
+
     public function isAdmin()
     {
         return $this->is_admin;

@@ -8,11 +8,11 @@
             </div>
             <div class="flex space-x-2">
                 <a href="{{ route('admin.investments.plans.edit', $plan) }}" 
-                   class="px-3 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-colors">
+                   class="px-3 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-colors">
                     Edit Plan
                 </a>
                 <a href="{{ route('admin.investments.plans.index') }}" 
-                   class="px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                   class="px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-colors">
                     Back to Plans
                 </a>
             </div>
@@ -182,7 +182,7 @@
                         <div class="p-4">
                             <div class="space-y-3">
                                 @foreach($plan->holdings->take(5) as $holding)
-                                <div class="flex items-center justify-between p-3 bg-muted/40 dark:bg-dark-muted rounded-lg">
+                                <div class="flex items-center justify-between p-3 bg-muted/40 rounded-lg">
                                     <div class="flex items-center space-x-3">
                                         @if($holding->user->profile_image)
                                             <img src="{{ asset('storage/' . $holding->user->profile_image) }}" 
@@ -223,7 +223,7 @@
                         <div class="p-4">
                             <div class="space-y-3">
                                 @foreach($plan->transactions->take(5) as $transaction)
-                                <div class="flex items-center justify-between p-3 bg-muted/40 dark:bg-dark-muted rounded-lg">
+                                <div class="flex items-center justify-between p-3 bg-muted/40 rounded-lg">
                                     <div class="flex items-center space-x-3">
                                         @if($transaction->user->profile_image)
                                             <img src="{{ asset('storage/' . $transaction->user->profile_image) }}" 

@@ -8,8 +8,8 @@
         <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
             <!-- Background Pattern -->
             <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-48 h-48 bg-white rounded-full -translate-y-24 translate-x-24"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-12 -translate-x-12"></div>
+                <div class="absolute top-0 right-0 w-48 h-48 bg-card rounded-full -translate-y-24 translate-x-24"></div>
+                <div class="absolute bottom-0 left-0 w-24 h-24 bg-card rounded-full translate-y-12 -translate-x-12"></div>
             </div>
             
             <div class="relative z-10">
@@ -21,7 +21,7 @@
                     </div>
                     
                     <!-- Enhanced Stats Card -->
-                    <div class="bg-white bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-80">
+                    <div class="bg-card bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-80">
                         <div class="flex items-center justify-between mb-3">
                             <div>
                                 <p class="text-xs text-tesla-100 dark:text-gray-300 mb-1">Current Price</p>
@@ -54,8 +54,8 @@
             <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Current Price</p>
-                        <p class="text-lg font-light text-black">{{ $stock->formatted_current_price }}</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Current Price</p>
+                        <p class="text-lg font-light text-foreground">{{ $stock->formatted_current_price }}</p>
                     </div>
                     <div class="w-8 h-8 flex items-center justify-center">
                         <i data-lucide="dollar-sign" class="w-4 h-4 text-tesla-600"></i>
@@ -67,7 +67,7 @@
             <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Change</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Change</p>
                         <p class="text-lg font-light {{ $stock->change_color }}">
                             {{ $stock->formatted_change_amount }}
                         </p>
@@ -85,8 +85,8 @@
             <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Volume</p>
-                        <p class="text-lg font-light text-black">{{ $stock->formatted_volume }}</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Volume</p>
+                        <p class="text-lg font-light text-foreground">{{ $stock->formatted_volume }}</p>
                     </div>
                     <div class="w-8 h-8 flex items-center justify-center">
                         <i data-lucide="activity" class="w-4 h-4 text-green-600"></i>
@@ -98,8 +98,8 @@
             <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Market Cap</p>
-                        <p class="text-lg font-light text-black">{{ $stock->formatted_market_cap }}</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Market Cap</p>
+                        <p class="text-lg font-light text-foreground">{{ $stock->formatted_market_cap }}</p>
                     </div>
                     <div class="w-8 h-8 flex items-center justify-center">
                         <i data-lucide="pie-chart" class="w-4 h-4 text-purple-600"></i>
@@ -116,14 +116,14 @@
                 <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 class="text-lg font-light text-black dark:text-white mb-1">Price Chart</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-300">Stock performance over time</p>
+                            <h3 class="text-lg font-light text-foreground mb-1">Price Chart</h3>
+                            <p class="text-xs text-muted-foreground dark:text-gray-300">Stock performance over time</p>
                         </div>
                         <div class="flex space-x-2">
-                            <button data-period="1d" class="px-3 py-1 text-xs font-medium text-gray-600 hover:text-black transition-colors duration-200">1D</button>
-                            <button data-period="1w" class="px-3 py-1 text-xs font-medium text-gray-600 hover:text-black transition-colors duration-200">1W</button>
-                            <button data-period="1m" class="px-3 py-1 text-xs font-medium text-black bg-muted rounded-lg">1M</button>
-                            <button data-period="1y" class="px-3 py-1 text-xs font-medium text-gray-600 hover:text-black transition-colors duration-200">1Y</button>
+                            <button data-period="1d" class="px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors duration-200">1D</button>
+                            <button data-period="1w" class="px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors duration-200">1W</button>
+                            <button data-period="1m" class="px-3 py-1 text-xs font-medium text-foreground bg-muted rounded-lg">1M</button>
+                            <button data-period="1y" class="px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors duration-200">1Y</button>
                         </div>
                     </div>
                     
@@ -137,62 +137,62 @@
                 <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 class="text-lg font-light text-black dark:text-white mb-1">Stock Details</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-300">Comprehensive stock information</p>
+                            <h3 class="text-lg font-light text-foreground mb-1">Stock Details</h3>
+                            <p class="text-xs text-muted-foreground dark:text-gray-300">Comprehensive stock information</p>
                         </div>
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- Key Metrics -->
                         <div class="space-y-4">
-                            <h4 class="text-sm font-medium text-black dark:text-white mb-3">Key Metrics</h4>
+                            <h4 class="text-sm font-medium text-foreground mb-3">Key Metrics</h4>
                             <div class="space-y-3">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs text-gray-600 dark:text-gray-300">Previous Close</span>
-                                    <span class="text-xs font-medium text-black">{{ $stock->formatted_previous_close }}</span>
+                                    <span class="text-xs text-muted-foreground">Previous Close</span>
+                                    <span class="text-xs font-medium text-foreground">{{ $stock->formatted_previous_close }}</span>
                                 </div>
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs text-gray-600 dark:text-gray-300">P/E Ratio</span>
-                                    <span class="text-xs font-medium text-black">{{ $stock->formatted_pe_ratio }}</span>
+                                    <span class="text-xs text-muted-foreground">P/E Ratio</span>
+                                    <span class="text-xs font-medium text-foreground">{{ $stock->formatted_pe_ratio }}</span>
                                 </div>
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs text-gray-600 dark:text-gray-300">Dividend Yield</span>
-                                    <span class="text-xs font-medium text-black">{{ $stock->formatted_dividend_yield }}</span>
+                                    <span class="text-xs text-muted-foreground">Dividend Yield</span>
+                                    <span class="text-xs font-medium text-foreground">{{ $stock->formatted_dividend_yield }}</span>
                                 </div>
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs text-gray-600 dark:text-gray-300">52 Week High</span>
-                                    <span class="text-xs font-medium text-black">{{ $stock->formatted_fifty_two_week_high }}</span>
+                                    <span class="text-xs text-muted-foreground">52 Week High</span>
+                                    <span class="text-xs font-medium text-foreground">{{ $stock->formatted_fifty_two_week_high }}</span>
                                 </div>
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs text-gray-600 dark:text-gray-300">52 Week Low</span>
-                                    <span class="text-xs font-medium text-black">{{ $stock->formatted_fifty_two_week_low }}</span>
+                                    <span class="text-xs text-muted-foreground">52 Week Low</span>
+                                    <span class="text-xs font-medium text-foreground">{{ $stock->formatted_fifty_two_week_low }}</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Company Info -->
                         <div class="space-y-4">
-                            <h4 class="text-sm font-medium text-black dark:text-white mb-3">Company Information</h4>
+                            <h4 class="text-sm font-medium text-foreground mb-3">Company Information</h4>
                             <div class="space-y-3">
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs text-gray-600 dark:text-gray-300">Symbol</span>
-                                    <span class="text-xs font-medium text-black">{{ $stock->symbol }}</span>
+                                    <span class="text-xs text-muted-foreground">Symbol</span>
+                                    <span class="text-xs font-medium text-foreground">{{ $stock->symbol }}</span>
                                 </div>
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs text-gray-600 dark:text-gray-300">Company</span>
-                                    <span class="text-xs font-medium text-black">{{ $stock->company_name }}</span>
+                                    <span class="text-xs text-muted-foreground">Company</span>
+                                    <span class="text-xs font-medium text-foreground">{{ $stock->company_name }}</span>
                                 </div>
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs text-gray-600 dark:text-gray-300">Sector</span>
-                                    <span class="text-xs font-medium text-black">{{ $stock->sector }}</span>
+                                    <span class="text-xs text-muted-foreground">Sector</span>
+                                    <span class="text-xs font-medium text-foreground">{{ $stock->sector }}</span>
                                 </div>
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs text-gray-600 dark:text-gray-300">Industry</span>
-                                    <span class="text-xs font-medium text-black">{{ $stock->industry }}</span>
+                                    <span class="text-xs text-muted-foreground">Industry</span>
+                                    <span class="text-xs font-medium text-foreground">{{ $stock->industry }}</span>
                                 </div>
                                 <div class="flex items-center justify-between">
-                                    <span class="text-xs text-gray-600 dark:text-gray-300">Last Updated</span>
-                                    <span class="text-xs font-medium text-black">{{ $stock->formatted_last_updated }}</span>
+                                    <span class="text-xs text-muted-foreground">Last Updated</span>
+                                    <span class="text-xs font-medium text-foreground">{{ $stock->formatted_last_updated }}</span>
                                 </div>
                             </div>
                         </div>
@@ -203,8 +203,8 @@
                 <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 class="text-lg font-light text-black dark:text-white mb-1">Latest News</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-300">Recent headlines for {{ $stock->symbol }}</p>
+                            <h3 class="text-lg font-light text-foreground mb-1">Latest News</h3>
+                            <p class="text-xs text-muted-foreground dark:text-gray-300">Recent headlines for {{ $stock->symbol }}</p>
                         </div>
                     </div>
 
@@ -213,12 +213,12 @@
                     @endphp
 
                     @if($articles->isEmpty())
-                        <p class="text-sm text-gray-500 dark:text-gray-300">No recent news found.</p>
+                        <p class="text-sm text-muted-foreground dark:text-gray-300">No recent news found.</p>
                     @else
                         <div class="space-y-4">
                             @foreach($articles as $article)
                                 <a href="{{ is_array($article) ? ($article['url'] ?? '#') : ($article->url ?? '#') }}" target="_blank" rel="noopener"
-                                   class="block p-4 rounded-lg border border-border hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200">
+                                   class="block p-4 rounded-lg border border-border hover:bg-muted/30 dark:hover:bg-gray-800 transition-colors duration-200">
                                     <div class="flex items-start space-x-3">
                                         @php
                                             $image = is_array($article) ? ($article['image'] ?? null) : ($article->image_url ?? null);
@@ -228,21 +228,21 @@
                                             $publishedAt = is_array($article)
                                                 ? (isset($article['datetime']) ? \Carbon\Carbon::parse($article['datetime'])->diffForHumans() : '')
                                                 : ($article->formatted_published_date ?? '');
-                                            $sentimentClass = !is_array($article) ? ($article->sentiment_color ?? 'text-gray-600') : 'text-gray-600';
+                                            $sentimentClass = !is_array($article) ? ($article->sentiment_color ?? 'text-muted-foreground') : 'text-muted-foreground';
                                             $sentimentLabel = !is_array($article) ? ($article->sentiment_label ?? 'Neutral') : 'Neutral';
                                         @endphp
                                         @if($image)
                                             <img src="{{ $image }}" class="w-16 h-16 object-cover rounded" alt="news" />
                                         @else
-                                            <div class="w-16 h-16 rounded bg-gray-100 flex items-center justify-center text-gray-400 dark:text-gray-300">
+                                            <div class="w-16 h-16 rounded bg-muted flex items-center justify-center text-gray-400 dark:text-gray-300">
                                                 <i data-lucide="image" class="w-5 h-5"></i>
                                             </div>
                                         @endif
                                         <div class="flex-1 min-w-0">
-                                            <p class="text-sm font-medium text-black line-clamp-2">{{ $headline }}</p>
-                                            <p class="text-xs text-gray-600 line-clamp-2 mt-1">{{ $summary }}</p>
+                                            <p class="text-sm font-medium text-foreground line-clamp-2">{{ $headline }}</p>
+                                            <p class="text-xs text-muted-foreground line-clamp-2 mt-1">{{ $summary }}</p>
                                             <div class="flex items-center justify-between mt-2">
-                                                <span class="text-[11px] text-gray-500 dark:text-gray-300">{{ $source }} • {{ $publishedAt }}</span>
+                                                <span class="text-[11px] text-muted-foreground dark:text-gray-300">{{ $source }} • {{ $publishedAt }}</span>
                                                 <span class="text-[11px] font-medium {{ $sentimentClass }}">{{ $sentimentLabel }}</span>
                                             </div>
                                         </div>
@@ -260,8 +260,8 @@
                 <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 class="text-lg font-light text-black dark:text-white mb-1">Trading Actions</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-300">Buy or sell this stock</p>
+                            <h3 class="text-lg font-light text-foreground mb-1">Trading Actions</h3>
+                            <p class="text-xs text-muted-foreground dark:text-gray-300">Buy or sell this stock</p>
                         </div>
                     </div>
                     
@@ -283,8 +283,8 @@
                 <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 class="text-lg font-light text-black dark:text-white mb-1">Watchlist</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-300">Track this stock and set price alerts</p>
+                            <h3 class="text-lg font-light text-foreground mb-1">Watchlist</h3>
+                            <p class="text-xs text-muted-foreground dark:text-gray-300">Track this stock and set price alerts</p>
                         </div>
                     </div>
                     
@@ -317,20 +317,20 @@
                             <form action="{{ route('trading.watchlist.add', $stock) }}" method="POST">
                                 @csrf
                                 <div class="mb-3">
-                                    <label for="alert_price" class="block text-xs font-medium text-gray-700 mb-1">Alert Price (Optional)</label>
+                                    <label for="alert_price" class="block text-xs font-medium text-foreground mb-1">Alert Price (Optional)</label>
                                     <input type="number" 
                                            id="alert_price" 
                                            name="alert_price" 
                                            step="0.01" 
                                            min="0.01"
-                                           class="w-full px-3 py-2 text-sm border border-border dark:bg-dark-muted dark:text-white rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                                           class="w-full px-3 py-2 text-sm border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                                            placeholder="0.00">
                                 </div>
                                 <div class="mb-4">
-                                    <label for="alert_type" class="block text-xs font-medium text-gray-700 mb-1">Alert Type (Optional)</label>
+                                    <label for="alert_type" class="block text-xs font-medium text-foreground mb-1">Alert Type (Optional)</label>
                                     <select id="alert_type" 
                                             name="alert_type" 
-                                            class="w-full px-3 py-2 text-sm border border-border dark:bg-dark-muted dark:text-white rounded-lg focus:ring-2 focus:ring-black focus:border-transparent">
+                                            class="w-full px-3 py-2 text-sm border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent">
                                         <option value="">No alert</option>
                                         <option value="above">Above this price</option>
                                         <option value="below">Below this price</option>
@@ -351,26 +351,26 @@
                 <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 class="text-lg font-light text-black dark:text-white mb-1">Your Holdings</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-300">Your position in this stock</p>
+                            <h3 class="text-lg font-light text-foreground mb-1">Your Holdings</h3>
+                            <p class="text-xs text-muted-foreground dark:text-gray-300">Your position in this stock</p>
                         </div>
                     </div>
                     
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-600 dark:text-gray-300">Shares Owned</span>
-                            <span class="text-xs font-medium text-black">{{ number_format($userHolding->quantity, 2) }}</span>
+                            <span class="text-xs text-muted-foreground">Shares Owned</span>
+                            <span class="text-xs font-medium text-foreground">{{ number_format($userHolding->quantity, 2) }}</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-600 dark:text-gray-300">Average Cost</span>
-                            <span class="text-xs font-medium text-black">{{ currency_symbol() }}{{ number_format($userHolding->average_buy_price, 2) }}</span>
+                            <span class="text-xs text-muted-foreground">Average Cost</span>
+                            <span class="text-xs font-medium text-foreground">{{ currency_symbol() }}{{ number_format($userHolding->average_buy_price, 2) }}</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-600 dark:text-gray-300">Current Value</span>
-                            <span class="text-xs font-medium text-black">{{ currency_symbol() }}{{ number_format($userHolding->current_value, 2) }}</span>
+                            <span class="text-xs text-muted-foreground">Current Value</span>
+                            <span class="text-xs font-medium text-foreground">{{ currency_symbol() }}{{ number_format($userHolding->current_value, 2) }}</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-600 dark:text-gray-300">Gain/Loss</span>
+                            <span class="text-xs text-muted-foreground">Gain/Loss</span>
                             <span class="text-xs font-medium {{ $userHolding->unrealized_gain_loss >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                 {{ $userHolding->unrealized_gain_loss >= 0 ? '+' : '' }}{{ currency_symbol() }}{{ number_format($userHolding->unrealized_gain_loss, 2) }}
                             </span>
@@ -384,8 +384,8 @@
                 <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 class="text-lg font-light text-black dark:text-white mb-1">Recent Activity</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-300">Latest transactions</p>
+                            <h3 class="text-lg font-light text-foreground mb-1">Recent Activity</h3>
+                            <p class="text-xs text-muted-foreground dark:text-gray-300">Latest transactions</p>
                         </div>
                     </div>
                     
@@ -400,11 +400,11 @@
                                 @endif
                             </div>
                             <div class="flex-1 min-w-0">
-                                <p class="text-xs font-medium text-black">{{ $transaction->type_label }}</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-300">{{ $transaction->created_at->format('M j, Y') }}</p>
+                                <p class="text-xs font-medium text-foreground">{{ $transaction->type_label }}</p>
+                                <p class="text-xs text-muted-foreground dark:text-gray-300">{{ $transaction->created_at->format('M j, Y') }}</p>
                             </div>
                             <div class="text-right">
-                                <p class="text-xs font-medium text-black">{{ currency_symbol() }}{{ number_format($transaction->total_amount, 2) }}</p>
+                                <p class="text-xs font-medium text-foreground">{{ currency_symbol() }}{{ number_format($transaction->total_amount, 2) }}</p>
                             </div>
                         </div>
                         @endforeach
@@ -508,9 +508,9 @@
                         // Update active button
                         document.querySelectorAll('[data-period]').forEach(btn => {
                             btn.classList.remove('bg-black', 'text-white');
-                            btn.classList.add('text-gray-600');
+                            btn.classList.add('text-muted-foreground');
                         });
-                        this.classList.remove('text-gray-600');
+                        this.classList.remove('text-muted-foreground');
                         this.classList.add('bg-black', 'text-white');
                     });
                 });
@@ -537,28 +537,28 @@
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50';
             modal.innerHTML = `
-                <div class="relative top-20 mx-auto p-5 border border-border w-96 max-w-[calc(100vw-2rem)] shadow-lg rounded-xl bg-card text-card-foreground dark:bg-dark-card">
+                <div class="relative top-20 mx-auto p-5 border border-border w-96 max-w-[calc(100vw-2rem)] shadow-lg rounded-xl bg-card text-card-foreground">
                     <div class="mt-3">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">Edit Price Alert</h3>
                         <form action="{{ route('trading.watchlist.update', $stock) }}" method="POST">
                             <input type="hidden" name="_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="_method" value="PATCH">
                             <div class="mb-4">
-                                <label for="alert_price" class="block text-sm font-medium text-gray-700 mb-2">Alert Price</label>
+                                <label for="alert_price" class="block text-sm font-medium text-foreground mb-2">Alert Price</label>
                                 <input type="number" 
                                        id="alert_price" 
                                        name="alert_price" 
                                        value="${currentPrice || ''}"
                                        step="0.01" 
                                        min="0.01"
-                                       class="w-full px-3 py-2 border border-border dark:bg-dark-muted dark:text-white rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                                       class="w-full px-3 py-2 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                                        placeholder="0.00">
                             </div>
                             <div class="mb-6">
-                                <label for="alert_type" class="block text-sm font-medium text-gray-700 mb-2">Alert Type</label>
+                                <label for="alert_type" class="block text-sm font-medium text-foreground mb-2">Alert Type</label>
                                 <select id="alert_type" 
                                         name="alert_type" 
-                                        class="w-full px-3 py-2 border border-border dark:bg-dark-muted dark:text-white rounded-lg focus:ring-2 focus:ring-black focus:border-transparent">
+                                        class="w-full px-3 py-2 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent">
                                     <option value="">No alert</option>
                                     <option value="above" ${currentType === 'above' ? 'selected' : ''}>Above this price</option>
                                     <option value="below" ${currentType === 'below' ? 'selected' : ''}>Below this price</option>
@@ -567,11 +567,11 @@
                             <div class="flex justify-end space-x-3">
                                 <button type="button" 
                                         onclick="this.closest('.fixed').remove()"
-                                        class="px-4 py-2 text-gray-600 bg-muted rounded-lg hover:bg-gray-200 transition-colors duration-200">
+                                        class="px-4 py-2 text-muted-foreground bg-muted rounded-lg hover:bg-muted transition-colors duration-200">
                                     Cancel
                                 </button>
                                 <button type="submit" 
-                                        class="px-4 py-2 bg-black dark:bg-white text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200">
+                                        class="px-4 py-2 bg-foreground text-background rounded-lg hover:opacity-90 transition-colors duration-200">
                                     Update Alert
                                 </button>
                             </div>

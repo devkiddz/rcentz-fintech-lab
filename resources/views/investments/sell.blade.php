@@ -8,8 +8,8 @@
         <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
             <!-- Background Pattern -->
             <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-16 translate-x-16"></div>
-                <div class="absolute bottom-0 left-0 w-16 h-16 bg-white rounded-full translate-y-8 -translate-x-8"></div>
+                <div class="absolute top-0 right-0 w-32 h-32 bg-card rounded-full -translate-y-16 translate-x-16"></div>
+                <div class="absolute bottom-0 left-0 w-16 h-16 bg-card rounded-full translate-y-8 -translate-x-8"></div>
             </div>
             
             <div class="relative z-10">
@@ -20,7 +20,7 @@
                     </div>
                     
                     <!-- Enhanced Plan Stats Card -->
-                    <div class="bg-white bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-64">
+                    <div class="bg-card bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-64">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-xs text-tesla-100 dark:text-gray-300 mb-1">Current NAV</p>
@@ -70,39 +70,39 @@
 
                 <!-- Sell Options -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-3">Sell Options</label>
+                    <label class="block text-sm font-medium text-foreground mb-3">Sell Options</label>
                     <div class="space-y-3">
-                        <label class="flex items-center p-3 border border-border rounded-lg cursor-pointer hover:border-gray-300 hover:bg-gray-50 transition-all duration-200">
+                        <label class="flex items-center p-3 border border-border rounded-lg cursor-pointer hover:border-border hover:bg-muted/30 transition-all duration-200">
                             <input type="radio" 
                                    name="sell_option" 
                                    value="units" 
-                                   class="w-4 h-4 text-black border-gray-300 focus:ring-black"
+                                   class="w-4 h-4 text-foreground border-border focus:ring-ring"
                                    checked>
                             <div class="ml-3 flex-1">
-                                <p class="font-medium text-black dark:text-white text-sm">Sell by Units</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-300">Specify the number of units to sell</p>
+                                <p class="font-medium text-foreground text-sm">Sell by Units</p>
+                                <p class="text-xs text-muted-foreground dark:text-gray-300">Specify the number of units to sell</p>
                             </div>
                         </label>
                         
-                        <label class="flex items-center p-3 border border-border rounded-lg cursor-pointer hover:border-gray-300 hover:bg-gray-50 transition-all duration-200">
+                        <label class="flex items-center p-3 border border-border rounded-lg cursor-pointer hover:border-border hover:bg-muted/30 transition-all duration-200">
                             <input type="radio" 
                                    name="sell_option" 
                                    value="amount" 
-                                   class="w-4 h-4 text-black border-gray-300 focus:ring-black">
+                                   class="w-4 h-4 text-foreground border-border focus:ring-ring">
                             <div class="ml-3 flex-1">
-                                <p class="font-medium text-black dark:text-white text-sm">Sell by Amount</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-300">Specify the dollar amount to sell</p>
+                                <p class="font-medium text-foreground text-sm">Sell by Amount</p>
+                                <p class="text-xs text-muted-foreground dark:text-gray-300">Specify the dollar amount to sell</p>
                             </div>
                         </label>
                         
-                        <label class="flex items-center p-3 border border-border rounded-lg cursor-pointer hover:border-gray-300 hover:bg-gray-50 transition-all duration-200">
+                        <label class="flex items-center p-3 border border-border rounded-lg cursor-pointer hover:border-border hover:bg-muted/30 transition-all duration-200">
                             <input type="radio" 
                                    name="sell_option" 
                                    value="all" 
-                                   class="w-4 h-4 text-black border-gray-300 focus:ring-black">
+                                   class="w-4 h-4 text-foreground border-border focus:ring-ring">
                             <div class="ml-3 flex-1">
-                                <p class="font-medium text-black dark:text-white text-sm">Sell All</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-300">Sell your entire holding</p>
+                                <p class="font-medium text-foreground text-sm">Sell All</p>
+                                <p class="text-xs text-muted-foreground dark:text-gray-300">Sell your entire holding</p>
                             </div>
                         </label>
                     </div>
@@ -110,9 +110,9 @@
 
                 <!-- Sell Amount/Units Input -->
                 <div id="sell-input-section">
-                    <label for="sell_value" class="block text-sm font-medium text-gray-700 mb-2">Amount to Sell</label>
+                    <label for="sell_value" class="block text-sm font-medium text-foreground mb-2">Amount to Sell</label>
                     <div class="relative">
-                        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300">$</span>
+                        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground dark:text-gray-300">$</span>
                         <input type="number" 
                                id="sell_value" 
                                name="sell_value" 
@@ -120,11 +120,11 @@
                                min="0.01" 
                                 max="{{ $holding->units * $plan->nav }}"
                                value="{{ old('sell_value') }}"
-                               class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200"
+                               class="w-full pl-8 pr-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
                                placeholder="0.00"
                                required>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">Maximum: {{ currency_symbol() }}{{ number_format($holding->units * $plan->nav, 2) }}</p>
+                    <p class="text-xs text-muted-foreground mt-1">Maximum: {{ currency_symbol() }}{{ number_format($holding->units * $plan->nav, 2) }}</p>
                     @error('sell_value')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -193,22 +193,22 @@
                 <!-- Profit/Loss Calculation -->
                 <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 border border-border">
                     <div class="flex items-center justify-between mb-3">
-                        <span class="text-xs font-medium text-gray-800">Profit/Loss</span>
+                        <span class="text-xs font-medium text-foreground">Profit/Loss</span>
                         <div class="w-8 h-8 flex items-center justify-center">
-                            <i data-lucide="trending-up" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
+                            <i data-lucide="trending-up" class="w-4 h-4 text-muted-foreground"></i>
                         </div>
                     </div>
                     <div class="space-y-2">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-700">Average Cost:</span>
-                            <span class="text-xs font-medium text-gray-800">{{ currency_symbol() }}{{ number_format($holding->average_cost, 4) }}</span>
+                            <span class="text-xs text-foreground">Average Cost:</span>
+                            <span class="text-xs font-medium text-foreground">{{ currency_symbol() }}{{ number_format($holding->average_cost, 4) }}</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-700">Current NAV:</span>
-                            <span class="text-xs font-medium text-gray-800">{{ currency_symbol() }}{{ number_format($plan->nav, 4) }}</span>
+                            <span class="text-xs text-foreground">Current NAV:</span>
+                            <span class="text-xs font-medium text-foreground">{{ currency_symbol() }}{{ number_format($plan->nav, 4) }}</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-700">Gain/Loss:</span>
+                            <span class="text-xs text-foreground">Gain/Loss:</span>
                             <span class="text-xs font-medium" id="gain-loss">{{ currency_symbol() }}0.00 (0.00%)</span>
                         </div>
                     </div>
@@ -217,7 +217,7 @@
                 <!-- Submit Button -->
                 <div class="pt-4">
                     <button type="submit" 
-                            class="w-full bg-black dark:bg-white text-white dark:text-gray-900 py-3 px-6 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center">
+                            class="w-full bg-foreground text-background py-3 px-6 rounded-lg font-medium hover:opacity-90 transition-colors duration-200 flex items-center justify-center">
                         <i data-lucide="minus" class="w-4 h-4 mr-2"></i>
                         Sell Investment
                     </button>

@@ -7,7 +7,7 @@
                 </h2>
             </div>
             <a href="{{ route('admin.investments.plans.create') }}" 
-               class="px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-colors">
+               class="px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-colors">
                 Add New Plan
             </a>
         </div>
@@ -89,7 +89,7 @@
                 <div class="p-4">
                     <div class="space-y-4">
                         @foreach($plans as $plan)
-                        <div class="bg-muted/40 dark:bg-dark-muted rounded-lg p-4 border border-border dark:border-gray-700 hover:bg-card hover:shadow-sm transition-all duration-200">
+                        <div class="bg-muted/40 rounded-lg p-4 border border-border dark:border-gray-700 hover:bg-card hover:shadow-sm transition-all duration-200">
                             <!-- Mobile Layout -->
                             <div class="md:hidden">
                                 <div class="flex items-start space-x-3 mb-3">
@@ -131,11 +131,11 @@
                                 <!-- Mobile Actions -->
                                 <div class="flex flex-wrap gap-2">
                                     <a href="{{ route('admin.investments.plans.show', $plan) }}" 
-                                       class="flex-1 px-3 py-2 bg-muted text-muted-foreground text-xs font-medium rounded text-center hover:bg-gray-200 transition-colors">
+                                       class="flex-1 px-3 py-2 bg-muted text-muted-foreground text-xs font-medium rounded text-center hover:bg-muted transition-colors">
                                         View Details
                                     </a>
                                     <a href="{{ route('admin.investments.plans.edit', $plan) }}" 
-                                       class="flex-1 px-3 py-2 bg-black dark:bg-card text-white dark:text-foreground text-xs font-medium rounded text-center hover:bg-gray-800 dark:hover:bg-muted transition-colors">
+                                       class="flex-1 px-3 py-2 bg-black dark:bg-card text-white dark:text-foreground text-xs font-medium rounded text-center hover:opacity-90 transition-colors">
                                         Edit
                                     </a>
                                     <form method="POST" action="{{ route('admin.investments.plans.destroy', $plan) }}" class="flex-1" onsubmit="return confirm('Are you sure you want to delete this investment plan?')">
@@ -180,11 +180,11 @@
                                     
                                     <div class="flex space-x-2">
                                         <a href="{{ route('admin.investments.plans.show', $plan) }}" 
-                                           class="px-3 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-gray-200 transition-colors">
+                                           class="px-3 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-muted transition-colors">
                                             View
                                         </a>
                                         <a href="{{ route('admin.investments.plans.edit', $plan) }}" 
-                                           class="px-3 py-1.5 bg-black dark:bg-card text-white dark:text-foreground text-xs font-medium rounded hover:bg-gray-800 dark:hover:bg-muted transition-colors">
+                                           class="px-3 py-1.5 bg-black dark:bg-card text-white dark:text-foreground text-xs font-medium rounded hover:opacity-90 transition-colors">
                                             Edit
                                         </a>
                                         <form method="POST" action="{{ route('admin.investments.plans.destroy', $plan) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this investment plan?')">
@@ -213,7 +213,7 @@
             @else
             <!-- Empty State -->
             <div class="bg-card border border-border p-8 rounded-lg text-center">
-                <div class="w-16 h-16 bg-muted dark:bg-dark-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8 text-gray-400 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
@@ -221,7 +221,7 @@
                 <h3 class="text-lg font-medium text-foreground dark:text-white mb-2">No investment plans found</h3>
                 <p class="text-xs text-muted-foreground dark:text-gray-300 mb-4">Get started by creating your first investment plan.</p>
                 <a href="{{ route('admin.investments.plans.create') }}" 
-                   class="px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-colors">
+                   class="px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-colors">
                     Create First Plan
                 </a>
             </div>

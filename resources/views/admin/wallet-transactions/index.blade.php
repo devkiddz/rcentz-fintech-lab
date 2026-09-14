@@ -102,27 +102,27 @@
                 <div class="p-4">
                     <div class="flex flex-wrap gap-2">
                         <a href="{{ route('admin.wallet-transactions.index') }}" 
-                           class="px-3 py-1.5 text-xs font-medium rounded {{ !request('type') && !request('status') ? 'bg-black dark:bg-card text-white dark:text-foreground' : 'bg-muted text-muted-foreground hover:bg-gray-200' }}">
+                           class="px-3 py-1.5 text-xs font-medium rounded {{ !request('type') && !request('status') ? 'bg-black dark:bg-card text-white dark:text-foreground' : 'bg-muted text-muted-foreground hover:bg-muted' }}">
                             All
                         </a>
                         <a href="{{ route('admin.wallet-transactions.index', ['type' => 'deposit']) }}" 
-                           class="px-3 py-1.5 text-xs font-medium rounded {{ request('type') === 'deposit' ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground hover:bg-gray-200' }}">
+                           class="px-3 py-1.5 text-xs font-medium rounded {{ request('type') === 'deposit' ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground hover:bg-muted' }}">
                             Deposits
                         </a>
                         <a href="{{ route('admin.wallet-transactions.index', ['type' => 'withdrawal']) }}" 
-                           class="px-3 py-1.5 text-xs font-medium rounded {{ request('type') === 'withdrawal' ? 'bg-red-600 text-white' : 'bg-muted text-muted-foreground hover:bg-gray-200' }}">
+                           class="px-3 py-1.5 text-xs font-medium rounded {{ request('type') === 'withdrawal' ? 'bg-red-600 text-white' : 'bg-muted text-muted-foreground hover:bg-muted' }}">
                             Withdrawals
                         </a>
                         <a href="{{ route('admin.wallet-transactions.index', ['status' => 'pending']) }}" 
-                           class="px-3 py-1.5 text-xs font-medium rounded {{ request('status') === 'pending' ? 'bg-yellow-600 text-white' : 'bg-muted text-muted-foreground hover:bg-gray-200' }}">
+                           class="px-3 py-1.5 text-xs font-medium rounded {{ request('status') === 'pending' ? 'bg-yellow-600 text-white' : 'bg-muted text-muted-foreground hover:bg-muted' }}">
                             Pending
                         </a>
                         <a href="{{ route('admin.wallet-transactions.index', ['status' => 'completed']) }}" 
-                           class="px-3 py-1.5 text-xs font-medium rounded {{ request('status') === 'completed' ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground hover:bg-gray-200' }}">
+                           class="px-3 py-1.5 text-xs font-medium rounded {{ request('status') === 'completed' ? 'bg-green-600 text-white' : 'bg-muted text-muted-foreground hover:bg-muted' }}">
                             Completed
                         </a>
                         <a href="{{ route('admin.wallet-transactions.index', ['status' => 'rejected']) }}" 
-                           class="px-3 py-1.5 text-xs font-medium rounded {{ request('status') === 'rejected' ? 'bg-red-600 text-white' : 'bg-muted text-muted-foreground hover:bg-gray-200' }}">
+                           class="px-3 py-1.5 text-xs font-medium rounded {{ request('status') === 'rejected' ? 'bg-red-600 text-white' : 'bg-muted text-muted-foreground hover:bg-muted' }}">
                             Rejected
                         </a>
                     </div>
@@ -160,9 +160,7 @@
                                     </div>
                                     <div class="text-right">
                                         <p class="text-sm font-medium text-foreground">{{ currency_symbol() }}{{ number_format($transaction->amount, 2) }}</p>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
-                                            {{ $transaction->status === 'completed' ? 'bg-green-100 text-green-800' : 
-                                               ($transaction->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->status === 'completed' ? 'bg-green-100 text-green-800' : ($transaction->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
                                             {{ ucfirst($transaction->status) }}
                                         </span>
                                     </div>
@@ -171,7 +169,7 @@
                                 <!-- Mobile Actions -->
                                 <div class="flex flex-wrap gap-2">
                                     <a href="{{ route('admin.wallet-transactions.show', $transaction) }}" 
-                                       class="flex-1 px-3 py-2 bg-muted text-muted-foreground text-xs font-medium rounded text-center hover:bg-gray-200 transition-colors">
+                                       class="flex-1 px-3 py-2 bg-muted text-muted-foreground text-xs font-medium rounded text-center hover:bg-muted transition-colors">
                                        View
                                     </a>
                                     @if($transaction->status === 'pending')
@@ -222,16 +220,14 @@
                                     <div class="text-right">
                                         <p class="text-sm font-medium text-foreground">{{ currency_symbol() }}{{ number_format($transaction->amount, 2) }}</p>
                                         <p class="text-xs text-muted-foreground dark:text-gray-300">{{ currency_symbol() }}{{ number_format($transaction->wallet->balance, 2) }} balance</p>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
-                                            {{ $transaction->status === 'completed' ? 'bg-green-100 text-green-800' : 
-                                               ($transaction->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->status === 'completed' ? 'bg-green-100 text-green-800' : ($transaction->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
                                             {{ ucfirst($transaction->status) }}
                                         </span>
                                     </div>
                                     
                                     <div class="flex space-x-2">
                                         <a href="{{ route('admin.wallet-transactions.show', $transaction) }}" 
-                                           class="px-3 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-gray-200 transition-colors">
+                                           class="px-3 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-muted transition-colors">
                                            View
                                         </a>
                                         @if($transaction->status === 'pending')
@@ -269,7 +265,7 @@
                     </div>
                     @else
                     <div class="text-center py-8">
-                        <div class="w-16 h-16 bg-muted dark:bg-dark-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                             <svg class="w-8 h-8 text-gray-400 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
                             </svg>
@@ -293,7 +289,7 @@
                     <div class="mb-4">
                         <label for="rejection_reason" class="block text-xs font-medium text-muted-foreground mb-2">Rejection Reason</label>
                         <textarea id="rejection_reason" name="rejection_reason" rows="3" 
-                                  class="w-full px-3 py-2 border border-border rounded-lg focus:ring-black focus:border-black text-sm" 
+                                  class="w-full px-3 py-2 border border-border rounded-lg focus:ring-ring focus:border-black text-sm" 
                                   placeholder="Enter reason for rejection..." required></textarea>
                     </div>
                     <div class="flex space-x-3">

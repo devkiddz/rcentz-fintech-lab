@@ -8,8 +8,8 @@
         <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
             <!-- Background Pattern -->
             <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-48 h-48 bg-white rounded-full -translate-y-24 translate-x-24"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-12 -translate-x-12"></div>
+                <div class="absolute top-0 right-0 w-48 h-48 bg-card rounded-full -translate-y-24 translate-x-24"></div>
+                <div class="absolute bottom-0 left-0 w-24 h-24 bg-card rounded-full translate-y-12 -translate-x-12"></div>
             </div>
             
             <div class="relative z-10">
@@ -20,7 +20,7 @@
                     </div>
                     
                     <!-- Enhanced Stats Card -->
-                    <div class="bg-white bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-80">
+                    <div class="bg-card bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-80">
                         <div class="flex items-center justify-between mb-3">
                             <div>
                                 <p class="text-xs text-tesla-100 dark:text-gray-300 mb-1">Total Holdings</p>
@@ -52,8 +52,8 @@
             <div class="px-6 py-4 border-b border-border">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-lg font-light text-black dark:text-white mb-1">Investment Holdings</h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-300">Detailed breakdown of your investments</p>
+                        <h3 class="text-lg font-light text-foreground mb-1">Investment Holdings</h3>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300">Detailed breakdown of your investments</p>
                     </div>
                     <a href="{{ route('investments.index') }}" class="text-xs text-tesla-600 hover:text-tesla-800 transition-colors duration-200 font-medium">
                         Browse More
@@ -65,39 +65,39 @@
             @if($holdings->count() > 0)
                 <div class="overflow-x-auto">
                     <table class="w-full">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-muted/30">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investment</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Units</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Cost</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Value</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gain/Loss</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Return %</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Investment</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Units</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Avg Cost</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Current Value</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Gain/Loss</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Return %</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-card divide-y divide-gray-100 dark:divide-tesla-600">
                             @foreach($holdings as $holding)
-                            <tr class="hover:bg-gray-50 transition-colors duration-200">
+                            <tr class="hover:bg-muted/30 transition-colors duration-200">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                                            <i data-lucide="trending-up" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
+                                            <i data-lucide="trending-up" class="w-4 h-4 text-muted-foreground"></i>
                                         </div>
                                         <div class="ml-3">
-                                            <div class="text-sm font-medium text-black">{{ $holding->investmentPlan->name }}</div>
-                                            <div class="text-xs text-gray-500 dark:text-gray-300">{{ $holding->investmentPlan->category }}</div>
+                                            <div class="text-sm font-medium text-foreground">{{ $holding->investmentPlan->name }}</div>
+                                            <div class="text-xs text-muted-foreground dark:text-gray-300">{{ $holding->investmentPlan->category }}</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm text-black">{{ number_format($holding->units, 4) }}</div>
+                                    <div class="text-sm text-foreground">{{ number_format($holding->units, 4) }}</div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm text-black">{{ currency_symbol() }}{{ number_format($holding->average_cost, 4) }}</div>
+                                    <div class="text-sm text-foreground">{{ currency_symbol() }}{{ number_format($holding->average_cost, 4) }}</div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm text-black">{{ currency_symbol() }}{{ number_format($holding->current_value, 2) }}</div>
+                                    <div class="text-sm text-foreground">{{ currency_symbol() }}{{ number_format($holding->current_value, 2) }}</div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="text-sm {{ $holding->unrealized_gain_loss >= 0 ? 'text-green-600' : 'text-red-600' }}">
@@ -114,7 +114,7 @@
                                         <a href="{{ route('investments.show', $holding->investmentPlan) }}" class="w-8 h-8 flex items-center justify-center text-tesla-600 hover:text-tesla-800 hover:bg-tesla-50 rounded-lg transition-colors duration-200" title="View">
                                             <i data-lucide="eye" class="w-4 h-4"></i>
                                         </a>
-                                        <a href="{{ route('investments.buy', $holding->investmentPlan) }}" class="w-8 h-8 flex items-center justify-center text-black hover:text-gray-800 hover:bg-muted rounded-lg transition-colors duration-200" title="Buy">
+                                        <a href="{{ route('investments.buy', $holding->investmentPlan) }}" class="w-8 h-8 flex items-center justify-center text-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors duration-200" title="Buy">
                                             <i data-lucide="plus" class="w-4 h-4"></i>
                                         </a>
                                         @if($holding->units > 0)
@@ -134,9 +134,9 @@
                     <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                         <i data-lucide="trending-up" class="w-8 h-8 text-gray-400 dark:text-gray-300"></i>
                     </div>
-                    <h3 class="text-lg font-light text-black dark:text-white mb-2">No holdings yet</h3>
-                    <p class="text-gray-600 text-sm mb-4">Start building your portfolio by investing in our plans</p>
-                    <a href="{{ route('investments.index') }}" class="inline-flex items-center px-4 py-2 bg-black dark:bg-white text-white dark:text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200">
+                    <h3 class="text-lg font-light text-foreground mb-2">No holdings yet</h3>
+                    <p class="text-muted-foreground text-sm mb-4">Start building your portfolio by investing in our plans</p>
+                    <a href="{{ route('investments.index') }}" class="inline-flex items-center px-4 py-2 bg-foreground text-background text-sm font-medium rounded-lg hover:opacity-90 transition-colors duration-200">
                         <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
                         Start Investing
                     </a>
@@ -151,8 +151,8 @@
             <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Total Invested</p>
-                        <p class="text-lg font-light text-black">{{ currency_symbol() }}{{ number_format($totalInvested, 2) }}</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Total Invested</p>
+                        <p class="text-lg font-light text-foreground">{{ currency_symbol() }}{{ number_format($totalInvested, 2) }}</p>
                     </div>
                     <div class="w-8 h-8 flex items-center justify-center">
                         <i data-lucide="dollar-sign" class="w-4 h-4 text-tesla-600"></i>
@@ -164,8 +164,8 @@
             <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Current Value</p>
-                        <p class="text-lg font-light text-black">{{ currency_symbol() }}{{ number_format($totalCurrentValue, 2) }}</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Current Value</p>
+                        <p class="text-lg font-light text-foreground">{{ currency_symbol() }}{{ number_format($totalCurrentValue, 2) }}</p>
                     </div>
                     <div class="w-8 h-8 flex items-center justify-center">
                         <i data-lucide="trending-up" class="w-4 h-4 text-green-600"></i>
@@ -177,7 +177,7 @@
             <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Total Gain/Loss</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Total Gain/Loss</p>
                         <p class="text-lg font-light {{ $totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600' }}">
                             {{ $totalGainLoss >= 0 ? '+' : '' }}{{ currency_symbol() }}{{ number_format($totalGainLoss, 2) }}
                         </p>
@@ -192,7 +192,7 @@
             <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Total Return</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Total Return</p>
                         <p class="text-lg font-light {{ $totalGainLossPercentage >= 0 ? 'text-green-600' : 'text-red-600' }}">
                             {{ $totalGainLossPercentage >= 0 ? '+' : '' }}{{ number_format($totalGainLossPercentage, 2) }}%
                         </p>

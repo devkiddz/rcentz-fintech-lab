@@ -7,7 +7,7 @@
                 </h2>
             </div>
             <a href="{{ route('admin.investments.automatic-nav-updates.index') }}" 
-               class="px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+               class="px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-colors">
                 Back
             </a>
         </div>
@@ -30,7 +30,7 @@
                                 <label for="name" class="block text-xs font-medium text-muted-foreground mb-2">Update Name *</label>
                                 <input type="text" name="name" id="name" value="{{ old('name') }}" required
                                        placeholder="e.g., Tesla Growth Fund Daily Increase"
-                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                 @error('name')
                                     <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                                 @enderror
@@ -39,7 +39,7 @@
                             <div>
                                 <label for="investment_plan_id" class="block text-xs font-medium text-muted-foreground mb-2">Investment Plan *</label>
                                 <select name="investment_plan_id" id="investment_plan_id" required
-                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                     <option value="">Select Investment Plan</option>
                                     @foreach($investmentPlans as $plan)
                                         <option value="{{ $plan->id }}" 
@@ -59,7 +59,7 @@
                             <label for="description" class="block text-xs font-medium text-muted-foreground mb-2">Description</label>
                             <textarea name="description" id="description" rows="3"
                                       placeholder="Optional description of this automatic update"
-                                      class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">{{ old('description') }}</textarea>
+                                      class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">{{ old('description') }}</textarea>
                             @error('description')
                                 <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                             @enderror
@@ -78,7 +78,7 @@
                             <div>
                                 <label for="update_type" class="block text-xs font-medium text-muted-foreground mb-2">Update Type *</label>
                                 <select name="update_type" id="update_type" required
-                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                     <option value="">Select Update Type</option>
                                     <option value="increase" {{ old('update_type') == 'increase' ? 'selected' : '' }}>
                                         Increase NAV
@@ -97,7 +97,7 @@
                                 <input type="number" name="update_amount" id="update_amount" value="{{ old('update_amount') }}" 
                                        step="0.0001" min="0.0001" max="999.9999" required
                                        placeholder="0.1000"
-                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                 @error('update_amount')
                                     <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                                 @enderror
@@ -119,7 +119,7 @@
                                 <label for="update_interval_value" class="block text-xs font-medium text-muted-foreground mb-2">Interval Value *</label>
                                 <input type="number" name="update_interval_value" id="update_interval_value" 
                                        value="{{ old('update_interval_value', 2) }}" min="1" max="999" required
-                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                 @error('update_interval_value')
                                     <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                                 @enderror
@@ -128,7 +128,7 @@
                             <div>
                                 <label for="update_interval_unit" class="block text-xs font-medium text-muted-foreground mb-2">Interval Unit *</label>
                                 <select name="update_interval_unit" id="update_interval_unit" required
-                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                     <option value="">Select Unit</option>
                                     <option value="minutes" {{ old('update_interval_unit') == 'minutes' ? 'selected' : '' }}>Minutes</option>
                                     <option value="hours" {{ old('update_interval_unit') == 'hours' ? 'selected' : '' }}>Hours</option>
@@ -146,7 +146,7 @@
                                 <input type="datetime-local" name="start_date" id="start_date" 
                                        value="{{ old('start_date', now()->format('Y-m-d\TH:i')) }}" required
                                        min="{{ now()->format('Y-m-d\TH:i') }}"
-                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                 @error('start_date')
                                     <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                                 @enderror
@@ -156,7 +156,7 @@
                                 <label for="end_date" class="block text-xs font-medium text-muted-foreground mb-2">End Date <span class="text-xs text-muted-foreground dark:text-gray-300">(UTC)</span> *</label>
                                 <input type="datetime-local" name="end_date" id="end_date" 
                                        value="{{ old('end_date') }}" required
-                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                 @error('end_date')
                                     <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                                 @enderror
@@ -179,7 +179,7 @@
                 <!-- Actions -->
                 <div class="flex justify-end space-x-3">
                     <a href="{{ route('admin.investments.automatic-nav-updates.index') }}" 
-                       class="px-4 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                       class="px-4 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-colors">
                         Cancel
                     </a>
                     <button type="button" id="previewBtn" 
@@ -187,7 +187,7 @@
                         Preview Update
                     </button>
                     <button type="submit" 
-                            class="px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-colors">
+                            class="px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-colors">
                         Create Automatic Update
                     </button>
                 </div>

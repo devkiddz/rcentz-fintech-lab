@@ -7,12 +7,16 @@
                 <div class="min-w-0">
                     <p class="text-sm font-medium text-muted-foreground">Available balance</p>
                     <div class="mt-1 flex flex-wrap items-end gap-x-3 gap-y-1">
-                        <h1 class="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">{{ format_currency($wallet->balance) }}</h1>
+                        <h1 class="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">{{ format_currency($wallet->available_balance) }}</h1>
                         <span class="pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ $wallet->currency }}</span>
                     </div>
                     <div class="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
                         <span class="inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
                         Wallet active
+                    </div>
+                    <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                        <span>Wallet balance <strong class="font-medium text-foreground">{{ format_currency($wallet->balance) }}</strong></span>
+                        <span>Reserved <strong class="font-medium text-foreground">{{ format_currency($wallet->reserved_balance) }}</strong></span>
                     </div>
                 </div>
 
@@ -28,6 +32,10 @@
                     <a href="{{ route('wallet.transfer') }}" class="wallet-action-button">
                         <i data-lucide="arrow-right-left" class="h-4 w-4"></i>
                         <span>Transfer</span>
+                    </a>
+                    <a href="{{ route('account.history') }}" class="wallet-action-button">
+                        <i data-lucide="history" class="h-4 w-4"></i>
+                        <span>History</span>
                     </a>
                 </div>
             </div>

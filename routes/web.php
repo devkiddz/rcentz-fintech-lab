@@ -13,6 +13,7 @@ use App\Http\Controllers\InvestmentDashboardController;
 use App\Http\Controllers\KYCController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SupportController;
+use App\Http\Controllers\FinancialHistoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\CarController as AdminCarController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -96,6 +97,9 @@ Route::middleware(['auth', 'verified', 'wallet', 'block.admin'])->group(function
     Route::get('/support', [SupportController::class, 'index'])->name('support.index');
     Route::post('/support', [SupportController::class, 'store'])->name('support.store');
     
+    // Financial history / audit trail
+    Route::get('/account/history', [FinancialHistoryController::class, 'index'])->name('account.history');
+
     // Wallet Routes
     Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
     Route::get('/wallet/deposit', [WalletController::class, 'deposit'])->name('wallet.deposit');

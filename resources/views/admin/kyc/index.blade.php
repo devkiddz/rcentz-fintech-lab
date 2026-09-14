@@ -78,19 +78,19 @@
                 <div class="p-4">
                     <div class="flex flex-wrap gap-2">
                         <a href="{{ route('admin.kyc.index') }}" 
-                           class="px-3 py-2 text-xs font-medium rounded-lg transition-colors {{ !request('status') ? 'bg-black dark:bg-card text-white dark:text-foreground' : 'bg-muted text-muted-foreground hover:bg-gray-200' }}">
+                           class="px-3 py-2 text-xs font-medium rounded-lg transition-colors {{ !request('status') ? 'bg-black dark:bg-card text-white dark:text-foreground' : 'bg-muted text-muted-foreground hover:bg-muted' }}">
                             All ({{ $stats['total'] }})
                         </a>
                         <a href="{{ route('admin.kyc.by-status', 'pending') }}" 
-                           class="px-3 py-2 text-xs font-medium rounded-lg transition-colors {{ request('status') === 'pending' ? 'bg-black dark:bg-card text-white dark:text-foreground' : 'bg-muted text-muted-foreground hover:bg-gray-200' }}">
+                           class="px-3 py-2 text-xs font-medium rounded-lg transition-colors {{ request('status') === 'pending' ? 'bg-black dark:bg-card text-white dark:text-foreground' : 'bg-muted text-muted-foreground hover:bg-muted' }}">
                             Pending ({{ $stats['pending'] }})
                         </a>
                         <a href="{{ route('admin.kyc.by-status', 'approved') }}" 
-                           class="px-3 py-2 text-xs font-medium rounded-lg transition-colors {{ request('status') === 'approved' ? 'bg-black dark:bg-card text-white dark:text-foreground' : 'bg-muted text-muted-foreground hover:bg-gray-200' }}">
+                           class="px-3 py-2 text-xs font-medium rounded-lg transition-colors {{ request('status') === 'approved' ? 'bg-black dark:bg-card text-white dark:text-foreground' : 'bg-muted text-muted-foreground hover:bg-muted' }}">
                             Approved ({{ $stats['approved'] }})
                         </a>
                         <a href="{{ route('admin.kyc.by-status', 'rejected') }}" 
-                           class="px-3 py-2 text-xs font-medium rounded-lg transition-colors {{ request('status') === 'rejected' ? 'bg-black dark:bg-card text-white dark:text-foreground' : 'bg-muted text-muted-foreground hover:bg-gray-200' }}">
+                           class="px-3 py-2 text-xs font-medium rounded-lg transition-colors {{ request('status') === 'rejected' ? 'bg-black dark:bg-card text-white dark:text-foreground' : 'bg-muted text-muted-foreground hover:bg-muted' }}">
                             Rejected ({{ $stats['rejected'] }})
                         </a>
                     </div>
@@ -112,7 +112,7 @@
                 <div class="p-4">
                     <div class="space-y-4">
                         @foreach($kycApplications as $kyc)
-                        <div class="bg-muted/40 dark:bg-dark-muted rounded-lg p-4 border border-border dark:border-gray-700 hover:bg-card hover:shadow-sm transition-all duration-200">
+                        <div class="bg-muted/40 rounded-lg p-4 border border-border dark:border-gray-700 hover:bg-card hover:shadow-sm transition-all duration-200">
                             <!-- Mobile Layout -->
                             <div class="md:hidden">
                                 <div class="flex items-start space-x-3 mb-3">
@@ -141,7 +141,7 @@
                                 <!-- Mobile Actions -->
                                 <div class="flex flex-wrap gap-2">
                                     <a href="{{ route('admin.kyc.show', $kyc) }}" 
-                                       class="flex-1 px-3 py-2 bg-muted text-muted-foreground text-xs font-medium rounded text-center hover:bg-gray-200 transition-colors">
+                                       class="flex-1 px-3 py-2 bg-muted text-muted-foreground text-xs font-medium rounded text-center hover:bg-muted transition-colors">
                                         View
                                     </a>
                                     
@@ -200,7 +200,7 @@
                                     
                                     <div class="flex space-x-2">
                                         <a href="{{ route('admin.kyc.show', $kyc) }}" 
-                                           class="px-3 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-gray-200 transition-colors">
+                                           class="px-3 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-muted transition-colors">
                                             View
                                         </a>
                                         
@@ -245,7 +245,7 @@
             @else
             <!-- Empty State -->
             <div class="bg-card border border-border p-8 rounded-lg text-center">
-                <div class="w-16 h-16 bg-muted dark:bg-dark-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8 text-gray-400 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                     </svg>
@@ -271,7 +271,7 @@
                         <textarea id="rejection_reason" 
                                   name="rejection_reason" 
                                   rows="3" 
-                                  class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors duration-200"
+                                  class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors duration-200"
                                   placeholder="Please provide a reason for rejection..."
                                   required></textarea>
                     </div>
@@ -279,7 +279,7 @@
                     <div class="flex justify-end space-x-3">
                         <button type="button" 
                                 onclick="closeRejectModal()" 
-                                class="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted dark:bg-dark-muted rounded-lg hover:bg-gray-200 transition-colors">
+                                class="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted rounded-lg hover:bg-muted transition-colors">
                             Cancel
                         </button>
                         <button type="submit" 

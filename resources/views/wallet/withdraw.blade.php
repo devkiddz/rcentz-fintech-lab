@@ -1,170 +1,162 @@
 <x-user-layout>
-    <x-slot name="header">
-        Withdraw Funds
-    </x-slot>
+    <x-slot name="header">Withdraw Funds</x-slot>
 
-    <div class="max-w-2xl mx-auto">
-        <!-- Enhanced Header -->
-        <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
-            <!-- Background Pattern -->
-            <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-16 translate-x-16"></div>
-                <div class="absolute bottom-0 left-0 w-16 h-16 bg-white rounded-full translate-y-8 -translate-x-8"></div>
+    <div class="money-page">
+        <section class="money-page-header">
+            <div>
+                <p class="ui-kicker">Wallet & Finance</p>
+                <h1 class="money-page-title">Withdraw funds</h1>
+                <p class="money-page-copy">Request a payout from your available balance. Requested funds are reserved immediately while the withdrawal is reviewed.</p>
             </div>
-            
-            <div class="relative z-10">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                    <div class="mb-4 lg:mb-0 lg:flex-1">
-                        <h1 class="text-xl font-light mb-1">Withdraw Funds</h1>
-                        <p class="text-tesla-100 dark:text-gray-300 text-sm">Transfer money from your wallet to your chosen destination</p>
-                    </div>
-                    
-                    <!-- Enhanced Balance Card -->
-                    <div class="bg-white bg-opacity-15 dark:bg-opacity-20 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-80">
-                        <div class="flex items-center justify-between mb-3">
-                            <div>
-                                <p class="text-xs text-tesla-100 dark:text-gray-300 mb-1">Available Balance</p>
-                                <p class="text-lg font-light">{{ format_currency(auth()->user()->wallet->balance ?? 0) }}</p>
-                            </div>
-                            <div class="w-10 h-10 flex items-center justify-center">
-                                <i data-lucide="wallet" class="w-5 h-5 text-white"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="ui-header-actions">
+                <a href="{{ route('account.history') }}" class="ui-btn ui-btn-secondary">
+                    <i data-lucide="history" class="h-4 w-4"></i> History
+                </a>
+                <a href="{{ route('wallet.index') }}" class="ui-btn ui-btn-secondary">
+                    <i data-lucide="wallet" class="h-4 w-4"></i> Wallet
+                </a>
             </div>
-        </div>
+        </section>
 
-        <!-- Enhanced Withdrawal Form -->
-        <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
-            <form action="{{ route('wallet.process-withdrawal') }}" method="POST" class="space-y-6">
-                @csrf
-                
-                <!-- Amount Input -->
-                <div>
-                    <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">Withdrawal Amount</label>
-                    <div class="relative">
-                        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300">{{ currency_symbol() }}</span>
-                        <input type="number" 
-                               id="amount" 
-                               name="amount" 
-                               step="0.01" 
-                               min="10" 
-                               max="{{ auth()->user()->wallet->balance ?? 0 }}"
-                               value="{{ old('amount') }}"
-                               class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200"
-                               placeholder="0.00"
-                               required>
+        <section class="money-balance-strip">
+            <div class="money-balance-card">
+                <span>Available balance</span>
+                <strong>{{ format_currency($wallet->available_balance) }}</strong>
+            </div>
+            <div class="money-balance-card">
+                <span>Wallet balance</span>
+                <strong>{{ format_currency($wallet->balance) }}</strong>
+            </div>
+            <div class="money-balance-card">
+                <span>Reserved</span>
+                <strong>{{ format_currency($wallet->reserved_balance) }}</strong>
+            </div>
+        </section>
+
+        <div class="money-workspace">
+            <section class="money-form-card">
+                <div class="money-card-head">
+                    <div>
+                        <h2>Withdrawal request</h2>
+                        <p>Choose an amount and payout destination.</p>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">Maximum withdrawal: {{ format_currency(auth()->user()->wallet->balance ?? 0) }}</p>
-                    @error('amount')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
+                    <div class="ui-metric-icon"><i data-lucide="circle-minus" class="h-4 w-4"></i></div>
                 </div>
 
-                <!-- Withdrawal Method Selection -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-3">Withdrawal Method</label>
-                    <div class="space-y-3">
-                        @foreach($paymentMethods->where('allow_withdraw', true) as $method)
-                        <label class="flex items-center p-4 border border-border rounded-lg cursor-pointer hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group">
-                            <input type="radio" 
-                                   name="payment_method_id" 
-                                   value="{{ $method->id }}" 
-                                   class="w-4 h-4 text-black border-gray-300 focus:ring-black"
-                                   {{ old('payment_method_id') == $method->id ? 'checked' : '' }}
-                                   required>
-                            <div class="ml-3 flex items-center flex-1">
-                                @if($method->logo)
-                                    <img src="{{ asset('storage/' . $method->logo) }}" alt="{{ $method->name }}" class="w-8 h-8 mr-3">
-                                @else
-                                    <div class="w-8 h-8 flex items-center justify-center mr-3">
-                                        <i data-lucide="banknote" class="w-4 h-4 text-gray-500 dark:text-gray-300"></i>
-                                    </div>
-                                @endif
-                                <div class="flex-1">
-                                    <p class="font-medium text-black dark:text-white text-sm">{{ $method->name }}</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-300">{{ $method->description }}</p>
-                                </div>
-                                <div class="w-6 h-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                                    <i data-lucide="arrow-right" class="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300"></i>
-                                </div>
+                <div class="money-card-body">
+                    @if($errors->any())
+                        <div class="mb-5 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-400">
+                            {{ $errors->first() }}
+                        </div>
+                    @endif
+
+                    <form action="{{ route('wallet.process-withdrawal') }}" method="POST" class="space-y-6">
+                        @csrf
+
+                        <div>
+                            <label for="amount" class="ui-label">Withdrawal amount</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{{ currency_symbol() }}</span>
+                                <input id="amount" name="amount" type="number" step="0.01" min="1" max="{{ $wallet->available_balance }}" value="{{ old('amount') }}" class="ui-input pl-8" placeholder="0.00" required>
                             </div>
-                        </label>
-                        @endforeach
-                    </div>
-                    @error('payment_method_id')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
+                            <p class="mt-1.5 text-xs text-muted-foreground">Maximum available: {{ format_currency($wallet->available_balance) }}</p>
+                            @error('amount')<p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>@enderror
+                        </div>
 
-                <div id="destination-crypto" class="hidden">
-                    <label for="wallet_address" class="block text-sm font-medium text-gray-700 mb-2">Destination Wallet Address</label>
-                    <input id="wallet_address" name="wallet_address" type="text" value="{{ old('wallet_address') }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-black focus:border-transparent" placeholder="Enter your wallet address" />
-                    @error('wallet_address')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <!-- Enhanced Fee Information -->
-                <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-4 border border-red-200">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-xs font-medium text-red-800">Fee Breakdown</span>
-                        <div class="w-8 h-8 flex items-center justify-center">
-                            <i data-lucide="calculator" class="w-4 h-4 text-red-600"></i>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs text-red-700">Withdrawal Amount:</span>
-                            <span class="text-xs font-medium text-red-800" id="withdrawal-amount">{{ currency_symbol() }}0.00</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs text-red-700">Processing Fee:</span>
-                            <span class="text-xs font-medium text-red-800" id="processing-fee">{{ currency_symbol() }}0.00</span>
-                        </div>
-                        <div class="border-t border-red-300 pt-2">
-                            <div class="flex items-center justify-between">
-                                <span class="text-xs font-semibold text-red-800">You'll Receive:</span>
-                                <span class="text-xs font-bold text-red-900" id="net-amount">{{ currency_symbol() }}0.00</span>
+                        <div>
+                            <label class="ui-label">Withdrawal method</label>
+                            <div class="money-method-list">
+                                @forelse($paymentMethods->where('allow_withdraw', true) as $method)
+                                    <label class="money-method">
+                                        <input type="radio" name="payment_method_id" value="{{ $method->id }}" class="h-4 w-4 border-border text-foreground focus:ring-ring" {{ old('payment_method_id') == $method->id ? 'checked' : '' }} required>
+                                        <div class="money-method-icon">
+                                            @if($method->logo)
+                                                <img src="{{ asset('storage/' . $method->logo) }}" alt="" class="h-5 w-5 object-contain">
+                                            @else
+                                                <i data-lucide="{{ $method->isCryptocurrency() ? 'bitcoin' : 'landmark' }}" class="h-4 w-4"></i>
+                                            @endif
+                                        </div>
+                                        <div class="min-w-0 flex-1">
+                                            <p class="text-sm font-medium text-foreground">{{ $method->name }}</p>
+                                            <p class="mt-0.5 text-xs text-muted-foreground">{{ $method->description ?: 'Withdrawal method' }}</p>
+                                        </div>
+                                        <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground"></i>
+                                    </label>
+                                @empty
+                                    <div class="money-note">No active withdrawal method is currently available.</div>
+                                @endforelse
                             </div>
+                            @error('payment_method_id')<p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>@enderror
                         </div>
+
+                        <div id="destination-crypto" class="hidden">
+                            <label for="wallet_address" class="ui-label">Destination wallet address</label>
+                            <input id="wallet_address" name="wallet_address" type="text" value="{{ old('wallet_address') }}" class="ui-input font-mono" placeholder="Enter destination address">
+                            @error('wallet_address')<p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>@enderror
+                        </div>
+
+                        <div class="money-note flex gap-2.5">
+                            <i data-lucide="lock-keyhole" class="mt-0.5 h-4 w-4 shrink-0 text-foreground"></i>
+                            <p>Submitting this request reserves the amount immediately. Rejected requests release the reservation; approved requests settle it permanently.</p>
+                        </div>
+
+                        <button type="submit" class="ui-btn ui-btn-primary w-full sm:w-auto">
+                            Submit withdrawal
+                            <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <aside class="money-summary-card">
+                <div class="money-card-head">
+                    <div>
+                        <h2>Withdrawal summary</h2>
+                        <p>Balance impact before you submit.</p>
                     </div>
                 </div>
-
-                <!-- Submit Button -->
-                <div class="pt-4">
-                    <button type="submit" 
-                            class="w-full bg-black dark:bg-white text-white dark:text-gray-900 py-3 px-6 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center">
-                        <i data-lucide="minus" class="w-4 h-4 mr-2"></i>
-                        Withdraw Funds
-                    </button>
+                <div class="money-card-body">
+                    <div class="money-summary-row"><span>Withdrawal amount</span><strong id="withdrawal-amount">{{ currency_symbol() }}0.00</strong></div>
+                    <div class="money-summary-row"><span>Processing fee</span><strong id="processing-fee">{{ currency_symbol() }}0.00</strong></div>
+                    <div class="money-summary-row"><span>Available after request</span><strong id="available-after">{{ format_currency($wallet->available_balance) }}</strong></div>
+                    <div class="money-summary-row"><span>Reserved after request</span><strong id="reserved-after">{{ format_currency($wallet->reserved_balance) }}</strong></div>
+                    <div class="money-summary-row money-summary-total"><span>Requested payout</span><strong id="net-amount">{{ currency_symbol() }}0.00</strong></div>
+                    <div class="mt-5 money-note">
+                        <strong class="mb-1 block text-foreground">Status flow</strong>
+                        Requested → Reserved → Reviewed → Completed / Released
+                    </div>
                 </div>
-            </form>
+            </aside>
         </div>
     </div>
 
     <script>
-        // Fee calculation logic
         const amountInput = document.getElementById('amount');
         const withdrawalAmount = document.getElementById('withdrawal-amount');
         const processingFee = document.getElementById('processing-fee');
         const netAmount = document.getElementById('net-amount');
+        const availableAfter = document.getElementById('available-after');
+        const reservedAfter = document.getElementById('reserved-after');
+        const startingAvailable = {{ (float) $wallet->available_balance }};
+        const startingReserved = {{ (float) $wallet->reserved_balance }};
 
-        function updateFeeCalculation() {
-            const amount = parseFloat(amountInput.value) || 0;
-            const fee = 0; // Processing fee is 0
-            const net = amount - fee;
-
-            withdrawalAmount.textContent = `{{ currency_symbol() }}${amount.toFixed(2)}`;
-            processingFee.textContent = `{{ currency_symbol() }}${fee.toFixed(2)}`;
-            netAmount.textContent = `{{ currency_symbol() }}${net.toFixed(2)}`;
+        function money(value) {
+            return `{{ currency_symbol() }}${Math.max(0, value).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         }
 
-        amountInput.addEventListener('input', updateFeeCalculation);
-        updateFeeCalculation();
+        function updateWithdrawalSummary() {
+            const amount = parseFloat(amountInput?.value) || 0;
+            const fee = 0;
+            if (withdrawalAmount) withdrawalAmount.textContent = money(amount);
+            if (processingFee) processingFee.textContent = money(fee);
+            if (netAmount) netAmount.textContent = money(amount - fee);
+            if (availableAfter) availableAfter.textContent = money(startingAvailable - amount);
+            if (reservedAfter) reservedAfter.textContent = money(startingReserved + amount);
+        }
 
-        // Toggle destination fields based on method type
+        amountInput?.addEventListener('input', updateWithdrawalSummary);
+        updateWithdrawalSummary();
+
         const methodRadios = document.querySelectorAll('input[name="payment_method_id"]');
         const cryptoIds = [
             @foreach($paymentMethods->where('allow_withdraw', true)->where('type','cryptocurrency') as $m)
@@ -172,17 +164,16 @@
             @endforeach
         ];
         const destCrypto = document.getElementById('destination-crypto');
+
         function updateDestinationFields() {
             const selected = document.querySelector('input[name="payment_method_id"]:checked');
-            if (!selected) return;
-            const isCrypto = cryptoIds.includes(selected.value);
-            destCrypto.classList.toggle('hidden', !isCrypto);
+            const isCrypto = selected ? cryptoIds.includes(selected.value) : false;
+            destCrypto?.classList.toggle('hidden', !isCrypto);
             const walletInput = document.getElementById('wallet_address');
-            if (walletInput) {
-                walletInput.required = isCrypto;
-            }
+            if (walletInput) walletInput.required = isCrypto;
         }
+
         methodRadios.forEach(r => r.addEventListener('change', updateDestinationFields));
         updateDestinationFields();
     </script>
-</x-user-layout> 
+</x-user-layout>

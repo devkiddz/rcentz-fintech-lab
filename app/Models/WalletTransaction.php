@@ -58,6 +58,35 @@ class WalletTransaction extends Model
         return !$this->is_credit;
     }
 
+
+    public function getDirectionLabelAttribute(): string
+    {
+        return $this->is_credit ? 'Credit' : 'Debit';
+    }
+
+    public function getSignedFormattedAmountAttribute(): string
+    {
+        $sign = $this->is_credit ? '+' : '-';
+
+        return $sign . '$' . number_format((float) $this->amount, 2);
+    }
+
+    public function getActivityLabelAttribute(): string
+    {
+        if ($this->description) {
+            return $this->description;
+        }
+
+        return match ($this->type) {
+            'deposit' => 'Deposit',
+            'withdrawal' => 'Withdrawal',
+            'investment' => $this->is_credit ? 'Investment sale' : 'Investment purchase',
+            'refund' => 'Refund',
+            'dividend' => 'Dividend',
+            default => ucfirst(str_replace('_', ' ', (string) $this->type)),
+        };
+    }
+
     public function getFormattedAmountAttribute()
     {
         return '$' . number_format($this->amount, 2);
@@ -107,6 +136,52 @@ class WalletTransaction extends Model
     public function scopeWithdrawals($query)
     {
         return $query->where('type', 'withdrawal');
+    }
+
+
+    public function scopeCredits($query)
+    {
+        return $query->where(function ($direction) {
+            $direction->where('direction', 'credit')
+                ->orWhere(function ($legacy) {
+                    $legacy->whereNull('direction')
+                        ->where(function ($credit) {
+                            $credit->whereIn('type', ['deposit', 'refund', 'dividend'])
+                                ->orWhere(function ($investmentSale) {
+                                    $investmentSale->where('type', 'investment')
+                                        ->where('description', 'like', 'Sale of%');
+                                });
+                        });
+                });
+        });
+    }
+
+    public function scopeDebits($query)
+    {
+        return $query->where(function ($direction) {
+            $direction->where('direction', 'debit')
+                ->orWhere(function ($legacy) {
+                    $legacy->whereNull('direction')
+                        ->whereNotIn('type', ['deposit', 'refund', 'dividend'])
+                        ->where(function ($debit) {
+                            $debit->where('type', '!=', 'investment')
+                                ->orWhere(function ($investmentBuy) {
+                                    $investmentBuy->where('type', 'investment')
+                                        ->where(function ($description) {
+                                            $description->whereNull('description')
+                                                ->orWhere('description', 'not like', 'Sale of%');
+                                        });
+                                });
+                        });
+                });
+        });
+    }
+
+    public function scopeDirection($query, string $direction)
+    {
+        return $direction === 'credit'
+            ? $query->credits()
+            : $query->debits();
     }
 
     public function scopeInvestments($query)

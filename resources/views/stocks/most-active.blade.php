@@ -8,8 +8,8 @@
         <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
             <!-- Background Pattern -->
             <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-48 h-48 bg-white rounded-full -translate-y-24 translate-x-24"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-12 -translate-x-12"></div>
+                <div class="absolute top-0 right-0 w-48 h-48 bg-card rounded-full -translate-y-24 translate-x-24"></div>
+                <div class="absolute bottom-0 left-0 w-24 h-24 bg-card rounded-full translate-y-12 -translate-x-12"></div>
             </div>
             
             <div class="relative z-10">
@@ -20,7 +20,7 @@
                     </div>
                     
                     <!-- Enhanced Stats Card -->
-                    <div class="bg-white bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-80">
+                    <div class="bg-card bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-80">
                         <div class="flex items-center justify-between mb-3">
                             <div>
                                 <p class="text-xs text-tesla-200 mb-1">Top Volume</p>
@@ -50,8 +50,8 @@
             <div class="px-6 py-4 border-b border-border">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-lg font-light text-black dark:text-white mb-1">Most Active Stocks</h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-300">Stocks with the highest trading volume</p>
+                        <h3 class="text-lg font-light text-foreground mb-1">Most Active Stocks</h3>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300">Stocks with the highest trading volume</p>
                     </div>
                 </div>
             </div>
@@ -59,20 +59,20 @@
             @if($stocks->count() > 0)
                 <div class="overflow-x-auto">
                     <table class="w-full">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-muted/30">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volume</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Market Cap</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Rank</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Stock</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Price</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Change</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Volume</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Market Cap</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-card divide-y divide-gray-100 dark:divide-tesla-600">
                             @foreach($stocks as $index => $stock)
-                            <tr class="hover:bg-gray-50 transition-colors duration-200">
+                            <tr class="hover:bg-muted/30 transition-colors duration-200">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
                                         @if($index < 3)
@@ -80,7 +80,7 @@
                                                 <span class="text-xs font-medium text-tesla-800">{{ $index + 1 }}</span>
                                             </div>
                                         @else
-                                            <span class="text-xs font-medium text-gray-500 dark:text-gray-300">{{ $index + 1 }}</span>
+                                            <span class="text-xs font-medium text-muted-foreground dark:text-gray-300">{{ $index + 1 }}</span>
                                         @endif
                                     </div>
                                 </td>
@@ -96,13 +96,13 @@
                                             @endif
                                         </div>
                                         <div class="ml-3">
-                                            <div class="text-sm font-medium text-black">{{ $stock->symbol }}</div>
-                                            <div class="text-xs text-gray-500 dark:text-gray-300">{{ $stock->company_name }}</div>
+                                            <div class="text-sm font-medium text-foreground">{{ $stock->symbol }}</div>
+                                            <div class="text-xs text-muted-foreground dark:text-gray-300">{{ $stock->company_name }}</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm text-black">{{ $stock->formatted_current_price }}</div>
+                                    <div class="text-sm text-foreground">{{ $stock->formatted_current_price }}</div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="text-sm {{ $stock->change_color }}">
@@ -113,10 +113,10 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm text-black font-medium">{{ $stock->formatted_volume }}</div>
+                                    <div class="text-sm text-foreground font-medium">{{ $stock->formatted_volume }}</div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm text-black">{{ $stock->formatted_market_cap }}</div>
+                                    <div class="text-sm text-foreground">{{ $stock->formatted_market_cap }}</div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex space-x-2">
@@ -143,9 +143,9 @@
                     <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                         <i data-lucide="activity" class="w-8 h-8 text-gray-400 dark:text-gray-300"></i>
                     </div>
-                    <h3 class="text-lg font-light text-black dark:text-white mb-2">No active stocks found</h3>
-                    <p class="text-gray-600 text-sm mb-4">No stocks with trading activity at the moment</p>
-                    <a href="{{ route('stocks.index') }}" class="inline-flex items-center px-4 py-2 bg-black dark:bg-white text-white dark:text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200">
+                    <h3 class="text-lg font-light text-foreground mb-2">No active stocks found</h3>
+                    <p class="text-muted-foreground text-sm mb-4">No stocks with trading activity at the moment</p>
+                    <a href="{{ route('stocks.index') }}" class="inline-flex items-center px-4 py-2 bg-foreground text-background text-sm font-medium rounded-lg hover:opacity-90 transition-colors duration-200">
                         <i data-lucide="bar-chart-3" class="w-4 h-4 mr-2"></i>
                         Browse All Stocks
                     </a>

@@ -53,7 +53,7 @@
             }
         </script>
     </head>
-    <body class="font-sans antialiased bg-background text-foreground">
+    <body class="admin-workspace font-sans antialiased bg-background text-foreground" data-theme-scope="admin">
         <div class="min-h-screen flex">
             <!-- Mobile Sidebar Overlay -->
             <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
@@ -64,8 +64,8 @@
                     <!-- Logo -->
                     <div class="flex items-center justify-between h-16 px-4 border-b border-gray-800">
                         <div class="flex items-center">
-                            @if(site_logo())
-                                <img src="{{ site_logo() }}" alt="{{ site_name() }}" class="h-6 w-auto mr-3 filter brightness-0 invert">
+                            @if(site_logo_dark() || site_logo_light())
+                                <img src="{{ site_logo_dark() ?? site_logo_light() }}" alt="{{ site_name() }}" class="h-6 w-auto mr-3">
                             @else
                                 <span class="text-white font-bold text-lg">{{ site_name() }}</span>
                             @endif
@@ -323,8 +323,8 @@
                     <div class="p-4 border-t border-gray-800">
                         <div class="flex items-center">
                             <div class="flex-shrink-0">
-                                <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                                    <span class="text-black font-medium text-sm">{{ substr(Auth::user()->name, 0, 1) }}</span>
+                                <div class="w-10 h-10 bg-card rounded-full flex items-center justify-center">
+                                    <span class="text-foreground font-medium text-sm">{{ substr(Auth::user()->name, 0, 1) }}</span>
                                 </div>
                             </div>
                             <div class="ml-3 flex-1">
@@ -346,60 +346,13 @@
 
             <!-- Main Content -->
             <div class="flex-1 flex flex-col overflow-hidden lg:ml-72">
-                <!-- Top Bar -->
-                <header class="bg-card border-b border-border">
-                    <div class="flex items-center justify-between px-4 py-3">
-                        <div class="flex items-center">
-                            <button onclick="toggleSidebar()" class="lg:hidden text-muted-foreground hover:text-foreground p-2 rounded-md hover:bg-muted mr-3">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                                </svg>
-                            </button>
-                            @if (isset($header))
-                                <div class="font-light text-lg text-foreground">
-                                    {{ $header }}
-                                </div>
-                            @endif
-                        </div>
-                        <button type="button" onclick="window.toggleTheme()" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label="Toggle theme">
-                            <svg class="hidden h-4 w-4 dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364-.707-.707M6.343 6.343l-.707-.707m12.728 0-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-                            <svg class="h-4 w-4 dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 1012 21a9.003 9.003 0 008.354-5.646z"/></svg>
-                        </button>
-                    </div>
-                </header>
+                @include('partials.shell.admin-topbar')
 
-                <!-- Flash Messages -->
-                @if (session('success'))
-                    <div class="bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-3 mx-6 mt-4 rounded-r-md" role="alert">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span>{{ session('success') }}</span>
-                            <button onclick="this.parentElement.parentElement.style.display='none'" class="ml-auto text-green-500 hover:text-green-700">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                @endif
+                <div class="shell-alert-stack">
+                    @include('partials.shell.flash-messages')
+                </div>
 
-                @if (session('error'))
-                    <div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 mx-6 mt-4 rounded-r-md" role="alert">
-                        <div class="flex items-center">
-                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span>{{ session('error') }}</span>
-                            <button onclick="this.parentElement.parentElement.style.display='none'" class="ml-auto text-red-500 hover:text-red-700">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                @endif
+
 
                 <!-- Page Content -->
                 <main class="flex-1 overflow-y-auto p-4 sm:p-6 bg-background">

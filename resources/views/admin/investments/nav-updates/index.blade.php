@@ -116,7 +116,7 @@
                                            name="updates[{{ $plan->id }}][new_nav]" 
                                            step="0.0001" 
                                            value="{{ $plan->nav }}"
-                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                     <input type="hidden" name="updates[{{ $plan->id }}][plan_id]" value="{{ $plan->id }}">
                                 </div>
                                 <div>
@@ -124,11 +124,11 @@
                                     <input type="text" 
                                            name="updates[{{ $plan->id }}][reason]" 
                                            placeholder="e.g., Market update, rebalancing"
-                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                 </div>
                                 <div class="flex items-end">
                                     <a href="{{ route('admin.investments.nav-updates.show', $plan) }}" 
-                                       class="w-full px-3 py-2 bg-muted text-muted-foreground text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors text-center">
+                                       class="w-full px-3 py-2 bg-muted text-muted-foreground text-xs font-medium rounded-lg hover:bg-muted transition-colors text-center">
                                         View History
                                     </a>
                                 </div>
@@ -147,7 +147,7 @@
                     
                     <div class="flex justify-end space-x-3 mt-6">
                         <button type="submit" 
-                                class="px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-colors">
+                                class="px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-colors">
                             Update All NAVs
                         </button>
                     </div>
@@ -199,11 +199,11 @@
                                     
                                     <div class="flex space-x-2">
                                         <a href="{{ route('admin.investments.nav-updates.show', $plan) }}" 
-                                           class="px-3 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-gray-200 transition-colors">
+                                           class="px-3 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-muted transition-colors">
                                             History
                                         </a>
                                         <a href="{{ route('admin.investments.plans.show', $plan) }}" 
-                                           class="px-3 py-1.5 bg-black dark:bg-card text-white dark:text-foreground text-xs font-medium rounded hover:bg-gray-800 dark:hover:bg-muted transition-colors">
+                                           class="px-3 py-1.5 bg-black dark:bg-card text-white dark:text-foreground text-xs font-medium rounded hover:opacity-90 transition-colors">
                                             View Plan
                                         </a>
                                     </div>

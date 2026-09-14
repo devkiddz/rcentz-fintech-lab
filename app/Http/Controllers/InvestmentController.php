@@ -10,6 +10,7 @@ use App\Models\InvestmentTransaction;
 use App\Models\InvestmentWatchlist;
 use App\Models\WalletTransaction;
 use App\Services\NotificationService;
+use App\Services\FinancialActivityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -38,7 +39,7 @@ class InvestmentController extends Controller
     /**
      * Execute buy investment
      */
-    public function executeBuy(Request $request, InvestmentPlan $plan)
+    public function executeBuy(Request $request, InvestmentPlan $plan, FinancialActivityService $activity)
     {
         if (!$plan->is_active) {
             abort(404);
@@ -57,14 +58,10 @@ class InvestmentController extends Controller
         $fee = 0.00; // Could be calculated based on amount or plan
         $totalCost = $amount + $fee;
 
-        // Check if user has sufficient funds
-        if (!$wallet->canWithdraw($totalCost)) {
-            return back()->withErrors(['amount' => 'Insufficient funds in wallet.']);
-        }
-
         try {
             DB::beginTransaction();
 
+            $wallet=$user->wallet()->lockForUpdate()->firstOrFail(); if(!$wallet->canWithdraw($totalCost))throw new \RuntimeException('Insufficient available balance.'); $before=$activity->snapshot($wallet); $reference=$activity->reference('INV-BUY');
             // Create wallet transaction
             $walletTransaction = $wallet->transactions()->create([
                 'payment_method_id' => 1, // Default payment method
@@ -73,6 +70,7 @@ class InvestmentController extends Controller
                 'amount' => $totalCost,
                 'fee' => $fee,
                 'status' => 'completed',
+                'reference_id' => $reference,
                 'description' => "Investment in {$plan->name}",
             ]);
 
@@ -124,6 +122,7 @@ class InvestmentController extends Controller
 
             // Deduct funds from wallet
             $wallet->deductFunds($totalCost);
+            $activity->record($user,'investment.buy','Investment purchased','Invested in '.$plan->name.'.',$reference,'completed','debit',(float)$totalCost,$wallet,$walletTransaction,null,$before,['investment_plan_id'=>$plan->id,'units'=>(float)$units],'user',$user->id);
 
             // Create notification for successful investment purchase
             NotificationService::createInvestmentSuccessNotification(
@@ -174,7 +173,7 @@ class InvestmentController extends Controller
     /**
      * Execute sell investment
      */
-    public function executeSell(Request $request, InvestmentPlan $plan)
+    public function executeSell(Request $request, InvestmentPlan $plan, FinancialActivityService $activity)
     {
         if (!$plan->is_active) {
             abort(404);
@@ -202,14 +201,16 @@ class InvestmentController extends Controller
         try {
             DB::beginTransaction();
 
+            $wallet=$user->wallet()->lockForUpdate()->firstOrFail(); $before=$activity->snapshot($wallet); $reference=$activity->reference('INV-SELL');
             // Create wallet transaction
-            $walletTransaction = $user->wallet->transactions()->create([
+            $walletTransaction = $wallet->transactions()->create([
                 'payment_method_id' => 1, // Default payment method
                 'type' => 'investment',
                 'direction' => 'credit',
                 'amount' => $netAmount,
                 'fee' => $fee,
                 'status' => 'completed',
+                'reference_id' => $reference,
                 'description' => "Sale of {$plan->name}",
             ]);
 
@@ -249,7 +250,8 @@ class InvestmentController extends Controller
             }
 
             // Add funds to wallet
-            $user->wallet->addFunds($netAmount);
+            $wallet->addFunds($netAmount);
+            $activity->record($user,'investment.sell','Investment sold','Sold units of '.$plan->name.'.',$reference,'completed','credit',(float)$netAmount,$wallet,$walletTransaction,null,$before,['investment_plan_id'=>$plan->id,'units'=>(float)$unitsToSell],'user',$user->id);
 
             // Create notification for successful investment sale
             NotificationService::createInvestmentSuccessNotification(

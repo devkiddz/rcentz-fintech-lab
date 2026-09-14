@@ -32,7 +32,7 @@
                                required 
                                autofocus 
                                autocomplete="name" 
-                               class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors duration-200 @error('name') border-red-500 @enderror">
+                               class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors duration-200 @error('name') border-red-500 @enderror">
                         @error('name')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -47,7 +47,7 @@
                                value="{{ old('email', $user->email) }}" 
                                required 
                                autocomplete="username" 
-                               class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors duration-200 @error('email') border-red-500 @enderror">
+                               class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors duration-200 @error('email') border-red-500 @enderror">
                         @error('email')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -93,7 +93,7 @@
                                id="current_password" 
                                name="current_password" 
                                autocomplete="current-password" 
-                               class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors duration-200 @error('current_password', 'updatePassword') border-red-500 @enderror">
+                               class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors duration-200 @error('current_password', 'updatePassword') border-red-500 @enderror">
                         @error('current_password', 'updatePassword')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -106,7 +106,7 @@
                                id="password" 
                                name="password" 
                                autocomplete="new-password" 
-                               class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors duration-200 @error('password', 'updatePassword') border-red-500 @enderror">
+                               class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors duration-200 @error('password', 'updatePassword') border-red-500 @enderror">
                         @error('password', 'updatePassword')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
@@ -120,7 +120,7 @@
                                id="password_confirmation" 
                                name="password_confirmation" 
                                autocomplete="new-password" 
-                               class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors duration-200 @error('password_confirmation', 'updatePassword') border-red-500 @enderror">
+                               class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors duration-200 @error('password_confirmation', 'updatePassword') border-red-500 @enderror">
                         @error('password_confirmation', 'updatePassword')
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror

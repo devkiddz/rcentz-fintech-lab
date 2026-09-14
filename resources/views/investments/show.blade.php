@@ -8,8 +8,8 @@
         <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
             <!-- Background Pattern -->
             <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-48 h-48 bg-white rounded-full -translate-y-24 translate-x-24"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-12 -translate-x-12"></div>
+                <div class="absolute top-0 right-0 w-48 h-48 bg-card rounded-full -translate-y-24 translate-x-24"></div>
+                <div class="absolute bottom-0 left-0 w-24 h-24 bg-card rounded-full translate-y-12 -translate-x-12"></div>
             </div>
             
             <div class="relative z-10">
@@ -20,7 +20,7 @@
                     </div>
                     
                     <!-- Enhanced Stats Card -->
-                    <div class="bg-white bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-80">
+                    <div class="bg-card bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-80">
                         <div class="flex items-center justify-between mb-3">
                             <div>
                                 <p class="text-xs text-tesla-100 dark:text-gray-300 mb-1">Current NAV</p>
@@ -53,7 +53,7 @@
                 <!-- Plan Overview -->
                 <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-light text-black">Plan Overview</h2>
+                        <h2 class="text-lg font-light text-foreground">Plan Overview</h2>
                         <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {{ $plan->risk_level_badge }}">
                             {{ ucfirst($plan->risk_level) }} Risk
                         </span>
@@ -61,38 +61,38 @@
                     
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         <div class="text-center">
-                            <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">NAV</p>
-                            <p class="text-lg font-medium text-black">{{ currency_symbol() }}{{ number_format($plan->nav, 4) }}</p>
+                            <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">NAV</p>
+                            <p class="text-lg font-medium text-foreground">{{ currency_symbol() }}{{ number_format($plan->nav, 4) }}</p>
                         </div>
                         <div class="text-center">
-                            <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">1Y Return</p>
+                            <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">1Y Return</p>
                             <p class="text-lg font-medium {{ $plan->nav_change_percentage >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                 {{ $plan->nav_change_percentage >= 0 ? '+' : '' }}{{ number_format($plan->nav_change_percentage, 2) }}%
                             </p>
                         </div>
                         <div class="text-center">
-                            <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Min Investment</p>
-                            <p class="text-lg font-medium text-black">{{ currency_symbol() }}{{ number_format($plan->minimum_investment, 2) }}</p>
+                            <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Min Investment</p>
+                            <p class="text-lg font-medium text-foreground">{{ currency_symbol() }}{{ number_format($plan->minimum_investment, 2) }}</p>
                         </div>
                         <div class="text-center">
-                            <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Management Fee</p>
-                            <p class="text-lg font-medium text-black">{{ number_format($plan->management_fee * 100, 2) }}%</p>
+                            <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Management Fee</p>
+                            <p class="text-lg font-medium text-foreground">{{ number_format($plan->management_fee * 100, 2) }}%</p>
                         </div>
                     </div>
                     
                     <div class="prose prose-sm max-w-none">
-                        <p class="text-gray-600 dark:text-gray-300">{{ $plan->description }}</p>
+                        <p class="text-muted-foreground">{{ $plan->description }}</p>
                     </div>
                 </div>
 
                 <!-- Performance Chart -->
                 <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
                     <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-light text-black">Performance</h2>
+                        <h2 class="text-lg font-light text-foreground">Performance</h2>
                         <div class="flex space-x-2">
-                            <button data-period="1y" class="px-3 py-1 text-xs font-medium rounded bg-black dark:bg-white text-white dark:text-gray-900">1Y</button>
-                            <button data-period="3y" class="px-3 py-1 text-xs font-medium rounded bg-gray-100 text-gray-600 hover:bg-gray-200">3Y</button>
-                            <button data-period="5y" class="px-3 py-1 text-xs font-medium rounded bg-gray-100 text-gray-600 hover:bg-gray-200">5Y</button>
+                            <button data-period="1y" class="px-3 py-1 text-xs font-medium rounded bg-foreground text-background">1Y</button>
+                            <button data-period="3y" class="px-3 py-1 text-xs font-medium rounded bg-muted text-muted-foreground hover:bg-muted">3Y</button>
+                            <button data-period="5y" class="px-3 py-1 text-xs font-medium rounded bg-muted text-muted-foreground hover:bg-muted">5Y</button>
                         </div>
                     </div>
                     
@@ -104,7 +104,7 @@
 
                 <!-- Holdings Breakdown -->
                 <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
-                    <h2 class="text-lg font-light text-black dark:text-white mb-4">Holdings Breakdown</h2>
+                    <h2 class="text-lg font-light text-foreground mb-4">Holdings Breakdown</h2>
                     
                     <div class="space-y-3">
                         <div class="flex items-center justify-between p-3 bg-muted rounded-lg">
@@ -113,13 +113,13 @@
                                     <i data-lucide="building" class="w-4 h-4 text-tesla-500"></i>
                                 </div>
                                 <div>
-                                    <p class="text-sm font-medium text-black">Technology</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-300">Tesla, Apple, Microsoft</p>
+                                    <p class="text-sm font-medium text-foreground">Technology</p>
+                                    <p class="text-xs text-muted-foreground dark:text-gray-300">Tesla, Apple, Microsoft</p>
                                 </div>
                             </div>
                             <div class="text-right">
-                                <p class="text-sm font-medium text-black">45.2%</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-300">{{ currency_symbol() }}2.3M</p>
+                                <p class="text-sm font-medium text-foreground">45.2%</p>
+                                <p class="text-xs text-muted-foreground dark:text-gray-300">{{ currency_symbol() }}2.3M</p>
                             </div>
                         </div>
                         
@@ -129,13 +129,13 @@
                                     <i data-lucide="zap" class="w-4 h-4 text-green-500"></i>
                                 </div>
                                 <div>
-                                    <p class="text-sm font-medium text-black">Energy</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-300">Renewable energy companies</p>
+                                    <p class="text-sm font-medium text-foreground">Energy</p>
+                                    <p class="text-xs text-muted-foreground dark:text-gray-300">Renewable energy companies</p>
                                 </div>
                             </div>
                             <div class="text-right">
-                                <p class="text-sm font-medium text-black">28.7%</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-300">{{ currency_symbol() }}1.5M</p>
+                                <p class="text-sm font-medium text-foreground">28.7%</p>
+                                <p class="text-xs text-muted-foreground dark:text-gray-300">{{ currency_symbol() }}1.5M</p>
                             </div>
                         </div>
                         
@@ -145,13 +145,13 @@
                                     <i data-lucide="car" class="w-4 h-4 text-purple-500"></i>
                                 </div>
                                 <div>
-                                    <p class="text-sm font-medium text-black">Automotive</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-300">EV manufacturers</p>
+                                    <p class="text-sm font-medium text-foreground">Automotive</p>
+                                    <p class="text-xs text-muted-foreground dark:text-gray-300">EV manufacturers</p>
                                 </div>
                             </div>
                             <div class="text-right">
-                                <p class="text-sm font-medium text-black">26.1%</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-300">{{ currency_symbol() }}1.3M</p>
+                                <p class="text-sm font-medium text-foreground">26.1%</p>
+                                <p class="text-xs text-muted-foreground dark:text-gray-300">{{ currency_symbol() }}1.3M</p>
                             </div>
                         </div>
                     </div>
@@ -162,7 +162,7 @@
             <div class="space-y-6">
                 <!-- Investment Actions -->
                 <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
-                    <h3 class="text-lg font-light text-black dark:text-white mb-4">Invest Now</h3>
+                    <h3 class="text-lg font-light text-foreground mb-4">Invest Now</h3>
                     
                     @if($userHolding)
                         <div class="mb-4 p-3 bg-tesla-50 rounded-lg border border-tesla-200">
@@ -186,13 +186,13 @@
                     @endif
                     
                     <div class="space-y-3">
-                        <a href="{{ route('investments.buy', $plan) }}" class="w-full px-4 py-3 bg-black dark:bg-white text-white dark:text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center">
+                        <a href="{{ route('investments.buy', $plan) }}" class="w-full px-4 py-3 bg-foreground text-background text-sm font-medium rounded-lg hover:opacity-90 transition-colors duration-200 flex items-center justify-center">
                             <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
                             Buy More
                         </a>
                         
                         @if($userHolding && $userHolding->units > 0)
-                            <a href="{{ route('investments.sell', $plan) }}" class="w-full px-4 py-3 border border-gray-300 text-black dark:text-white text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors duration-200 flex items-center justify-center">
+                            <a href="{{ route('investments.sell', $plan) }}" class="w-full px-4 py-3 border border-border text-foreground text-sm font-medium rounded-lg hover:bg-muted/30 transition-colors duration-200 flex items-center justify-center">
                                 <i data-lucide="minus" class="w-4 h-4 mr-2"></i>
                                 Sell Units
                             </a>
@@ -202,37 +202,37 @@
 
                 <!-- Plan Details -->
                 <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
-                    <h3 class="text-lg font-light text-black dark:text-white mb-4">Plan Details</h3>
+                    <h3 class="text-lg font-light text-foreground mb-4">Plan Details</h3>
                     
                     <div class="space-y-3">
                         <div class="flex justify-between">
-                            <span class="text-xs text-gray-500 dark:text-gray-300">Type:</span>
-                            <span class="text-xs font-medium text-black">{{ ucfirst($plan->type) }}</span>
+                            <span class="text-xs text-muted-foreground dark:text-gray-300">Type:</span>
+                            <span class="text-xs font-medium text-foreground">{{ ucfirst($plan->type) }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-xs text-gray-500 dark:text-gray-300">Category:</span>
-                                                            <span class="text-xs font-medium text-black">{{ $plan->category }}</span>
+                            <span class="text-xs text-muted-foreground dark:text-gray-300">Category:</span>
+                                                            <span class="text-xs font-medium text-foreground">{{ $plan->category }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-xs text-gray-500 dark:text-gray-300">Risk Level:</span>
-                            <span class="text-xs font-medium text-black">{{ ucfirst($plan->risk_level) }}</span>
+                            <span class="text-xs text-muted-foreground dark:text-gray-300">Risk Level:</span>
+                            <span class="text-xs font-medium text-foreground">{{ ucfirst($plan->risk_level) }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-xs text-gray-500 dark:text-gray-300">Expense Ratio:</span>
-                            <span class="text-xs font-medium text-black">{{ number_format($plan->expense_ratio * 100, 2) }}%</span>
+                            <span class="text-xs text-muted-foreground dark:text-gray-300">Expense Ratio:</span>
+                            <span class="text-xs font-medium text-foreground">{{ number_format($plan->expense_ratio * 100, 2) }}%</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-xs text-gray-500 dark:text-gray-300">Total Assets:</span>
-                            <span class="text-xs font-medium text-black">{{ $plan->total_assets ? '$' . number_format($plan->total_assets, 0) : 'N/A' }}</span>
+                            <span class="text-xs text-muted-foreground dark:text-gray-300">Total Assets:</span>
+                            <span class="text-xs font-medium text-foreground">{{ $plan->total_assets ? '$' . number_format($plan->total_assets, 0) : 'N/A' }}</span>
                         </div>
                         <div class="flex justify-between">
-                            <span class="text-xs text-gray-500 dark:text-gray-300">Inception:</span>
-                            <span class="text-xs font-medium text-black">{{ $plan->inception_date ? $plan->inception_date->format('M Y') : 'N/A' }}</span>
+                            <span class="text-xs text-muted-foreground dark:text-gray-300">Inception:</span>
+                            <span class="text-xs font-medium text-foreground">{{ $plan->inception_date ? $plan->inception_date->format('M Y') : 'N/A' }}</span>
                         </div>
                         @if($plan->dividend_yield)
                         <div class="flex justify-between">
-                            <span class="text-xs text-gray-500 dark:text-gray-300">Dividend Yield:</span>
-                            <span class="text-xs font-medium text-black">{{ number_format($plan->dividend_yield, 2) }}%</span>
+                            <span class="text-xs text-muted-foreground dark:text-gray-300">Dividend Yield:</span>
+                            <span class="text-xs font-medium text-foreground">{{ number_format($plan->dividend_yield, 2) }}%</span>
                         </div>
                         @endif
                     </div>
@@ -240,7 +240,7 @@
 
                 <!-- Recent Activity -->
                 <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
-                    <h3 class="text-lg font-light text-black dark:text-white mb-4">Recent Activity</h3>
+                    <h3 class="text-lg font-light text-foreground mb-4">Recent Activity</h3>
                     
                     @if($recentTransactions->count() > 0)
                         <div class="space-y-3">
@@ -254,11 +254,11 @@
                                     @endif
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-xs font-medium text-black">{{ ucfirst($transaction->type) }}</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-300">{{ $transaction->created_at->format('M d, Y') }}</p>
+                                    <p class="text-xs font-medium text-foreground">{{ ucfirst($transaction->type) }}</p>
+                                    <p class="text-xs text-muted-foreground dark:text-gray-300">{{ $transaction->created_at->format('M d, Y') }}</p>
                                 </div>
                                 <div class="text-right">
-                                    <p class="text-xs font-medium text-black">{{ currency_symbol() }}{{ number_format($transaction->total_amount, 2) }}</p>
+                                    <p class="text-xs font-medium text-foreground">{{ currency_symbol() }}{{ number_format($transaction->total_amount, 2) }}</p>
                                 </div>
                             </div>
                             @endforeach
@@ -268,7 +268,7 @@
                             <div class="w-8 h-8 bg-muted rounded-full flex items-center justify-center mx-auto mb-2">
                                 <i data-lucide="activity" class="w-4 h-4 text-gray-400 dark:text-gray-300"></i>
                             </div>
-                            <p class="text-xs text-gray-500 dark:text-gray-300">No recent activity</p>
+                            <p class="text-xs text-muted-foreground dark:text-gray-300">No recent activity</p>
                         </div>
                     @endif
                 </div>
@@ -391,9 +391,9 @@
                         // Update active button
                         document.querySelectorAll('[data-period]').forEach(btn => {
                             btn.classList.remove('bg-black', 'text-white');
-                            btn.classList.add('bg-gray-100', 'text-gray-600');
+                            btn.classList.add('bg-muted', 'text-muted-foreground');
                         });
-                        this.classList.remove('bg-gray-100', 'text-gray-600');
+                        this.classList.remove('bg-muted', 'text-muted-foreground');
                         this.classList.add('bg-black', 'text-white');
                     });
                 });

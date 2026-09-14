@@ -1,4 +1,4 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-border">
+<nav x-data="{ open: false }" class="bg-card border-b border-border">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -6,10 +6,11 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                        @if(site_logo())
-                            <img src="{{ site_logo() }}" alt="{{ site_name() }}" class="h-9 w-auto">
+                        @if(site_logo_light() || site_logo_dark())
+                            <img src="{{ site_logo_light() ?? site_logo_dark() }}" alt="{{ site_name() }}" class="h-9 w-auto dark:hidden">
+                            <img src="{{ site_logo_dark() ?? site_logo_light() }}" alt="{{ site_name() }}" class="hidden h-9 w-auto dark:block">
                         @else
-                            <span class="text-xl font-bold text-gray-800">{{ site_name() }}</span>
+                            <span class="text-xl font-bold text-foreground">{{ site_name() }}</span>
                         @endif
                     </a>
                 </div>
@@ -26,7 +27,7 @@
             <div class="hidden sm:flex sm:items-center sm:ms-6">
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-muted-foreground bg-card hover:text-foreground focus:outline-none transition ease-in-out duration-150">
                             <div>{{ Auth::user()->name }}</div>
 
                             <div class="ms-1">
@@ -58,7 +59,7 @@
 
             <!-- Hamburger -->
             <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
+                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-muted-foreground hover:bg-muted focus:outline-none focus:bg-muted focus:text-muted-foreground transition duration-150 ease-in-out">
                     <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -79,8 +80,8 @@
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-border">
             <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500 dark:text-gray-300">{{ Auth::user()->email }}</div>
+                <div class="font-medium text-base text-foreground">{{ Auth::user()->name }}</div>
+                <div class="font-medium text-sm text-muted-foreground dark:text-gray-300">{{ Auth::user()->email }}</div>
             </div>
 
             <div class="mt-3 space-y-1">

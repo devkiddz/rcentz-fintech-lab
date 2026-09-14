@@ -8,8 +8,8 @@
         <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
             <!-- Background Pattern -->
             <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-48 h-48 bg-white rounded-full -translate-y-24 translate-x-24"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-12 -translate-x-12"></div>
+                <div class="absolute top-0 right-0 w-48 h-48 bg-card rounded-full -translate-y-24 translate-x-24"></div>
+                <div class="absolute bottom-0 left-0 w-24 h-24 bg-card rounded-full translate-y-12 -translate-x-12"></div>
             </div>
             
             <div class="relative z-10">
@@ -29,7 +29,7 @@
                     </div>
                     
                     <!-- Enhanced Stats Card -->
-                    <div class="bg-white bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-80">
+                    <div class="bg-card bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-80">
                         <div class="flex items-center justify-between mb-3">
                             <div>
                                 <p class="text-xs text-tesla-100 dark:text-gray-300 mb-1">Active Stocks</p>
@@ -60,7 +60,7 @@
             <a href="{{ route('stocks.gainers') }}" class="block bg-card rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-green-200 dark:hover:border-green-600 transition-all duration-200 group cursor-pointer" data-market-section="gainers">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Top Gainers</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Top Gainers</p>
                         <p class="text-lg font-light text-green-600 stock-price" data-stock-symbol="{{ $gainers->first() ? $gainers->first()->symbol : '' }}">+{{ $gainers->first() ? number_format($gainers->first()->change_percentage, 2) : '0.00' }}%</p>
                         <p class="text-xs text-gray-400 mt-1">Click to view all</p>
                     </div>
@@ -74,7 +74,7 @@
             <a href="{{ route('stocks.losers') }}" class="block bg-card rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-red-200 dark:hover:border-red-600 transition-all duration-200 group cursor-pointer" data-market-section="losers">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Top Losers</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Top Losers</p>
                         <p class="text-lg font-light text-red-600 stock-price" data-stock-symbol="{{ $losers->first() ? $losers->first()->symbol : '' }}">{{ $losers->first() ? number_format($losers->first()->change_percentage, 2) : '0.00' }}%</p>
                         <p class="text-xs text-gray-400 mt-1">Click to view all</p>
                     </div>
@@ -88,8 +88,8 @@
             <a href="{{ route('stocks.most-active') }}" class="block bg-card rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md hover:border-tesla-200 dark:hover:border-tesla-500 transition-all duration-200 group cursor-pointer" data-market-section="most-active">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Most Active</p>
-                        <p class="text-lg font-light text-black stock-volume" data-stock-symbol="{{ $mostActive->first() ? $mostActive->first()->symbol : '' }}">{{ $mostActive->first() ? $mostActive->first()->formatted_volume : '0' }}</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Most Active</p>
+                        <p class="text-lg font-light text-foreground stock-volume" data-stock-symbol="{{ $mostActive->first() ? $mostActive->first()->symbol : '' }}">{{ $mostActive->first() ? $mostActive->first()->formatted_volume : '0' }}</p>
                         <p class="text-xs text-gray-400 mt-1">Click to view all</p>
                     </div>
                     <div class="w-8 h-8 flex items-center justify-center">
@@ -104,14 +104,14 @@
             <form method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <!-- Search -->
                 <div>
-                    <label for="search" class="block text-xs font-medium text-gray-700 mb-1">Search</label>
-                    <input type="text" id="search" name="search" value="{{ request('search') }}" placeholder="Symbol or company name" class="w-full px-3 py-2 border border-border dark:bg-dark-muted dark:text-white rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200">
+                    <label for="search" class="block text-xs font-medium text-foreground mb-1">Search</label>
+                    <input type="text" id="search" name="search" value="{{ request('search') }}" placeholder="Symbol or company name" class="w-full px-3 py-2 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
                 </div>
 
                 <!-- Sector Filter -->
                 <div>
-                    <label for="sector" class="block text-xs font-medium text-gray-700 mb-1">Sector</label>
-                    <select id="sector" name="sector" class="w-full px-3 py-2 border border-border dark:bg-dark-muted dark:text-white rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200">
+                    <label for="sector" class="block text-xs font-medium text-foreground mb-1">Sector</label>
+                    <select id="sector" name="sector" class="w-full px-3 py-2 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
                         <option value="">All Sectors</option>
                         @foreach($sectors as $sector)
                             <option value="{{ $sector }}" {{ request('sector') == $sector ? 'selected' : '' }}>{{ $sector }}</option>
@@ -121,8 +121,8 @@
 
                 <!-- Industry Filter -->
                 <div>
-                    <label for="industry" class="block text-xs font-medium text-gray-700 mb-1">Industry</label>
-                    <select id="industry" name="industry" class="w-full px-3 py-2 border border-border dark:bg-dark-muted dark:text-white rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200">
+                    <label for="industry" class="block text-xs font-medium text-foreground mb-1">Industry</label>
+                    <select id="industry" name="industry" class="w-full px-3 py-2 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
                         <option value="">All Industries</option>
                         @foreach($industries as $industry)
                             <option value="{{ $industry }}" {{ request('industry') == $industry ? 'selected' : '' }}>{{ $industry }}</option>
@@ -132,8 +132,8 @@
 
                 <!-- Sort -->
                 <div>
-                    <label for="sort" class="block text-xs font-medium text-gray-700 mb-1">Sort By</label>
-                    <select id="sort" name="sort" class="w-full px-3 py-2 border border-border dark:bg-dark-muted dark:text-white rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200">
+                    <label for="sort" class="block text-xs font-medium text-foreground mb-1">Sort By</label>
+                    <select id="sort" name="sort" class="w-full px-3 py-2 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
                         <option value="symbol" {{ request('sort') == 'symbol' ? 'selected' : '' }}>Symbol</option>
                         <option value="price" {{ request('sort') == 'price' ? 'selected' : '' }}>Price</option>
                         <option value="change" {{ request('sort') == 'change' ? 'selected' : '' }}>Change</option>
@@ -144,11 +144,11 @@
 
                 <!-- Actions -->
                 <div class="flex items-end space-x-2">
-                    <button type="submit" class="px-4 py-2 bg-black dark:bg-white text-white dark:text-gray-900 text-xs font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200">
+                    <button type="submit" class="px-4 py-2 bg-foreground text-background text-xs font-medium rounded-lg hover:opacity-90 transition-colors duration-200">
                         <i data-lucide="search" class="w-3 h-3 mr-1"></i>
                         Search
                     </button>
-                    <a href="{{ route('stocks.index') }}" class="px-4 py-2 border border-border text-black dark:text-white dark:bg-dark-card text-xs font-medium rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200">
+                    <a href="{{ route('stocks.index') }}" class="px-4 py-2 border border-border text-foreground text-xs font-medium rounded-lg hover:bg-muted/30 dark:hover:bg-gray-800 transition-colors duration-200">
                         <i data-lucide="refresh-cw" class="w-3 h-3 mr-1"></i>
                         Clear
                     </a>
@@ -161,28 +161,28 @@
         <div class="bg-card rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-lg font-light text-black dark:text-white mb-1">Featured Stocks</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-300">Handpicked stocks for your portfolio</p>
+                    <h3 class="text-lg font-light text-foreground mb-1">Featured Stocks</h3>
+                    <p class="text-xs text-muted-foreground dark:text-gray-300">Handpicked stocks for your portfolio</p>
                 </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" data-market-section="featured">
                 @foreach($featuredStocks as $stock)
-                <div class="bg-muted rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-300" data-stock-index="{{ $loop->index }}">
+                <div class="bg-muted rounded-lg p-4 hover:bg-muted dark:hover:bg-gray-700 transition-all duration-300" data-stock-index="{{ $loop->index }}">
                     <div class="flex items-center justify-between mb-3">
                         <div>
-                            <h4 class="text-sm font-medium text-black stock-symbol">{{ $stock->symbol }}</h4>
-                            <p class="text-xs text-gray-500 stock-name">{{ $stock->company_name }}</p>
+                            <h4 class="text-sm font-medium text-foreground stock-symbol">{{ $stock->symbol }}</h4>
+                            <p class="text-xs text-muted-foreground stock-name">{{ $stock->company_name }}</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-sm font-medium text-black stock-price" data-stock-symbol="{{ $stock->symbol }}" data-previous-price="{{ $stock->current_price }}">{{ $stock->formatted_current_price }}</p>
+                            <p class="text-sm font-medium text-foreground stock-price" data-stock-symbol="{{ $stock->symbol }}" data-previous-price="{{ $stock->current_price }}">{{ $stock->formatted_current_price }}</p>
                             <p class="text-xs {{ $stock->change_color }} stock-change" data-stock-change="{{ $stock->symbol }}">
                                 {{ $stock->formatted_change_amount }} ({{ $stock->formatted_change_percentage }})
                             </p>
                         </div>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-xs text-gray-500 dark:text-gray-300">{{ $stock->sector }}</span>
+                        <span class="text-xs text-muted-foreground dark:text-gray-300">{{ $stock->sector }}</span>
                         <a href="{{ route('stocks.show', $stock) }}" class="text-xs text-tesla-600 hover:text-tesla-800 transition-colors duration-200">
                             View Details
                         </a>
@@ -198,8 +198,8 @@
             <div class="px-6 py-4 border-b border-border">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-lg font-light text-black dark:text-white mb-1">All Stocks</h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-300">{{ $stocks->total() }} stocks available</p>
+                        <h3 class="text-lg font-light text-foreground mb-1">All Stocks</h3>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300">{{ $stocks->total() }} stocks available</p>
                     </div>
                 </div>
             </div>
@@ -207,19 +207,19 @@
             @if($stocks->count() > 0)
                 <div class="overflow-x-auto">
                     <table class="w-full">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-muted/30">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Volume</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Market Cap</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Stock</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Price</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Change</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Volume</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Market Cap</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-card divide-y divide-gray-100 dark:divide-tesla-600">
                             @foreach($stocks as $stock)
-                            <tr class="hover:bg-gray-50 transition-colors duration-200 stock-row" data-stock-symbol="{{ $stock->symbol }}">
+                            <tr class="hover:bg-muted/30 transition-colors duration-200 stock-row" data-stock-symbol="{{ $stock->symbol }}">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden">
@@ -227,18 +227,18 @@
                                                 <img src="{{ $stock->logo_url }}" alt="{{ $stock->company_name }}" class="w-8 h-8 object-cover">
                                             @else
                                                 <div class="w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                                                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
+                                                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-muted-foreground"></i>
                                                 </div>
                                             @endif
                                         </div>
                                         <div class="ml-3">
-                                            <div class="text-sm font-medium text-black stock-symbol">{{ $stock->symbol }}</div>
-                                            <div class="text-xs text-gray-500 stock-name">{{ $stock->company_name }}</div>
+                                            <div class="text-sm font-medium text-foreground stock-symbol">{{ $stock->symbol }}</div>
+                                            <div class="text-xs text-muted-foreground stock-name">{{ $stock->company_name }}</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm text-black stock-price" data-stock-symbol="{{ $stock->symbol }}" data-previous-price="{{ $stock->current_price }}">{{ $stock->formatted_current_price }}</div>
+                                    <div class="text-sm text-foreground stock-price" data-stock-symbol="{{ $stock->symbol }}" data-previous-price="{{ $stock->current_price }}">{{ $stock->formatted_current_price }}</div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="text-sm {{ $stock->change_color }} stock-change" data-stock-change="{{ $stock->symbol }}">
@@ -249,10 +249,10 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm text-black stock-volume" data-stock-volume="{{ $stock->symbol }}">{{ $stock->formatted_volume }}</div>
+                                    <div class="text-sm text-foreground stock-volume" data-stock-volume="{{ $stock->symbol }}">{{ $stock->formatted_volume }}</div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm text-black">{{ $stock->formatted_market_cap }}</div>
+                                    <div class="text-sm text-foreground">{{ $stock->formatted_market_cap }}</div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex space-x-2">
@@ -309,9 +309,9 @@
                     <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                         <i data-lucide="bar-chart-3" class="w-8 h-8 text-gray-400 dark:text-gray-300"></i>
                     </div>
-                    <h3 class="text-lg font-light text-black dark:text-white mb-2">No stocks found</h3>
-                    <p class="text-gray-600 text-sm mb-4">Try adjusting your search criteria</p>
-                    <a href="{{ route('stocks.index') }}" class="inline-flex items-center px-4 py-2 bg-black dark:bg-white text-white dark:text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200">
+                    <h3 class="text-lg font-light text-foreground mb-2">No stocks found</h3>
+                    <p class="text-muted-foreground text-sm mb-4">Try adjusting your search criteria</p>
+                    <a href="{{ route('stocks.index') }}" class="inline-flex items-center px-4 py-2 bg-foreground text-background text-sm font-medium rounded-lg hover:opacity-90 transition-colors duration-200">
                         <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i>
                         Clear Filters
                     </a>

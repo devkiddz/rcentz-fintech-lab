@@ -8,8 +8,8 @@
         <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
             <!-- Background Pattern -->
             <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-48 h-48 bg-white rounded-full -translate-y-24 translate-x-24"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-12 -translate-x-12"></div>
+                <div class="absolute top-0 right-0 w-48 h-48 bg-card rounded-full -translate-y-24 translate-x-24"></div>
+                <div class="absolute bottom-0 left-0 w-24 h-24 bg-card rounded-full translate-y-12 -translate-x-12"></div>
             </div>
             
             <div class="relative z-10">
@@ -20,7 +20,7 @@
                     </div>
                     
                     <!-- Profile Image Preview -->
-                    <div class="bg-white bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-64">
+                    <div class="bg-card bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-64">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-xs text-tesla-100 dark:text-gray-300 mb-1">Profile Image</p>
@@ -51,8 +51,8 @@
                 <div class="space-y-4">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 class="text-lg font-light text-black dark:text-white mb-1">Personal Information</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-300">Update your basic account details</p>
+                            <h3 class="text-lg font-light text-foreground mb-1">Personal Information</h3>
+                            <p class="text-xs text-muted-foreground dark:text-gray-300">Update your basic account details</p>
                         </div>
                         <div class="w-8 h-8 flex items-center justify-center">
                             <i data-lucide="user" class="w-4 h-4 text-tesla-600"></i>
@@ -66,7 +66,7 @@
                                    id="name" 
                                    name="name" 
                                    value="{{ old('name', $user->name) }}" 
-                                   class="w-full px-4 py-3 border border-border dark:bg-dark-muted dark:text-white rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200"
+                                   class="w-full px-4 py-3 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
                                    required>
                             @error('name')
                                 <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -79,7 +79,7 @@
                                    id="email" 
                                    name="email" 
                                    value="{{ old('email', $user->email) }}" 
-                                   class="w-full px-4 py-3 border border-border dark:bg-dark-muted dark:text-white rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200"
+                                   class="w-full px-4 py-3 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
                                    required>
                             @error('email')
                                 <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -92,7 +92,7 @@
                             <label for="country" class="block text-sm font-medium text-foreground mb-2">Country</label>
                             <select id="country" 
                                     name="country" 
-                                    class="w-full px-4 py-3 border border-border dark:bg-dark-muted dark:text-white rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200">
+                                    class="w-full px-4 py-3 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
                                 <option value="">Select Country</option>
                             </select>
                             @error('country')
@@ -104,7 +104,7 @@
                             <label for="currency" class="block text-sm font-medium text-foreground mb-2">Preferred Currency</label>
                             <select id="currency" 
                                     name="currency" 
-                                    class="w-full px-4 py-3 border border-border dark:bg-dark-muted dark:text-white rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200">
+                                    class="w-full px-4 py-3 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
                                 <option value="USD" {{ old('currency', $user->currency) == 'USD' ? 'selected' : '' }}>USD - US Dollar ($)</option>
                                 <option value="EUR" {{ old('currency', $user->currency) == 'EUR' ? 'selected' : '' }}>EUR - Euro (€)</option>
                                 <option value="GBP" {{ old('currency', $user->currency) == 'GBP' ? 'selected' : '' }}>GBP - British Pound (£)</option>
@@ -147,8 +147,8 @@
                 <div class="space-y-4">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 class="text-lg font-light text-black dark:text-white mb-1">Profile Image</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-300">Upload a new profile picture</p>
+                            <h3 class="text-lg font-light text-foreground mb-1">Profile Image</h3>
+                            <p class="text-xs text-muted-foreground dark:text-gray-300">Upload a new profile picture</p>
                         </div>
                         <div class="w-8 h-8 flex items-center justify-center">
                             <i data-lucide="image" class="w-4 h-4 text-purple-600"></i>
@@ -171,9 +171,9 @@
                                            id="profile_image" 
                                            name="profile_image" 
                                            accept="image/*"
-                                           class="w-full px-4 py-3 border border-border dark:bg-dark-muted dark:text-white rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200"
+                                           class="w-full px-4 py-3 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
                                            onchange="previewImage(this)">
-                                    <p class="text-xs text-gray-500 dark:text-gray-300 mt-1">JPG, PNG or GIF. Max 2MB.</p>
+                                    <p class="text-xs text-muted-foreground dark:text-gray-300 mt-1">JPG, PNG or GIF. Max 2MB.</p>
                                     @error('profile_image')
                                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                                     @enderror
@@ -187,8 +187,8 @@
                 <div class="space-y-4">
                     <div class="flex items-center justify-between mb-4">
                         <div>
-                            <h3 class="text-lg font-light text-black dark:text-white mb-1">Security Settings</h3>
-                            <p class="text-xs text-gray-500 dark:text-gray-300">Update your password</p>
+                            <h3 class="text-lg font-light text-foreground mb-1">Security Settings</h3>
+                            <p class="text-xs text-muted-foreground dark:text-gray-300">Update your password</p>
                         </div>
                         <div class="w-8 h-8 flex items-center justify-center">
                             <i data-lucide="shield" class="w-4 h-4 text-green-600"></i>
@@ -201,7 +201,7 @@
                             <input type="password" 
                                    id="current_password" 
                                    name="current_password" 
-                                   class="w-full px-4 py-3 border border-border dark:bg-dark-muted dark:text-white rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200">
+                                   class="w-full px-4 py-3 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
                             @error('current_password')
                                 <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                             @enderror
@@ -212,7 +212,7 @@
                             <input type="password" 
                                    id="password" 
                                    name="password" 
-                                   class="w-full px-4 py-3 border border-border dark:bg-dark-muted dark:text-white rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200">
+                                   class="w-full px-4 py-3 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
                             @error('password')
                                 <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                             @enderror
@@ -224,17 +224,17 @@
                         <input type="password" 
                                id="password_confirmation" 
                                name="password_confirmation" 
-                               class="w-full px-4 py-3 border border-border dark:bg-dark-muted dark:text-white rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200">
+                               class="w-full px-4 py-3 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
                     </div>
                 </div>
 
                 <!-- Submit Button -->
                 <div class="flex items-center justify-between pt-6 border-t border-border">
                     <div>
-                        <p class="text-sm text-gray-600 dark:text-gray-300">Last updated: {{ $user->updated_at->format('M j, Y g:i A') }}</p>
+                        <p class="text-sm text-muted-foreground">Last updated: {{ $user->updated_at->format('M j, Y g:i A') }}</p>
                     </div>
                     <button type="submit" 
-                            class="px-6 py-3 bg-black dark:bg-white text-white dark:text-gray-900 font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200 flex items-center">
+                            class="px-6 py-3 bg-foreground text-background font-medium rounded-lg hover:opacity-90 transition-colors duration-200 flex items-center">
                         <i data-lucide="save" class="w-4 h-4 mr-2"></i>
                         Save Changes
                     </button>

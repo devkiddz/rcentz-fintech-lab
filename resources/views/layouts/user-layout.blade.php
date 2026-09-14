@@ -39,7 +39,7 @@
             }
         </script>
     </head>
-    <body class="font-sans bg-background text-foreground transition-colors duration-200">
+    <body class="customer-workspace font-sans bg-background text-foreground transition-colors duration-200" data-theme-scope="customer">
         <div class="min-h-screen flex">
             <!-- Mobile Sidebar Overlay -->
             <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-[9998] lg:hidden hidden" onclick="toggleSidebar()"></div>
@@ -66,7 +66,7 @@
                     <div class="px-5 py-4 border-b border-border bg-card">
                         <div class="flex items-center space-x-3">
                             <div class="relative">
-                                <div class="w-10 h-10 bg-gradient-to-br from-tesla-400 to-tesla-600 dark:from-tesla-400 dark:to-tesla-600 rounded-lg flex items-center justify-center">
+                                <div class="w-10 h-10 bg-foreground dark:from-tesla-400 dark:to-tesla-600 rounded-lg flex items-center justify-center">
                                     @if(auth()->user()->profile_image)
                                         <img src="{{ asset('storage/' . auth()->user()->profile_image) }}" alt="{{ auth()->user()->name }}" class="w-10 h-10 rounded-lg object-cover">
                                     @else
@@ -170,12 +170,13 @@
                             </div>
                         </details>
 
-                        <details class="group rounded-xl" {{ request()->routeIs('profile.*','support.*') ? 'open' : '' }}>
+                        <details class="group rounded-xl" {{ request()->routeIs('dashboard','account.*','profile.*','support.*') ? 'open' : '' }}>
                             <summary class="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted">
                                 <span class="flex items-center"><i data-lucide="circle-user" class="w-4 h-4 mr-3"></i>Account</span>
                                 <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
                             </summary>
                             <div class="ml-5 mt-1 pl-5 border-l border-border space-y-1">
+                                <a href="{{ route('dashboard') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="layout-dashboard" class="w-4 h-4 mr-3"></i>Account Overview</a>
                                 <a href="{{ route('profile.edit') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="user-round-cog" class="w-4 h-4 mr-3"></i>Profile Settings</a>
                                 <a href="{{ route('profile.kyc') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="shield-check" class="w-4 h-4 mr-3"></i>Verify Identity @if(!auth()->user()->kyc || !auth()->user()->kyc->isApproved())<span class="ml-auto text-[10px] bg-red-100 text-red-700 rounded-full px-2 py-0.5">Required</span>@endif</a>
                                 <a href="{{ route('support.index') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="headphones" class="w-4 h-4 mr-3"></i>Support Center</a>
@@ -200,123 +201,13 @@
 
             <!-- Main Content -->
             <div class="flex-1 flex min-w-0 flex-col overflow-hidden lg:ml-72 bg-background">
-                <!-- Enhanced Top Bar -->
-                <header class="bg-background/95 border-b border-border backdrop-blur transition-colors duration-200">
-                    <div class="mx-auto flex min-h-16 w-full max-w-[1536px] items-center justify-between px-4 sm:px-6 lg:px-8">
-                        <div class="flex items-center">
-                            <button onclick="toggleSidebar()" class="lg:hidden text-muted-foreground dark:text-dark-text hover:text-gray-900 dark:hover:text-white p-1.5 rounded-md hover:bg-muted dark:hover:bg-gray-700 mr-3">
-                                <i data-lucide="menu" class="w-5 h-5"></i>
-                            </button>
-                            @if (isset($header))
-                                <div class="text-base font-medium tracking-tight text-foreground">
-                                    {{ $header }}
-                                </div>
-                            @endif
-                        </div>
+                @include('partials.shell.customer-topbar')
 
-                        <!-- Enhanced Right side with theme toggle and notifications -->
-                        <div class="flex items-center space-x-3">
-                            <!-- Theme Toggle Button -->
-                            <button 
-                                data-theme-toggle onclick="window.AxausTheme.toggle()" 
-                                class="p-2 text-muted-foreground dark:text-dark-text hover:text-tesla-600 dark:hover:text-dark-accent rounded-lg hover:bg-tesla-50 dark:hover:bg-gray-700 transition-all duration-200 group"
-                                title="Toggle Theme"
-                            >
-                                <i data-lucide="sun" class="w-5 h-5 hidden dark:block group-hover:rotate-180 transition-transform duration-500"></i>
-                                <i data-lucide="moon" class="w-5 h-5 block dark:hidden group-hover:-rotate-90 transition-transform duration-500"></i>
-                            </button>
+                <div class="shell-alert-stack">
+                    @include('partials.shell.flash-messages')
+                </div>
 
-                            <!-- Impersonation Stop Button -->
-                            @if(app('impersonate')->isImpersonating())
-                                <a href="{{ route('impersonate.leave') }}" 
-                                   class="inline-flex items-center px-3 py-2 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-all duration-200">
-                                    <i data-lucide="log-out" class="w-3 h-3 mr-1"></i>
-                                    Stop Impersonating
-                                </a>
-                            @endif
-                            
-                            <!-- Notifications -->
-                            <div class="relative">
-                                <button onclick="toggleNotifications()" class="relative p-2 text-muted-foreground dark:text-dark-text hover:text-tesla-600 dark:hover:text-dark-accent rounded-lg hover:bg-tesla-50 dark:hover:bg-gray-700 transition-all duration-200">
-                                    <i data-lucide="bell" class="w-5 h-5"></i>
-                                    <!-- Notification badge -->
-                                    <span id="notification-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center hidden">0</span>
-                                </button>
 
-                                <!-- Enhanced Notifications Dropdown -->
-                                <div id="notifications-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-card rounded-lg shadow-lg border border-border z-50">
-                                    <div class="p-3 border-b border-border">
-                                        <div class="flex items-center justify-between">
-                                            <h3 class="text-sm font-medium text-foreground">Notifications</h3>
-                                            <button onclick="markAllNotificationsAsRead()" class="text-xs text-muted-foreground hover:text-gray-900 dark:hover:text-white">Mark all read</button>
-                                        </div>
-                                    </div>
-                                    <div id="notifications-list" class="max-h-64 overflow-y-auto">
-                                        <!-- Notifications will be loaded here dynamically -->
-                                        <div class="p-3 text-center">
-                                            <div class="w-6 h-6 bg-muted rounded-full flex items-center justify-center mx-auto mb-2">
-                                                <i data-lucide="loader-2" class="w-3 h-3 text-gray-400 dark:text-gray-300 animate-spin"></i>
-                                            </div>
-                                            <p class="text-xs text-muted-foreground dark:text-gray-300">Loading notifications...</p>
-                                        </div>
-                                    </div>
-                                    <div class="p-3 border-t border-border">
-                                        <a href="{{ route('notifications.index') }}" class="text-xs text-tesla-600 dark:text-gray-300 hover:text-tesla-700 dark:hover:text-white font-medium">View all notifications</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </header>
-
-                <!-- Enhanced Flash Messages -->
-                @if (session('success'))
-                    <div class="bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-3 mx-6 mt-3 rounded-r-md" role="alert">
-                        <div class="flex items-center">
-                            <i data-lucide="check-circle" class="w-4 h-4 mr-2 flex-shrink-0"></i>
-                            <span class="text-sm">{{ session('success') }}</span>
-                            <button onclick="this.parentElement.parentElement.style.display='none'" class="ml-auto text-green-500 hover:text-green-700">
-                                <i data-lucide="x" class="w-3 h-3"></i>
-                            </button>
-                        </div>
-                    </div>
-                @endif
-
-                @if (session('error'))
-                    <div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 mx-6 mt-3 rounded-r-md" role="alert">
-                        <div class="flex items-center">
-                            <i data-lucide="alert-circle" class="w-4 h-4 mr-2 flex-shrink-0"></i>
-                            <span class="text-sm">{{ session('error') }}</span>
-                            <button onclick="this.parentElement.parentElement.style.display='none'" class="ml-auto text-red-500 hover:text-red-700">
-                                <i data-lucide="x" class="w-3 h-3"></i>
-                            </button>
-                        </div>
-                    </div>
-                @endif
-
-                @if (session('warning'))
-                    <div class="bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 px-4 py-3 mx-6 mt-3 rounded-r-md" role="alert">
-                        <div class="flex items-center">
-                            <i data-lucide="alert-triangle" class="w-4 h-4 mr-2 flex-shrink-0"></i>
-                            <span class="text-sm">{{ session('warning') }}</span>
-                            <button onclick="this.parentElement.parentElement.style.display='none'" class="ml-auto text-yellow-500 hover:text-yellow-700">
-                                <i data-lucide="x" class="w-3 h-3"></i>
-                            </button>
-                        </div>
-                    </div>
-                @endif
-
-                @if (session('info'))
-                    <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 px-4 py-3 mx-6 mt-3 rounded-r-md" role="alert">
-                        <div class="flex items-center">
-                            <i data-lucide="info" class="w-4 h-4 mr-2 flex-shrink-0"></i>
-                            <span class="text-sm">{{ session('info') }}</span>
-                            <button onclick="this.parentElement.parentElement.style.display='none'" class="ml-auto text-blue-500 hover:text-blue-700">
-                                <i data-lucide="x" class="w-3 h-3"></i>
-                            </button>
-                        </div>
-                    </div>
-                @endif
 
                 <!-- Page Content -->
                 <main class="flex-1 overflow-y-auto bg-background px-4 py-5 pb-24 transition-colors duration-200 sm:px-6 lg:px-8 lg:py-7 lg:pb-8">
@@ -328,10 +219,10 @@
         <!-- Mobile Bottom Navigation + Quick Actions -->
         <div class="fixed bottom-0 left-0 right-0 bg-card border-t border-border lg:hidden z-50 shadow-2xl transition-colors duration-200">
             <div class="grid grid-cols-5 items-end px-2 py-2">
-                <a href="{{ route('dashboard') }}" class="flex flex-col items-center gap-1 py-1 text-xs {{ request()->routeIs('dashboard') ? 'text-tesla-600' : 'text-muted-foreground' }}"><i data-lucide="home" class="w-5 h-5"></i><span>Home</span></a>
-                <a href="{{ route('stocks.index') }}" class="flex flex-col items-center gap-1 py-1 text-xs {{ request()->routeIs('stocks.*','trading.*') ? 'text-tesla-600' : 'text-muted-foreground' }}"><i data-lucide="candlestick-chart" class="w-5 h-5"></i><span>Markets</span></a>
+                <a href="{{ route('dashboard') }}" class="flex flex-col items-center gap-1 py-1 text-xs {{ request()->routeIs('dashboard') ? 'text-foreground' : 'text-muted-foreground' }}"><i data-lucide="home" class="w-5 h-5"></i><span>Home</span></a>
+                <a href="{{ route('stocks.index') }}" class="flex flex-col items-center gap-1 py-1 text-xs {{ request()->routeIs('stocks.*','trading.*') ? 'text-foreground' : 'text-muted-foreground' }}"><i data-lucide="candlestick-chart" class="w-5 h-5"></i><span>Markets</span></a>
                 <button type="button" onclick="toggleQuickActions()" class="-mt-7 mx-auto w-14 h-14 rounded-full bg-muted text-foreground shadow-xl ring-4 ring-card flex items-center justify-center" aria-label="Open quick actions"><i data-lucide="plus" class="w-6 h-6"></i></button>
-                <a href="{{ route('wallet.index') }}" class="flex flex-col items-center gap-1 py-1 text-xs {{ request()->routeIs('wallet.*') ? 'text-tesla-600' : 'text-muted-foreground' }}"><i data-lucide="wallet" class="w-5 h-5"></i><span>Wallet</span></a>
+                <a href="{{ route('wallet.index') }}" class="flex flex-col items-center gap-1 py-1 text-xs {{ request()->routeIs('wallet.*') ? 'text-foreground' : 'text-muted-foreground' }}"><i data-lucide="wallet" class="w-5 h-5"></i><span>Wallet</span></a>
                 <button type="button" onclick="toggleSidebar()" class="flex flex-col items-center gap-1 py-1 text-xs text-muted-foreground"><i data-lucide="menu" class="w-5 h-5"></i><span>Menu</span></button>
             </div>
         </div>
@@ -344,7 +235,7 @@
                     <button type="button" onclick="toggleQuickActions(false)" class="p-2 rounded-full hover:bg-muted text-muted-foreground"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
                 <div class="grid grid-cols-2 gap-3 mb-4">
-                    <a href="{{ route('investments.index') }}" class="rounded-2xl border border-border bg-background p-4 flex flex-col items-center justify-center gap-2 h-24 hover:border-tesla-500"><i data-lucide="trending-up" class="w-7 h-7 text-tesla-500"></i><span class="font-medium">Invest</span></a>
+                    <a href="{{ route('investments.index') }}" class="rounded-2xl border border-border bg-background p-4 flex flex-col items-center justify-center gap-2 h-24 hover:border-foreground/40"><i data-lucide="trending-up" class="w-7 h-7 text-foreground"></i><span class="font-medium">Invest</span></a>
                     <a href="{{ route('wallet.withdraw') }}" class="rounded-2xl border border-border bg-background p-4 flex flex-col items-center justify-center gap-2 h-24 hover:border-emerald-500"><i data-lucide="wallet-cards" class="w-7 h-7 text-emerald-500"></i><span class="font-medium">Withdraw</span></a>
                 </div>
                 <div class="space-y-1">

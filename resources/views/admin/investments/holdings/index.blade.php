@@ -85,7 +85,7 @@
                 <div class="p-4">
                     <div class="space-y-4">
                         @foreach($holdings as $holding)
-                        <div class="bg-muted/40 dark:bg-dark-muted rounded-lg p-4 border border-border dark:border-gray-700 hover:bg-card hover:shadow-sm transition-all duration-200">
+                        <div class="bg-muted/40 rounded-lg p-4 border border-border dark:border-gray-700 hover:bg-card hover:shadow-sm transition-all duration-200">
                             <!-- Mobile Layout -->
                             <div class="md:hidden">
                                 <div class="flex items-start space-x-3 mb-3">
@@ -112,11 +112,11 @@
                                 <!-- Mobile Actions -->
                                 <div class="flex flex-wrap gap-2">
                                     <a href="{{ route('admin.investments.holdings.show', $holding) }}" 
-                                       class="flex-1 px-3 py-2 bg-muted text-muted-foreground text-xs font-medium rounded text-center hover:bg-gray-200 transition-colors">
+                                       class="flex-1 px-3 py-2 bg-muted text-muted-foreground text-xs font-medium rounded text-center hover:bg-muted transition-colors">
                                         View Details
                                     </a>
                                     <a href="{{ route('admin.users.show', $holding->user) }}" 
-                                       class="flex-1 px-3 py-2 bg-black dark:bg-card text-white dark:text-foreground text-xs font-medium rounded text-center hover:bg-gray-800 dark:hover:bg-muted transition-colors">
+                                       class="flex-1 px-3 py-2 bg-black dark:bg-card text-white dark:text-foreground text-xs font-medium rounded text-center hover:opacity-90 transition-colors">
                                         View User
                                     </a>
                                 </div>
@@ -150,11 +150,11 @@
                                     
                                     <div class="flex space-x-2">
                                         <a href="{{ route('admin.investments.holdings.show', $holding) }}" 
-                                           class="px-3 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-gray-200 transition-colors">
+                                           class="px-3 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-muted transition-colors">
                                             View
                                         </a>
                                         <a href="{{ route('admin.users.show', $holding->user) }}" 
-                                           class="px-3 py-1.5 bg-black dark:bg-card text-white dark:text-foreground text-xs font-medium rounded hover:bg-gray-800 dark:hover:bg-muted transition-colors">
+                                           class="px-3 py-1.5 bg-black dark:bg-card text-white dark:text-foreground text-xs font-medium rounded hover:opacity-90 transition-colors">
                                             User
                                         </a>
                                     </div>
@@ -175,7 +175,7 @@
             @else
             <!-- Empty State -->
             <div class="bg-card border border-border p-8 rounded-lg text-center">
-                <div class="w-16 h-16 bg-muted dark:bg-dark-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8 text-gray-400 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>

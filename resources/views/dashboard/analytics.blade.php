@@ -8,8 +8,8 @@
         <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
             <!-- Background Pattern -->
             <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-48 h-48 bg-white rounded-full -translate-y-24 translate-x-24"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-12 -translate-x-12"></div>
+                <div class="absolute top-0 right-0 w-48 h-48 bg-card rounded-full -translate-y-24 translate-x-24"></div>
+                <div class="absolute bottom-0 left-0 w-24 h-24 bg-card rounded-full translate-y-12 -translate-x-12"></div>
             </div>
             
             <div class="relative z-10">
@@ -20,7 +20,7 @@
                     </div>
                     
                     <!-- Enhanced Stats Card -->
-                    <div class="bg-white bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-80">
+                    <div class="bg-card bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-80">
                         <div class="flex items-center justify-between mb-3">
                             <div>
                                 <p class="text-xs text-tesla-100 dark:text-gray-300 mb-1">Total Return</p>
@@ -55,8 +55,8 @@
             <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Portfolio Value</p>
-                        <p class="text-lg font-light text-black">{{ currency_symbol() }}{{ number_format($totalPortfolioValue, 2) }}</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Portfolio Value</p>
+                        <p class="text-lg font-light text-foreground">{{ currency_symbol() }}{{ number_format($totalPortfolioValue, 2) }}</p>
                     </div>
                     <div class="w-8 h-8 flex items-center justify-center">
                         <i data-lucide="pie-chart" class="w-4 h-4 text-tesla-600"></i>
@@ -68,8 +68,8 @@
             <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Total Invested</p>
-                        <p class="text-lg font-light text-black">{{ currency_symbol() }}{{ number_format($totalInvested, 2) }}</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Total Invested</p>
+                        <p class="text-lg font-light text-foreground">{{ currency_symbol() }}{{ number_format($totalInvested, 2) }}</p>
                     </div>
                     <div class="w-8 h-8 flex items-center justify-center">
                         <i data-lucide="dollar-sign" class="w-4 h-4 text-green-600"></i>
@@ -81,7 +81,7 @@
             <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Total Gain/Loss</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Total Gain/Loss</p>
                         <p class="text-lg font-light {{ $totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600' }}">
                             {{ $totalGainLoss >= 0 ? '+' : '' }}{{ currency_symbol() }}{{ number_format($totalGainLoss, 2) }}
                         </p>
@@ -96,7 +96,7 @@
             <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Total Return</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Total Return</p>
                         <p class="text-lg font-light {{ $totalGainLossPercentage >= 0 ? 'text-green-600' : 'text-red-600' }}">
                             {{ $totalGainLossPercentage >= 0 ? '+' : '' }}{{ number_format($totalGainLossPercentage, 2) }}%
                         </p>
@@ -112,46 +112,46 @@
         <div class="bg-card rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-lg font-light text-black dark:text-white mb-1">Asset Allocation</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-300">Portfolio breakdown by asset type</p>
+                    <h3 class="text-lg font-light text-foreground mb-1">Asset Allocation</h3>
+                    <p class="text-xs text-muted-foreground dark:text-gray-300">Portfolio breakdown by asset type</p>
                 </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- Investment Allocation -->
                 <div class="bg-muted rounded-lg p-4">
-                    <h4 class="text-sm font-medium text-black dark:text-white mb-3">Investment Plans</h4>
+                    <h4 class="text-sm font-medium text-foreground mb-3">Investment Plans</h4>
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-600 dark:text-gray-300">Total Value</span>
-                            <span class="text-xs font-medium text-black">{{ currency_symbol() }}{{ number_format($totalInvestmentValue, 2) }}</span>
+                            <span class="text-xs text-muted-foreground">Total Value</span>
+                            <span class="text-xs font-medium text-foreground">{{ currency_symbol() }}{{ number_format($totalInvestmentValue, 2) }}</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-600 dark:text-gray-300">Percentage</span>
-                            <span class="text-xs font-medium text-black">{{ $totalPortfolioValue > 0 ? number_format(($totalInvestmentValue / $totalPortfolioValue) * 100, 1) : 0 }}%</span>
+                            <span class="text-xs text-muted-foreground">Percentage</span>
+                            <span class="text-xs font-medium text-foreground">{{ $totalPortfolioValue > 0 ? number_format(($totalInvestmentValue / $totalPortfolioValue) * 100, 1) : 0 }}%</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-600 dark:text-gray-300">Holdings</span>
-                            <span class="text-xs font-medium text-black">{{ $investmentHoldings->count() }}</span>
+                            <span class="text-xs text-muted-foreground">Holdings</span>
+                            <span class="text-xs font-medium text-foreground">{{ $investmentHoldings->count() }}</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Stock Allocation -->
                 <div class="bg-muted rounded-lg p-4">
-                    <h4 class="text-sm font-medium text-black dark:text-white mb-3">Stocks</h4>
+                    <h4 class="text-sm font-medium text-foreground mb-3">Stocks</h4>
                     <div class="space-y-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-600 dark:text-gray-300">Total Value</span>
-                            <span class="text-xs font-medium text-black">{{ currency_symbol() }}{{ number_format($totalStockValue, 2) }}</span>
+                            <span class="text-xs text-muted-foreground">Total Value</span>
+                            <span class="text-xs font-medium text-foreground">{{ currency_symbol() }}{{ number_format($totalStockValue, 2) }}</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-600 dark:text-gray-300">Percentage</span>
-                            <span class="text-xs font-medium text-black">{{ $totalPortfolioValue > 0 ? number_format(($totalStockValue / $totalPortfolioValue) * 100, 1) : 0 }}%</span>
+                            <span class="text-xs text-muted-foreground">Percentage</span>
+                            <span class="text-xs font-medium text-foreground">{{ $totalPortfolioValue > 0 ? number_format(($totalStockValue / $totalPortfolioValue) * 100, 1) : 0 }}%</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-600 dark:text-gray-300">Holdings</span>
-                            <span class="text-xs font-medium text-black">{{ $stockHoldings->count() }}</span>
+                            <span class="text-xs text-muted-foreground">Holdings</span>
+                            <span class="text-xs font-medium text-foreground">{{ $stockHoldings->count() }}</span>
                         </div>
                     </div>
                 </div>
@@ -162,14 +162,14 @@
         <div class="bg-card rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-lg font-light text-black dark:text-white mb-1">Performance Chart</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-300">Portfolio performance over time</p>
+                    <h3 class="text-lg font-light text-foreground mb-1">Performance Chart</h3>
+                    <p class="text-xs text-muted-foreground dark:text-gray-300">Portfolio performance over time</p>
                 </div>
                 <div class="flex space-x-2">
-                    <button data-period="1m" class="px-3 py-1 text-xs font-medium text-black bg-muted rounded-lg">1M</button>
-                    <button data-period="3m" class="px-3 py-1 text-xs font-medium text-gray-600 hover:text-black transition-colors duration-200">3M</button>
-                    <button data-period="6m" class="px-3 py-1 text-xs font-medium text-gray-600 hover:text-black transition-colors duration-200">6M</button>
-                    <button data-period="1y" class="px-3 py-1 text-xs font-medium text-gray-600 hover:text-black transition-colors duration-200">1Y</button>
+                    <button data-period="1m" class="px-3 py-1 text-xs font-medium text-foreground bg-muted rounded-lg">1M</button>
+                    <button data-period="3m" class="px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors duration-200">3M</button>
+                    <button data-period="6m" class="px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors duration-200">6M</button>
+                    <button data-period="1y" class="px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors duration-200">1Y</button>
                 </div>
             </div>
             
@@ -183,23 +183,23 @@
         <div class="bg-card rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-lg font-light text-black dark:text-white mb-1">Risk Analysis</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-300">Portfolio risk assessment and metrics</p>
+                    <h3 class="text-lg font-light text-foreground mb-1">Risk Analysis</h3>
+                    <p class="text-xs text-muted-foreground dark:text-gray-300">Portfolio risk assessment and metrics</p>
                 </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <!-- Risk Level Distribution -->
                 <div class="bg-muted rounded-lg p-4">
-                    <h4 class="text-sm font-medium text-black dark:text-white mb-3">Investment Risk Levels</h4>
+                    <h4 class="text-sm font-medium text-foreground mb-3">Investment Risk Levels</h4>
                     <div class="space-y-2">
                         @php
                             $riskLevels = $investmentHoldings->groupBy('investmentPlan.risk_level');
                         @endphp
                         @foreach($riskLevels as $riskLevel => $holdingsGroup)
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-600 capitalize">{{ $riskLevel }}</span>
-                            <span class="text-xs font-medium text-black">{{ $holdingsGroup->count() }}</span>
+                            <span class="text-xs text-muted-foreground capitalize">{{ $riskLevel }}</span>
+                            <span class="text-xs font-medium text-foreground">{{ $holdingsGroup->count() }}</span>
                         </div>
                         @endforeach
                     </div>
@@ -207,15 +207,15 @@
 
                 <!-- Sector Allocation -->
                 <div class="bg-muted rounded-lg p-4">
-                    <h4 class="text-sm font-medium text-black dark:text-white mb-3">Stock Sectors</h4>
+                    <h4 class="text-sm font-medium text-foreground mb-3">Stock Sectors</h4>
                     <div class="space-y-2">
                         @php
                             $sectors = $stockHoldings->groupBy('stock.sector');
                         @endphp
                         @foreach($sectors as $sector => $holdingsGroup)
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-600 dark:text-gray-300">{{ $sector ?: 'Unknown' }}</span>
-                            <span class="text-xs font-medium text-black">{{ $holdingsGroup->count() }}</span>
+                            <span class="text-xs text-muted-foreground">{{ $sector ?: 'Unknown' }}</span>
+                            <span class="text-xs font-medium text-foreground">{{ $holdingsGroup->count() }}</span>
                         </div>
                         @endforeach
                     </div>
@@ -223,10 +223,10 @@
 
                 <!-- Performance Summary -->
                 <div class="bg-muted rounded-lg p-4">
-                    <h4 class="text-sm font-medium text-black dark:text-white mb-3">Performance Summary</h4>
+                    <h4 class="text-sm font-medium text-foreground mb-3">Performance Summary</h4>
                     <div class="space-y-2">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-600 dark:text-gray-300">Best Performer</span>
+                            <span class="text-xs text-muted-foreground">Best Performer</span>
                             <span class="text-xs font-medium text-green-600">
                                 @php
                                     $allHoldings = $investmentHoldings->concat($stockHoldings);
@@ -236,7 +236,7 @@
                             </span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-600 dark:text-gray-300">Worst Performer</span>
+                            <span class="text-xs text-muted-foreground">Worst Performer</span>
                             <span class="text-xs font-medium text-red-600">
                                 @php
                                     $worstHolding = $allHoldings->sortBy('unrealized_gain_loss_percentage')->first();
@@ -253,8 +253,8 @@
         <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-lg font-light text-black dark:text-white mb-1">Recent Activity</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-300">Latest portfolio changes</p>
+                    <h3 class="text-lg font-light text-foreground mb-1">Recent Activity</h3>
+                    <p class="text-xs text-muted-foreground dark:text-gray-300">Latest portfolio changes</p>
                 </div>
                 <a href="{{ route('investment.transactions') }}" class="text-xs text-tesla-600 hover:text-tesla-800 transition-colors duration-200 font-medium">
                     View All
@@ -278,17 +278,17 @@
                             @endif
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-xs font-medium text-black">
+                            <p class="text-xs font-medium text-foreground">
                                 @if(isset($transaction->investmentPlan))
                                     {{ $transaction->investmentPlan->name }}
                                 @elseif(isset($transaction->stock))
                                     {{ $transaction->stock->symbol }}
                                 @endif
                             </p>
-                            <p class="text-xs text-gray-500 dark:text-gray-300">{{ $transaction->type_label }} • {{ $transaction->created_at->format('M j, Y') }}</p>
+                            <p class="text-xs text-muted-foreground dark:text-gray-300">{{ $transaction->type_label }} • {{ $transaction->created_at->format('M j, Y') }}</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-xs font-medium text-black">{{ currency_symbol() }}{{ number_format($transaction->total_amount, 2) }}</p>
+                            <p class="text-xs font-medium text-foreground">{{ currency_symbol() }}{{ number_format($transaction->total_amount, 2) }}</p>
                         </div>
                     </div>
                     @endforeach
@@ -298,7 +298,7 @@
                     <div class="w-8 h-8 bg-muted rounded-full flex items-center justify-center mx-auto mb-2">
                         <i data-lucide="activity" class="w-4 h-4 text-gray-400 dark:text-gray-300"></i>
                     </div>
-                    <p class="text-xs text-gray-500 dark:text-gray-300">No recent activity</p>
+                    <p class="text-xs text-muted-foreground dark:text-gray-300">No recent activity</p>
                 </div>
             @endif
         </div>
@@ -419,11 +419,11 @@
                         
                         // Update active button
                         document.querySelectorAll('[data-period]').forEach(btn => {
-                            btn.classList.remove('bg-gray-100', 'text-black');
-                            btn.classList.add('text-gray-600');
+                            btn.classList.remove('bg-muted', 'text-foreground');
+                            btn.classList.add('text-muted-foreground');
                         });
-                        this.classList.remove('text-gray-600');
-                        this.classList.add('bg-gray-100', 'text-black');
+                        this.classList.remove('text-muted-foreground');
+                        this.classList.add('bg-muted', 'text-foreground');
                     });
                 });
 

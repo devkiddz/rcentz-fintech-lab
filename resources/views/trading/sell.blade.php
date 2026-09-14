@@ -8,8 +8,8 @@
         <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
             <!-- Background Pattern -->
             <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-16 translate-x-16"></div>
-                <div class="absolute bottom-0 left-0 w-16 h-16 bg-white rounded-full translate-y-8 -translate-x-8"></div>
+                <div class="absolute top-0 right-0 w-32 h-32 bg-card rounded-full -translate-y-16 translate-x-16"></div>
+                <div class="absolute bottom-0 left-0 w-16 h-16 bg-card rounded-full translate-y-8 -translate-x-8"></div>
             </div>
             
             <div class="relative z-10">
@@ -20,7 +20,7 @@
                     </div>
                     
                     <!-- Enhanced Stock Stats Card -->
-                    <div class="bg-white bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-64">
+                    <div class="bg-card bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-64">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-xs text-tesla-100 dark:text-gray-300 mb-1">Current Price</p>
@@ -47,9 +47,9 @@
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-medium text-gray-900">{{ $stock->symbol }} Price Chart</h3>
                 <div class="flex space-x-2">
-                    <button type="button" class="chart-period-btn px-3 py-1 text-xs rounded-lg border border-gray-300 text-gray-600 dark:text-gray-300" data-period="1d">1D</button>
-                    <button type="button" class="chart-period-btn px-3 py-1 text-xs rounded-lg border border-gray-300 text-gray-600 dark:text-gray-300" data-period="1w">1W</button>
-                    <button type="button" class="chart-period-btn px-3 py-1 text-xs rounded-lg border border-gray-300 bg-black dark:bg-white text-white dark:text-gray-900" data-period="1m">1M</button>
+                    <button type="button" class="chart-period-btn px-3 py-1 text-xs rounded-lg border border-border text-muted-foreground" data-period="1d">1D</button>
+                    <button type="button" class="chart-period-btn px-3 py-1 text-xs rounded-lg border border-border text-muted-foreground" data-period="1w">1W</button>
+                    <button type="button" class="chart-period-btn px-3 py-1 text-xs rounded-lg border border-border bg-foreground text-background" data-period="1m">1M</button>
                   </div>
             </div>
             <div class="relative">
@@ -64,67 +64,67 @@
                 
                 <!-- Sell Options -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-3">Sell Options</label>
+                    <label class="block text-sm font-medium text-foreground mb-3">Sell Options</label>
                     <div class="space-y-3">
-                        <label class="flex items-center p-4 border border-border rounded-lg cursor-pointer hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group">
+                        <label class="flex items-center p-4 border border-border rounded-lg cursor-pointer hover:border-border hover:bg-muted/30 transition-all duration-200 group">
                             <input type="radio" 
                                    name="sell_type" 
                                    value="quantity" 
-                                   class="w-4 h-4 text-black border-gray-300 focus:ring-black"
+                                   class="w-4 h-4 text-foreground border-border focus:ring-ring"
                                    {{ old('sell_type', 'quantity') == 'quantity' ? 'checked' : '' }}
                                    required>
                             <div class="ml-3 flex items-center flex-1">
                                 <div class="w-8 h-8 flex items-center justify-center mr-3">
-                                    <i data-lucide="hash" class="w-4 h-4 text-gray-500 dark:text-gray-300"></i>
+                                    <i data-lucide="hash" class="w-4 h-4 text-muted-foreground dark:text-gray-300"></i>
                                 </div>
                                 <div class="flex-1">
-                                    <p class="font-medium text-black dark:text-white text-sm">Sell by Number of Shares</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-300">Specify the exact number of shares to sell</p>
+                                    <p class="font-medium text-foreground text-sm">Sell by Number of Shares</p>
+                                    <p class="text-xs text-muted-foreground dark:text-gray-300">Specify the exact number of shares to sell</p>
                                 </div>
                                 <div class="w-6 h-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                                    <i data-lucide="arrow-right" class="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300"></i>
+                                    <i data-lucide="arrow-right" class="w-4 h-4 text-gray-400 group-hover:text-muted-foreground"></i>
                                 </div>
                             </div>
                         </label>
 
-                        <label class="flex items-center p-4 border border-border rounded-lg cursor-pointer hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group">
+                        <label class="flex items-center p-4 border border-border rounded-lg cursor-pointer hover:border-border hover:bg-muted/30 transition-all duration-200 group">
                             <input type="radio" 
                                    name="sell_type" 
                                    value="amount" 
-                                   class="w-4 h-4 text-black border-gray-300 focus:ring-black"
+                                   class="w-4 h-4 text-foreground border-border focus:ring-ring"
                                    {{ old('sell_type') == 'amount' ? 'checked' : '' }}
                                    required>
                             <div class="ml-3 flex items-center flex-1">
                                 <div class="w-8 h-8 flex items-center justify-center mr-3">
-                                    <i data-lucide="dollar-sign" class="w-4 h-4 text-gray-500 dark:text-gray-300"></i>
+                                    <i data-lucide="dollar-sign" class="w-4 h-4 text-muted-foreground dark:text-gray-300"></i>
                                 </div>
                                 <div class="flex-1">
-                                    <p class="font-medium text-black dark:text-white text-sm">Sell by Dollar Amount</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-300">Specify the dollar amount you want to receive</p>
+                                    <p class="font-medium text-foreground text-sm">Sell by Dollar Amount</p>
+                                    <p class="text-xs text-muted-foreground dark:text-gray-300">Specify the dollar amount you want to receive</p>
                                 </div>
                                 <div class="w-6 h-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                                    <i data-lucide="arrow-right" class="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300"></i>
+                                    <i data-lucide="arrow-right" class="w-4 h-4 text-gray-400 group-hover:text-muted-foreground"></i>
                                 </div>
                             </div>
                         </label>
 
-                        <label class="flex items-center p-4 border border-border rounded-lg cursor-pointer hover:border-gray-300 hover:bg-gray-50 transition-all duration-200 group">
+                        <label class="flex items-center p-4 border border-border rounded-lg cursor-pointer hover:border-border hover:bg-muted/30 transition-all duration-200 group">
                             <input type="radio" 
                                    name="sell_type" 
                                    value="all" 
-                                   class="w-4 h-4 text-black border-gray-300 focus:ring-black"
+                                   class="w-4 h-4 text-foreground border-border focus:ring-ring"
                                    {{ old('sell_type') == 'all' ? 'checked' : '' }}
                                    required>
                             <div class="ml-3 flex items-center flex-1">
                                 <div class="w-8 h-8 flex items-center justify-center mr-3">
-                                    <i data-lucide="trash-2" class="w-4 h-4 text-gray-500 dark:text-gray-300"></i>
+                                    <i data-lucide="trash-2" class="w-4 h-4 text-muted-foreground dark:text-gray-300"></i>
                                 </div>
                                 <div class="flex-1">
-                                    <p class="font-medium text-black dark:text-white text-sm">Sell All Shares</p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-300">Sell your entire position in this stock</p>
+                                    <p class="font-medium text-foreground text-sm">Sell All Shares</p>
+                                    <p class="text-xs text-muted-foreground dark:text-gray-300">Sell your entire position in this stock</p>
                                 </div>
                                 <div class="w-6 h-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                                    <i data-lucide="arrow-right" class="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:text-gray-300"></i>
+                                    <i data-lucide="arrow-right" class="w-4 h-4 text-gray-400 group-hover:text-muted-foreground"></i>
                                 </div>
                             </div>
                         </label>
@@ -133,7 +133,7 @@
 
                 <!-- Quantity/Amount Input -->
                 <div id="quantity-input" class="sell-input-section">
-                    <label for="quantity" class="block text-sm font-medium text-gray-700 mb-2">Number of Shares</label>
+                    <label for="quantity" class="block text-sm font-medium text-foreground mb-2">Number of Shares</label>
                     <div class="relative">
                         <input type="number" 
                                id="quantity" 
@@ -142,19 +142,19 @@
                                min="1" 
                                max="{{ $holding->quantity }}"
                                value="{{ old('quantity') }}"
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200"
+                               class="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
                                placeholder="0">
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">Maximum shares: {{ number_format($holding->quantity) }}</p>
+                    <p class="text-xs text-muted-foreground mt-1">Maximum shares: {{ number_format($holding->quantity) }}</p>
                     @error('quantity')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div id="amount-input" class="sell-input-section hidden">
-                    <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">Dollar Amount</label>
+                    <label for="amount" class="block text-sm font-medium text-foreground mb-2">Dollar Amount</label>
                     <div class="relative">
-                        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-300">{{ currency_symbol() }}</span>
+                        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground dark:text-gray-300">{{ currency_symbol() }}</span>
                         <input type="number" 
                                id="amount" 
                                name="amount" 
@@ -162,10 +162,10 @@
                                min="0.01" 
                                max="{{ $holding->current_value }}"
                                value="{{ old('amount') }}"
-                               class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200"
+                               class="w-full pl-8 pr-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
                                placeholder="0.00">
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">Maximum amount: {{ currency_symbol() }}{{ number_format($holding->current_value, 2) }}</p>
+                    <p class="text-xs text-muted-foreground mt-1">Maximum amount: {{ currency_symbol() }}{{ number_format($holding->current_value, 2) }}</p>
                     @error('amount')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -413,12 +413,12 @@
                     // Remove active class from all buttons
                     periodButtons.forEach(btn => {
                         btn.classList.remove('active', 'bg-black', 'text-white');
-                        btn.classList.add('text-gray-600');
+                        btn.classList.add('text-muted-foreground');
                     });
                     
                     // Add active class to clicked button
                     this.classList.add('active', 'bg-black', 'text-white');
-                    this.classList.remove('text-gray-600');
+                    this.classList.remove('text-muted-foreground');
                     
                     // Fetch new data for the selected period
                     const period = this.dataset.period;

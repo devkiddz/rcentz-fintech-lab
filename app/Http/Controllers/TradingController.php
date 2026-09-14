@@ -11,6 +11,7 @@ use App\Models\StockWatchlist;
 use App\Models\WalletTransaction;
 use App\Models\StockPriceHistory;
 use App\Services\NotificationService;
+use App\Services\FinancialActivityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -43,7 +44,7 @@ class TradingController extends Controller
     /**
      * Execute buy stock
      */
-    public function executeBuy(Request $request, Stock $stock)
+    public function executeBuy(Request $request, Stock $stock, FinancialActivityService $activity)
     {
         if (!$stock->is_active) {
             abort(404);
@@ -61,13 +62,13 @@ class TradingController extends Controller
         $fee = 0.00; // Could be calculated based on amount
         $totalAmount = $totalCost + $fee;
 
-        // Check if user has sufficient funds
-        if (!$wallet->canWithdraw($totalAmount)) {
-            return back()->withErrors(['quantity' => 'Insufficient funds in wallet.']);
-        }
-
         try {
             DB::beginTransaction();
+
+            $wallet = $user->wallet()->lockForUpdate()->firstOrFail();
+            if (! $wallet->canWithdraw($totalAmount)) throw new \RuntimeException('Insufficient available balance.');
+            $before = $activity->snapshot($wallet);
+            $reference = $activity->reference('STK-BUY');
 
             // Create wallet transaction
             $walletTransaction = $wallet->transactions()->create([
@@ -77,6 +78,7 @@ class TradingController extends Controller
                 'amount' => $totalAmount,
                 'fee' => $fee,
                 'status' => 'completed',
+                'reference_id' => $reference,
                 'description' => "Purchase of {$quantity} shares of {$stock->symbol}",
             ]);
 
@@ -128,6 +130,7 @@ class TradingController extends Controller
 
             // Deduct funds from wallet
             $wallet->deductFunds($totalAmount);
+            $activity->record($user,'stock.buy','Bought '.$stock->symbol,'Purchased '.$quantity.' shares of '.$stock->symbol.'.',$reference,'completed','debit',(float)$totalAmount,$wallet,$walletTransaction,null,$before,['stock_id'=>$stock->id,'quantity'=>(float)$quantity],'user',$user->id);
 
             // Create notification for successful stock purchase
             NotificationService::createInvestmentSuccessNotification(
@@ -177,7 +180,7 @@ class TradingController extends Controller
     /**
      * Execute sell stock
      */
-    public function executeSell(Request $request, Stock $stock)
+    public function executeSell(Request $request, Stock $stock, FinancialActivityService $activity)
     {
         if (!$stock->is_active) {
             abort(404);
@@ -206,14 +209,16 @@ class TradingController extends Controller
         try {
             DB::beginTransaction();
 
+            $wallet=$user->wallet()->lockForUpdate()->firstOrFail(); $before=$activity->snapshot($wallet); $reference=$activity->reference('STK-SELL');
             // Create wallet transaction
-            $walletTransaction = $user->wallet->transactions()->create([
+            $walletTransaction = $wallet->transactions()->create([
                 'payment_method_id' => 1, // Default payment method
                 'type' => 'investment',
                 'direction' => 'credit',
                 'amount' => $netAmount,
                 'fee' => $fee,
                 'status' => 'completed',
+                'reference_id' => $reference,
                 'description' => "Sale of {$quantityToSell} shares of {$stock->symbol}",
             ]);
 
@@ -253,7 +258,8 @@ class TradingController extends Controller
             }
 
             // Add funds to wallet
-            $user->wallet->addFunds($netAmount);
+            $wallet->addFunds($netAmount);
+            $activity->record($user,'stock.sell','Sold '.$stock->symbol,'Sold '.$quantityToSell.' shares of '.$stock->symbol.'.',$reference,'completed','credit',(float)$netAmount,$wallet,$walletTransaction,null,$before,['stock_id'=>$stock->id,'quantity'=>(float)$quantityToSell],'user',$user->id);
 
             // Create notification for successful stock sale
             NotificationService::createInvestmentSuccessNotification(

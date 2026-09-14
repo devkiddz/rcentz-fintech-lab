@@ -8,14 +8,14 @@
             </div>
             <div class="flex space-x-2">
                 <a href="{{ route('admin.emails.compose') }}" 
-                   class="inline-flex items-center px-3 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-all duration-200">
+                   class="inline-flex items-center px-3 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                     </svg>
                     Send Email
                 </a>
                 <a href="{{ route('admin.emails.templates.create') }}" 
-                   class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-all duration-200">
+                   class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-all duration-200">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
@@ -114,13 +114,7 @@
                                         </div>
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium
-                                            @if($template->type === 'general') bg-muted text-foreground
-                                            @elseif($template->type === 'purchase') bg-green-100 text-green-800
-                                            @elseif($template->type === 'notification') bg-tesla-100 text-tesla-800
-                                            @elseif($template->type === 'welcome') bg-purple-100 text-purple-800
-                                            @elseif($template->type === 'reminder') bg-yellow-100 text-yellow-800
-                                            @endif">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium @if($template->type === 'general') bg-muted text-foreground @elseif($template->type === 'purchase') bg-green-100 text-green-800 @elseif($template->type === 'notification') bg-tesla-100 text-tesla-800 @elseif($template->type === 'welcome') bg-purple-100 text-purple-800 @elseif($template->type === 'reminder') bg-yellow-100 text-yellow-800 @endif">
                                             {{ ucfirst($template->type) }}
                                         </span>
                                     </td>

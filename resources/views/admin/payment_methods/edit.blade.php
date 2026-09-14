@@ -7,7 +7,7 @@
                 </h2>
             </div>
             <a href="{{ route('admin.payment_methods.index') }}" 
-               class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-all duration-200">
+               class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-all duration-200">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
@@ -37,7 +37,7 @@
                                        name="name" 
                                        id="name"
                                        value="{{ old('name', $paymentMethod->name) }}"
-                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black @error('name') border-red-500 @enderror"
+                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black @error('name') border-red-500 @enderror"
                                        placeholder="e.g., Bitcoin, Credit Card, PayPal"
                                        required>
                                 @error('name')
@@ -49,7 +49,7 @@
                                 <label for="type" class="block text-xs font-medium text-muted-foreground mb-2">Payment Type</label>
                                 <select name="type" 
                                         id="type" 
-                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black @error('type') border-red-500 @enderror"
+                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black @error('type') border-red-500 @enderror"
                                         onchange="toggleCryptoFields()"
                                         required>
                                     <option value="traditional" {{ old('type', $paymentMethod->type) == 'traditional' ? 'selected' : '' }}>Traditional Payment</option>
@@ -67,7 +67,7 @@
                             <textarea name="details" 
                                       id="details" 
                                       rows="3"
-                                      class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black @error('details') border-red-500 @enderror"
+                                      class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black @error('details') border-red-500 @enderror"
                                       placeholder="Additional information about this payment method">{{ old('details', $paymentMethod->details) }}</textarea>
                             @error('details')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -99,7 +99,7 @@
                                    name="logo" 
                                    id="logo"
                                    accept="image/*"
-                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black @error('logo') border-red-500 @enderror">
+                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black @error('logo') border-red-500 @enderror">
                             <p class="mt-1 text-xs text-muted-foreground dark:text-gray-300">Upload a logo or icon for this payment method (PNG, JPG, SVG)</p>
                             @error('logo')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -117,7 +117,7 @@
                                            name="crypto_symbol" 
                                            id="crypto_symbol"
                                            value="{{ old('crypto_symbol', $paymentMethod->crypto_symbol) }}"
-                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black @error('crypto_symbol') border-red-500 @enderror"
+                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black @error('crypto_symbol') border-red-500 @enderror"
                                            placeholder="e.g., BTC, ETH, LTC">
                                     @error('crypto_symbol')
                                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -132,7 +132,7 @@
                                            value="{{ old('network_fee', $paymentMethod->network_fee) }}"
                                            step="0.00000001"
                                            min="0"
-                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black @error('network_fee') border-red-500 @enderror"
+                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black @error('network_fee') border-red-500 @enderror"
                                            placeholder="0.00001">
                                     <p class="mt-1 text-xs text-muted-foreground dark:text-gray-300">Network transaction fee in crypto units</p>
                                     @error('network_fee')
@@ -147,7 +147,7 @@
                                        name="wallet_address" 
                                        id="wallet_address"
                                        value="{{ old('wallet_address', $paymentMethod->wallet_address) }}"
-                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black @error('wallet_address') border-red-500 @enderror font-mono text-sm"
+                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black @error('wallet_address') border-red-500 @enderror font-mono text-sm"
                                        placeholder="Enter the wallet address for receiving payments">
                                 @error('wallet_address')
                                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -178,7 +178,7 @@
                                        name="barcode" 
                                        id="barcode"
                                        accept="image/*"
-                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black @error('barcode') border-red-500 @enderror">
+                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black @error('barcode') border-red-500 @enderror">
                                 <p class="mt-1 text-xs text-muted-foreground dark:text-gray-300">Upload a QR code image for the wallet address</p>
                                 @error('barcode')
                                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -196,7 +196,7 @@
                                            name="is_active" 
                                            value="1" 
                                            {{ old('is_active', $paymentMethod->is_active) ? 'checked' : '' }}
-                                           class="text-foreground focus:ring-black">
+                                           class="text-foreground focus:ring-ring">
                                     <span class="ml-2 text-sm text-foreground">Active (available for customers)</span>
                                 </label>
                                 
@@ -205,7 +205,7 @@
                                            name="allow_deposit" 
                                            value="1" 
                                            {{ old('allow_deposit', $paymentMethod->allow_deposit) ? 'checked' : '' }}
-                                           class="text-foreground focus:ring-black">
+                                           class="text-foreground focus:ring-ring">
                                     <span class="ml-2 text-sm text-foreground">Allow deposits</span>
                                 </label>
                                 
@@ -214,7 +214,7 @@
                                            name="allow_withdraw" 
                                            value="1" 
                                            {{ old('allow_withdraw', $paymentMethod->allow_withdraw) ? 'checked' : '' }}
-                                           class="text-foreground focus:ring-black">
+                                           class="text-foreground focus:ring-ring">
                                     <span class="ml-2 text-sm text-foreground">Allow withdrawals</span>
                                 </label>
                             </div>
@@ -223,11 +223,11 @@
 
                     <div class="px-4 py-4 bg-muted/40 border-t border-border dark:border-gray-700 flex justify-end space-x-3">
                         <a href="{{ route('admin.payment_methods.index') }}" 
-                           class="px-4 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-all duration-200">
+                           class="px-4 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-all duration-200">
                             Cancel
                         </a>
                         <button type="submit" 
-                                class="px-6 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-all duration-200">
+                                class="px-6 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
                             Update Payment Method
                         </button>
                     </div>

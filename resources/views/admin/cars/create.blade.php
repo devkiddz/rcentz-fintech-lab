@@ -6,7 +6,7 @@
                     {{ __('Add New Vehicle') }}
                 </h2>
             </div>
-            <a href="{{ route('admin.cars.index') }}" class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-all duration-200">
+            <a href="{{ route('admin.cars.index') }}" class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-all duration-200">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
@@ -36,7 +36,7 @@
                             <label for="title" class="block text-xs font-medium text-muted-foreground mb-2">Vehicle Title *</label>
                             <input type="text" name="title" id="title" value="{{ old('title') }}" 
                                    placeholder="e.g., 2023 Tesla Model S Plaid"
-                                   class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-black text-foreground placeholder-gray-400 @error('title') border-red-300 ring-red-300 @enderror">
+                                   class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-ring text-foreground placeholder-gray-400 @error('title') border-red-300 ring-red-300 @enderror">
                             @error('title')
                                 <p class="mt-2 text-xs text-red-600 flex items-center">
                                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -52,7 +52,7 @@
                             <label for="description" class="block text-xs font-medium text-muted-foreground mb-2">Description *</label>
                             <textarea name="description" id="description" rows="4" 
                                       placeholder="Describe the vehicle's features, condition, and unique selling points..."
-                                      class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-black text-foreground placeholder-gray-400 @error('description') border-red-300 ring-red-300 @enderror">{{ old('description') }}</textarea>
+                                      class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-ring text-foreground placeholder-gray-400 @error('description') border-red-300 ring-red-300 @enderror">{{ old('description') }}</textarea>
                             @error('description')
                                 <p class="mt-2 text-xs text-red-600 flex items-center">
                                     <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -82,7 +82,7 @@
                                 <label for="make" class="block text-xs font-medium text-muted-foreground mb-2">Make *</label>
                                 <input type="text" name="make" id="make" value="{{ old('make') }}" 
                                        placeholder="e.g., Tesla"
-                                       class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-black text-foreground placeholder-gray-400 @error('make') border-red-300 ring-red-300 @enderror">
+                                       class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-ring text-foreground placeholder-gray-400 @error('make') border-red-300 ring-red-300 @enderror">
                                 @error('make')
                                     <p class="mt-2 text-xs text-red-600 flex items-center">
                                         <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -98,7 +98,7 @@
                                 <label for="model" class="block text-xs font-medium text-muted-foreground mb-2">Model *</label>
                                 <input type="text" name="model" id="model" value="{{ old('model') }}" 
                                        placeholder="e.g., Model S"
-                                       class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-black text-foreground placeholder-gray-400 @error('model') border-red-300 ring-red-300 @enderror">
+                                       class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-ring text-foreground placeholder-gray-400 @error('model') border-red-300 ring-red-300 @enderror">
                                 @error('model')
                                     <p class="mt-2 text-xs text-red-600 flex items-center">
                                         <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -114,7 +114,7 @@
                                 <label for="year" class="block text-xs font-medium text-muted-foreground mb-2">Year *</label>
                                 <input type="number" name="year" id="year" value="{{ old('year') }}" min="1990" max="{{ date('Y') + 1 }}" 
                                        placeholder="{{ date('Y') }}"
-                                       class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-black text-foreground placeholder-gray-400 @error('year') border-red-300 ring-red-300 @enderror">
+                                       class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-ring text-foreground placeholder-gray-400 @error('year') border-red-300 ring-red-300 @enderror">
                                 @error('year')
                                     <p class="mt-2 text-xs text-red-600 flex items-center">
                                         <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -130,7 +130,7 @@
                                 <label for="color" class="block text-xs font-medium text-muted-foreground mb-2">Color *</label>
                                 <input type="text" name="color" id="color" value="{{ old('color') }}" 
                                        placeholder="e.g., Pearl White"
-                                       class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-black text-foreground placeholder-gray-400 @error('color') border-red-300 ring-red-300 @enderror">
+                                       class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-ring text-foreground placeholder-gray-400 @error('color') border-red-300 ring-red-300 @enderror">
                                 @error('color')
                                     <p class="mt-2 text-xs text-red-600 flex items-center">
                                         <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -146,7 +146,7 @@
                                 <label for="engine" class="block text-xs font-medium text-muted-foreground mb-2">Engine *</label>
                                 <input type="text" name="engine" id="engine" value="{{ old('engine') }}" 
                                        placeholder="e.g., Electric Motor"
-                                       class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-black text-foreground placeholder-gray-400 @error('engine') border-red-300 ring-red-300 @enderror">
+                                       class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-ring text-foreground placeholder-gray-400 @error('engine') border-red-300 ring-red-300 @enderror">
                                 @error('engine')
                                     <p class="mt-2 text-xs text-red-600 flex items-center">
                                         <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -161,7 +161,7 @@
                             <div>
                                 <label for="transmission" class="block text-xs font-medium text-muted-foreground mb-2">Transmission *</label>
                                 <select name="transmission" id="transmission" 
-                                        class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-black text-foreground @error('transmission') border-red-300 ring-red-300 @enderror">
+                                        class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-ring text-foreground @error('transmission') border-red-300 ring-red-300 @enderror">
                                     <option value="">Select Transmission</option>
                                     <option value="Automatic" {{ old('transmission') == 'Automatic' ? 'selected' : '' }}>Automatic</option>
                                     <option value="Manual" {{ old('transmission') == 'Manual' ? 'selected' : '' }}>Manual</option>
@@ -200,7 +200,7 @@
                                 </div>
                                 <input type="number" name="price" id="price" value="{{ old('price') }}" step="0.01" min="0" 
                                        placeholder="75000"
-                                       class="pl-6 block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-black text-foreground placeholder-gray-400 @error('price') border-red-300 ring-red-300 @enderror">
+                                       class="pl-6 block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-ring text-foreground placeholder-gray-400 @error('price') border-red-300 ring-red-300 @enderror">
                             </div>
                             @error('price')
                                 <p class="mt-2 text-xs text-red-600 flex items-center">
@@ -213,9 +213,9 @@
                         </div>
 
                         <!-- Availability -->
-                        <div class="flex items-center p-3 bg-muted/40 dark:bg-dark-muted rounded-lg">
+                        <div class="flex items-center p-3 bg-muted/40 rounded-lg">
                             <input type="checkbox" name="is_available" id="is_available" value="1" {{ old('is_available', true) ? 'checked' : '' }}
-                                   class="h-4 w-4 text-foreground focus:ring-black border-border rounded">
+                                   class="h-4 w-4 text-foreground focus:ring-ring border-border rounded">
                             <label for="is_available" class="ml-3 block text-xs font-medium text-foreground">
                                 Available for sale
                             </label>
@@ -275,7 +275,7 @@
                             <label for="image_urls" class="block text-xs font-medium text-muted-foreground mb-2">Or Add Image URLs</label>
                             <textarea name="image_urls" id="image_urls" rows="4" 
                                       placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg&#10;https://example.com/image3.jpg" 
-                                      class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-black text-foreground placeholder-gray-400">{{ old('image_urls') }}</textarea>
+                                      class="block w-full rounded-lg border-border shadow-sm focus:border-black focus:ring-ring text-foreground placeholder-gray-400">{{ old('image_urls') }}</textarea>
                             <p class="mt-2 text-xs text-muted-foreground dark:text-gray-300">Enter one image URL per line.</p>
                             @error('image_urls')
                                 <p class="mt-2 text-xs text-red-600 flex items-center">
@@ -292,10 +292,10 @@
                 <!-- Submit Actions -->
                 <div class="bg-card border border-border p-4 rounded-lg">
                     <div class="flex items-center justify-end space-x-3">
-                        <a href="{{ route('admin.cars.index') }}" class="inline-flex items-center px-4 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-all duration-200">
+                        <a href="{{ route('admin.cars.index') }}" class="inline-flex items-center px-4 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-all duration-200">
                             Cancel
                         </a>
-                        <button type="submit" class="inline-flex items-center px-6 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-all duration-200">
+                        <button type="submit" class="inline-flex items-center px-6 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                             </svg>

@@ -1,20 +1,26 @@
 <x-user-layout>
     <x-slot name="header">Transfer</x-slot>
 
-    <div class="app-page max-w-7xl mx-auto space-y-5 sm:space-y-6">
+    <div class="money-page space-y-5 sm:space-y-6">
         <section class="wallet-shell-card">
             <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <p class="text-sm font-medium text-muted-foreground">Available balance</p>
                     <div class="mt-1 flex items-end gap-2">
-                        <h1 class="text-3xl font-semibold tracking-tight text-foreground">{{ format_currency($wallet->balance) }}</h1>
+                        <h1 class="text-3xl font-semibold tracking-tight text-foreground">{{ format_currency($wallet->available_balance) }}</h1>
                         <span class="pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ $wallet->currency }}</span>
                     </div>
                 </div>
-                <a href="{{ route('wallet.index') }}" class="ui-button-secondary self-start sm:self-auto">
+                <div class="flex flex-wrap gap-2 self-start sm:self-auto">
+                    <a href="{{ route('account.history') }}" class="ui-button-secondary">
+                        <i data-lucide="history" class="h-4 w-4"></i>
+                        History
+                    </a>
+                    <a href="{{ route('wallet.index') }}" class="ui-button-secondary">
                     <i data-lucide="arrow-left" class="h-4 w-4"></i>
-                    Wallet overview
-                </a>
+                        Wallet overview
+                    </a>
+                </div>
             </div>
         </section>
 
@@ -61,7 +67,7 @@
 
                         <div class="flex items-start gap-2.5 rounded-lg border border-border bg-muted/30 p-3 text-xs leading-5 text-muted-foreground">
                             <i data-lucide="shield-check" class="mt-0.5 h-4 w-4 shrink-0 text-foreground"></i>
-                            <p>Transfers are processed immediately and recorded in both account histories.</p>
+                            <p>Transfers settle atomically against available balance and are recorded in both the ledger and account history.</p>
                         </div>
 
                         <div class="flex justify-end border-t border-border pt-5">

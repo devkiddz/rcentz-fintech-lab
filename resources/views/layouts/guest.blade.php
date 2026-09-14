@@ -23,8 +23,9 @@
         <nav class="border-b border-border bg-card/95 shadow-sm backdrop-blur">
             <div class="mx-auto flex h-14 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                 <a href="{{ route('home') }}" class="flex items-center gap-2 font-semibold tracking-tight text-foreground transition hover:opacity-75">
-                    @if(site_logo())
-                        <img src="{{ site_logo() }}" alt="{{ site_name() }}" class="h-6 w-auto dark:brightness-0 dark:invert">
+                    @if(site_logo_light() || site_logo_dark())
+                        <img src="{{ site_logo_light() ?? site_logo_dark() }}" alt="{{ site_name() }}" class="h-6 w-auto dark:hidden">
+                        <img src="{{ site_logo_dark() ?? site_logo_light() }}" alt="{{ site_name() }}" class="hidden h-6 w-auto dark:block">
                     @else
                         <span>{{ site_name() }}</span>
                     @endif
@@ -45,7 +46,7 @@
                         @endif
                     @endauth
 
-                    <button type="button" onclick="toggleTheme()" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label="Toggle color theme">
+                    <button type="button" data-theme-toggle onclick="window.AxausTheme.toggle()" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label="Toggle color theme">
                         <i data-lucide="sun" class="hidden h-4 w-4 dark:block"></i>
                         <i data-lucide="moon" class="h-4 w-4 dark:hidden"></i>
                     </button>

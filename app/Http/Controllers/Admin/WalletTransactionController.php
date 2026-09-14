@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\WalletTransaction;
 use App\Models\User;
 use App\Services\NotificationService;
+use App\Services\FinancialActivityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -49,110 +50,14 @@ class WalletTransactionController extends Controller
         return view('admin.wallet-transactions.show', compact('transaction'));
     }
 
-    public function approve(WalletTransaction $transaction)
+    public function approve(WalletTransaction $transaction, FinancialActivityService $activity)
     {
-        try {
-            DB::beginTransaction();
-
-            if ($transaction->status !== 'pending') {
-                return redirect()->back()->with('error', 'Only pending transactions can be approved.');
-            }
-
-            $user = $transaction->wallet->user;
-            $amount = $transaction->amount;
-
-            if ($transaction->type === 'deposit') {
-                // Add funds to user wallet
-                $transaction->wallet->addFunds($amount);
-                $transaction->update(['status' => 'completed']);
-
-                // Send notification
-                NotificationService::createWalletUpdateNotification($user, 'deposit', $amount);
-
-                $message = "Deposit approved. User wallet credited with $" . number_format($amount, 2);
-
-            } elseif ($transaction->type === 'withdrawal') {
-                // Check if user has sufficient funds
-                if (!$transaction->wallet->canWithdraw($amount)) {
-                    return redirect()->back()->with('error', 'User has insufficient funds for this withdrawal.');
-                }
-
-                // Deduct funds from user wallet
-                $transaction->wallet->deductFunds($amount);
-                $transaction->update(['status' => 'completed']);
-
-                // Send notification
-                NotificationService::createWalletUpdateNotification($user, 'withdrawal', $amount);
-
-                $message = "Withdrawal approved. User wallet debited with $" . number_format($amount, 2);
-            } else {
-                return redirect()->back()->with('error', 'Invalid transaction type for approval.');
-            }
-
-            DB::commit();
-
-            Log::info("Admin approved {$transaction->type} transaction {$transaction->id} for user {$user->id}");
-
-            return redirect()->route('admin.wallet-transactions.index')
-                ->with('success', $message);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error("Failed to approve transaction {$transaction->id}: " . $e->getMessage());
-
-            return redirect()->back()->with('error', 'Failed to approve transaction. Please try again.');
-        }
+        try{$message=DB::transaction(function() use($transaction,$activity){$tx=WalletTransaction::query()->whereKey($transaction->id)->lockForUpdate()->firstOrFail();if($tx->status!=='pending')throw new \RuntimeException('Only pending transactions can be approved.');$wallet=$tx->wallet()->lockForUpdate()->firstOrFail();$user=$wallet->user;$amount=(float)$tx->amount;$before=$activity->snapshot($wallet);if($tx->type==='deposit'){$wallet->addFunds($amount);$tx->update(['status'=>'completed']);$activity->record($user,'deposit.approved','Deposit approved','Deposit verified and credited to the wallet.',$tx->reference_id,'completed','credit',$amount,$wallet,$tx,null,$before,[],'admin',auth()->id());NotificationService::createWalletUpdateNotification($user,'deposit',$amount);return 'Deposit approved. User wallet credited with $'.number_format($amount,2);}if($tx->type==='withdrawal'){if((float)$wallet->reserved_balance<$amount)throw new \RuntimeException('This withdrawal does not have enough reserved balance.');$wallet->settleReservedDebit($amount);$tx->update(['status'=>'completed']);$activity->record($user,'withdrawal.approved','Withdrawal approved','Reserved funds were settled and debited from the wallet.',$tx->reference_id,'completed','debit',$amount,$wallet,$tx,null,$before,[],'admin',auth()->id());NotificationService::createWalletUpdateNotification($user,'withdrawal',$amount);return 'Withdrawal approved. Reserved funds settled for $'.number_format($amount,2);}throw new \RuntimeException('Invalid transaction type for approval.');});return redirect()->route('admin.wallet-transactions.index')->with('success',$message);}catch(\Throwable $e){Log::error('Failed to approve transaction '.$transaction->id.': '.$e->getMessage());return back()->with('error',$e->getMessage());}
     }
 
-    public function reject(Request $request, WalletTransaction $transaction)
+    public function reject(Request $request, WalletTransaction $transaction, FinancialActivityService $activity)
     {
-        $request->validate([
-            'rejection_reason' => 'required|string|max:255',
-        ]);
-
-        try {
-            DB::beginTransaction();
-
-            if ($transaction->status !== 'pending') {
-                return redirect()->back()->with('error', 'Only pending transactions can be rejected.');
-            }
-
-            $user = $transaction->wallet->user;
-            $amount = $transaction->amount;
-
-            // Update transaction status
-            $transaction->update([
-                'status' => 'rejected',
-                'description' => $transaction->description . ' [REJECTED: ' . $request->rejection_reason . ']',
-            ]);
-
-            // Send notification
-            $notificationMessage = "Your {$transaction->type} request for $" . number_format($amount, 2) . " has been rejected. Reason: " . $request->rejection_reason;
-            
-            NotificationService::createSystemNotification(
-                $user,
-                ucfirst($transaction->type) . ' Request Rejected',
-                $notificationMessage,
-                [
-                    'transaction_id' => $transaction->id,
-                    'amount' => $amount,
-                    'rejection_reason' => $request->rejection_reason,
-                ]
-            );
-
-            DB::commit();
-
-            Log::info("Admin rejected {$transaction->type} transaction {$transaction->id} for user {$user->id}. Reason: {$request->rejection_reason}");
-
-            return redirect()->route('admin.wallet-transactions.index')
-                ->with('success', ucfirst($transaction->type) . ' request rejected successfully.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error("Failed to reject transaction {$transaction->id}: " . $e->getMessage());
-
-            return redirect()->back()->with('error', 'Failed to reject transaction. Please try again.');
-        }
+        $request->validate(['rejection_reason'=>'required|string|max:255']);try{DB::transaction(function() use($request,$transaction,$activity){$tx=WalletTransaction::query()->whereKey($transaction->id)->lockForUpdate()->firstOrFail();if($tx->status!=='pending')throw new \RuntimeException('Only pending transactions can be rejected.');$wallet=$tx->wallet()->lockForUpdate()->firstOrFail();$user=$wallet->user;$amount=(float)$tx->amount;$before=$activity->snapshot($wallet);if($tx->type==='withdrawal'){$wallet->releaseReservedFunds($amount);}$tx->update(['status'=>'rejected','description'=>trim(($tx->description?$tx->description.' ':'').'[REJECTED: '.$request->rejection_reason.']')]);$activity->record($user,$tx->type.'.rejected',ucfirst($tx->type).' rejected',$request->rejection_reason,$tx->reference_id,'rejected',$tx->direction,$amount,$wallet,$tx,null,$before,['rejection_reason'=>$request->rejection_reason],'admin',auth()->id());NotificationService::createSystemNotification($user,ucfirst($tx->type).' Request Rejected','Your '.$tx->type.' request for $'.number_format($amount,2).' was rejected. Reason: '.$request->rejection_reason,['transaction_id'=>$tx->id,'reference'=>$tx->reference_id]);});return redirect()->route('admin.wallet-transactions.index')->with('success',ucfirst($transaction->type).' request rejected successfully.');}catch(\Throwable $e){Log::error('Failed to reject transaction '.$transaction->id.': '.$e->getMessage());return back()->with('error',$e->getMessage());}
     }
 
     public function destroy(WalletTransaction $transaction)

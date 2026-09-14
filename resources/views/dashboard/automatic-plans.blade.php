@@ -8,8 +8,8 @@
         <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
             <!-- Background Pattern -->
             <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-48 h-48 bg-white rounded-full -translate-y-24 translate-x-24"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full translate-y-12 -translate-x-12"></div>
+                <div class="absolute top-0 right-0 w-48 h-48 bg-card rounded-full -translate-y-24 translate-x-24"></div>
+                <div class="absolute bottom-0 left-0 w-24 h-24 bg-card rounded-full translate-y-12 -translate-x-12"></div>
             </div>
             
             <div class="relative z-10">
@@ -20,7 +20,7 @@
                     </div>
                     
                     <!-- Enhanced Stats Card -->
-                    <div class="bg-white bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-80">
+                    <div class="bg-card bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-80">
                         <div class="flex items-center justify-between mb-3">
                             <div>
                                 <p class="text-xs text-tesla-100 dark:text-gray-300 mb-1">Active Plans</p>
@@ -49,10 +49,10 @@
         <div class="bg-card rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-lg font-light text-black dark:text-white mb-1">Quick Actions</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-300">Manage your automatic investment plans</p>
+                    <h3 class="text-lg font-light text-foreground mb-1">Quick Actions</h3>
+                    <p class="text-xs text-muted-foreground dark:text-gray-300">Manage your automatic investment plans</p>
                 </div>
-                <button onclick="openCreateModal()" class="inline-flex items-center px-4 py-2 bg-black dark:bg-white text-white dark:text-gray-900 text-xs font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200">
+                <button onclick="openCreateModal()" class="inline-flex items-center px-4 py-2 bg-foreground text-background text-xs font-medium rounded-lg hover:opacity-90 transition-colors duration-200">
                     <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
                     Create New Plan
                 </button>
@@ -64,8 +64,8 @@
             <div class="px-6 py-4 border-b border-border">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-lg font-light text-black dark:text-white mb-1">Your Automatic Investment Plans</h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-300">Recurring investment schedules</p>
+                        <h3 class="text-lg font-light text-foreground mb-1">Your Automatic Investment Plans</h3>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300">Recurring investment schedules</p>
                     </div>
                 </div>
             </div>
@@ -73,41 +73,41 @@
             @if($automaticPlans->count() > 0)
                 <div class="overflow-x-auto">
                     <table class="w-full">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-muted/30">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investment Plan</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Frequency</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Next Investment</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Investment Plan</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Frequency</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Next Investment</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-card divide-y divide-gray-100 dark:divide-tesla-600">
                             @foreach($automaticPlans as $plan)
-                            <tr class="hover:bg-gray-50 transition-colors duration-200">
+                            <tr class="hover:bg-muted/30 transition-colors duration-200">
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 w-8 h-8 bg-muted rounded-lg flex items-center justify-center">
-                                            <i data-lucide="trending-up" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
+                                            <i data-lucide="trending-up" class="w-4 h-4 text-muted-foreground"></i>
                                         </div>
                                         <div class="ml-3">
-                                            <div class="text-sm font-medium text-black">{{ $plan->investmentPlan->name }}</div>
-                                            <div class="text-xs text-gray-500 dark:text-gray-300">{{ $plan->investmentPlan->category }}</div>
+                                            <div class="text-sm font-medium text-foreground">{{ $plan->investmentPlan->name }}</div>
+                                            <div class="text-xs text-muted-foreground dark:text-gray-300">{{ $plan->investmentPlan->category }}</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm text-black">{{ currency_symbol() }}{{ number_format($plan->amount, 2) }}</div>
+                                    <div class="text-sm text-foreground">{{ currency_symbol() }}{{ number_format($plan->amount, 2) }}</div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm text-black capitalize">{{ $plan->frequency }}</div>
+                                    <div class="text-sm text-foreground capitalize">{{ $plan->frequency }}</div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-sm text-black">{{ $plan->next_investment_date ? $plan->next_investment_date->format('M j, Y') : 'N/A' }}</div>
+                                    <div class="text-sm text-foreground">{{ $plan->next_investment_date ? $plan->next_investment_date->format('M j, Y') : 'N/A' }}</div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $plan->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $plan->is_active ? 'bg-green-100 text-green-800' : 'bg-muted text-foreground' }}">
                                         {{ $plan->is_active ? 'Active' : 'Inactive' }}
                                     </span>
                                 </td>
@@ -140,9 +140,9 @@
                     <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                         <i data-lucide="repeat" class="w-8 h-8 text-gray-400 dark:text-gray-300"></i>
                     </div>
-                    <h3 class="text-lg font-light text-black dark:text-white mb-2">No automatic investment plans</h3>
-                    <p class="text-gray-600 text-sm mb-4">Set up recurring investments to build your portfolio automatically</p>
-                    <button onclick="openCreateModal()" class="inline-flex items-center px-4 py-2 bg-black dark:bg-white text-white dark:text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200">
+                    <h3 class="text-lg font-light text-foreground mb-2">No automatic investment plans</h3>
+                    <p class="text-muted-foreground text-sm mb-4">Set up recurring investments to build your portfolio automatically</p>
+                    <button onclick="openCreateModal()" class="inline-flex items-center px-4 py-2 bg-foreground text-background text-sm font-medium rounded-lg hover:opacity-90 transition-colors duration-200">
                         <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
                         Create Your First Plan
                     </button>
@@ -157,8 +157,8 @@
             <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Active Plans</p>
-                        <p class="text-lg font-light text-black">{{ $automaticPlans->where('is_active', true)->count() }}</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Active Plans</p>
+                        <p class="text-lg font-light text-foreground">{{ $automaticPlans->where('is_active', true)->count() }}</p>
                     </div>
                     <div class="w-8 h-8 flex items-center justify-center">
                         <i data-lucide="check-circle" class="w-4 h-4 text-green-600"></i>
@@ -170,8 +170,8 @@
             <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Total Plans</p>
-                        <p class="text-lg font-light text-black">{{ $automaticPlans->count() }}</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Total Plans</p>
+                        <p class="text-lg font-light text-foreground">{{ $automaticPlans->count() }}</p>
                     </div>
                     <div class="w-8 h-8 flex items-center justify-center">
                         <i data-lucide="repeat" class="w-4 h-4 text-tesla-600"></i>
@@ -183,8 +183,8 @@
             <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Monthly Investment</p>
-                        <p class="text-lg font-light text-black">{{ currency_symbol() }}{{ number_format($automaticPlans->where('is_active', true)->sum('amount'), 2) }}</p>
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Monthly Investment</p>
+                        <p class="text-lg font-light text-foreground">{{ currency_symbol() }}{{ number_format($automaticPlans->where('is_active', true)->sum('amount'), 2) }}</p>
                     </div>
                     <div class="w-8 h-8 flex items-center justify-center">
                         <i data-lucide="dollar-sign" class="w-4 h-4 text-green-600"></i>
@@ -196,8 +196,8 @@
             <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-gray-500 dark:text-gray-300 mb-1">Average Amount</p>
-                        <p class="text-lg font-light text-black">
+                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Average Amount</p>
+                        <p class="text-lg font-light text-foreground">
                             ${{ $automaticPlans->where('is_active', true)->count() > 0 ? number_format($automaticPlans->where('is_active', true)->avg('amount'), 2) : '0.00' }}
                         </p>
                     </div>
@@ -215,8 +215,8 @@
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="bg-card rounded-xl p-6 w-full max-w-md">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-light text-black" id="modalTitle">Create Automatic Investment Plan</h3>
-                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 dark:text-gray-300">
+                    <h3 class="text-lg font-light text-foreground" id="modalTitle">Create Automatic Investment Plan</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-muted-foreground">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -227,8 +227,8 @@
                     
                     <!-- Investment Plan Selection -->
                     <div class="mb-4">
-                        <label for="investment_plan_id" class="block text-sm font-medium text-gray-700 mb-2">Investment Plan</label>
-                        <select id="investment_plan_id" name="investment_plan_id" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent">
+                        <label for="investment_plan_id" class="block text-sm font-medium text-foreground mb-2">Investment Plan</label>
+                        <select id="investment_plan_id" name="investment_plan_id" required class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent">
                             <option value="">Select an investment plan</option>
                             @foreach(\App\Models\InvestmentPlan::all() as $plan)
                                 <option value="{{ $plan->id }}">{{ $plan->name }} ({{ $plan->category }})</option>
@@ -238,19 +238,19 @@
                     
                     <!-- Amount -->
                     <div class="mb-4">
-                        <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">Investment Amount</label>
+                        <label for="amount" class="block text-sm font-medium text-foreground mb-2">Investment Amount</label>
                         <div class="relative">
-                            <span class="absolute left-3 top-2 text-gray-500 dark:text-gray-300">$</span>
+                            <span class="absolute left-3 top-2 text-muted-foreground dark:text-gray-300">$</span>
                             <input type="number" id="amount" name="amount" step="0.01" min="1" required 
-                                   class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                                   class="w-full pl-8 pr-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                                    placeholder="0.00">
                         </div>
                     </div>
                     
                     <!-- Frequency -->
                     <div class="mb-4">
-                        <label for="frequency" class="block text-sm font-medium text-gray-700 mb-2">Frequency</label>
-                        <select id="frequency" name="frequency" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent">
+                        <label for="frequency" class="block text-sm font-medium text-foreground mb-2">Frequency</label>
+                        <select id="frequency" name="frequency" required class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent">
                             <option value="">Select frequency</option>
                             <option value="weekly">Weekly</option>
                             <option value="biweekly">Bi-weekly</option>
@@ -261,17 +261,17 @@
                     
                     <!-- Start Date -->
                     <div class="mb-6">
-                        <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                        <label for="start_date" class="block text-sm font-medium text-foreground mb-2">Start Date</label>
                         <input type="date" id="start_date" name="start_date" required 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                               class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                                min="{{ date('Y-m-d', strtotime('+1 day')) }}">
                     </div>
                     
                     <div class="flex space-x-2">
-                        <button type="button" onclick="closeModal()" class="flex-1 px-4 py-2 border border-gray-300 text-black text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                        <button type="button" onclick="closeModal()" class="flex-1 px-4 py-2 border border-border text-foreground text-xs font-medium rounded-lg hover:bg-muted/30 transition-colors duration-200">
                             Cancel
                         </button>
-                        <button type="submit" class="flex-1 px-4 py-2 bg-black dark:bg-white text-white dark:text-gray-900 text-xs font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200">
+                        <button type="submit" class="flex-1 px-4 py-2 bg-foreground text-background text-xs font-medium rounded-lg hover:opacity-90 transition-colors duration-200">
                             Create Plan
                         </button>
                     </div>
@@ -285,8 +285,8 @@
         <div class="flex items-center justify-center min-h-screen p-4">
             <div class="bg-card rounded-xl p-6 w-full max-w-md">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-light text-black">Edit Automatic Investment Plan</h3>
-                    <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 dark:text-gray-300">
+                    <h3 class="text-lg font-light text-foreground">Edit Automatic Investment Plan</h3>
+                    <button onclick="closeEditModal()" class="text-gray-400 hover:text-muted-foreground">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -297,19 +297,19 @@
                     
                     <!-- Amount -->
                     <div class="mb-4">
-                        <label for="edit_amount" class="block text-sm font-medium text-gray-700 mb-2">Investment Amount</label>
+                        <label for="edit_amount" class="block text-sm font-medium text-foreground mb-2">Investment Amount</label>
                         <div class="relative">
-                            <span class="absolute left-3 top-2 text-gray-500 dark:text-gray-300">$</span>
+                            <span class="absolute left-3 top-2 text-muted-foreground dark:text-gray-300">$</span>
                             <input type="number" id="edit_amount" name="amount" step="0.01" min="1" required 
-                                   class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                                   class="w-full pl-8 pr-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                                    placeholder="0.00">
                         </div>
                     </div>
                     
                     <!-- Frequency -->
                     <div class="mb-4">
-                        <label for="edit_frequency" class="block text-sm font-medium text-gray-700 mb-2">Frequency</label>
-                        <select id="edit_frequency" name="frequency" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent">
+                        <label for="edit_frequency" class="block text-sm font-medium text-foreground mb-2">Frequency</label>
+                        <select id="edit_frequency" name="frequency" required class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent">
                             <option value="weekly">Weekly</option>
                             <option value="biweekly">Bi-weekly</option>
                             <option value="monthly">Monthly</option>
@@ -320,16 +320,16 @@
                     <!-- Active Status -->
                     <div class="mb-6">
                         <label class="flex items-center">
-                            <input type="checkbox" id="edit_is_active" name="is_active" value="1" class="w-4 h-4 text-black border-gray-300 rounded focus:ring-black">
-                            <span class="ml-2 text-sm text-gray-700">Active</span>
+                            <input type="checkbox" id="edit_is_active" name="is_active" value="1" class="w-4 h-4 text-foreground border-border rounded focus:ring-ring">
+                            <span class="ml-2 text-sm text-foreground">Active</span>
                         </label>
                     </div>
                     
                     <div class="flex space-x-2">
-                        <button type="button" onclick="closeEditModal()" class="flex-1 px-4 py-2 border border-gray-300 text-black text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                        <button type="button" onclick="closeEditModal()" class="flex-1 px-4 py-2 border border-border text-foreground text-xs font-medium rounded-lg hover:bg-muted/30 transition-colors duration-200">
                             Cancel
                         </button>
-                        <button type="submit" class="flex-1 px-4 py-2 bg-black dark:bg-white text-white dark:text-gray-900 text-xs font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200">
+                        <button type="submit" class="flex-1 px-4 py-2 bg-foreground text-background text-xs font-medium rounded-lg hover:opacity-90 transition-colors duration-200">
                             Update Plan
                         </button>
                     </div>

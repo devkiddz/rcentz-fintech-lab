@@ -8,8 +8,8 @@
         <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
             <!-- Background Pattern -->
             <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -translate-y-16 translate-x-16"></div>
-                <div class="absolute bottom-0 left-0 w-16 h-16 bg-white rounded-full translate-y-8 -translate-x-8"></div>
+                <div class="absolute top-0 right-0 w-32 h-32 bg-card rounded-full -translate-y-16 translate-x-16"></div>
+                <div class="absolute bottom-0 left-0 w-16 h-16 bg-card rounded-full translate-y-8 -translate-x-8"></div>
             </div>
             
             <div class="relative z-10">
@@ -20,7 +20,7 @@
                     </div>
                     
                     <!-- Enhanced Stock Stats Card -->
-                    <div class="bg-white bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-64">
+                    <div class="bg-card bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-64">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-xs text-tesla-100 dark:text-gray-300 mb-1">Current Price</p>
@@ -47,7 +47,7 @@
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-medium text-gray-900">{{ $stock->symbol }} Price Chart</h3>
                 <div class="flex space-x-2">
-                    <button type="button" class="chart-period-btn px-3 py-1 text-xs rounded-lg border border-gray-300 bg-black dark:bg-white text-white dark:text-gray-900" data-period="1m">1M</button>
+                    <button type="button" class="chart-period-btn px-3 py-1 text-xs rounded-lg border border-border bg-foreground text-background" data-period="1m">1M</button>
                 </div>
             </div>
             <div class="relative">
@@ -62,7 +62,7 @@
                 
                 <!-- Quantity Input -->
                 <div>
-                    <label for="quantity" class="block text-sm font-medium text-gray-700 mb-2">Number of Shares</label>
+                    <label for="quantity" class="block text-sm font-medium text-foreground mb-2">Number of Shares</label>
                     <div class="relative">
                         <input type="number" 
                                id="quantity" 
@@ -71,11 +71,11 @@
                                min="1" 
                                max="10000"
                                value="{{ old('quantity') }}"
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200"
+                               class="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
                                placeholder="0"
                                required>
                     </div>
-                    <p class="text-xs text-gray-500 mt-1">Maximum shares: 10,000</p>
+                    <p class="text-xs text-muted-foreground mt-1">Maximum shares: 10,000</p>
                     @error('quantity')
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
@@ -203,18 +203,18 @@
                 <!-- Wallet Balance -->
                 <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 border border-border">
                     <div class="flex items-center justify-between mb-3">
-                        <span class="text-xs font-medium text-gray-800">Wallet Balance</span>
+                        <span class="text-xs font-medium text-foreground">Wallet Balance</span>
                         <div class="w-8 h-8 flex items-center justify-center">
-                            <i data-lucide="wallet" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
+                            <i data-lucide="wallet" class="w-4 h-4 text-muted-foreground"></i>
                         </div>
                     </div>
                     <div class="flex justify-between items-center">
-                        <span class="text-sm text-gray-700">Available Funds</span>
-                        <span class="text-sm font-medium text-gray-800">{{ currency_symbol() }}{{ number_format($wallet->balance, 2) }}</span>
+                        <span class="text-sm text-foreground">Available Funds</span>
+                        <span class="text-sm font-medium text-foreground">{{ currency_symbol() }}{{ number_format($wallet->balance, 2) }}</span>
                     </div>
                     <div class="flex justify-between items-center mt-1">
-                        <span class="text-sm text-gray-700">After Purchase</span>
-                        <span class="text-sm font-medium text-gray-800" id="remaining-display">{{ currency_symbol() }}{{ number_format($wallet->balance, 2) }}</span>
+                        <span class="text-sm text-foreground">After Purchase</span>
+                        <span class="text-sm font-medium text-foreground" id="remaining-display">{{ currency_symbol() }}{{ number_format($wallet->balance, 2) }}</span>
                     </div>
                 </div>
 
@@ -252,7 +252,7 @@
 
                 <!-- Submit Button -->
                 <button type="submit" 
-                        class="w-full bg-black dark:bg-white text-white dark:text-gray-900 py-3 px-6 rounded-lg font-medium hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200 flex items-center justify-center">
+                        class="w-full bg-foreground text-background py-3 px-6 rounded-lg font-medium hover:opacity-90 transition-colors duration-200 flex items-center justify-center">
                     <i data-lucide="shopping-cart" class="w-4 h-4 mr-2"></i>
                     Buy Shares
                 </button>

@@ -6,7 +6,7 @@
                     {{ __('Fleet Management') }}
                 </h2>
             </div>
-            <a href="{{ route('admin.cars.create') }}" class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-all duration-200">
+            <a href="{{ route('admin.cars.create') }}" class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
@@ -22,7 +22,7 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-card border border-border p-4 rounded-lg">
                     <div class="flex items-center">
-                        <div class="w-10 h-10 bg-muted dark:bg-dark-muted rounded-lg flex items-center justify-center">
+                        <div class="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
                             <svg class="w-5 h-5 text-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                             </svg>
@@ -91,13 +91,17 @@
                 <div class="p-4">
                     <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                         @foreach($cars as $car)
-                        <div class="group bg-muted/40 dark:bg-dark-muted rounded-lg p-4 hover:bg-card hover:shadow-md transition-all duration-200 border border-transparent hover:border-border dark:border-gray-700">
+                        <div class="group bg-muted/40 rounded-lg p-4 hover:bg-card hover:shadow-md transition-all duration-200 border border-transparent hover:border-border dark:border-gray-700">
                             <!-- Car Image -->
                             <div class="mb-3">
                                 @if($car->first_image)
-                                    <img src="{{ strpos($car->first_image, 'http') === 0 ? $car->first_image : asset('storage/' . $car->first_image) }}" 
-                                         alt="{{ $car->title }}" 
-                                         class="w-full h-40 object-cover rounded-lg group-hover:scale-105 transition-transform duration-200">
+                                    <a href="{{ route('admin.cars.show', ['car' => $car->getRouteKey()]) }}"
+                                       class="block overflow-hidden rounded-lg"
+                                       aria-label="View details for {{ $car->title }}">
+                                        <img src="{{ strpos($car->first_image, 'http') === 0 ? $car->first_image : asset('storage/' . $car->first_image) }}" 
+                                             alt="{{ $car->title }}" 
+                                             class="w-full h-40 object-cover rounded-lg group-hover:scale-105 transition-transform duration-200">
+                                    </a>
                                 @else
                                     <div class="w-full h-40 bg-gradient-to-br from-gray-200 to-gray-300 rounded-lg flex items-center justify-center">
                                         <svg class="w-12 h-12 text-gray-400 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,7 +115,10 @@
                             <div class="space-y-2">
                                 <div class="flex items-start justify-between">
                                     <div>
-                                        <h4 class="font-medium text-foreground dark:text-white text-sm">{{ $car->title }}</h4>
+                                        <a href="{{ route('admin.cars.show', ['car' => $car->getRouteKey()]) }}"
+                                           class="font-medium text-foreground dark:text-white text-sm hover:text-tesla-600 transition-colors">
+                                            {{ $car->title }}
+                                        </a>
                                         <p class="text-xs text-muted-foreground dark:text-gray-300">{{ $car->year }} {{ $car->make }} {{ $car->model }}</p>
                                     </div>
                                     @if($car->is_available)
@@ -143,8 +150,9 @@
                                 
                                 <!-- Actions -->
                                 <div class="flex items-center space-x-2 pt-2">
-                                    <a href="{{ route('admin.cars.show', $car) }}" class="flex-1 text-center px-2 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded-md hover:bg-gray-200 transition-colors">
-                                        View
+                                    <a href="{{ route('admin.cars.show', ['car' => $car->getRouteKey()]) }}"
+                                       class="relative z-10 flex-1 text-center px-2 py-1.5 bg-muted text-foreground text-xs font-medium rounded-md hover:bg-muted dark:hover:bg-gray-700 transition-colors">
+                                        View Details
                                     </a>
                                     <a href="{{ route('admin.cars.edit', $car) }}" class="flex-1 text-center px-2 py-1.5 bg-tesla-100 text-tesla-700 text-xs font-medium rounded-md hover:bg-tesla-200 transition-colors">
                                         Edit
@@ -173,14 +181,14 @@
             @else
             <!-- Empty State -->
             <div class="bg-card border border-border p-8 text-center rounded-lg">
-                <div class="w-16 h-16 bg-muted dark:bg-dark-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8 text-gray-400 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                     </svg>
                 </div>
                 <h3 class="text-lg font-medium text-foreground dark:text-white mb-2">No vehicles in inventory</h3>
                 <p class="text-muted-foreground dark:text-gray-300 mb-6 max-w-md mx-auto text-sm">Get started by adding your first vehicle to the inventory. You can add details, photos, and pricing information.</p>
-                <a href="{{ route('admin.cars.create') }}" class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-all duration-200">
+                <a href="{{ route('admin.cars.create') }}" class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>

@@ -7,7 +7,7 @@
                 </h2>
             </div>
             <a href="{{ route('admin.payment_methods.create') }}" 
-               class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-all duration-200">
+               class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
@@ -195,7 +195,7 @@
                                 <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-end space-x-2">
                                         <a href="{{ route('admin.payment_methods.show', $method) }}" 
-                                           class="text-center px-2 py-1 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-gray-200 transition-colors">
+                                           class="text-center px-2 py-1 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-muted transition-colors">
                                             View
                                         </a>
                                         <a href="{{ route('admin.payment_methods.edit', $method) }}" 
@@ -224,7 +224,7 @@
             @else
             <!-- Empty State -->
             <div class="bg-card border border-border p-8 rounded-lg text-center">
-                <div class="w-16 h-16 bg-muted dark:bg-dark-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8 text-gray-400 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
                     </svg>
@@ -232,7 +232,7 @@
                 <h3 class="text-lg font-medium text-foreground dark:text-white mb-2">No Payment Methods</h3>
                 <p class="text-xs text-muted-foreground dark:text-gray-300 mb-6 max-w-md mx-auto">Get started by adding your first payment method for customers to use during checkout. Support both traditional and cryptocurrency payments.</p>
                 <a href="{{ route('admin.payment_methods.create') }}" 
-                   class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-all duration-200">
+                   class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>

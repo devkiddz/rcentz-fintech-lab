@@ -8,7 +8,7 @@
             </div>
             <div class="flex space-x-2">
                 <a href="{{ route('admin.wallet-transactions.index') }}" 
-                   class="px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                   class="px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-colors">
                     Back to Transactions
                 </a>
             </div>
@@ -36,14 +36,10 @@
                                     <h4 class="text-lg font-medium text-foreground dark:text-white mb-2">{{ ucfirst($transaction->type) }} Transaction</h4>
                                     <p class="text-sm text-muted-foreground mb-3">{{ $transaction->description ?? 'No description provided' }}</p>
                                     <div class="flex flex-wrap gap-2">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
-                                            {{ $transaction->type === 'deposit' ? 'bg-green-100 text-green-800' : 
-                                               ($transaction->type === 'withdrawal' ? 'bg-red-100 text-red-800' : 'bg-tesla-100 text-tesla-800') }}">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->type === 'deposit' ? 'bg-green-100 text-green-800' : ($transaction->type === 'withdrawal' ? 'bg-red-100 text-red-800' : 'bg-tesla-100 text-tesla-800') }}">
                                             {{ ucfirst($transaction->type) }}
                                         </span>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
-                                            {{ $transaction->status === 'completed' ? 'bg-green-100 text-green-800' : 
-                                               ($transaction->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->status === 'completed' ? 'bg-green-100 text-green-800' : ($transaction->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
                                             {{ ucfirst($transaction->status) }}
                                         </span>
                                         @if($transaction->paymentMethod)
@@ -106,9 +102,7 @@
                                 <div>
                                     <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Type</label>
                                     <p class="text-sm font-medium text-foreground">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
-                                            {{ $transaction->type === 'deposit' ? 'bg-green-100 text-green-800' : 
-                                               ($transaction->type === 'withdrawal' ? 'bg-red-100 text-red-800' : 'bg-tesla-100 text-tesla-800') }}">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->type === 'deposit' ? 'bg-green-100 text-green-800' : ($transaction->type === 'withdrawal' ? 'bg-red-100 text-red-800' : 'bg-tesla-100 text-tesla-800') }}">
                                             {{ ucfirst($transaction->type) }}
                                         </span>
                                     </p>
@@ -116,9 +110,7 @@
                                 <div>
                                     <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Status</label>
                                     <p class="text-sm font-medium text-foreground">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium 
-                                            {{ $transaction->status === 'completed' ? 'bg-green-100 text-green-800' : 
-                                               ($transaction->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->status === 'completed' ? 'bg-green-100 text-green-800' : ($transaction->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
                                             {{ ucfirst($transaction->status) }}
                                         </span>
                                     </p>
@@ -261,7 +253,7 @@
 
                             <div class="mt-4">
                                 <a href="{{ route('admin.users.show', $transaction->wallet->user) }}" 
-                                   class="w-full inline-flex items-center justify-center px-3 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-colors">
+                                   class="w-full inline-flex items-center justify-center px-3 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-colors">
                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                    </svg>
@@ -393,7 +385,7 @@
                     <div class="mb-4">
                         <label for="rejection_reason" class="block text-xs font-medium text-muted-foreground mb-2">Rejection Reason</label>
                         <textarea id="rejection_reason" name="rejection_reason" rows="3" 
-                                  class="w-full px-3 py-2 border border-border rounded-lg focus:ring-black focus:border-black text-sm" 
+                                  class="w-full px-3 py-2 border border-border rounded-lg focus:ring-ring focus:border-black text-sm" 
                                   placeholder="Enter reason for rejection..." required></textarea>
                     </div>
                     <div class="flex space-x-3">

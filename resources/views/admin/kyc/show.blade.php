@@ -8,7 +8,7 @@
             </div>
             <div class="flex space-x-2">
                 <a href="{{ route('admin.kyc.index') }}" 
-                   class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-all duration-200">
+                   class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-all duration-200">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
@@ -253,7 +253,7 @@
                         <textarea id="rejection_reason" 
                                   name="rejection_reason" 
                                   rows="3" 
-                                  class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors duration-200"
+                                  class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors duration-200"
                                   placeholder="Please provide a reason for rejection..."
                                   required></textarea>
                     </div>
@@ -261,7 +261,7 @@
                     <div class="flex justify-end space-x-3">
                         <button type="button" 
                                 onclick="closeRejectModal()" 
-                                class="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted dark:bg-dark-muted rounded-lg hover:bg-gray-200 transition-colors">
+                                class="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted rounded-lg hover:bg-muted transition-colors">
                             Cancel
                         </button>
                         <button type="submit" 

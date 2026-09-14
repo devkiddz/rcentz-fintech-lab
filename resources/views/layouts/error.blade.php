@@ -28,7 +28,7 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased bg-white text-black">
+    <body class="font-sans antialiased bg-card text-foreground">
         <main>
             @yield('content')
         </main>

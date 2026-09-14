@@ -9,11 +9,11 @@
             </div>
             <div class="flex space-x-2">
                 <a href="{{ route('admin.investments.automatic-nav-updates.edit', $automaticNavUpdate) }}" 
-                   class="px-3 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-colors">
+                   class="px-3 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-colors">
                     Edit
                 </a>
                 <a href="{{ route('admin.investments.automatic-nav-updates.index') }}" 
-                   class="px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                   class="px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-colors">
                     Back
                 </a>
             </div>
@@ -194,7 +194,7 @@
                 </form>
                 
                 <a href="{{ route('admin.investments.automatic-nav-updates.edit', $automaticNavUpdate) }}" 
-                   class="px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-colors">
+                   class="px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-colors">
                     Edit Update
                 </a>
                 

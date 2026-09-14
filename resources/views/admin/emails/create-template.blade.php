@@ -8,7 +8,7 @@
                 <p class="text-xs text-muted-foreground mt-1">Create a new email template for sending notifications to users</p>
             </div>
             <a href="{{ route('admin.emails.index') }}" 
-               class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-all duration-200">
+               class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-all duration-200">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
@@ -35,7 +35,7 @@
                                         Template Name *
                                     </label>
                                     <input type="text" name="name" id="name" value="{{ old('name') }}" required
-                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black"
                                            placeholder="e.g., Welcome Email, Purchase Confirmation">
                                     @error('name')
                                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -47,7 +47,7 @@
                                         Template Type *
                                     </label>
                                     <select name="type" id="type" required
-                                            class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black">
+                                            class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black">
                                         <option value="">Select type...</option>
                                         <option value="general" {{ old('type') === 'general' ? 'selected' : '' }}>General</option>
                                         <option value="purchase" {{ old('type') === 'purchase' ? 'selected' : '' }}>Purchase</option>
@@ -65,7 +65,7 @@
                                         Email Subject *
                                     </label>
                                     <input type="text" name="subject" id="subject" value="{{ old('subject') }}" required
-                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black"
                                            placeholder="e.g., Welcome to Tesla Drives, @{{user_name}}!">
                                     @error('subject')
                                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -83,7 +83,7 @@
                                     Email Content *
                                 </label>
                                 <textarea name="content" id="content" rows="12" required
-                                          class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                                          class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black"
                                           placeholder="Write your email content here. You can use variables like @{{user_name}}, @{{user_email}}, etc.">{{ old('content') }}</textarea>
                                 @error('content')
                                     <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -104,7 +104,7 @@
                                         Variable Names (comma-separated)
                                     </label>
                                     <input type="text" name="variables" id="variables" value="{{ old('variables') }}"
-                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black"
                                            placeholder="e.g., user_name, user_email, order_number">
                                     <p class="mt-1 text-xs text-muted-foreground dark:text-gray-300">
                                         List variable names that can be used in this template
@@ -123,7 +123,7 @@
                             <div class="space-y-3">
                                 <label class="flex items-center">
                                     <input type="checkbox" name="is_active" value="1" {{ old('is_active', true) ? 'checked' : '' }}
-                                           class="text-foreground focus:ring-black">
+                                           class="text-foreground focus:ring-ring">
                                     <span class="ml-2 text-sm text-foreground">Active template</span>
                                 </label>
                                 
@@ -166,7 +166,7 @@
                         <!-- Submit Button -->
                         <div class="bg-card border border-border p-4 rounded-lg">
                             <button type="submit" 
-                                    class="w-full inline-flex items-center justify-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-all duration-200">
+                                    class="w-full inline-flex items-center justify-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                 </svg>

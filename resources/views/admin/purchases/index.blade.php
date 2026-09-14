@@ -82,13 +82,13 @@
                                    id="search"
                                    value="{{ request('search') }}"
                                    placeholder="Customer or car..."
-                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black">
+                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black">
                         </div>
 
                         <!-- Status Filter -->
                         <div>
                             <label for="status" class="block text-xs font-medium text-muted-foreground mb-2">Status</label>
-                            <select name="status" id="status" class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black">
+                            <select name="status" id="status" class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black">
                                 <option value="">All Statuses</option>
                                 <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                                 <option value="processing" {{ request('status') == 'processing' ? 'selected' : '' }}>Processing</option>
@@ -101,7 +101,7 @@
                         <!-- User Filter -->
                         <div>
                             <label for="user_id" class="block text-xs font-medium text-muted-foreground mb-2">Customer</label>
-                            <select name="user_id" id="user_id" class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black">
+                            <select name="user_id" id="user_id" class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black">
                                 <option value="">All Customers</option>
                                 @foreach($users as $user)
                                     <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
@@ -118,7 +118,7 @@
                                    name="date_from" 
                                    id="date_from"
                                    value="{{ request('date_from') }}"
-                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black">
+                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black">
                         </div>
 
                         <!-- Date To -->
@@ -128,20 +128,20 @@
                                    name="date_to" 
                                    id="date_to"
                                    value="{{ request('date_to') }}"
-                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black">
+                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black">
                         </div>
                     </div>
 
                     <div class="flex items-center space-x-3">
                         <button type="submit" 
-                                class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-all duration-200">
+                                class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                             Filter
                         </button>
                         <a href="{{ route('admin.purchases.index') }}" 
-                           class="inline-flex items-center px-4 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-all duration-200">
+                           class="inline-flex items-center px-4 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-all duration-200">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                             </svg>
@@ -185,7 +185,7 @@
                                                  alt="{{ $purchase->car->title }}" 
                                                  class="w-10 h-8 object-cover rounded-lg mr-3">
                                         @else
-                                            <div class="w-10 h-8 bg-gray-200 rounded-lg flex items-center justify-center mr-3">
+                                            <div class="w-10 h-8 bg-muted rounded-lg flex items-center justify-center mr-3">
                                                 <svg class="w-4 h-4 text-gray-400 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                                                 </svg>
@@ -264,7 +264,7 @@
             @else
             <!-- Empty State -->
             <div class="bg-card border border-border p-8 rounded-lg text-center">
-                <div class="w-16 h-16 bg-muted dark:bg-dark-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8 text-gray-400 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
                     </svg>
@@ -279,7 +279,7 @@
                 </p>
                 @if(request()->hasAny(['search', 'status', 'user_id', 'date_from', 'date_to']))
                 <a href="{{ route('admin.purchases.index') }}" 
-                   class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-all duration-200">
+                   class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                     </svg>
@@ -326,7 +326,7 @@
                 </div>
                 <div class="flex items-center justify-center space-x-3">
                     <button onclick="closeDeleteModal()" 
-                            class="px-4 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                            class="px-4 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-colors">
                         Cancel
                     </button>
                     <button onclick="submitDelete()" 

@@ -29,8 +29,11 @@
                 <!-- Logo -->
                 <div class="flex items-center">
                     <a href="{{ route('home') }}" class="flex items-center">
-                        @if(site_logo())
-                            <img src="{{ site_logo() }}" alt="{{ site_name() }}" class="h-6 w-auto filter brightness-0 invert">
+                        @if(site_logo_light() && site_logo_dark())
+                            <img src="{{ site_logo_light() }}" alt="{{ site_name() }}" class="h-6 w-auto dark:hidden">
+                            <img src="{{ site_logo_dark() }}" alt="{{ site_name() }}" class="hidden h-6 w-auto dark:block">
+                        @elseif(site_logo_light() || site_logo_dark())
+                            <img src="{{ site_logo_light() ?? site_logo_dark() }}" alt="{{ site_name() }}" class="h-6 w-auto">
                         @else
                             <span class="text-lg font-bold text-white">{{ site_name() }}</span>
                         @endif
@@ -47,6 +50,11 @@
 
                 <!-- Right Side -->
                 <div class="flex items-center space-x-2">
+                    <button type="button" data-theme-toggle onclick="window.AxausTheme.toggle()" class="hidden md:inline-flex items-center gap-2 rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/20" aria-label="Toggle color theme" title="Toggle light/dark theme">
+                        <span class="dark:hidden"><i data-lucide="moon" class="h-4 w-4"></i></span>
+                        <span class="hidden dark:inline-flex"><i data-lucide="sun" class="h-4 w-4"></i></span>
+                        <span data-theme-current>Dark mode</span>
+                    </button>
                     @auth
                         <!-- Account Dropdown -->
                         <div class="relative group">
@@ -68,7 +76,7 @@
                                     <div class="border-t border-border mt-2 pt-2">
                                         <form method="POST" action="{{ route('logout') }}">
                                             @csrf
-                                            <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Sign Out</button>
+                                            <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-foreground hover:bg-muted">Sign Out</button>
                                         </form>
                                     </div>
                                 </div>
@@ -95,6 +103,11 @@
                 <a href="{{ route('investments.index') }}" class="block px-3 py-2 text-sm font-medium text-white rounded hover:bg-black/20">Invest</a>
                 <a href="{{ route('stocks.index') }}" class="block px-3 py-2 text-sm font-medium text-white rounded hover:bg-black/20">Stocks</a>
                 <a href="{{ route('portfolio.index') }}" class="block px-3 py-2 text-sm font-medium text-white rounded hover:bg-black/20">Portfolio</a>
+                <button type="button" data-theme-toggle onclick="window.AxausTheme.toggle()" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium text-white rounded hover:bg-black/20">
+                    <span class="dark:hidden"><i data-lucide="moon" class="h-4 w-4"></i></span>
+                    <span class="hidden dark:inline-flex"><i data-lucide="sun" class="h-4 w-4"></i></span>
+                    <span data-theme-current>Dark mode</span>
+                </button>
                 @auth
                     <div class="border-t mt-2 pt-2" style="border-color: #A00D25;">
                         <a href="{{ route('dashboard') }}" class="block px-3 py-2 text-sm font-medium text-white rounded hover:bg-black/20">Dashboard</a>
@@ -118,7 +131,7 @@
         <!-- Flash Messages (Dashboard-style) -->
         <div class="pt-16">
             @if (session('success'))
-                <div class="bg-green-50 border-l-4 border-green-500 text-green-700 px-4 py-3 max-w-7xl mx-auto mt-3 rounded-r-md" role="alert">
+                <div class="bg-green-50 dark:bg-green-950/30 border-l-4 border-green-500 text-green-700 dark:text-green-300 px-4 py-3 max-w-7xl mx-auto mt-3 rounded-r-md" role="alert">
                     <div class="flex items-center">
                         <i data-lucide="check-circle" class="w-4 h-4 mr-2"></i>
                         <span class="text-sm">{{ session('success') }}</span>
@@ -129,7 +142,7 @@
                 </div>
             @endif
             @if (session('error'))
-                <div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 max-w-7xl mx-auto mt-3 rounded-r-md" role="alert">
+                <div class="bg-red-50 dark:bg-red-950/30 border-l-4 border-red-500 text-red-700 dark:text-red-300 px-4 py-3 max-w-7xl mx-auto mt-3 rounded-r-md" role="alert">
                     <div class="flex items-center">
                         <i data-lucide="alert-circle" class="w-4 h-4 mr-2"></i>
                         <span class="text-sm">{{ session('error') }}</span>
@@ -140,7 +153,7 @@
                 </div>
             @endif
             @if (session('warning'))
-                <div class="bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 px-4 py-3 max-w-7xl mx-auto mt-3 rounded-r-md" role="alert">
+                <div class="bg-yellow-50 dark:bg-yellow-950/30 border-l-4 border-yellow-500 text-yellow-700 dark:text-yellow-300 px-4 py-3 max-w-7xl mx-auto mt-3 rounded-r-md" role="alert">
                     <div class="flex items-center">
                         <i data-lucide="alert-triangle" class="w-4 h-4 mr-2"></i>
                         <span class="text-sm">{{ session('warning') }}</span>
@@ -151,7 +164,7 @@
                 </div>
             @endif
             @if (session('info'))
-                <div class="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 max-w-7xl mx-auto mt-3 rounded-r-md" role="alert">
+                <div class="bg-red-50 dark:bg-red-950/30 border-l-4 border-red-500 text-red-700 dark:text-red-300 px-4 py-3 max-w-7xl mx-auto mt-3 rounded-r-md" role="alert">
                     <div class="flex items-center">
                         <i data-lucide="info" class="w-4 h-4 mr-2"></i>
                         <span class="text-sm">{{ session('info') }}</span>
@@ -169,35 +182,36 @@
         </main>
 
         <!-- Footer -->
-        <footer class="mt-12 border-t border-gray-800 bg-gray-950 text-white transition-colors duration-200">
+        <footer class="mt-12 border-t border-border bg-card text-card-foreground transition-colors duration-200">
             <div class="max-w-7xl mx-auto px-6 sm:px-10 py-12">
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-10 text-sm">
                     <div class="col-span-2 md:col-span-1">
-                        @if(site_logo())
-                            <img src="{{ site_logo() }}" alt="{{ site_name() }}" class="h-4 w-auto filter brightness-0 invert mb-6">
+                        @if(site_logo_dark() || site_logo_light())
+                            <img src="{{ site_logo_light() ?? site_logo_dark() }}" alt="{{ site_name() }}" class="h-4 w-auto mb-6 dark:hidden">
+                            <img src="{{ site_logo_dark() ?? site_logo_light() }}" alt="{{ site_name() }}" class="hidden h-4 w-auto mb-6 dark:block">
                         @else
-                            <span class="text-lg font-bold text-white mb-6">{{ site_name() }}</span>
+                            <span class="text-lg font-bold text-foreground mb-6">{{ site_name() }}</span>
                         @endif
-                        <p class="text-gray-400 dark:text-dark-text mt-3">© {{ date('Y') }} {{ site_name() }}</p>
+                        <p class="text-muted-foreground mt-3">© {{ date('Y') }} {{ site_name() }}</p>
                     </div>
                     <div>
                         <h4 class="font-medium text-base mb-4">Company</h4>
-                        <ul class="space-y-3 text-gray-400 dark:text-dark-text">
-                            <li><a href="{{ route('about') }}" class="hover:text-white transition-colors duration-200">About</a></li>
-                            <li><a href="{{ route('contact') }}" class="hover:text-white transition-colors duration-200">Contact</a></li>
+                        <ul class="space-y-3 text-muted-foreground">
+                            <li><a href="{{ route('about') }}" class="hover:text-foreground transition-colors duration-200">About</a></li>
+                            <li><a href="{{ route('contact') }}" class="hover:text-foreground transition-colors duration-200">Contact</a></li>
                         </ul>
                     </div>
                     <div>
                         <h4 class="font-medium text-base mb-4">Support</h4>
-                        <ul class="space-y-3 text-gray-400 dark:text-dark-text">
-                            <li><a href="{{ route('help-center') }}" class="hover:text-white transition-colors duration-200">Help Center</a></li>
-                            <li><a href="{{ route('terms') }}" class="hover:text-white transition-colors duration-200">Terms</a></li>  
+                        <ul class="space-y-3 text-muted-foreground">
+                            <li><a href="{{ route('help-center') }}" class="hover:text-foreground transition-colors duration-200">Help Center</a></li>
+                            <li><a href="{{ route('terms') }}" class="hover:text-foreground transition-colors duration-200">Terms</a></li>  
                         </ul>
                     </div>
                     <div>
                         <h4 class="font-medium text-base mb-4">Legal</h4>
-                        <ul class="space-y-4 text-gray-400 dark:text-dark-text">
-                            <li><a href="{{ route('privacy') }}" class="hover:text-white transition-colors duration-200">Privacy & Legal</a></li>
+                        <ul class="space-y-4 text-muted-foreground">
+                            <li><a href="{{ route('privacy') }}" class="hover:text-foreground transition-colors duration-200">Privacy & Legal</a></li>
                         </ul>
                     </div>
                 </div>

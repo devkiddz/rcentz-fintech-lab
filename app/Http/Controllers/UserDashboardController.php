@@ -8,72 +8,43 @@ use App\Models\Purchase;
 use App\Models\Stock;
 use App\Models\StockPriceHistory;
 use Carbon\Carbon;
+use App\Services\FinancialOverviewService;
 
 class UserDashboardController extends Controller
 {
-    public function index()
+    public function index(FinancialOverviewService $financialOverview)
     {
         $user = Auth::user();
-        
-        // Car purchase data
+
+        // Financial truth for the authenticated customer.
+        $finance = $financialOverview->forUser($user, 8);
+
+        // Vehicle activity remains available as a secondary product surface.
         $recentPurchases = $user->purchases()
             ->with(['car', 'paymentMethod'])
             ->orderBy('created_at', 'desc')
-            ->limit(5)
+            ->limit(3)
             ->get();
 
         $totalSpent = $user->purchases()
             ->where('status', 'completed')
             ->sum('amount');
 
-        $totalPurchases = $user->purchases()->where('status', 'completed')->get();
-
-        // Get investment and stock holdings
-        $investmentHoldings = $user->investmentHoldings()
-            ->with('investmentPlan')
+        $totalPurchases = $user->purchases()
+            ->where('status', 'completed')
             ->get();
 
-        $stockHoldings = $user->stockHoldings()
-            ->with('stock')
-            ->get();
-
-        // Calculate portfolio values
-        $totalInvestmentValue = $investmentHoldings->sum('current_value');
-        $totalStockValue = $stockHoldings->sum('current_value');
-        $totalPortfolioValue = $totalInvestmentValue + $totalStockValue + ($user->wallet->balance ?? 0);
-
-        $totalInvestmentInvested = $investmentHoldings->sum('total_invested');
-        $totalStockInvested = $stockHoldings->sum('total_invested');
-        $totalInvested = $totalInvestmentInvested + $totalStockInvested;
-
-        $totalGainLoss = $totalPortfolioValue - $totalInvested;
-        $totalGainLossPercentage = $totalInvested > 0 ? ($totalGainLoss / $totalInvested) * 100 : 0;
-
-        // Calculate monthly performance
-        $monthlyPerformance = $this->calculateMonthlyPerformance($user);
-
-        // Get stock data for chart
+        // Existing market discovery data can still support the lower dashboard.
         $chartData = $this->getStockChartData();
         $marketOverview = $this->getMarketOverview();
 
-        return view('user.dashboard', compact(
-            'recentPurchases',
-            'totalSpent',
-            'totalPurchases',
-            'investmentHoldings',
-            'stockHoldings',
-            'totalInvestmentValue',
-            'totalStockValue',
-            'totalPortfolioValue',
-            'totalInvestmentInvested',
-            'totalStockInvested',
-            'totalInvested',
-            'totalGainLoss',
-            'totalGainLossPercentage',
-            'monthlyPerformance',
-            'chartData',
-            'marketOverview'
-        ));
+        return view('user.dashboard', array_merge($finance, [
+            'recentPurchases' => $recentPurchases,
+            'totalSpent' => $totalSpent,
+            'totalPurchases' => $totalPurchases,
+            'chartData' => $chartData,
+            'marketOverview' => $marketOverview,
+        ]));
     }
 
     private function getStockChartData()

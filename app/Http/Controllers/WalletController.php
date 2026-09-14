@@ -8,6 +8,8 @@ use App\Models\PaymentMethod;
 use App\Models\User;
 use App\Models\WalletTransaction;
 use App\Services\NotificationService;
+use App\Services\FinancialOverviewService;
+use App\Services\FinancialActivityService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +36,7 @@ class WalletController extends Controller
         // Get transaction statistics
         $totalDeposits = $wallet->transactions()->deposits()->completed()->sum('amount');
         $totalWithdrawals = $wallet->transactions()->withdrawals()->completed()->sum('amount');
-        $totalInvestments = $wallet->transactions()->investments()->completed()->sum('amount');
+        $totalInvestments = $wallet->total_investments;
 
         return view('wallet.index', compact(
             'wallet',
@@ -58,64 +60,12 @@ class WalletController extends Controller
     /**
      * Process deposit
      */
-    public function processDeposit(Request $request)
+    public function processDeposit(Request $request, FinancialActivityService $activity)
     {
-        $request->validate([
-            'amount' => 'required|numeric|min:1|max:100000',
-            'payment_method_id' => 'required|exists:payment_methods,id',
-            'description' => 'nullable|string|max:500',
-        ]);
-
-        $user = Auth::user();
-        $wallet = $user->wallet;
-        $paymentMethod = PaymentMethod::findOrFail($request->payment_method_id);
-
-        // Verify payment method allows deposits
-        if (!$paymentMethod->canDeposit()) {
-            return back()->withErrors(['payment_method_id' => 'This payment method does not support deposits.']);
-        }
-
-        try {
-            DB::beginTransaction();
-
-            // Create wallet transaction (pending by default)
-            $transaction = $wallet->transactions()->create([
-                'payment_method_id' => $paymentMethod->id,
-                'type' => 'deposit',
-                'amount' => $request->amount,
-                'fee' => 0.00, // Optionally compute based on payment method
-                'status' => 'pending',
-                'description' => $request->description ?? "Deposit via {$paymentMethod->name}",
-            ]);
-
-            DB::commit();
-
-            // For cryptocurrency deposits, redirect to a confirmation page with wallet address and QR
-            if ($paymentMethod->isCryptocurrency()) {
-                return redirect()->route('wallet.crypto-payment', $transaction)
-                    ->with('info', 'Please complete your crypto transfer and submit the transaction ID.');
-            }
-
-            // For traditional methods, credit instantly (existing behavior)
-            DB::beginTransaction();
-            $wallet->addFunds($request->amount);
-            $transaction->update(['status' => 'completed']);
-
-            NotificationService::createWalletUpdateNotification(
-                $user,
-                'deposit',
-                $request->amount
-            );
-
-            DB::commit();
-
-            return redirect()->route('wallet.index')
-                ->with('success', 'Deposit processed successfully. Your wallet has been credited.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->withErrors(['error' => 'Failed to process deposit. Please try again.']);
-        }
+        $request->validate(['amount'=>'required|numeric|min:1|max:100000','payment_method_id'=>'required|exists:payment_methods,id','description'=>'nullable|string|max:500']);
+        $user=Auth::user(); $paymentMethod=PaymentMethod::findOrFail($request->payment_method_id);
+        if(!$paymentMethod->canDeposit()) return back()->withErrors(['payment_method_id'=>'This payment method does not support deposits.']);
+        try { $transaction=DB::transaction(function() use($user,$paymentMethod,$request,$activity){ $wallet=$user->wallet()->lockForUpdate()->firstOrFail(); $before=$activity->snapshot($wallet); $reference=$activity->reference('DEP'); $tx=$wallet->transactions()->create(['payment_method_id'=>$paymentMethod->id,'type'=>'deposit','direction'=>'credit','amount'=>$request->amount,'fee'=>0,'status'=>'pending','reference_id'=>$reference,'description'=>$request->description??"Deposit via {$paymentMethod->name}"]); $activity->record($user,'deposit.submitted','Deposit submitted','Deposit request created and awaiting verification.',$reference,'pending','credit',(float)$request->amount,$wallet,$tx,null,$before,['payment_method'=>$paymentMethod->name],'user',$user->id); return $tx; }); NotificationService::createSystemNotification($user,'Deposit submitted','Your deposit of $'.number_format($request->amount,2).' is pending verification.',['type'=>'deposit_pending','transaction_id'=>$transaction->id,'reference'=>$transaction->reference_id]); if($paymentMethod->isCryptocurrency())return redirect()->route('wallet.crypto-payment',$transaction)->with('info','Please complete your crypto transfer and submit the transaction ID.'); return redirect()->route('wallet.index')->with('success','Deposit submitted successfully and is pending verification.'); } catch(\Throwable $e){ return back()->withInput()->withErrors(['error'=>'Failed to submit deposit. Please try again.']); }
     }
 
     /**
@@ -142,38 +92,11 @@ class WalletController extends Controller
     /**
      * Confirm crypto payment by saving user-provided transaction hash/id. Remains pending for admin approval.
      */
-    public function confirmCryptoPayment(Request $request, WalletTransaction $transaction)
+    public function confirmCryptoPayment(Request $request, WalletTransaction $transaction, FinancialActivityService $activity)
     {
-        $user = Auth::user();
-
-        if (
-            $transaction->wallet_id !== $user->wallet->id ||
-            $transaction->type !== 'deposit' ||
-            $transaction->status !== 'pending'
-        ) {
-            abort(403);
-        }
-
-        $request->validate([
-            'transaction_id' => ['required', 'string', 'max:255'],
-        ]);
-
-        $transaction->update([
-            'reference_id' => $request->transaction_id,
-            // keep status as 'pending' until admin verifies and approves
-            'description' => $transaction->description ?? 'Crypto deposit pending verification',
-        ]);
-
-        // Notify user that their crypto deposit is pending approval
-        NotificationService::createWalletDepositPendingNotification(
-            $user,
-            $transaction->amount,
-            $transaction->paymentMethod->name,
-            $transaction->reference_id
-        );
-
-        return redirect()->route('wallet.index')
-            ->with('success', 'Your crypto deposit is submitted and pending admin approval.');
+        $user=Auth::user(); if($transaction->wallet_id!==$user->wallet->id||$transaction->type!=='deposit'||$transaction->status!=='pending')abort(403); $request->validate(['transaction_id'=>['required','string','max:255']]);
+        DB::transaction(function() use($user,$transaction,$request,$activity){$locked=WalletTransaction::query()->whereKey($transaction->id)->lockForUpdate()->firstOrFail();$wallet=$user->wallet()->lockForUpdate()->firstOrFail();$before=$activity->snapshot($wallet);$locked->update(['user_crypto_details'=>array_merge($locked->user_crypto_details??[],['submitted_transaction_id'=>$request->transaction_id])]);$activity->record($user,'deposit.proof_submitted','Deposit proof submitted','Transaction proof was submitted for admin verification.',$locked->reference_id,'pending','credit',(float)$locked->amount,$wallet,$locked,null,$before,['submitted_transaction_id'=>$request->transaction_id],'user',$user->id);});
+        NotificationService::createWalletDepositPendingNotification($user,$transaction->amount,$transaction->paymentMethod->name,$transaction->reference_id); return redirect()->route('wallet.index')->with('success','Your deposit proof was submitted and is pending admin approval.');
     }
 
     /**
@@ -190,83 +113,10 @@ class WalletController extends Controller
     /**
      * Process withdrawal
      */
-    public function processWithdrawal(Request $request)
+    public function processWithdrawal(Request $request, FinancialActivityService $activity)
     {
-        $user = Auth::user();
-        $wallet = $user->wallet;
-
-        $request->validate([
-            'amount' => [
-                'required',
-                'numeric',
-                'min:1',
-                'max:' . $wallet->balance,
-            ],
-            'payment_method_id' => 'required|exists:payment_methods,id',
-            'description' => 'nullable|string|max:500',
-            // Require wallet address if crypto withdrawal
-            'wallet_address' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-        ]);
-
-        $paymentMethod = PaymentMethod::findOrFail($request->payment_method_id);
-
-        // Verify payment method allows withdrawals
-        if (!$paymentMethod->canWithdraw()) {
-            return back()->withErrors(['payment_method_id' => 'This payment method does not support withdrawals.']);
-        }
-
-        // Verify sufficient balance
-        if (!$wallet->canWithdraw($request->amount)) {
-            return back()->withErrors(['amount' => 'Insufficient funds in wallet.']);
-        }
-
-        try {
-            DB::beginTransaction();
-
-            // Create wallet transaction
-            $transaction = $wallet->transactions()->create([
-                'payment_method_id' => $paymentMethod->id,
-                'type' => 'withdrawal',
-                'amount' => $request->amount,
-                'fee' => 0.00,
-                'status' => 'pending',
-                'description' => $request->description ?? "Withdrawal via {$paymentMethod->name}",
-                'user_crypto_details' => $paymentMethod->isCryptocurrency() ? [
-                    'wallet_address' => $request->wallet_address,
-                    'crypto_symbol' => $paymentMethod->crypto_symbol,
-                    'payment_method' => $paymentMethod->name,
-                ] : null,
-            ]);
-
-            // For withdrawals, keep pending for admin to process payout
-            // Do not deduct immediately; admin approval/process should handle funds movement
-
-            // Create notification for successful withdrawal
-            NotificationService::createSystemNotification(
-                $user,
-                'Withdrawal requested',
-                'Your withdrawal request of $' . number_format($request->amount, 2) . ' is pending review.',
-                [
-                    'type' => 'withdrawal_pending',
-                    'amount' => $request->amount,
-                    'payment_method' => $paymentMethod->name,
-                    'crypto' => $paymentMethod->isCryptocurrency(),
-                ]
-            );
-
-            DB::commit();
-
-            return redirect()->route('wallet.index')
-                ->with('success', 'Withdrawal request submitted and pending admin approval.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->withErrors(['error' => 'Failed to process withdrawal. Please try again.']);
-        }
+        $user=Auth::user();$wallet=$user->wallet;$request->validate(['amount'=>['required','numeric','min:1','max:'.$wallet->available_balance],'payment_method_id'=>'required|exists:payment_methods,id','description'=>'nullable|string|max:500','wallet_address'=>['nullable','string','max:255']]);$paymentMethod=PaymentMethod::findOrFail($request->payment_method_id);if(!$paymentMethod->canWithdraw())return back()->withErrors(['payment_method_id'=>'This payment method does not support withdrawals.']);
+        try{$tx=DB::transaction(function() use($user,$request,$paymentMethod,$activity){$wallet=$user->wallet()->lockForUpdate()->firstOrFail();if(!$wallet->canWithdraw($request->amount))throw new \RuntimeException('Insufficient available balance.');$before=$activity->snapshot($wallet);$ref=$activity->reference('WDR');$wallet->reserveFunds($request->amount);$tx=$wallet->transactions()->create(['payment_method_id'=>$paymentMethod->id,'type'=>'withdrawal','direction'=>'debit','amount'=>$request->amount,'fee'=>0,'status'=>'pending','reference_id'=>$ref,'description'=>$request->description??"Withdrawal via {$paymentMethod->name}",'user_crypto_details'=>$paymentMethod->isCryptocurrency()?['wallet_address'=>$request->wallet_address,'crypto_symbol'=>$paymentMethod->crypto_symbol,'payment_method'=>$paymentMethod->name]:null]);$activity->record($user,'withdrawal.reserved','Withdrawal requested','Funds were reserved while the withdrawal awaits review.',$ref,'pending','debit',(float)$request->amount,$wallet,$tx,null,$before,['payment_method'=>$paymentMethod->name],'user',$user->id);return $tx;});NotificationService::createSystemNotification($user,'Withdrawal requested','Your withdrawal request of $'.number_format($request->amount,2).' is pending review. The funds are reserved.',['type'=>'withdrawal_pending','transaction_id'=>$tx->id,'reference'=>$tx->reference_id]);return redirect()->route('wallet.index')->with('success','Withdrawal request submitted. The funds are now reserved pending review.');}catch(\Throwable $e){return back()->withInput()->withErrors(['amount'=>$e->getMessage()==='Insufficient available balance.'?$e->getMessage():'Failed to submit withdrawal. Please try again.']);}
     }
 
     /**
@@ -291,121 +141,10 @@ class WalletController extends Controller
     /**
      * Execute a user-to-user transfer atomically.
      */
-    public function processTransfer(Request $request)
+    public function processTransfer(Request $request, FinancialActivityService $activity)
     {
-        $user = Auth::user();
-        $wallet = $user->wallet;
-
-        $data = $request->validate([
-            'recipient' => ['required', 'email', 'max:255'],
-            'amount' => ['required', 'numeric', 'min:1', 'max:100000'],
-            'note' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        $recipient = User::query()
-            ->whereRaw('LOWER(email) = ?', [strtolower($data['recipient'])])
-            ->where('is_admin', false)
-            ->first();
-
-        if (! $recipient || ! $recipient->wallet) {
-            return back()->withInput()->withErrors([
-                'recipient' => 'No customer account with that email was found.',
-            ]);
-        }
-
-        if ($recipient->id === $user->id) {
-            return back()->withInput()->withErrors([
-                'recipient' => 'You cannot transfer funds to your own wallet.',
-            ]);
-        }
-
-        if (! $wallet->canWithdraw($data['amount'])) {
-            return back()->withInput()->withErrors([
-                'amount' => 'Your wallet does not have enough available balance.',
-            ]);
-        }
-
-        try {
-            $transfer = DB::transaction(function () use ($user, $recipient, $wallet, $data) {
-                // Lock both wallet rows so simultaneous transfers cannot spend the same balance.
-                $senderWallet = $wallet->newQuery()->whereKey($wallet->id)->lockForUpdate()->firstOrFail();
-                $recipientWallet = $recipient->wallet()->lockForUpdate()->firstOrFail();
-
-                if ((float) $senderWallet->balance < (float) $data['amount']) {
-                    throw new \RuntimeException('Insufficient funds.');
-                }
-
-                $reference = (string) Str::uuid();
-                $paymentMethod = PaymentMethod::firstOrCreate(
-                    ['name' => 'Internal Transfer'],
-                    [
-                        'type' => 'traditional',
-                        'details' => 'User-to-user transfer inside the platform.',
-                        'is_active' => true,
-                        'allow_deposit' => false,
-                        'allow_withdraw' => false,
-                    ]
-                );
-
-                $senderWallet->deductFunds($data['amount']);
-                $recipientWallet->addFunds($data['amount']);
-
-                $transfer = InternalTransfer::create([
-                    'reference' => $reference,
-                    'sender_id' => $user->id,
-                    'recipient_id' => $recipient->id,
-                    'amount' => $data['amount'],
-                    'currency' => $senderWallet->currency ?: 'USD',
-                    'status' => 'completed',
-                    'note' => $data['note'] ?? null,
-                ]);
-
-                $senderWallet->transactions()->create([
-                    'payment_method_id' => $paymentMethod->id,
-                    'type' => 'withdrawal',
-                    'amount' => $data['amount'],
-                    'fee' => 0,
-                    'status' => 'completed',
-                    'reference_id' => 'TX-' . $reference,
-                    'description' => 'Internal transfer to ' . $recipient->email,
-                ]);
-
-                $recipientWallet->transactions()->create([
-                    'payment_method_id' => $paymentMethod->id,
-                    'type' => 'deposit',
-                    'amount' => $data['amount'],
-                    'fee' => 0,
-                    'status' => 'completed',
-                    'reference_id' => 'TX-' . $reference,
-                    'description' => 'Internal transfer from ' . $user->email,
-                ]);
-
-                return $transfer;
-            });
-
-            NotificationService::createSystemNotification(
-                $recipient,
-                'Funds received',
-                'You received ' . format_currency($transfer->amount) . ' from ' . $user->name . '.',
-                ['type' => 'internal_transfer', 'reference' => $transfer->reference]
-            );
-
-            NotificationService::createSystemNotification(
-                $user,
-                'Transfer completed',
-                format_currency($transfer->amount) . ' was transferred to ' . $recipient->email . '.',
-                ['type' => 'internal_transfer', 'reference' => $transfer->reference]
-            );
-
-            return redirect()->route('wallet.transfer')
-                ->with('success', 'Transfer completed successfully.');
-        } catch (\Throwable $e) {
-            return back()->withInput()->withErrors([
-                'error' => $e->getMessage() === 'Insufficient funds.'
-                    ? $e->getMessage()
-                    : 'The transfer could not be completed. Please try again.',
-            ]);
-        }
+        $user=Auth::user();$data=$request->validate(['recipient'=>['required','email','max:255'],'amount'=>['required','numeric','min:1','max:100000'],'note'=>['nullable','string','max:255']]);$recipient=User::query()->whereRaw('LOWER(email) = ?',[strtolower($data['recipient'])])->where('is_admin',false)->first();if(!$recipient||!$recipient->wallet)return back()->withInput()->withErrors(['recipient'=>'No customer account with that email was found.']);if($recipient->id===$user->id)return back()->withInput()->withErrors(['recipient'=>'You cannot transfer funds to your own wallet.']);
+        try{$transfer=DB::transaction(function() use($user,$recipient,$data,$activity){$ids=[$user->wallet->id,$recipient->wallet->id];sort($ids);$locked=\App\Models\Wallet::query()->whereIn('id',$ids)->orderBy('id')->lockForUpdate()->get()->keyBy('id');$sender=$locked[$user->wallet->id];$receiver=$locked[$recipient->wallet->id];if(!$sender->canWithdraw($data['amount']))throw new \RuntimeException('Insufficient available balance.');$sb=$activity->snapshot($sender);$rb=$activity->snapshot($receiver);$ref=$activity->reference('TRF');$pm=PaymentMethod::firstOrCreate(['name'=>'Internal Transfer'],['type'=>'traditional','details'=>'User-to-user transfer inside the platform.','is_active'=>true,'allow_deposit'=>false,'allow_withdraw'=>false]);$sender->deductFunds($data['amount']);$receiver->addFunds($data['amount']);$transfer=InternalTransfer::create(['reference'=>(string)Str::uuid(),'sender_id'=>$user->id,'recipient_id'=>$recipient->id,'amount'=>$data['amount'],'currency'=>$sender->currency?:'USD','status'=>'completed','note'=>$data['note']??null]);$st=$sender->transactions()->create(['payment_method_id'=>$pm->id,'type'=>'withdrawal','direction'=>'debit','amount'=>$data['amount'],'fee'=>0,'status'=>'completed','reference_id'=>$ref,'description'=>'Internal transfer to '.$recipient->email]);$rt=$receiver->transactions()->create(['payment_method_id'=>$pm->id,'type'=>'deposit','direction'=>'credit','amount'=>$data['amount'],'fee'=>0,'status'=>'completed','reference_id'=>$ref,'description'=>'Internal transfer from '.$user->email]);$activity->record($user,'transfer.sent','Transfer sent','Funds transferred to '.$recipient->email.'.',$ref,'completed','debit',(float)$data['amount'],$sender,$st,$transfer,$sb,['counterparty_user_id'=>$recipient->id],'user',$user->id);$activity->record($recipient,'transfer.received','Transfer received','Funds received from '.$user->email.'.',$ref,'completed','credit',(float)$data['amount'],$receiver,$rt,$transfer,$rb,['counterparty_user_id'=>$user->id],'user',$user->id);return $transfer;});NotificationService::createSystemNotification($recipient,'Funds received','You received '.format_currency($transfer->amount).' from '.$user->name.'.',['type'=>'internal_transfer','reference'=>$transfer->reference]);NotificationService::createSystemNotification($user,'Transfer completed',format_currency($transfer->amount).' was transferred to '.$recipient->email.'.',['type'=>'internal_transfer','reference'=>$transfer->reference]);return redirect()->route('wallet.transfer')->with('success','Transfer completed successfully.');}catch(\Throwable $e){return back()->withInput()->withErrors(['amount'=>$e->getMessage()==='Insufficient available balance.'?$e->getMessage():'The transfer could not be completed. Please try again.']);}
     }
 
     /**
@@ -504,26 +243,27 @@ class WalletController extends Controller
     }
 
     /**
-     * Show transaction history
+     * Show the customer's unified financial ledger.
      */
-    public function transactions(Request $request)
+    public function transactions(Request $request, FinancialOverviewService $financialOverview)
     {
         $user = Auth::user();
         $wallet = $user->wallet;
 
         $query = $wallet->transactions()->with('paymentMethod');
 
-        // Filter by type
+        if ($request->filled('direction') && in_array($request->direction, ['credit', 'debit'], true)) {
+            $query->direction($request->direction);
+        }
+
         if ($request->filled('type')) {
             $query->where('type', $request->type);
         }
 
-        // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // Filter by date range
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
@@ -532,13 +272,22 @@ class WalletController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $transactions = $query->orderBy('created_at', 'desc')->paginate(20);
+        $transactions = $query
+            ->latest()
+            ->paginate(20)
+            ->withQueryString();
 
-        // Calculate transaction statistics
-        $totalDeposits = $wallet->transactions()->deposits()->completed()->sum('amount');
-        $totalWithdrawals = $wallet->transactions()->withdrawals()->completed()->sum('amount');
-        $totalFees = $wallet->transactions()->sum('fee');
+        $finance = $financialOverview->forUser($user, 6);
 
-        return view('wallet.transactions', compact('transactions', 'wallet', 'totalDeposits', 'totalWithdrawals', 'totalFees'));
+        $transactionTypes = $wallet->transactions()
+            ->select('type')
+            ->distinct()
+            ->orderBy('type')
+            ->pluck('type');
+
+        return view('wallet.transactions', array_merge($finance, [
+            'transactions' => $transactions,
+            'transactionTypes' => $transactionTypes,
+        ]));
     }
 }

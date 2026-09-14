@@ -8,11 +8,11 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Stock Watchlist</h1>
-                <p class="text-gray-600 mt-1">Track stocks you're interested in and set price alerts</p>
+                <p class="text-muted-foreground mt-1">Track stocks you're interested in and set price alerts</p>
             </div>
             <div class="mt-4 sm:mt-0">
                 <a href="{{ route('stocks.index') }}" 
-                   class="inline-flex items-center px-4 py-2 bg-black dark:bg-white text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200">
+                   class="inline-flex items-center px-4 py-2 bg-foreground text-background rounded-lg hover:opacity-90 transition-colors duration-200">
                     <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
                     Add Stock to Watchlist
                 </a>
@@ -23,38 +23,38 @@
         <div class="bg-card rounded-xl shadow-sm border border-border">
             <div class="p-6 border-b border-border">
                 <h2 class="text-lg font-semibold text-gray-900">Your Watchlist</h2>
-                <p class="text-sm text-gray-600 mt-1">Monitor stocks and get price alerts</p>
+                <p class="text-sm text-muted-foreground mt-1">Monitor stocks and get price alerts</p>
             </div>
             
             @if($watchlist->count() > 0)
                 <div class="overflow-x-auto">
                     <table class="w-full">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-muted/30">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Price</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alert Price</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Alert Type</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Stock</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Current Price</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Change</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Alert Price</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Alert Type</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="bg-card divide-y divide-gray-200">
                             @foreach($watchlist as $item)
-                                <tr class="hover:bg-gray-50">
+                                <tr class="hover:bg-muted/30">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             @if($item->stock->logo_url)
                                                 <img src="{{ $item->stock->logo_url }}" alt="{{ $item->stock->symbol }}" class="w-8 h-8 rounded mr-3">
                                             @else
-                                                <div class="w-8 h-8 bg-gray-200 rounded mr-3 flex items-center justify-center">
-                                                    <span class="text-xs font-medium text-gray-600 dark:text-gray-300">{{ substr($item->stock->symbol, 0, 2) }}</span>
+                                                <div class="w-8 h-8 bg-muted rounded mr-3 flex items-center justify-center">
+                                                    <span class="text-xs font-medium text-muted-foreground">{{ substr($item->stock->symbol, 0, 2) }}</span>
                                                 </div>
                                             @endif
                                             <div>
                                                 <div class="text-sm font-medium text-gray-900">{{ $item->stock->symbol }}</div>
-                                                <div class="text-sm text-gray-500 dark:text-gray-300">{{ $item->stock->company_name }}</div>
+                                                <div class="text-sm text-muted-foreground dark:text-gray-300">{{ $item->stock->company_name }}</div>
                                             </div>
                                         </div>
                                     </td>
@@ -65,7 +65,7 @@
                                         <div class="text-sm {{ $item->stock->change_percentage >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                             {{ $item->stock->change_percentage >= 0 ? '+' : '' }}{{ number_format($item->stock->change_percentage, 2) }}%
                                         </div>
-                                        <div class="text-xs text-gray-500 dark:text-gray-300">
+                                        <div class="text-xs text-muted-foreground dark:text-gray-300">
                                             {{ $item->stock->change_percentage >= 0 ? '+' : '' }}{{ currency_symbol() }}{{ number_format($item->stock->change_amount, 2) }}
                                         </div>
                                     </td>
@@ -78,7 +78,7 @@
                                                 {{ ucfirst($item->alert_type) }}
                                             </span>
                                         @else
-                                            <span class="text-sm text-gray-500 dark:text-gray-300">Not set</span>
+                                            <span class="text-sm text-muted-foreground dark:text-gray-300">Not set</span>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -88,7 +88,7 @@
                                                 Alert Triggered
                                             </span>
                                         @else
-                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground">
                                                 Monitoring
                                             </span>
                                         @endif
@@ -128,9 +128,9 @@
                         <i data-lucide="eye" class="w-8 h-8 text-gray-400 dark:text-gray-300"></i>
                     </div>
                     <h3 class="text-lg font-medium text-gray-900 mb-2">No Stocks in Watchlist</h3>
-                    <p class="text-gray-600 mb-6">Start building your watchlist by adding stocks you're interested in.</p>
+                    <p class="text-muted-foreground mb-6">Start building your watchlist by adding stocks you're interested in.</p>
                     <a href="{{ route('stocks.index') }}" 
-                       class="inline-flex items-center px-4 py-2 bg-black dark:bg-white text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200">
+                       class="inline-flex items-center px-4 py-2 bg-foreground text-background rounded-lg hover:opacity-90 transition-colors duration-200">
                         <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
                         Browse Stocks
                     </a>
@@ -146,20 +146,20 @@
                     <form id="alertForm" method="POST">
                         @csrf
                         <div class="mb-4">
-                            <label for="alert_price" class="block text-sm font-medium text-gray-700 mb-2">Alert Price</label>
+                            <label for="alert_price" class="block text-sm font-medium text-foreground mb-2">Alert Price</label>
                             <input type="number" 
                                    id="alert_price" 
                                    name="alert_price" 
                                    step="0.01" 
                                    min="0.01"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent"
                                    placeholder="0.00">
                         </div>
                         <div class="mb-6">
-                            <label for="alert_type" class="block text-sm font-medium text-gray-700 mb-2">Alert Type</label>
+                            <label for="alert_type" class="block text-sm font-medium text-foreground mb-2">Alert Type</label>
                             <select id="alert_type" 
                                     name="alert_type" 
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent">
+                                    class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent">
                                 <option value="">Select alert type</option>
                                 <option value="above">Above this price</option>
                                 <option value="below">Below this price</option>
@@ -168,11 +168,11 @@
                         <div class="flex justify-end space-x-3">
                             <button type="button" 
                                     onclick="closeAlertModal()"
-                                    class="px-4 py-2 text-gray-600 bg-muted rounded-lg hover:bg-gray-200 transition-colors duration-200">
+                                    class="px-4 py-2 text-muted-foreground bg-muted rounded-lg hover:bg-muted transition-colors duration-200">
                                 Cancel
                             </button>
                             <button type="submit" 
-                                    class="px-4 py-2 bg-black dark:bg-white text-white dark:text-gray-900 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition-colors duration-200">
+                                    class="px-4 py-2 bg-foreground text-background rounded-lg hover:opacity-90 transition-colors duration-200">
                                 Set Alert
                             </button>
                         </div>

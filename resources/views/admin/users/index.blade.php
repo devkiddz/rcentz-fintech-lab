@@ -5,7 +5,7 @@
                 <h2 class="font-light text-lg text-foreground leading-tight mr-4">
                     {{ __('Users') }}
                 </h2>
-                <a href="{{ route('admin.about') }}" class="inline-flex items-center px-3 py-1 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-gray-200 transition-all duration-200">
+                <a href="{{ route('admin.about') }}" class="inline-flex items-center px-3 py-1 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-muted transition-all duration-200">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20h.01"></path>
                     </svg>
@@ -13,7 +13,7 @@
                 </a>
             </div>
             <a href="{{ route('admin.users.create') }}" 
-               class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-all duration-200">
+               class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                 </svg>
@@ -112,7 +112,7 @@
                 <div class="p-4">
                     <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                         @foreach($users as $user)
-                        <div class="group bg-muted/40 dark:bg-dark-muted rounded-lg p-4 hover:bg-card hover:shadow-lg transition-all duration-200 border border-transparent hover:border-border dark:border-gray-700">
+                        <div class="group bg-muted/40 rounded-lg p-4 hover:bg-card hover:shadow-lg transition-all duration-200 border border-transparent hover:border-border dark:border-gray-700">
                             <!-- User Avatar and Info -->
                             <div class="flex items-start space-x-3 mb-3">
                                 @if($user->profile_image)
@@ -185,7 +185,7 @@
 
                             <!-- Action Buttons -->
                             <div class="flex space-x-2">
-                                <a href="{{ route('admin.users.show', $user) }}" class="flex-1 text-center px-3 py-2 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-gray-200 transition-colors">
+                                <a href="{{ route('admin.users.show', $user) }}" class="flex-1 text-center px-3 py-2 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-muted transition-colors">
                                     View
                                 </a>
                                 <a href="{{ route('admin.users.edit', $user) }}" class="flex-1 text-center px-3 py-2 bg-tesla-100 text-tesla-700 text-xs font-medium rounded hover:bg-tesla-200 transition-colors">
@@ -221,7 +221,7 @@
             @else
             <!-- Empty State -->
             <div class="bg-card border border-border p-8 rounded-lg text-center">
-                <div class="w-16 h-16 bg-muted dark:bg-dark-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8 text-gray-400 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                     </svg>
@@ -229,7 +229,7 @@
                 <h3 class="text-lg font-medium text-foreground dark:text-white mb-2">No users found</h3>
                 <p class="text-xs text-muted-foreground dark:text-gray-300 mb-6">No users have been registered yet.</p>
                 <a href="{{ route('admin.users.create') }}" 
-                   class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-all duration-200">
+                   class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                     </svg>

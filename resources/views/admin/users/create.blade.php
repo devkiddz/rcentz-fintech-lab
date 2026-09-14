@@ -7,7 +7,7 @@
                 </h2>
             </div>
             <a href="{{ route('admin.users.index') }}" 
-               class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-all duration-200">
+               class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-all duration-200">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
@@ -37,7 +37,7 @@
                                    id="name" 
                                    name="name" 
                                    value="{{ old('name') }}"
-                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-all duration-200 @error('name') border-red-500 @enderror"
+                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-all duration-200 @error('name') border-red-500 @enderror"
                                    placeholder="Enter user's full name"
                                    required>
                             @error('name')
@@ -54,7 +54,7 @@
                                    id="email" 
                                    name="email" 
                                    value="{{ old('email') }}"
-                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-all duration-200 @error('email') border-red-500 @enderror"
+                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-all duration-200 @error('email') border-red-500 @enderror"
                                    placeholder="Enter email address"
                                    required>
                             @error('email')
@@ -70,7 +70,7 @@
                             <input type="password" 
                                    id="password" 
                                    name="password"
-                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-all duration-200 @error('password') border-red-500 @enderror"
+                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-all duration-200 @error('password') border-red-500 @enderror"
                                    placeholder="Enter password"
                                    required>
                             @error('password')
@@ -89,7 +89,7 @@
                             <input type="password" 
                                    id="password_confirmation" 
                                    name="password_confirmation"
-                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-all duration-200"
+                                   class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-all duration-200"
                                    placeholder="Confirm password"
                                    required>
                         </div>
@@ -105,7 +105,7 @@
                                            name="user_type" 
                                            value="user" 
                                            {{ old('user_type', 'user') === 'user' ? 'checked' : '' }}
-                                           class="w-4 h-4 text-foreground focus:ring-black border-border">
+                                           class="w-4 h-4 text-foreground focus:ring-ring border-border">
                                     <span class="ml-2 text-sm text-muted-foreground">Regular User</span>
                                 </label>
                                 <label class="flex items-center">
@@ -113,7 +113,7 @@
                                            name="user_type" 
                                            value="admin" 
                                            {{ old('user_type') === 'admin' ? 'checked' : '' }}
-                                           class="w-4 h-4 text-foreground focus:ring-black border-border">
+                                           class="w-4 h-4 text-foreground focus:ring-ring border-border">
                                     <span class="ml-2 text-sm text-muted-foreground">Administrator</span>
                                 </label>
                             </div>
@@ -130,7 +130,7 @@
                                            name="email_verified" 
                                            value="1" 
                                            {{ old('email_verified') ? 'checked' : '' }}
-                                           class="w-4 h-4 text-foreground focus:ring-black border-border rounded">
+                                           class="w-4 h-4 text-foreground focus:ring-ring border-border rounded">
                                     <span class="ml-2 text-sm text-muted-foreground">Mark email as verified</span>
                                 </label>
                                 <p class="text-xs text-muted-foreground ml-6">
@@ -146,7 +146,7 @@
                                        name="is_admin" 
                                        value="1" 
                                        {{ old('is_admin') ? 'checked' : '' }}
-                                       class="w-4 h-4 text-foreground focus:ring-black border-border rounded">
+                                       class="w-4 h-4 text-foreground focus:ring-ring border-border rounded">
                                 <span class="ml-2 text-sm text-muted-foreground">Grant admin privileges</span>
                             </label>
                         </div>
@@ -159,7 +159,7 @@
                             Cancel
                         </a>
                         <button type="submit" 
-                                class="px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-colors">
+                                class="px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-colors">
                             Create User
                         </button>
                     </div>

@@ -7,7 +7,7 @@
                 </h2>
                </div>
             <a href="{{ route('admin.emails.index') }}" 
-               class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-all duration-200">
+               class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-all duration-200">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
@@ -34,7 +34,7 @@
                                         Email Template *
                                     </label>
                                     <select name="template_id" id="template_id" required
-                                            class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black">
+                                            class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black">
                                         <option value="">Choose a template...</option>
                                         <option value="custom" data-subject="" data-content="" data-variables="[]">
                                             📝 Custom Message (Type your own)
@@ -60,7 +60,7 @@
                                             Email Subject *
                                         </label>
                                         <input type="text" name="custom_subject" id="custom_subject"
-                                               class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                                               class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black"
                                                placeholder="Enter your email subject...">
                                     </div>
                                     
@@ -88,7 +88,7 @@
                                                 </button>
                                             </div>
                                             <textarea name="custom_content" id="custom_content" rows="10"
-                                                      class="w-full px-3 py-2 border-0 rounded-b-lg focus:ring-2 focus:ring-black focus:border-black resize-none"
+                                                      class="w-full px-3 py-2 border-0 rounded-b-lg focus:ring-2 focus:ring-ring focus:border-black resize-none"
                                                       placeholder="Type your message here...
 
 You can use:
@@ -128,7 +128,7 @@ You can use:
                                         Email Subject *
                                     </label>
                                     <input type="text" name="subject" id="subject" required
-                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black"
+                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black"
                                            placeholder="Enter email subject...">
                                     @error('subject')
                                         <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -159,7 +159,7 @@ You can use:
                                             </button>
                                         </div>
                                         <textarea name="content" id="content" rows="12" required
-                                                  class="w-full px-3 py-2 border-0 rounded-b-lg focus:ring-2 focus:ring-black focus:border-black resize-none"
+                                                  class="w-full px-3 py-2 border-0 rounded-b-lg focus:ring-2 focus:ring-ring focus:border-black resize-none"
                                                   placeholder="Enter your email content here...
 
 You can use:
@@ -188,11 +188,11 @@ You can use:
                                     <label class="block text-xs font-medium text-muted-foreground mb-2">Recipient Type *</label>
                                     <div class="space-y-2">
                                         <label class="flex items-center">
-                                            <input type="radio" name="recipient_type" value="all" class="text-foreground focus:ring-black" checked>
+                                            <input type="radio" name="recipient_type" value="all" class="text-foreground focus:ring-ring" checked>
                                             <span class="ml-2 text-sm text-foreground">All Users</span>
                                         </label>
                                         <label class="flex items-center">
-                                            <input type="radio" name="recipient_type" value="custom" class="text-foreground focus:ring-black">
+                                            <input type="radio" name="recipient_type" value="custom" class="text-foreground focus:ring-ring">
                                             <span class="ml-2 text-sm text-foreground">Custom Selection</span>
                                         </label>
                                     </div>
@@ -203,7 +203,7 @@ You can use:
                                         Select Users
                                     </label>
                                     <select name="recipients[]" id="recipients" multiple
-                                            class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black">
+                                            class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black">
                                         @foreach($users as $user)
                                             <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
                                         @endforeach
@@ -231,7 +231,7 @@ You can use:
                             
                             <div class="space-y-3">
                                 <label class="flex items-center">
-                                    <input type="checkbox" name="send_immediately" value="1" class="text-foreground focus:ring-black" checked>
+                                    <input type="checkbox" name="send_immediately" value="1" class="text-foreground focus:ring-ring" checked>
                                     <span class="ml-2 text-sm text-foreground">Send immediately</span>
                                 </label>
                                 
@@ -240,7 +240,7 @@ You can use:
                                         Schedule for
                                     </label>
                                     <input type="datetime-local" name="scheduled_at" id="scheduled_at"
-                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black">
+                                           class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black">
                                 </div>
 
                                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
@@ -259,7 +259,7 @@ You can use:
                         <!-- Send Button -->
                         <div class="bg-card border border-border p-4 rounded-lg">
                             <button type="submit" 
-                                    class="w-full inline-flex items-center justify-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-all duration-200">
+                                    class="w-full inline-flex items-center justify-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                                 </svg>

@@ -8,7 +8,7 @@
                 <p class="text-xs text-muted-foreground mt-1">{{ $automaticNavUpdate->name }}</p>
             </div>
             <a href="{{ route('admin.investments.automatic-nav-updates.show', $automaticNavUpdate) }}" 
-               class="px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+               class="px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-colors">
                 Back
             </a>
         </div>
@@ -31,7 +31,7 @@
                             <div>
                                 <label for="name" class="block text-xs font-medium text-muted-foreground mb-2">Update Name *</label>
                                 <input type="text" name="name" id="name" value="{{ old('name', $automaticNavUpdate->name) }}" required
-                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                 @error('name')
                                     <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                                 @enderror
@@ -40,7 +40,7 @@
                             <div>
                                 <label for="investment_plan_id" class="block text-xs font-medium text-muted-foreground mb-2">Investment Plan *</label>
                                 <select name="investment_plan_id" id="investment_plan_id" required
-                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                     <option value="">Select Investment Plan</option>
                                     @foreach($investmentPlans as $plan)
                                         <option value="{{ $plan->id }}" 
@@ -59,7 +59,7 @@
                         <div>
                             <label for="description" class="block text-xs font-medium text-muted-foreground mb-2">Description</label>
                             <textarea name="description" id="description" rows="3"
-                                      class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">{{ old('description', $automaticNavUpdate->description) }}</textarea>
+                                      class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">{{ old('description', $automaticNavUpdate->description) }}</textarea>
                             @error('description')
                                 <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                             @enderror
@@ -78,7 +78,7 @@
                             <div>
                                 <label for="update_type" class="block text-xs font-medium text-muted-foreground mb-2">Update Type *</label>
                                 <select name="update_type" id="update_type" required
-                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                     <option value="">Select Update Type</option>
                                     <option value="increase" {{ old('update_type', $automaticNavUpdate->update_type) == 'increase' ? 'selected' : '' }}>
                                         Increase NAV
@@ -97,7 +97,7 @@
                                 <input type="number" name="update_amount" id="update_amount" 
                                        value="{{ old('update_amount', $automaticNavUpdate->update_amount) }}" 
                                        step="0.0001" min="0.0001" max="999.9999" required
-                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                 @error('update_amount')
                                     <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                                 @enderror
@@ -120,7 +120,7 @@
                                 <input type="number" name="update_interval_value" id="update_interval_value" 
                                        value="{{ old('update_interval_value', $automaticNavUpdate->update_interval_value) }}" 
                                        min="1" max="999" required
-                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                 @error('update_interval_value')
                                     <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                                 @enderror
@@ -129,7 +129,7 @@
                             <div>
                                 <label for="update_interval_unit" class="block text-xs font-medium text-muted-foreground mb-2">Interval Unit *</label>
                                 <select name="update_interval_unit" id="update_interval_unit" required
-                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                        class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                     <option value="">Select Unit</option>
                                     <option value="minutes" {{ old('update_interval_unit', $automaticNavUpdate->update_interval_unit) == 'minutes' ? 'selected' : '' }}>Minutes</option>
                                     <option value="hours" {{ old('update_interval_unit', $automaticNavUpdate->update_interval_unit) == 'hours' ? 'selected' : '' }}>Hours</option>
@@ -146,7 +146,7 @@
                                 <label for="start_date" class="block text-xs font-medium text-muted-foreground mb-2">Start Date <span class="text-xs text-muted-foreground dark:text-gray-300">(UTC)</span> *</label>
                                 <input type="datetime-local" name="start_date" id="start_date" 
                                        value="{{ old('start_date', $automaticNavUpdate->start_date->format('Y-m-d\TH:i')) }}" required
-                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                 @error('start_date')
                                     <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                                 @enderror
@@ -156,7 +156,7 @@
                                 <label for="end_date" class="block text-xs font-medium text-muted-foreground mb-2">End Date <span class="text-xs text-muted-foreground dark:text-gray-300">(UTC)</span> *</label>
                                 <input type="datetime-local" name="end_date" id="end_date" 
                                        value="{{ old('end_date', $automaticNavUpdate->end_date->format('Y-m-d\TH:i')) }}" required
-                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black transition-colors">
+                                       class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black transition-colors">
                                 @error('end_date')
                                     <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
                                 @enderror
@@ -175,7 +175,7 @@
                         <div class="flex items-center">
                             <input type="checkbox" name="is_active" id="is_active" value="1" 
                                    {{ old('is_active', $automaticNavUpdate->is_active) ? 'checked' : '' }}
-                                   class="h-4 w-4 text-foreground focus:ring-black border-border rounded">
+                                   class="h-4 w-4 text-foreground focus:ring-ring border-border rounded">
                             <label for="is_active" class="ml-2 block text-sm text-muted-foreground">
                                 Active (automatic update will run according to schedule)
                             </label>
@@ -214,11 +214,11 @@
                 <!-- Actions -->
                 <div class="flex justify-end space-x-3">
                     <a href="{{ route('admin.investments.automatic-nav-updates.show', $automaticNavUpdate) }}" 
-                       class="px-4 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                       class="px-4 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-colors">
                         Cancel
                     </a>
                     <button type="submit" 
-                            class="px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-colors">
+                            class="px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-colors">
                         Update Automatic NAV Update
                     </button>
                 </div>

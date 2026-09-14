@@ -1,0 +1,94 @@
+<header class="shell-topbar">
+    <div class="shell-topbar-inner">
+        <div class="flex min-w-0 items-center gap-3">
+            <button
+                type="button"
+                onclick="toggleSidebar()"
+                class="shell-icon-button lg:hidden"
+                aria-label="Open navigation"
+            >
+                <i data-lucide="menu" class="h-4 w-4"></i>
+            </button>
+
+            <div class="min-w-0">
+                @if (isset($header))
+                    <div class="truncate text-sm font-medium tracking-tight text-foreground sm:text-base">
+                        {{ $header }}
+                    </div>
+                @else
+                    <div class="truncate text-sm font-medium tracking-tight text-foreground sm:text-base">
+                        {{ site_name() }}
+                    </div>
+                @endif
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-2.5">
+            @include('partials.shell.theme-toggle')
+
+            @if(app('impersonate')->isImpersonating())
+                <a
+                    href="{{ route('impersonate.leave') }}"
+                    class="shell-impersonation-pill"
+                    title="Return to administrator account"
+                >
+                    <i data-lucide="log-out" class="h-3.5 w-3.5"></i>
+                    <span class="hidden sm:inline">Stop impersonating</span>
+                    <span class="sm:hidden">Exit</span>
+                </a>
+            @endif
+
+            <div class="relative">
+                <button
+                    type="button"
+                    onclick="toggleNotifications()"
+                    class="shell-icon-button relative"
+                    aria-label="Open notifications"
+                >
+                    <i data-lucide="bell" class="h-4 w-4"></i>
+                    <span
+                        id="notification-badge"
+                        class="absolute -right-1 -top-1 hidden min-w-4 rounded-full bg-red-500 px-1 text-center text-[10px] font-semibold leading-4 text-white"
+                    >0</span>
+                </button>
+
+                <div
+                    id="notifications-dropdown"
+                    class="absolute right-0 z-50 mt-2 hidden w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-card shadow-xl"
+                >
+                    <div class="flex items-center justify-between gap-4 border-b border-border px-4 py-3">
+                        <div>
+                            <h3 class="text-sm font-medium text-foreground">Notifications</h3>
+                            <p class="mt-0.5 text-[11px] text-muted-foreground">Recent account activity</p>
+                        </div>
+                        <button
+                            type="button"
+                            onclick="markAllNotificationsAsRead()"
+                            class="text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                        >
+                            Mark all read
+                        </button>
+                    </div>
+
+                    <div id="notifications-list" class="max-h-72 overflow-y-auto">
+                        <div class="p-5 text-center">
+                            <div class="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted/50">
+                                <i data-lucide="loader-2" class="h-4 w-4 animate-spin text-muted-foreground"></i>
+                            </div>
+                            <p class="text-xs text-muted-foreground">Loading notifications...</p>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-border px-4 py-3">
+                        <a
+                            href="{{ route('notifications.index') }}"
+                            class="text-xs font-medium text-foreground transition hover:text-primary"
+                        >
+                            View all notifications
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>

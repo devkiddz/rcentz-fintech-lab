@@ -17,14 +17,14 @@
                     </a>
                 @endif
                 <a href="{{ route('admin.users.edit', $user) }}" 
-                   class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-all duration-200">
+                   class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                     </svg>
                     Edit User
                 </a>
                 <a href="{{ route('admin.users.index') }}" 
-                   class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-all duration-200">
+                   class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-all duration-200">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
@@ -121,9 +121,9 @@
                                 <form method="POST" action="{{ route('admin.users.fund-wallet', $user) }}" class="space-y-2">
                                     @csrf
                                     <input type="number" name="amount" step="0.01" min="0.01" placeholder="Amount" 
-                                           class="w-full px-3 py-2 text-xs border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black">
+                                           class="w-full px-3 py-2 text-xs border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black">
                                     <input type="text" name="description" placeholder="Description (optional)" 
-                                           class="w-full px-3 py-2 text-xs border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black">
+                                           class="w-full px-3 py-2 text-xs border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black">
                                     <button type="submit" 
                                             class="w-full px-3 py-2 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition-colors">
                                         Fund Wallet
@@ -137,9 +137,9 @@
                                 <form method="POST" action="{{ route('admin.users.deduct-wallet', $user) }}" class="space-y-2">
                                     @csrf
                                     <input type="number" name="amount" step="0.01" min="0.01" max="{{ $walletBalance }}" placeholder="Amount" 
-                                           class="w-full px-3 py-2 text-xs border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black">
+                                           class="w-full px-3 py-2 text-xs border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black">
                                     <input type="text" name="description" placeholder="Description (optional)" 
-                                           class="w-full px-3 py-2 text-xs border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black">
+                                           class="w-full px-3 py-2 text-xs border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black">
                                     <button type="submit" 
                                             class="w-full px-3 py-2 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition-colors">
                                         Deduct Funds
@@ -212,7 +212,7 @@
                         <div class="p-4">
                             <div class="space-y-3">
                                 @foreach($user->investmentHoldings as $holding)
-                                <div class="flex items-center justify-between p-3 bg-muted/40 dark:bg-dark-muted rounded-lg border border-border dark:border-gray-700">
+                                <div class="flex items-center justify-between p-3 bg-muted/40 rounded-lg border border-border dark:border-gray-700">
                                     <div class="flex items-center space-x-3">
                                         <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
                                             <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -244,7 +244,7 @@
                         <div class="p-4">
                             <div class="space-y-3">
                                 @foreach($user->stockHoldings as $holding)
-                                <div class="flex items-center justify-between p-3 bg-muted/40 dark:bg-dark-muted rounded-lg border border-border dark:border-gray-700">
+                                <div class="flex items-center justify-between p-3 bg-muted/40 rounded-lg border border-border dark:border-gray-700">
                                     <div class="flex items-center space-x-3">
                                         <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
                                             <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -276,14 +276,14 @@
                         <div class="p-4">
                             <div class="space-y-3">
                                 @foreach($user->purchases->take(5) as $purchase)
-                                <div class="flex items-center justify-between p-3 bg-muted/40 dark:bg-dark-muted rounded-lg border border-border dark:border-gray-700">
+                                <div class="flex items-center justify-between p-3 bg-muted/40 rounded-lg border border-border dark:border-gray-700">
                                     <div class="flex items-center space-x-3">
                                         @if($purchase->car->images && count($purchase->car->images) > 0)
                                             <img src="{{ strpos($purchase->car->images[0], 'http') === 0 ? $purchase->car->images[0] : asset('storage/' . $purchase->car->images[0]) }}" 
                                                  alt="{{ $purchase->car->title }}" 
                                                  class="w-10 h-8 object-cover rounded-lg">
                                         @else
-                                            <div class="w-10 h-8 bg-gray-200 rounded-lg flex items-center justify-center">
+                                            <div class="w-10 h-8 bg-muted rounded-lg flex items-center justify-center">
                                                 <svg class="w-4 h-4 text-gray-400 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                                                 </svg>

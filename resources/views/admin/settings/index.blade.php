@@ -1,73 +1,32 @@
 <x-admin-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <div>
-                <h2 class="font-light text-lg text-foreground leading-tight mr-4">
-                    Site Settings
-                </h2>
-            </div>
-            <div class="flex flex-wrap gap-2">
-                <form method="POST" action="{{ route('admin.settings.fix-storage') }}" class="inline">
-                    @csrf
-                    <button type="submit" class="px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
-                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-                        </svg>
-                        Fix Storage
-                    </button>
-                </form>
-                <form method="POST" action="{{ route('admin.settings.storage-link') }}" class="inline">
-                    @csrf
-                    <button type="submit" class="px-3 py-2 bg-tesla-600 text-white text-sm font-medium rounded-lg hover:bg-tesla-700 transition-colors">
-                        <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-                        </svg>
-                        Storage Link
-                    </button>
-                </form>
-                <form method="POST" action="{{ route('admin.settings.clear-cache') }}" class="inline">
-                    @csrf
-                    <button type="submit" class="px-3 py-2 bg-yellow-600 text-white text-sm font-medium rounded-lg hover:bg-yellow-700 transition-colors">
-                        Clear Cache
-                    </button>
-                </form>
-                <form method="POST" action="{{ route('admin.settings.clear-config') }}" class="inline">
-                    @csrf
-                    <button type="submit" class="px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors">
-                        Clear Config
-                    </button>
-                </form>
-                <form method="POST" action="{{ route('admin.settings.clear-views') }}" class="inline">
-                    @csrf
-                    <button type="submit" class="px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
-                        Clear Views
-                    </button>
-                </form>
-                <form method="POST" action="{{ route('admin.settings.clear-routes') }}" class="inline">
-                    @csrf
-                    <button type="submit" class="px-3 py-2 bg-pink-600 text-white text-sm font-medium rounded-lg hover:bg-pink-700 transition-colors">
-                        Clear Routes
-                    </button>
-                </form>
-                <form method="POST" action="{{ route('admin.settings.optimize-clear') }}" class="inline">
-                    @csrf
-                    <button type="submit" class="px-3 py-2 bg-cyan-600 text-white text-sm font-medium rounded-lg hover:bg-cyan-700 transition-colors">
-                        Clear All
-                    </button>
-                </form>
-                <form method="POST" action="{{ route('admin.settings.reset-defaults') }}" class="inline">
-                    @csrf
-                    <button type="submit" onclick="return confirm('Are you sure you want to reset all settings to defaults? This action cannot be undone.')" 
-                            class="px-3 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
-                        Reset Defaults
-                    </button>
-                </form>
-            </div>
+        <div>
+            <h2 class="font-light text-lg text-foreground leading-tight">Site Settings</h2>
+            <p class="mt-1 text-xs text-muted-foreground">Brand, mail, application and operational configuration.</p>
         </div>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
+            <details class="mb-6 overflow-hidden rounded-lg border border-border bg-card">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 text-sm font-medium text-foreground hover:bg-muted/50">
+                    <span class="flex items-center gap-2"><svg class="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg> System maintenance tools</span>
+                    <span class="text-xs font-normal text-muted-foreground">Open only when needed</span>
+                </summary>
+                <div class="border-t border-border bg-muted/20 p-4">
+                    <p class="mb-3 text-xs text-muted-foreground">These are server maintenance actions, not everyday dashboard controls.</p>
+                    <div class="flex flex-wrap gap-2">
+                        <form method="POST" action="{{ route('admin.settings.fix-storage') }}">@csrf<button type="submit" class="ui-button-secondary !py-2 !text-xs">Fix Storage</button></form>
+                        <form method="POST" action="{{ route('admin.settings.storage-link') }}">@csrf<button type="submit" class="ui-button-secondary !py-2 !text-xs">Storage Link</button></form>
+                        <form method="POST" action="{{ route('admin.settings.clear-cache') }}">@csrf<button type="submit" class="ui-button-secondary !py-2 !text-xs">Clear Cache</button></form>
+                        <form method="POST" action="{{ route('admin.settings.clear-config') }}">@csrf<button type="submit" class="ui-button-secondary !py-2 !text-xs">Clear Config</button></form>
+                        <form method="POST" action="{{ route('admin.settings.clear-views') }}">@csrf<button type="submit" class="ui-button-secondary !py-2 !text-xs">Clear Views</button></form>
+                        <form method="POST" action="{{ route('admin.settings.clear-routes') }}">@csrf<button type="submit" class="ui-button-secondary !py-2 !text-xs">Clear Routes</button></form>
+                        <form method="POST" action="{{ route('admin.settings.optimize-clear') }}">@csrf<button type="submit" class="ui-button-secondary !py-2 !text-xs">Clear All</button></form>
+                        <form method="POST" action="{{ route('admin.settings.reset-defaults') }}">@csrf<button type="submit" onclick="return confirm('Reset all settings to defaults? This cannot be undone.')" class="inline-flex items-center justify-center rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive transition hover:bg-destructive/15">Reset Defaults</button></form>
+                    </div>
+                </div>
+            </details>
             <form method="POST" action="{{ route('admin.settings.update') }}" enctype="multipart/form-data">
                 @csrf
                 
@@ -96,7 +55,7 @@
                                                    name="settings[{{ $setting->key }}]" 
                                                    value="1" 
                                                    {{ $setting->value == '1' ? 'checked' : '' }}
-                                                   class="w-4 h-4 text-foreground border-border rounded focus:ring-black focus:ring-2">
+                                                   class="w-4 h-4 text-foreground border-border rounded focus:ring-ring focus:ring-2">
                                             <span class="ml-2 text-sm text-muted-foreground dark:text-gray-300">Enable {{ $setting->label }}</span>
                                         </div>
                                     @elseif($setting->isImage())
@@ -104,7 +63,7 @@
                                             @if($setting->value)
                                                 <div class="flex items-center space-x-3">
                                                     @if(in_array(pathinfo($setting->value, PATHINFO_EXTENSION), ['svg', 'ico']))
-                                                        <div class="w-16 h-16 bg-muted dark:bg-dark-muted rounded-lg flex items-center justify-center">
+                                                        <div class="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
                                                             <img src="{{ asset('storage/' . $setting->value) }}" 
                                                                  alt="{{ $setting->label }}" 
                                                                  class="w-12 h-12 object-contain">
@@ -126,15 +85,22 @@
                                                    class="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-black file:text-white hover:file:bg-gray-800">
                                             <p class="text-xs text-muted-foreground dark:text-gray-300">Upload new {{ strtolower($setting->label) }}</p>
                                         </div>
+                                    @elseif($setting->isPassword())
+                                        <input type="password"
+                                               name="settings[{{ $setting->key }}]"
+                                               value=""
+                                               autocomplete="new-password"
+                                               placeholder="{{ $setting->value ? '•••••••• (leave blank to keep current)' : 'Enter secret' }}"
+                                               class="w-full px-3 py-2 border border-border rounded-lg focus:ring-ring focus:border-black text-sm">
                                     @elseif($setting->isTextarea())
                                         <textarea name="settings[{{ $setting->key }}]" 
                                                   rows="3"
-                                                  class="w-full px-3 py-2 border border-border rounded-lg focus:ring-black focus:border-black text-sm">{{ $setting->value }}</textarea>
+                                                  class="w-full px-3 py-2 border border-border rounded-lg focus:ring-ring focus:border-black text-sm">{{ $setting->value }}</textarea>
                                     @else
                                         <input type="text" 
                                                name="settings[{{ $setting->key }}]" 
                                                value="{{ $setting->value }}"
-                                               class="w-full px-3 py-2 border border-border rounded-lg focus:ring-black focus:border-black text-sm">
+                                               class="w-full px-3 py-2 border border-border rounded-lg focus:ring-ring focus:border-black text-sm">
                                     @endif
                                 </div>
                                 @endforeach
@@ -146,7 +112,7 @@
 
                 <!-- Submit Button -->
                 <div class="mt-6 flex justify-end">
-                    <button type="submit" class="px-6 py-3 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:bg-gray-800 dark:hover:bg-muted transition-colors">
+                    <button type="submit" class="px-6 py-3 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-colors">
                         <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                         </svg>
@@ -154,6 +120,29 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Mail Delivery Test -->
+    <div class="pb-6">
+        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
+            <div class="bg-card border border-border rounded-lg p-5">
+                <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                    <div>
+                        <h3 class="text-base font-medium text-foreground">Test Mail Delivery</h3>
+                        <p class="mt-1 text-xs text-muted-foreground">Save the mail settings above first, then send a real SMTP test message.</p>
+                    </div>
+                    <form method="POST" action="{{ route('admin.settings.test-mail') }}" class="flex w-full max-w-xl flex-col gap-2 sm:flex-row">
+                        @csrf
+                        <input type="email" name="test_email" required placeholder="you@example.com"
+                               class="min-w-0 flex-1 px-3 py-2 border border-border rounded-lg focus:ring-ring focus:border-black text-sm">
+                        <button type="submit"
+                                class="px-4 py-2 bg-tesla-600 text-white text-sm font-medium rounded-lg hover:bg-tesla-700 transition-colors">
+                            Send Test Email
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 

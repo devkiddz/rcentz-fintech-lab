@@ -8,7 +8,7 @@
             </div>
             <div class="flex space-x-2">
                 <a href="{{ route('admin.purchases.index') }}" 
-                   class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-200 transition-all duration-200">
+                   class="inline-flex items-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-all duration-200">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                     </svg>
@@ -74,7 +74,7 @@
                                          alt="{{ $purchase->car->title }}" 
                                          class="w-24 h-18 object-cover rounded-lg border border-border dark:border-gray-700">
                                 @else
-                                    <div class="w-24 h-18 bg-gray-200 rounded-lg flex items-center justify-center border border-border dark:border-gray-700">
+                                    <div class="w-24 h-18 bg-muted rounded-lg flex items-center justify-center border border-border dark:border-gray-700">
                                         <svg class="w-8 h-8 text-gray-400 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
                                         </svg>
@@ -162,7 +162,7 @@
 
                             <div class="mt-4">
                                 <a href="{{ route('admin.users.show', $purchase->user) }}" 
-                                   class="w-full inline-flex items-center justify-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded hover:bg-gray-200 transition-colors">
+                                   class="w-full inline-flex items-center justify-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded hover:bg-muted transition-colors">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                     </svg>
@@ -185,7 +185,7 @@
                                 <div class="space-y-3">
                                     <div>
                                         <label for="status" class="block text-xs font-medium text-muted-foreground mb-2">Update Status</label>
-                                        <select name="status" id="status" class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-black focus:border-black">
+                                        <select name="status" id="status" class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-black">
                                             <option value="pending" {{ $purchase->status == 'pending' ? 'selected' : '' }}>Pending</option>
                                             <option value="processing" {{ $purchase->status == 'processing' ? 'selected' : '' }}>Processing</option>
                                             <option value="completed" {{ $purchase->status == 'completed' ? 'selected' : '' }}>Completed</option>
@@ -194,7 +194,7 @@
                                         </select>
                                     </div>
                                     <button type="submit" 
-                                            class="w-full inline-flex items-center justify-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded hover:bg-gray-800 dark:hover:bg-muted transition-all duration-200">
+                                            class="w-full inline-flex items-center justify-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded hover:opacity-90 transition-all duration-200">
                                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                                         </svg>
@@ -240,7 +240,7 @@
                                 @endif
                                 
                                 <div class="flex items-center space-x-3">
-                                    <div class="w-6 h-6 {{ $purchase->status == 'completed' ? 'bg-green-100' : 'bg-gray-200' }} rounded-full flex items-center justify-center">
+                                    <div class="w-6 h-6 {{ $purchase->status == 'completed' ? 'bg-green-100' : 'bg-muted' }} rounded-full flex items-center justify-center">
                                         <svg class="w-3 h-3 {{ $purchase->status == 'completed' ? 'text-green-600' : 'text-muted-foreground' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                         </svg>
@@ -297,7 +297,7 @@
                 </div>
                 <div class="flex items-center justify-center space-x-3">
                     <button onclick="closeDeleteModal()" 
-                            class="px-4 py-2 bg-muted text-muted-foreground text-sm font-medium rounded hover:bg-gray-200 transition-colors">
+                            class="px-4 py-2 bg-muted text-muted-foreground text-sm font-medium rounded hover:bg-muted transition-colors">
                         Cancel
                     </button>
                     <button onclick="submitDelete()" 
