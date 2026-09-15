@@ -140,7 +140,7 @@ class TradePositionService
         ?int $actorId = null,
         bool $linkTransaction = true
     ): void {
-        DB::transaction(function () use ($position,$trade,$reason,$actorType,$actorId) {
+        DB::transaction(function () use ($position,$trade,$reason,$actorType,$actorId,$linkTransaction) {
             $position = TradePosition::lockForUpdate()->findOrFail($position->id);
             $qty = min((float)$trade->quantity,(float)$position->open_quantity);
             if ($qty <= 0) return;
@@ -324,7 +324,23 @@ class TradePositionService
                     }
 
                     try{
-                        $this->close($position,$reason,null,'system',null);
+                        $trade=$this->close($position,$reason,null,'system',null);
+
+                        // Strategy-provider automatic exits (SL / TP / time stop)
+                        // must propagate to the exact copy strategy just like a
+                        // manually submitted provider exit.
+                        if($position->context_type==='copy_strategy'){
+                            try{
+                                app(CopyTradingService::class)->mirrorCompletedTrade($trade);
+                            }catch(\Throwable $mirrorError){
+                                \Log::warning('Automatic strategy exit mirroring failed',[
+                                    'position_id'=>$position->id,
+                                    'trade_id'=>$trade->id,
+                                    'error'=>$mirrorError->getMessage(),
+                                ]);
+                            }
+                        }
+
                         $stats[$reason] = ($stats[$reason] ?? 0) + 1;
                     }catch(\Throwable $e){
                         \Log::warning('Position automatic exit failed',[
