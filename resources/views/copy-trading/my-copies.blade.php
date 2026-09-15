@@ -1,92 +1,10 @@
-<x-user-layout>
-<x-slot name="header">My Copied Strategies</x-slot>
-
-<div class="ui-page max-w-[1440px]">
-    <section class="ui-page-header">
-        <div>
-            <p class="ui-kicker">Copy Trading</p>
-            <h1 class="ui-heading">My Copied Strategies</h1>
-            <p class="ui-lead">Your copied providers, allocation exposure and mirrored trading activity.</p>
-        </div>
-        <div class="flex flex-wrap gap-2">
-            <a class="ui-btn ui-btn-secondary" href="{{ route('copy-trading.executions') }}">Execution History</a>
-            <a class="ui-btn ui-btn-secondary" href="{{ route('copy-trading.marketplace') }}">Strategy Marketplace</a>
-        </div>
-    </section>
-
-    <div class="grid gap-5 xl:grid-cols-2">
-        @forelse($relationships as $relationship)
-            @php
-                $m = $relationship->performance_metrics;
-                $allocation = (float)$relationship->allocation_limit;
-                $used = (float)$relationship->used_amount;
-                $usedPct = $allocation > 0 ? min(100, ($used / $allocation) * 100) : 0;
-                $completed = max(0, (int)$m['completed_count']);
-                $wins = max(0, (int)$m['winning_trades']);
-                $losses = max(0, (int)$m['losing_trades']);
-                $neutral = max(0, $completed - $wins - $losses);
-            @endphp
-
-            <article class="ui-panel overflow-hidden p-5 sm:p-6">
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <div class="flex flex-wrap items-center gap-2">
-                            <span class="rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">{{ ucfirst($relationship->strategy?->risk_level ?? 'medium') }} risk</span>
-                            <span class="rounded-full px-2.5 py-1 text-[11px] font-semibold {{ $relationship->status === 'active' ? 'bg-green-500/10 text-green-600' : 'bg-muted text-muted-foreground' }}">{{ ucfirst($relationship->status) }}</span>
-                        </div>
-                        <h2 class="mt-3 text-xl font-semibold">{{ $relationship->strategy?->name }}</h2>
-                        <p class="mt-1 text-sm text-muted-foreground">Provider · {{ $relationship->provider->name }}</p>
-                    </div>
-
-                    <a href="{{ route('copy-trading.relationships.edit',$relationship) }}" class="ui-btn ui-btn-primary">Edit Settings</a>
-                </div>
-
-                <div class="mt-6 rounded-2xl bg-muted/25 p-5">
-                    <div class="flex items-end justify-between gap-5">
-                        <div>
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{{ $m['is_manual_performance'] ? 'Preview P/L' : 'Current P/L' }}</p>
-                            <p class="mt-2 text-3xl font-semibold {{ $m['profit_loss']<0?'text-red-600':($m['profit_loss']>0?'text-green-600':'') }}">{{ $m['profit_loss']>0?'+':'' }}{{ format_currency($m['profit_loss']) }}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{{ $m['is_manual_performance'] ? 'Preview Return' : 'Current Return' }}</p>
-                            <p class="mt-2 text-xl font-semibold">{{ $m['return_percent']>0?'+':'' }}{{ number_format($m['return_percent'],2) }}%</p>
-                        </div>
-                    </div>
-
-                    <div class="mt-5 flex h-2.5 overflow-hidden rounded-full bg-muted">
-                        @if($completed > 0)
-                            <div class="bg-green-500" style="width: {{ ($wins / $completed) * 100 }}%"></div>
-                            <div class="bg-red-500" style="width: {{ ($losses / $completed) * 100 }}%"></div>
-                            <div class="bg-muted-foreground/30" style="width: {{ ($neutral / $completed) * 100 }}%"></div>
-                        @endif
-                    </div>
-                    <div class="mt-3 flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
-                        <span>{{ $completed }} mirrored executions</span>
-                        <span>{{ number_format($m['win_rate'],1) }}% positive execution rate</span>
-                    </div>
-                </div>
-
-                <div class="mt-6 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3">
-                    <div><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Allocation</p><p class="mt-1.5 text-lg font-semibold">{{ format_currency($allocation) }}</p></div>
-                    <div><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Used</p><p class="mt-1.5 text-lg font-semibold">{{ format_currency($used) }}</p></div>
-                    <div><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Copy Percentage</p><p class="mt-1.5 text-lg font-semibold">{{ number_format($relationship->copy_ratio_percent,0) }}%</p></div>
-                    <div><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Max Per Trade</p><p class="mt-1.5 text-lg font-semibold">{{ format_currency($relationship->max_trade_amount) }}</p></div>
-                    <div><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Positive</p><p class="mt-1.5 text-lg font-semibold">{{ $wins }}</p></div>
-                    <div><p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Negative</p><p class="mt-1.5 text-lg font-semibold">{{ $losses }}</p></div>
-
-                    <div class="col-span-2 sm:col-span-3">
-                        <div class="flex items-center justify-between text-xs"><span class="text-muted-foreground">Allocation used</span><span class="font-medium">{{ number_format($usedPct,1) }}%</span></div>
-                        <div class="mt-2 h-2 overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-foreground" style="width: {{ $usedPct }}%"></div></div>
-                    </div>
-                </div>
-            </article>
-        @empty
-            <div class="ui-panel p-10 text-center xl:col-span-2">
-                <p class="font-medium">No copied strategies yet.</p>
-                <p class="mt-1 text-sm text-muted-foreground">Choose an approved provider strategy to begin mirroring trades.</p>
-                <a href="{{ route('copy-trading.marketplace') }}" class="ui-btn ui-btn-primary mt-5">Explore Strategies</a>
-            </div>
-        @endforelse
+<x-user-layout><x-slot name="header">My Copied Strategies</x-slot><div class="ui-page max-w-[1440px]"><section class="ui-page-header"><div><p class="ui-kicker text-[10px]">Copy Trading</p><h1 class="ui-heading !text-xl">My Copied Strategies</h1><p class="ui-lead !text-[13px]">Allocation exposure and mirrored trading activity.</p></div><div class="flex gap-2"><a class="ui-btn ui-btn-secondary" href="{{ route('copy-trading.executions') }}"><i data-lucide="history" class="h-4 w-4"></i> History</a><a class="ui-btn ui-btn-secondary" href="{{ route('copy-trading.marketplace') }}"><i data-lucide="store" class="h-4 w-4"></i> Marketplace</a></div></section><div class="grid gap-4 xl:grid-cols-2">@forelse($relationships as $relationship)@php
+    $m = $relationship->performance_metrics;$allocation=(float;
+@endphp
+@if($m['is_manual_performance'])
+    <div class="mb-2 inline-flex items-center gap-1.5 rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-violet-600">
+        <i data-lucide="sparkles" class="h-3 w-3"></i>
+        {{ $m['performance_label'] ?: 'Manual Performance' }}
     </div>
-</div>
-</x-user-layout>
+@endif
+$relationship->allocation_limit;$used=(float)$relationship->used_amount;$usedPct=$allocation>0?min(100,($used/$allocation)*100):0;$completed=max(0,(int)$m['completed_count']);$wins=max(0,(int)$m['winning_trades']);$losses=max(0,(int)$m['losing_trades']);@endphp<article class="ui-panel overflow-hidden border border-border/70 bg-gradient-to-br from-background via-background to-muted/10 p-4 shadow-sm"><div class="flex items-start justify-between gap-3"><div><div class="flex gap-2"><span class="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-600">{{ ucfirst($relationship->strategy?->risk_level??'medium') }} risk</span><span class="inline-flex items-center gap-1 rounded-full {{ $relationship->status==='active'?'border border-emerald-500/20 bg-emerald-500/10 text-emerald-600':'border border-border bg-muted text-muted-foreground' }} px-2 py-1 text-[10px] font-semibold">@if($relationship->status==='active')<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>@endif{{ ucfirst($relationship->status) }}</span></div><h2 class="mt-2.5 text-base font-semibold">{{ $relationship->strategy?->name }}</h2><p class="mt-1 text-xs text-muted-foreground">Provider · {{ $relationship->provider->name }}</p></div><a href="{{ route('copy-trading.relationships.edit',$relationship) }}" class="ui-btn ui-btn-primary"><i data-lucide="sliders-horizontal" class="h-4 w-4"></i> Edit</a></div><div class="mt-4 grid grid-cols-2 gap-2.5"><div class="rounded-xl border {{ $m['profit_loss']>0?'border-emerald-500/20 bg-emerald-500/5':($m['profit_loss']<0?'border-red-500/20 bg-red-500/5':'border-border') }} p-3"><p class="text-[10px] uppercase tracking-[.14em] text-muted-foreground">{{ $m['is_manual_performance']?'P/L':'Current P/L' }}</p><p class="mt-1 text-sm font-semibold {{ $m['profit_loss']>0?'text-emerald-600':($m['profit_loss']<0?'text-red-600':'') }}">{{ $m['profit_loss']>0?'+':'' }}{{ format_currency($m['profit_loss']) }}</p></div><div class="rounded-xl border border-sky-500/20 bg-sky-500/5 p-3"><p class="text-[10px] uppercase tracking-[.14em] text-muted-foreground">Return</p><p class="mt-1 text-sm font-semibold text-sky-600">{{ $m['return_percent']>0?'+':'' }}{{ number_format($m['return_percent'],2) }}%</p></div></div><div class="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">@foreach([['wallet-minimal','Allocation',format_currency($allocation)],['pie-chart','Used',format_currency($used)],['percent','Copy %',number_format($relationship->copy_ratio_percent,0).'%'],['coins','Max / Trade',format_currency($relationship->max_trade_amount)],['circle-check','Positive',$wins],['circle-x','Negative',$losses]] as [$icon,$label,$value])<div class="rounded-xl border border-border bg-background/50 p-3"><div class="flex items-center gap-2 text-[10px] uppercase tracking-[.14em] text-muted-foreground"><i data-lucide="{{ $icon }}" class="h-3.5 w-3.5"></i>{{ $label }}</div><p class="mt-1 text-sm font-semibold">{{ $value }}</p></div>@endforeach</div><div class="mt-3"><div class="flex justify-between text-[11px]"><span class="text-muted-foreground">Allocation used</span><span class="font-medium">{{ number_format($usedPct,1) }}%</span></div><div class="mt-2 h-2 overflow-hidden rounded-full bg-muted"><div class="h-full bg-sky-500" style="width:{{ $usedPct }}%"></div></div></div></article>@empty<div class="ui-panel p-8 text-center text-sm text-muted-foreground xl:col-span-2">No copied strategies yet.</div>@endforelse</div></div></x-user-layout>

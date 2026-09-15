@@ -363,6 +363,7 @@ Route::middleware(['auth', 'admin'])
         Route::post('/', [AdminTradingBotController::class, 'store'])->name('store');
         Route::get('/subscriptions', [AdminTradingBotController::class, 'subscriptions'])->name('subscriptions');
         Route::get('/executions', [AdminTradingBotController::class, 'executions'])->name('executions');
+        Route::get('/executions/{execution}', [AdminTradingBotController::class, 'executionShow'])->name('executions.show');
         Route::get('/{botProduct}/edit', [AdminTradingBotController::class, 'edit'])->name('edit');
         Route::patch('/{botProduct}', [AdminTradingBotController::class, 'update'])->name('update');
         Route::patch('/{botProduct}/toggle', [AdminTradingBotController::class, 'toggle'])->name('toggle');

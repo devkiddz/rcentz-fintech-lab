@@ -70,6 +70,12 @@
                 </div>
 
                 <div>
+                    <label class="ui-label">Customer-facing performance label</label>
+                    <input name="manual_performance_label" class="ui-input" value="{{ old('manual_performance_label', $strategy->manual_performance_label) }}" placeholder="e.g. Illustrative Performance, Backtest Snapshot, Model Projection">
+                    <p class="mt-1 text-xs text-muted-foreground">Shown to customers when manual performance is enabled.</p>
+                </div>
+
+                <div>
                     <label class="ui-label">Internal presentation note</label>
                     <input name="manual_performance_note" class="ui-input" value="{{ old('manual_performance_note', $strategy->manual_performance_note) }}" placeholder="Why this preview override is being used">
                     <input type="hidden" name="manual_performance_source" id="manual_performance_source" value="">

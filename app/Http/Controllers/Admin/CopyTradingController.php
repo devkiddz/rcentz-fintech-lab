@@ -95,6 +95,7 @@ class CopyTradingController extends Controller
             'use_manual_performance' => 'nullable|boolean',
             'manual_profit_loss' => 'nullable|numeric|min:-100000000|max:100000000',
             'manual_return_percent' => 'nullable|numeric|min:-10000|max:10000',
+            'manual_performance_label' => 'nullable|string|max:60|required_if:use_manual_performance,1',
             'manual_performance_note' => 'nullable|string|max:255',
             'manual_performance_source' => 'nullable|in:profit_loss,return_percent',
         ]);

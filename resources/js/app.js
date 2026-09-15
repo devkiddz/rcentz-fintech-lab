@@ -1,4 +1,5 @@
 import './bootstrap';
+import './rcentz-lightweight-charts';
 import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
@@ -9,13 +10,10 @@ const themeMedia = window.matchMedia('(prefers-color-scheme: dark)');
 function getThemeScope() {
     const path = window.location.pathname;
 
-    // Admin pages keep their own preference.
     if (path === '/admin' || path.startsWith('/admin/')) {
         return 'admin';
     }
 
-    // Authenticated customer pages — including impersonated customer sessions —
-    // use a separate preference from the admin workspace.
     const customerShell = document.querySelector('[data-theme-scope="customer"], #sidebar');
 
     if (customerShell && !document.body.classList.contains('admin-workspace')) {
@@ -71,8 +69,6 @@ function toggleTheme() {
     setTheme(nextTheme);
 }
 
-// One public theme API for every shell.
-// Keep the older global toggleTheme alias so existing Blade layouts continue to work.
 window.AxausTheme = {
     apply: applyTheme,
     get: getStoredTheme,
@@ -91,8 +87,6 @@ themeMedia.addEventListener('change', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    // theme-init.blade.php applies the theme before paint.
-    // Re-resolve here because DOM state can now identify the exact shell.
     const storedTheme = getStoredTheme();
     applyTheme(storedTheme);
 
@@ -101,7 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Refresh the CSRF token periodically for long-lived authenticated pages.
 setInterval(() => {
     fetch('/refresh-csrf', {
         headers: { Accept: 'application/json' },
@@ -121,7 +114,5 @@ setInterval(() => {
             });
             document.querySelector('meta[name="csrf-token"]')?.setAttribute('content', data.token);
         })
-        .catch(() => {
-            // A failed refresh should not interrupt the current page.
-        });
+        .catch(() => {});
 }, 600000);

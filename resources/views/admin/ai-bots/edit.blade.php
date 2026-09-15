@@ -38,7 +38,7 @@
             <div class="grid gap-5 md:grid-cols-3">
                 <div>
                     <label class="ui-label">Strategy</label>
-                    <select name="strategy" class="ui-input">
+                    <select name="strategy" id="bot-strategy" class="ui-input">
                         <option value="dca" @selected(old('strategy', $botProduct->strategy) === 'dca')>DCA / Interval</option>
                         <option value="price_below" @selected(old('strategy', $botProduct->strategy) === 'price_below')>Price Below</option>
                         <option value="price_above" @selected(old('strategy', $botProduct->strategy) === 'price_above')>Price Above</option>
@@ -93,8 +93,8 @@
                     <label class="ui-label">Default trade amount</label>
                     <input name="default_trade_amount" type="number" min="1" step="0.01" class="ui-input" value="{{ old('default_trade_amount', $botProduct->default_trade_amount) }}">
                 </div>
-                <div>
-                    <label class="ui-label">Default trigger price</label>
+                <div id="admin-trigger-field">
+                    <label class="ui-label" id="admin-trigger-label">Default trigger price</label>
                     <input name="default_trigger_price" type="number" min="0.01" step="0.01" class="ui-input" value="{{ old('default_trigger_price', $botProduct->default_trigger_price) }}">
                 </div>
             </div>
@@ -137,6 +137,12 @@
                 </div>
 
                 <div>
+                    <label class="ui-label">Customer-facing performance label</label>
+                    <input name="manual_performance_label" class="ui-input" value="{{ old('manual_performance_label', $botProduct->manual_performance_label) }}" placeholder="e.g. Illustrative Performance, Backtest Snapshot, Model Projection">
+                    <p class="mt-1 text-xs text-muted-foreground">Shown to customers when manual performance is enabled. This replaces hard-coded “Preview” wording.</p>
+                </div>
+
+                <div>
                     <label class="ui-label">Internal presentation note</label>
                     <input name="manual_performance_note" class="ui-input" value="{{ old('manual_performance_note', $botProduct->manual_performance_note) }}" placeholder="Why this preview override is being used">
                     <input type="hidden" name="manual_performance_source" id="manual_performance_source" value="">
@@ -148,7 +154,7 @@
                     <input type="checkbox" name="allow_user_trade_amount" value="1" @checked(old('allow_user_trade_amount', $botProduct->allow_user_trade_amount))>
                     <span class="text-sm">Customer can adjust trade amount</span>
                 </label>
-                <label class="flex items-center gap-3 rounded-xl border border-border p-4">
+                <label id="admin-trigger-permission" class="flex items-center gap-3 rounded-xl border border-border p-4">
                     <input type="checkbox" name="allow_user_trigger_price" value="1" @checked(old('allow_user_trigger_price', $botProduct->allow_user_trigger_price))>
                     <span class="text-sm">Customer can adjust trigger</span>
                 </label>
@@ -217,6 +223,39 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     refreshBase();
+});
+</script>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const strategy = document.getElementById('bot-strategy');
+    const triggerField = document.getElementById('admin-trigger-field');
+    const triggerPermission = document.getElementById('admin-trigger-permission');
+    const triggerInput = document.querySelector('[name="default_trigger_price"]');
+    const triggerLabel = document.getElementById('admin-trigger-label');
+
+    function syncTriggerUi() {
+        if (!strategy || !triggerField) return;
+        const value = strategy.value;
+        const isDca = value === 'dca';
+
+        triggerField.classList.toggle('hidden', isDca);
+        if (triggerPermission) triggerPermission.classList.toggle('hidden', isDca);
+
+        if (isDca) {
+            if (triggerInput) triggerInput.value = '';
+        } else if (triggerLabel) {
+            triggerLabel.textContent = value === 'price_below'
+                ? 'Default buy-below price'
+                : value === 'price_above'
+                    ? 'Default buy-above price'
+                    : 'Default trigger price';
+        }
+    }
+
+    strategy?.addEventListener('change', syncTriggerUi);
+    syncTriggerUi();
 });
 </script>
 

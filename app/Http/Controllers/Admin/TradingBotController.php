@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BotProduct;
 use App\Models\BotSubscription;
 use App\Models\Stock;
+use App\Models\TradingBotExecution;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Services\TradingPerformanceService;
@@ -13,8 +14,17 @@ class TradingBotController extends Controller
 {
     public function index(TradingPerformanceService $performance)
     {
-        $products=BotProduct::with('stock')->withCount('subscriptions')->latest()->paginate(30);
-        foreach ($products as $product) { $product->performance_metrics = $performance->botProduct($product); }
+        $products = BotProduct::with('stock')
+            ->withCount([
+                'subscriptions',
+                'subscriptions as active_subscriptions_count' => fn ($q) => $q->whereIn('status', ['active','paused']),
+            ])
+            ->latest()
+            ->paginate(30);
+
+        foreach ($products as $product) {
+            $product->performance_metrics = $performance->botProduct($product);
+        }
         return view('admin.ai-bots.index',compact('products'));
     }
 
@@ -80,8 +90,46 @@ class TradingBotController extends Controller
 
     public function executions()
     {
-        $executions=\App\Models\TradingBotExecution::with(['subscription.user','subscription.product','bot.stock'])->latest()->paginate(50);
-        return view('admin.ai-bots.executions',compact('executions'));
+        $executions = TradingBotExecution::with([
+            'subscription.user',
+            'subscription.product',
+            'bot.stock',
+            'stockTransaction',
+        ])->latest()->paginate(50);
+
+        return view('admin.ai-bots.executions', compact('executions'));
+    }
+
+    public function executionShow(TradingBotExecution $execution)
+    {
+        $execution->load([
+            'subscription.user',
+            'subscription.product',
+            'bot.stock',
+            'stockTransaction',
+        ]);
+
+        $currentPrice = (float) ($execution->bot?->stock?->current_price ?? 0);
+        $entryPrice = (float) $execution->price;
+        $quantity = (float) $execution->quantity;
+
+        $profitLoss = 0.0;
+        if ($execution->status === 'completed' && $entryPrice > 0 && $quantity > 0 && $currentPrice > 0) {
+            $profitLoss = $execution->action === 'sell'
+                ? ($entryPrice - $currentPrice) * $quantity
+                : ($currentPrice - $entryPrice) * $quantity;
+        }
+
+        $returnPercent = (float) $execution->amount > 0
+            ? ($profitLoss / (float) $execution->amount) * 100
+            : 0;
+
+        return view('admin.ai-bots.execution-show', compact(
+            'execution',
+            'currentPrice',
+            'profitLoss',
+            'returnPercent'
+        ));
     }
 
     private function validated(Request $request):array
@@ -107,6 +155,7 @@ class TradingBotController extends Controller
             'use_manual_performance'=>'nullable|boolean',
             'manual_profit_loss'=>'nullable|numeric|min:-100000000|max:100000000',
             'manual_return_percent'=>'nullable|numeric|min:-10000|max:10000',
+            'manual_performance_label'=>'nullable|string|max:60|required_if:use_manual_performance,1',
             'manual_performance_note'=>'nullable|string|max:255',
             'manual_performance_source'=>'nullable|in:profit_loss,return_percent',
         ]);

@@ -22,6 +22,7 @@ class TradingPerformanceService
             (bool) $product->use_manual_performance,
             $product->manual_profit_loss,
             $product->manual_return_percent,
+            $product->manual_performance_label,
             $product->manual_performance_note
         );
     }
@@ -40,6 +41,7 @@ class TradingPerformanceService
             (bool) $subscription->product?->use_manual_performance,
             $subscription->product?->manual_profit_loss,
             $subscription->product?->manual_return_percent,
+            $subscription->product?->manual_performance_label,
             $subscription->product?->manual_performance_note
         );
     }
@@ -57,6 +59,7 @@ class TradingPerformanceService
             (bool) $strategy->use_manual_performance,
             $strategy->manual_profit_loss,
             $strategy->manual_return_percent,
+            $strategy->manual_performance_label,
             $strategy->manual_performance_note
         );
     }
@@ -73,6 +76,7 @@ class TradingPerformanceService
             (bool) $relationship->strategy?->use_manual_performance,
             $relationship->strategy?->manual_profit_loss,
             $relationship->strategy?->manual_return_percent,
+            $relationship->strategy?->manual_performance_label,
             $relationship->strategy?->manual_performance_note
         );
     }
@@ -107,7 +111,7 @@ class TradingPerformanceService
     private function fromCopyExecutions(Collection $executions, float $minimumAmount): array
     {
         $completed = $executions->where('status', 'completed');
-        $volume = (float) $completed->sum('executed_amount');
+        $volume = (float) $completed->sum('copied_amount');
         $pnl = 0.0;
         $wins = 0;
         $losses = 0;
@@ -137,11 +141,13 @@ class TradingPerformanceService
         bool $enabled,
         mixed $manualProfitLoss,
         mixed $manualReturnPercent,
+        ?string $label,
         ?string $note
     ): array {
         $metrics['actual_profit_loss'] = $metrics['profit_loss'];
         $metrics['actual_return_percent'] = $metrics['return_percent'];
         $metrics['is_manual_performance'] = $enabled;
+        $metrics['performance_label'] = $enabled ? trim((string) $label) : null;
         $metrics['performance_note'] = $enabled ? $note : null;
 
         if (! $enabled) {
