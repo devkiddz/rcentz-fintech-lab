@@ -154,6 +154,37 @@
                             </summary>
                             <div class="ml-5 mt-1 pl-5 border-l border-border space-y-1">
                                 <a href="{{ route('stocks.index') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="candlestick-chart" class="w-4 h-4 mr-3"></i>Live Markets</a>
+                                <a href="{{ route('trading.portfolio') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="briefcase-business" class="w-4 h-4 mr-3"></i>Portfolio</a>
+                                <a href="{{ route('trading.transactions') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="receipt-text" class="w-4 h-4 mr-3"></i>Transactions</a>
+                                <a href="{{ route('trading.watchlist') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="bookmark" class="w-4 h-4 mr-3"></i>Watchlist</a>
+                            </div>
+                        </details>
+
+                        <details class="group rounded-xl" {{ request()->routeIs('copy-trading.*') ? 'open' : '' }}>
+                            <summary class="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted">
+                                <span class="flex items-center"><i data-lucide="users-round" class="w-4 h-4 mr-3"></i>Copy Trading</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
+                            </summary>
+                            <div class="ml-5 mt-1 pl-5 border-l border-border space-y-1">
+                                <a href="{{ route('copy-trading.marketplace') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="store" class="w-4 h-4 mr-3"></i>Strategy Marketplace</a>
+                                <a href="{{ route('copy-trading.my-copies') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="copy-check" class="w-4 h-4 mr-3"></i>My Copied Strategies</a>
+                                <a href="{{ route('copy-trading.apply') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="badge-check" class="w-4 h-4 mr-3"></i>Become a Provider</a>
+                                @if(auth()->user()->copyTraderProfile?->approved_at)
+                                    <a href="{{ route('copy-trading.provider.dashboard') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="layout-dashboard" class="w-4 h-4 mr-3"></i>Provider Dashboard</a>
+                                @endif
+                            </div>
+                        </details>
+
+                        <details class="group rounded-xl" {{ request()->routeIs('ai-bots.*') ? 'open' : '' }}>
+                            <summary class="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted">
+                                <span class="flex items-center"><i data-lucide="bot" class="w-4 h-4 mr-3"></i>AI Trading Bots</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
+                            </summary>
+                            <div class="ml-5 mt-1 pl-5 border-l border-border space-y-1">
+                                <a href="{{ route('ai-bots.marketplace') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="store" class="w-4 h-4 mr-3"></i>Bot Marketplace</a>
+                                <a href="{{ route('ai-bots.my-bots') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="bot-message-square" class="w-4 h-4 mr-3"></i>My Bots</a>
+                                <a href="{{ route('ai-bots.subscriptions') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="badge-dollar-sign" class="w-4 h-4 mr-3"></i>Subscriptions</a>
+                                <a href="{{ route('ai-bots.performance') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="chart-no-axes-combined" class="w-4 h-4 mr-3"></i>Performance</a>
                             </div>
                         </details>
 

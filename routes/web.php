@@ -9,6 +9,10 @@ use App\Http\Controllers\InvestmentPlanController;
 use App\Http\Controllers\InvestmentController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\TradingController;
+use App\Http\Controllers\CopyTradingController;
+use App\Http\Controllers\TradingBotController;
+use App\Http\Controllers\Admin\CopyTradingController as AdminCopyTradingController;
+use App\Http\Controllers\Admin\TradingBotController as AdminTradingBotController;
 use App\Http\Controllers\InvestmentDashboardController;
 use App\Http\Controllers\KYCController;
 use App\Http\Controllers\NotificationController;
@@ -165,8 +169,61 @@ Route::middleware(['auth', 'verified', 'wallet', 'block.admin'])->group(function
         Route::post('/trading/watchlist/{stock}', [TradingController::class, 'addToWatchlist'])->name('trading.watchlist.add');
         Route::patch('/trading/watchlist/update/{stock}', [TradingController::class, 'updateWatchlist'])->name('trading.watchlist.update');
         Route::delete('/trading/watchlist/{stock}', [TradingController::class, 'removeFromWatchlist'])->name('trading.watchlist.remove');
+
+        // Copy Trading
+        Route::get('/trading/copy', [CopyTradingController::class, 'index'])->name('trading.copy.index');
+        Route::post('/trading/copy/profile', [CopyTradingController::class, 'saveProfile'])->name('trading.copy.profile');
+        Route::post('/trading/copy/{provider}/follow', [CopyTradingController::class, 'follow'])->name('trading.copy.follow');
+        Route::patch('/trading/copy/relationships/{relationship}', [CopyTradingController::class, 'status'])->name('trading.copy.relationships.status');
+        Route::get('/trading/copy-executions', [CopyTradingController::class, 'executions'])->name('trading.copy.executions');
+
+        // Trading Bots
+        Route::get('/trading/bots', [TradingBotController::class, 'index'])->name('trading.bots.index');
+        Route::post('/trading/bots', [TradingBotController::class, 'store'])->name('trading.bots.store');
+        Route::patch('/trading/bots/{bot}', [TradingBotController::class, 'update'])->name('trading.bots.update');
+        Route::post('/trading/bots/{bot}/toggle', [TradingBotController::class, 'toggle'])->name('trading.bots.toggle');
+        Route::post('/trading/bots/{bot}/run', [TradingBotController::class, 'run'])->name('trading.bots.run');
+        Route::delete('/trading/bots/{bot}', [TradingBotController::class, 'destroy'])->name('trading.bots.destroy');
+        Route::get('/trading/bot-executions', [TradingBotController::class, 'executions'])->name('trading.bots.executions');
     });
     
+    // Legacy Trading Intelligence V1 entry points: keep old bookmarks safe.
+    Route::redirect('/trading/copy', '/copy-trading')->name('trading.copy.index');
+    Route::redirect('/trading/bots', '/ai-bots')->name('trading.bots.index');
+
+    // Copy Trading product domain
+    Route::middleware(['auth','kyc'])->prefix('copy-trading')->name('copy-trading.')->group(function () {
+        Route::get('/', [CopyTradingController::class, 'marketplace'])->name('marketplace');
+        Route::get('/my-copies', [CopyTradingController::class, 'myCopies'])->name('my-copies');
+        Route::get('/executions', [CopyTradingController::class, 'executions'])->name('executions');
+        Route::get('/executions/{execution}', [CopyTradingController::class, 'executionShow'])->name('executions.show');
+        Route::get('/relationships/{relationship}/edit', [CopyTradingController::class, 'editRelationship'])->name('relationships.edit');
+        Route::patch('/relationships/{relationship}/settings', [CopyTradingController::class, 'updateRelationship'])->name('relationships.update');
+        Route::get('/provider/apply', [CopyTradingController::class, 'applyForm'])->name('apply');
+        Route::post('/provider/apply', [CopyTradingController::class, 'apply'])->name('apply.store');
+        Route::get('/provider/dashboard', [CopyTradingController::class, 'providerDashboard'])->name('provider.dashboard');
+        Route::post('/provider/strategies', [CopyTradingController::class, 'storeStrategy'])->name('provider.strategy.store');
+        Route::patch('/provider/strategies/{strategy}/toggle', [CopyTradingController::class, 'toggleStrategy'])->name('provider.strategy.toggle');
+        Route::post('/strategies/{strategy}/copy', [CopyTradingController::class, 'follow'])->name('follow');
+        Route::patch('/relationships/{relationship}', [CopyTradingController::class, 'status'])->name('status');
+    });
+
+    // AI Trading Bots product domain
+    Route::middleware(['auth','kyc'])->prefix('ai-bots')->name('ai-bots.')->group(function () {
+        Route::get('/', [TradingBotController::class, 'marketplace'])->name('marketplace');
+        Route::get('/my-bots', [TradingBotController::class, 'myBots'])->name('my-bots');
+        Route::get('/subscriptions', [TradingBotController::class, 'subscriptions'])->name('subscriptions');
+        Route::get('/performance', [TradingBotController::class, 'performance'])->name('performance');
+        Route::get('/executions/{execution}', [TradingBotController::class, 'executionShow'])->name('executions.show');
+        Route::get('/subscription/{subscription}/configure', [TradingBotController::class, 'configure'])->name('configure');
+        Route::get('/{product}', [TradingBotController::class, 'show'])->name('show');
+        Route::post('/{product}/subscribe', [TradingBotController::class, 'subscribe'])->name('subscribe');
+        Route::patch('/subscription/{subscription}', [TradingBotController::class, 'update'])->name('update');
+        Route::post('/subscription/{subscription}/toggle', [TradingBotController::class, 'toggle'])->name('toggle');
+        Route::post('/subscription/{subscription}/run', [TradingBotController::class, 'run'])->name('run');
+        Route::delete('/subscription/{subscription}', [TradingBotController::class, 'cancel'])->name('cancel');
+    });
+
     // Investment Dashboard Routes
     Route::middleware(['auth', 'kyc'])->group(function () {
         Route::get('/investment', [InvestmentDashboardController::class, 'index'])->name('investment.dashboard');
@@ -285,6 +342,31 @@ Route::middleware(['auth', 'admin'])
         Route::post('/{transaction}/approve', [AdminWalletTransactionController::class, 'approve'])->name('approve');
         Route::post('/{transaction}/reject', [AdminWalletTransactionController::class, 'reject'])->name('reject');
         Route::delete('/{transaction}', [AdminWalletTransactionController::class, 'destroy'])->name('destroy');
+    });
+
+    // Admin Copy Trading
+    Route::prefix('copy-trading')->name('copy-trading.')->group(function () {
+        Route::get('/applications', [AdminCopyTradingController::class, 'applications'])->name('applications');
+        Route::post('/applications/{application}/approve', [AdminCopyTradingController::class, 'approve'])->name('applications.approve');
+        Route::post('/applications/{application}/reject', [AdminCopyTradingController::class, 'reject'])->name('applications.reject');
+        Route::get('/providers', [AdminCopyTradingController::class, 'providers'])->name('providers');
+        Route::get('/strategies', [AdminCopyTradingController::class, 'strategies'])->name('strategies');
+        Route::get('/strategies/{strategy}/edit', [AdminCopyTradingController::class, 'editStrategy'])->name('strategies.edit');
+        Route::patch('/strategies/{strategy}', [AdminCopyTradingController::class, 'updateStrategy'])->name('strategies.update');
+        Route::patch('/strategies/{strategy}/toggle', [AdminCopyTradingController::class, 'toggleStrategy'])->name('strategies.toggle');
+    });
+
+    // Admin AI Trading Bots
+    Route::prefix('ai-bots')->name('ai-bots.')->group(function () {
+        Route::get('/', [AdminTradingBotController::class, 'index'])->name('index');
+        Route::get('/create', [AdminTradingBotController::class, 'create'])->name('create');
+        Route::post('/', [AdminTradingBotController::class, 'store'])->name('store');
+        Route::get('/subscriptions', [AdminTradingBotController::class, 'subscriptions'])->name('subscriptions');
+        Route::get('/executions', [AdminTradingBotController::class, 'executions'])->name('executions');
+        Route::get('/{botProduct}/edit', [AdminTradingBotController::class, 'edit'])->name('edit');
+        Route::patch('/{botProduct}', [AdminTradingBotController::class, 'update'])->name('update');
+        Route::patch('/{botProduct}/toggle', [AdminTradingBotController::class, 'toggle'])->name('toggle');
+        Route::delete('/{botProduct}', [AdminTradingBotController::class, 'destroy'])->name('destroy');
     });
 
     // Admin Settings Management

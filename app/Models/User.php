@@ -128,6 +128,37 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(FinancialActivity::class);
     }
 
+    public function copyTraderProfile()
+    {
+        return $this->hasOne(CopyTraderProfile::class);
+    }
+
+    public function copyRelationships()
+    {
+        return $this->hasMany(CopyRelationship::class, 'follower_id');
+    }
+
+    public function copyFollowers()
+    {
+        return $this->hasMany(CopyRelationship::class, 'provider_id');
+    }
+
+    public function tradingBots()
+    {
+        return $this->hasMany(TradingBot::class);
+    }
+
+    public function strategyProviderApplications()
+    {
+        return $this->hasMany(StrategyProviderApplication::class);
+    }
+
+    public function botSubscriptions()
+    {
+        return $this->hasMany(BotSubscription::class);
+    }
+
+
     public function isAdmin()
     {
         return $this->is_admin;

@@ -12,6 +12,7 @@ use App\Models\WalletTransaction;
 use App\Models\StockPriceHistory;
 use App\Services\NotificationService;
 use App\Services\FinancialActivityService;
+use App\Services\CopyTradingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -44,7 +45,7 @@ class TradingController extends Controller
     /**
      * Execute buy stock
      */
-    public function executeBuy(Request $request, Stock $stock, FinancialActivityService $activity)
+    public function executeBuy(Request $request, Stock $stock, FinancialActivityService $activity, CopyTradingService $copyTrading)
     {
         if (!$stock->is_active) {
             abort(404);
@@ -147,6 +148,10 @@ class TradingController extends Controller
 
             DB::commit();
 
+            // Provider trades are mirrored only after the provider trade commits.
+            // A follower failure can never roll back the provider's own trade.
+            try { $copyTrading->mirrorCompletedTrade($stockTransaction); } catch (\Throwable $e) { \Log::warning('Copy mirroring failed after provider buy', ['trade_id' => $stockTransaction->id, 'error' => $e->getMessage()]); }
+
             return redirect()->route('trading.portfolio')
                 ->with('success', "Successfully purchased {$quantity} shares of {$stock->symbol} for \${$totalCost}.");
 
@@ -180,7 +185,7 @@ class TradingController extends Controller
     /**
      * Execute sell stock
      */
-    public function executeSell(Request $request, Stock $stock, FinancialActivityService $activity)
+    public function executeSell(Request $request, Stock $stock, FinancialActivityService $activity, CopyTradingService $copyTrading)
     {
         if (!$stock->is_active) {
             abort(404);
@@ -275,6 +280,8 @@ class TradingController extends Controller
             Mail::to($user->email)->send(new StockSellEmail($user, $stockTransaction, $totalPortfolioValue));
 
             DB::commit();
+
+            try { $copyTrading->mirrorCompletedTrade($stockTransaction); } catch (\Throwable $e) { \Log::warning('Copy mirroring failed after provider sale', ['trade_id' => $stockTransaction->id, 'error' => $e->getMessage()]); }
 
             return redirect()->route('trading.portfolio')
                 ->with('success', "Successfully sold {$quantityToSell} shares of {$stock->symbol} for \${$netAmount}.");

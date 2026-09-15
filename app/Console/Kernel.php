@@ -11,53 +11,22 @@ use App\Jobs\CleanupOldDataJob;
 
 class Kernel extends ConsoleKernel
 {
-    /**
-     * Define the application's command schedule.
-     */
     protected function schedule(Schedule $schedule): void
     {
-        // Update stock quotes every 5 minutes during market hours
-        $schedule->job(new UpdateStockQuotesJob())
-            ->everyFiveMinutes()
-            ->between('09:30', '16:00')
-            ->weekdays()
-            ->withoutOverlapping()
-            ->onOneServer();
+        $schedule->job(new UpdateStockQuotesJob())->everyFiveMinutes()->between('09:30', '16:00')->weekdays()->withoutOverlapping()->onOneServer();
+        $schedule->job(new FetchStockHistoryJob())->hourly()->withoutOverlapping()->onOneServer();
+        $schedule->job(new ProcessStockNewsJob())->daily()->at('06:00')->withoutOverlapping()->onOneServer();
+        $schedule->job(new CleanupOldDataJob())->weekly()->sundays()->at('02:00')->withoutOverlapping()->onOneServer();
+        $schedule->command('queue:work --stop-when-empty')->everyMinute()->withoutOverlapping();
 
-        // Fetch historical data hourly
-        $schedule->job(new FetchStockHistoryJob())
-            ->hourly()
-            ->withoutOverlapping()
-            ->onOneServer();
-
-        // Process stock news daily
-        $schedule->job(new ProcessStockNewsJob())
-            ->daily()
-            ->at('06:00')
-            ->withoutOverlapping()
-            ->onOneServer();
-
-        // Cleanup old data weekly
-        $schedule->job(new CleanupOldDataJob())
-            ->weekly()
-            ->sundays()
-            ->at('02:00')
-            ->withoutOverlapping()
-            ->onOneServer();
-
-        // Monitor queue health
-        $schedule->command('queue:work --stop-when-empty')
-            ->everyMinute()
-            ->withoutOverlapping();
+        // Trading intelligence automation. The command itself only runs active,
+        // due bots and re-checks every risk limit before execution.
+        $schedule->command('trading-bots:run')->everyFiveMinutes()->withoutOverlapping();
     }
 
-    /**
-     * Register the commands for the application.
-     */
     protected function commands(): void
     {
         $this->load(__DIR__.'/Commands');
-
         require base_path('routes/console.php');
     }
-} 
+}

@@ -1,0 +1,8 @@
+<x-user-layout><x-slot name="header">Become a Strategy Provider</x-slot><div class="ui-page max-w-4xl"><section class="ui-page-header"><div><p class="ui-kicker">Copy Trading</p><h1 class="ui-heading">Strategy Provider Application</h1><p class="ui-lead">Publishing copyable strategies requires admin approval.</p></div></section>
+@if($latest)<div class="ui-panel p-5 mb-5"><p class="text-xs text-muted-foreground">Latest application</p><div class="mt-2 flex items-center justify-between"><strong>{{ $latest->display_name }}</strong><span class="ui-status">{{ ucfirst($latest->status) }}</span></div>@if($latest->admin_notes)<p class="mt-3 text-sm text-muted-foreground">{{ $latest->admin_notes }}</p>@endif</div>@endif
+<form class="ui-panel p-6 space-y-5" method="POST" action="{{ route('copy-trading.apply.store') }}">@csrf
+<div><label class="ui-label">Provider / strategy name</label><input name="display_name" class="ui-input" required></div>
+<div><label class="ui-label">Trading experience</label><textarea name="experience" class="ui-input min-h-28" required></textarea></div>
+<div><label class="ui-label">Strategy summary</label><textarea name="strategy_summary" class="ui-input min-h-28" required></textarea></div>
+<div><label class="ui-label">Risk level</label><select name="risk_level" class="ui-input"><option>low</option><option selected>medium</option><option>high</option></select></div>
+<button class="ui-btn ui-btn-primary">Submit for review</button></form></div></x-user-layout>

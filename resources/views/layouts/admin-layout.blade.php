@@ -16,6 +16,9 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700&display=swap" rel="stylesheet" />
 
+        <!-- Lucide Icons -->
+        <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
         @include('partials.theme-init')
 
         <!-- Scripts -->
@@ -51,6 +54,11 @@
                     icon.classList.add('rotate-90');
                 }
             }
+                    document.addEventListener('DOMContentLoaded', function () {
+                if (window.lucide) {
+                    lucide.createIcons();
+                }
+            });
         </script>
     </head>
     <body class="admin-workspace font-sans antialiased bg-background text-foreground" data-theme-scope="admin">
@@ -231,6 +239,33 @@
                             </svg>
                             <span>KYC Management</span>
                         </a>
+
+                        <!-- Copy Trading -->
+                        <details class="group rounded-xl" {{ request()->routeIs('admin.copy-trading.*') ? 'open' : '' }}>
+                            <summary class="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted">
+                                <span class="flex items-center"><i data-lucide="users-round" class="w-4 h-4 mr-3"></i>Copy Trading</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
+                            </summary>
+                            <div class="ml-5 mt-1 pl-5 border-l border-border space-y-1">
+                                <a href="{{ route('admin.copy-trading.applications') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="clipboard-check" class="w-4 h-4 mr-2"></i>Provider Applications</a>
+                                <a href="{{ route('admin.copy-trading.providers') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="badge-check" class="w-4 h-4 mr-2"></i>Providers</a>
+                                <a href="{{ route('admin.copy-trading.strategies') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="route" class="w-4 h-4 mr-2"></i>Strategies</a>
+                            </div>
+                        </details>
+
+                        <!-- AI Trading Bots -->
+                        <details class="group rounded-xl" {{ request()->routeIs('admin.ai-bots.*') ? 'open' : '' }}>
+                            <summary class="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted">
+                                <span class="flex items-center"><i data-lucide="bot" class="w-4 h-4 mr-3"></i>AI Trading Bots</span>
+                                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
+                            </summary>
+                            <div class="ml-5 mt-1 pl-5 border-l border-border space-y-1">
+                                <a href="{{ route('admin.ai-bots.index') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="store" class="w-4 h-4 mr-2"></i>Bot Catalog</a>
+                                <a href="{{ route('admin.ai-bots.create') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="circle-plus" class="w-4 h-4 mr-2"></i>Create Bot</a>
+                                <a href="{{ route('admin.ai-bots.subscriptions') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="badge-dollar-sign" class="w-4 h-4 mr-2"></i>Subscriptions</a>
+                                <a href="{{ route('admin.ai-bots.executions') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="activity" class="w-4 h-4 mr-2"></i>Executions</a>
+                            </div>
+                        </details>
 
                         <!-- Wallet Transactions -->
                         <a href="{{ route('admin.wallet-transactions.index') }}" 
