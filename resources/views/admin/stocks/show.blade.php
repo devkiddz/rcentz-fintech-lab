@@ -1,288 +1,226 @@
 <x-admin-layout>
-    <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <div>
-                <h2 class="font-light text-lg text-foreground leading-tight mr-4">
-                    {{ $stock->name }} ({{ $stock->symbol }})
-                </h2>
-            </div>
-            <div class="flex space-x-2">
-                <a href="{{ route('admin.stocks.index') }}" 
-                   class="px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-colors">
-                    Back to Stocks
-                </a>
+<x-slot name="header">{{ $stock->name }} ({{ $stock->symbol }})</x-slot>
+
+<div class="ui-page max-w-[1600px]">
+    <section class="ui-page-header">
+        <div class="flex min-w-0 items-start gap-4">
+            @if($stock->logo_url)
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border bg-background">
+                    <img src="{{ $stock->logo_url }}" alt="{{ $stock->symbol }} logo" class="h-8 w-8 object-contain" loading="lazy">
+                </div>
+            @else
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-border bg-muted text-[11px] font-semibold">
+                    {{ $stock->symbol }}
+                </div>
+            @endif
+
+            <div class="min-w-0">
+                <p class="ui-kicker text-[10px]">Trading Management · Stock</p>
+                <div class="mt-1 flex flex-wrap items-center gap-2">
+                    <h1 class="ui-heading !text-2xl">{{ $stock->name }}</h1>
+                    <span class="rounded-full border border-border bg-muted px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[.11em] text-muted-foreground">
+                        {{ $stock->symbol }}
+                    </span>
+                    <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[.11em]
+                        {{ $stock->is_active ? 'border border-emerald-500/20 bg-emerald-500/10 text-emerald-600' : 'border border-border bg-muted text-muted-foreground' }}">
+                        @if($stock->is_active)<span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>@endif
+                        {{ $stock->is_active ? 'Active' : 'Inactive' }}
+                    </span>
+                </div>
+                <p class="ui-lead !mt-2 !max-w-3xl !text-[13px]">{{ $stock->description ?: 'No stock description available.' }}</p>
             </div>
         </div>
-    </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <!-- Main Content -->
-                <div class="xl:col-span-2 space-y-6">
-                    <!-- Stock Overview -->
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">Stock Overview</h3>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('admin.stocks.index') }}" class="ui-btn ui-btn-secondary">
+                <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                Stocks
+            </a>
+            <a href="{{ route('admin.stocks.holdings.index') }}?stock={{ $stock->id }}" class="ui-btn ui-btn-secondary">
+                <i data-lucide="layers-3" class="h-4 w-4"></i>
+                Holdings
+            </a>
+            <a href="{{ route('admin.stocks.transactions.index') }}?stock={{ $stock->id }}" class="ui-btn ui-btn-secondary">
+                <i data-lucide="receipt-text" class="h-4 w-4"></i>
+                Transactions
+            </a>
+            <a href="{{ route('admin.stocks.trade', $stock) }}" class="ui-btn ui-btn-primary">
+                <i data-lucide="badge-dollar-sign" class="h-4 w-4"></i>
+                Trading Desk
+            </a>
+        </div>
+    </section>
+
+    <section class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="ui-panel p-4">
+            <p class="text-[8px] font-semibold uppercase tracking-[.13em] text-muted-foreground">Current price</p>
+            <p class="mt-2 text-2xl font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format($stock->current_price, 2) }}</p>
+            <p class="mt-2 text-[9px] text-muted-foreground">Previous close · {{ currency_symbol() }}{{ number_format($stock->previous_close, 2) }}</p>
+        </div>
+
+        <div class="ui-panel p-4">
+            <p class="text-[8px] font-semibold uppercase tracking-[.13em] text-muted-foreground">Price move</p>
+            <p class="mt-2 text-2xl font-semibold tabular-nums {{ $stock->price_change >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                {{ $stock->price_change >= 0 ? '+' : '' }}{{ currency_symbol() }}{{ number_format($stock->price_change, 2) }}
+            </p>
+            <p class="mt-2 text-[9px] font-semibold {{ $stock->price_change_percentage >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                {{ $stock->price_change_percentage >= 0 ? '+' : '' }}{{ number_format($stock->price_change_percentage, 2) }}%
+            </p>
+        </div>
+
+        <div class="ui-panel p-4">
+            <p class="text-[8px] font-semibold uppercase tracking-[.13em] text-muted-foreground">Customer exposure</p>
+            <p class="mt-2 text-2xl font-semibold tabular-nums">{{ number_format($stats['total_holdings']) }}</p>
+            <p class="mt-2 text-[9px] text-muted-foreground">{{ number_format($stats['total_shares'], 2) }} shares held</p>
+        </div>
+
+        <div class="ui-panel p-4">
+            <p class="text-[8px] font-semibold uppercase tracking-[.13em] text-muted-foreground">Trading volume</p>
+            <p class="mt-2 text-2xl font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format($stats['total_volume'], 0) }}</p>
+            <p class="mt-2 text-[9px] text-muted-foreground">{{ number_format($stats['total_transactions']) }} executions</p>
+        </div>
+    </section>
+
+
+    <section class="mt-5">
+        @include('trading.partials.analysis-chart', [
+            'stock' => $stock,
+            'analysis' => $analysis,
+            'chartHeight' => 'h-[320px] md:h-[420px]',
+        ])
+    </section>
+
+    <section class="mt-5 grid gap-5 xl:grid-cols-[1.45fr_.55fr]">
+        <div class="space-y-5">
+            <div class="ui-panel overflow-hidden">
+                <div class="flex items-center justify-between border-b border-border/70 px-4 py-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="wallet-cards" class="h-4 w-4 text-violet-500"></i>
+                            <h2 class="text-[13px] font-semibold">Recent holdings</h2>
                         </div>
-                        <div class="p-4">
-                            <div class="flex items-start space-x-4 mb-4">
-                                @if($stock->logo_url)
-                                    <div class="w-16 h-16 rounded-lg flex items-center justify-center bg-card border border-border">
-                                        <img src="{{ $stock->logo_url }}" alt="{{ $stock->symbol }} Logo" class="w-14 h-14 object-contain" loading="lazy">
-                                    </div>
-                                @else
-                                    <div class="w-16 h-16 bg-gradient-to-br from-tesla-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                        <span class="text-white font-bold text-lg">{{ $stock->symbol }}</span>
-                                    </div>
-                                @endif
-                                <div class="flex-1">
-                                    <h4 class="text-lg font-medium text-foreground dark:text-white mb-2">{{ $stock->name }}</h4>
-                                    <p class="text-sm text-muted-foreground mb-3">{{ $stock->description }}</p>
-                                    <div class="flex flex-wrap gap-2">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-tesla-100 text-tesla-800">
-                                            {{ $stock->sector }}
-                                        </span>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            {{ $stock->industry }}
-                                        </span>
-                                        @if($stock->is_active)
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                Active
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <p class="mt-1 text-[10px] text-muted-foreground">Latest customer positions in {{ $stock->symbol }}.</p>
                     </div>
+                    <a href="{{ route('admin.stocks.holdings.index') }}?stock={{ $stock->id }}" class="text-[11px] font-medium hover:underline">View all</a>
+                </div>
 
-                    <!-- Current Price Metrics -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="bg-card border border-border p-4 rounded-lg">
-                            <div class="text-center">
-                                <p class="text-xs font-medium text-muted-foreground mb-1">Current Price</p>
-                                <p class="text-lg font-light text-foreground">{{ currency_symbol() }}{{ number_format($stock->current_price, 2) }}</p>
+                <div class="divide-y divide-border/70">
+                    @forelse($stock->holdings->take(5) as $holding)
+                        <div class="grid gap-3 px-4 py-4 sm:grid-cols-[1.1fr_.6fr_.7fr_.6fr] sm:items-center">
+                            <div class="min-w-0">
+                                <p class="truncate text-[11px] font-semibold">{{ $holding->user->name }}</p>
+                                <p class="mt-0.5 truncate text-[9px] text-muted-foreground">{{ $holding->user->email }}</p>
                             </div>
-                        </div>
-
-                        <div class="bg-card border border-border p-4 rounded-lg">
-                            <div class="text-center">
-                                <p class="text-xs font-medium text-muted-foreground mb-1">Previous Close</p>
-                                <p class="text-lg font-light text-foreground">{{ currency_symbol() }}{{ number_format($stock->previous_close, 2) }}</p>
+                            <div>
+                                <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Shares</p>
+                                <p class="mt-1 text-[11px] font-semibold tabular-nums">{{ number_format($holding->quantity, 2) }}</p>
                             </div>
-                        </div>
-
-                        <div class="bg-card border border-border p-4 rounded-lg">
-                            <div class="text-center">
-                                <p class="text-xs font-medium text-muted-foreground mb-1">Change</p>
-                                <p class="text-lg font-light {{ $stock->price_change >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                    {{ $stock->price_change >= 0 ? '+' : '' }}{{ currency_symbol() }}{{ number_format($stock->price_change, 2) }}
+                            <div>
+                                <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Current value</p>
+                                <p class="mt-1 text-[11px] font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format($holding->current_value, 2) }}</p>
+                            </div>
+                            <div>
+                                <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Unrealized</p>
+                                <p class="mt-1 text-[10px] font-semibold {{ $holding->unrealized_gain_loss_percentage >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                                    {{ $holding->unrealized_gain_loss_percentage >= 0 ? '+' : '' }}{{ number_format($holding->unrealized_gain_loss_percentage, 2) }}%
                                 </p>
                             </div>
                         </div>
+                    @empty
+                        <div class="p-8 text-center text-[10px] text-muted-foreground">No holdings found for this stock.</div>
+                    @endforelse
+                </div>
+            </div>
 
-                        <div class="bg-card border border-border p-4 rounded-lg">
-                            <div class="text-center">
-                                <p class="text-xs font-medium text-muted-foreground mb-1">Change %</p>
-                                <p class="text-lg font-light {{ $stock->price_change_percentage >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                    {{ $stock->price_change_percentage >= 0 ? '+' : '' }}{{ number_format($stock->price_change_percentage, 2) }}%
-                                </p>
-                            </div>
+            <div class="ui-panel overflow-hidden">
+                <div class="flex items-center justify-between border-b border-border/70 px-4 py-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="arrow-left-right" class="h-4 w-4 text-sky-500"></i>
+                            <h2 class="text-[13px] font-semibold">Recent transactions</h2>
                         </div>
+                        <p class="mt-1 text-[10px] text-muted-foreground">Latest buy and sell executions for {{ $stock->symbol }}.</p>
                     </div>
-
-                    <!-- Recent Holdings -->
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">Recent Holdings</h3>
-                            <p class="text-xs text-muted-foreground mt-1">Latest stock holdings by users</p>
-                        </div>
-                        <div class="p-4">
-                            @if($stock->holdings->count() > 0)
-                            <div class="space-y-3">
-                                @foreach($stock->holdings->take(5) as $holding)
-                                <div class="border border-border dark:border-gray-700 rounded-lg p-3">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-3">
-                                            @if($holding->user->profile_image)
-                                                <img src="{{ asset('storage/' . $holding->user->profile_image) }}" 
-                                                     alt="{{ $holding->user->name }}" 
-                                                     class="w-8 h-8 rounded-lg object-cover">
-                                            @else
-                                                <div class="w-8 h-8 bg-gradient-to-br from-tesla-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                                    <span class="text-white font-bold text-xs">{{ strtoupper(substr($holding->user->name, 0, 2)) }}</span>
-                                                </div>
-                                            @endif
-                                            <div>
-                                                <h4 class="text-sm font-medium text-foreground">{{ $holding->user->name }}</h4>
-                                                <p class="text-xs text-muted-foreground dark:text-gray-300">{{ number_format($holding->quantity, 2) }} shares</p>
-                                            </div>
-                                        </div>
-                                        <div class="text-right">
-                                            <p class="text-sm font-medium text-foreground">{{ currency_symbol() }}{{ number_format($holding->current_value, 2) }}</p>
-                                            <p class="text-xs {{ $holding->unrealized_gain_loss_percentage >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                                {{ $holding->unrealized_gain_loss_percentage >= 0 ? '+' : '' }}{{ number_format($holding->unrealized_gain_loss_percentage, 2) }}%
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                                @endforeach
-                            </div>
-                            @else
-                            <div class="text-center py-6">
-                                <p class="text-sm text-muted-foreground dark:text-gray-300">No holdings found for this stock.</p>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- Recent Transactions -->
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">Recent Transactions</h3>
-                            <p class="text-xs text-muted-foreground mt-1">Latest buy/sell transactions</p>
-                        </div>
-                        <div class="p-4">
-                            @if($stock->transactions->count() > 0)
-                            <div class="space-y-3">
-                                @foreach($stock->transactions->take(5) as $transaction)
-                                <div class="border border-border dark:border-gray-700 rounded-lg p-3">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-3">
-                                            @if($transaction->user->profile_image)
-                                                <img src="{{ asset('storage/' . $transaction->user->profile_image) }}" 
-                                                     alt="{{ $transaction->user->name }}" 
-                                                     class="w-8 h-8 rounded-lg object-cover">
-                                            @else
-                                                <div class="w-8 h-8 bg-gradient-to-br from-tesla-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                                    <span class="text-white font-bold text-xs">{{ strtoupper(substr($transaction->user->name, 0, 2)) }}</span>
-                                                </div>
-                                            @endif
-                                            <div>
-                                                <h4 class="text-sm font-medium text-foreground">{{ $transaction->user->name }}</h4>
-                                                <p class="text-xs text-muted-foreground dark:text-gray-300">{{ ucfirst($transaction->type) }} • {{ number_format($transaction->quantity, 2) }} shares</p>
-                                            </div>
-                                        </div>
-                                        <div class="text-right">
-                                            <p class="text-sm font-medium text-foreground">{{ currency_symbol() }}{{ number_format($transaction->total_amount, 2) }}</p>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                                {{ ucfirst($transaction->status) }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                @endforeach
-                            </div>
-                            @else
-                            <div class="text-center py-6">
-                                <p class="text-sm text-muted-foreground dark:text-gray-300">No transactions found for this stock.</p>
-                            </div>
-                            @endif
-                        </div>
-                    </div>
+                    <a href="{{ route('admin.stocks.transactions.index') }}?stock={{ $stock->id }}" class="text-[11px] font-medium hover:underline">View all</a>
                 </div>
 
-                <!-- Sidebar -->
-                <div class="space-y-6">
-                    <!-- Stock Information -->
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">Stock Information</h3>
-                        </div>
-                        <div class="p-4">
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Symbol</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $stock->symbol }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Sector</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $stock->sector }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Industry</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $stock->industry }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Status</label>
-                                    <p class="text-sm font-medium text-foreground">
-                                        @if($stock->is_active)
-                                            <span class="text-green-600">Active</span>
-                                        @else
-                                            <span class="text-red-600">Inactive</span>
-                                        @endif
-                                    </p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Last Updated</label>
-                                    <p class="text-sm font-medium text-foreground">
-                                        {{ $stock->last_updated ? $stock->last_updated->format('M d, Y h:i A') : 'Never' }}
-                                    </p>
-                                </div>
+                <div class="divide-y divide-border/70">
+                    @forelse($stock->transactions->take(5) as $transaction)
+                        <a href="{{ route('admin.stocks.transactions.show', $transaction) }}"
+                           class="grid gap-3 px-4 py-4 transition hover:bg-muted/20 sm:grid-cols-[1.1fr_.45fr_.6fr_.6fr_auto] sm:items-center">
+                            <div class="min-w-0">
+                                <p class="truncate text-[11px] font-semibold">{{ $transaction->user->name }}</p>
+                                <p class="mt-0.5 text-[9px] text-muted-foreground">{{ $transaction->created_at->format('M d, Y · H:i') }}</p>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Statistics Summary -->
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">Statistics Summary</h3>
-                        </div>
-                        <div class="p-4">
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Total Holdings</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $stats['total_holdings'] }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Total Transactions</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $stats['total_transactions'] }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Total Volume</label>
-                                    <p class="text-sm font-medium text-foreground">{{ currency_symbol() }}{{ number_format($stats['total_volume'], 2) }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Total Shares</label>
-                                    <p class="text-sm font-medium text-foreground">{{ number_format($stats['total_shares'], 2) }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Total Value</label>
-                                    <p class="text-sm font-medium text-foreground">{{ currency_symbol() }}{{ number_format($stats['total_value'], 2) }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Total Invested</label>
-                                    <p class="text-sm font-medium text-foreground">{{ currency_symbol() }}{{ number_format($stats['total_invested'], 2) }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Total Gain/Loss</label>
-                                    <p class="text-sm font-medium {{ $stats['total_gain_loss'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $stats['total_gain_loss'] >= 0 ? '+' : '' }}{{ currency_symbol() }}{{ number_format($stats['total_gain_loss'], 2) }}
-                                    </p>
-                                </div>
+                            <div>
+                                <span class="inline-flex rounded-full px-2 py-1 text-[8px] font-semibold uppercase tracking-[.11em]
+                                    {{ $transaction->type === 'buy' ? 'border border-emerald-500/20 bg-emerald-500/10 text-emerald-600' : 'border border-red-500/20 bg-red-500/10 text-red-600' }}">
+                                    {{ ucfirst($transaction->type) }}
+                                </span>
                             </div>
-
-                            <div class="mt-4 space-y-2">
-                                <a href="{{ route('admin.stocks.holdings.index') }}?stock={{ $stock->id }}" 
-                                   class="w-full inline-flex items-center justify-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-colors">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                    </svg>
-                                    View All Holdings
-                                </a>
-                                <a href="{{ route('admin.stocks.transactions.index') }}?stock={{ $stock->id }}" 
-                                   class="w-full inline-flex items-center justify-center px-3 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-colors">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                                    </svg>
-                                    View All Transactions
-                                </a>
+                            <div>
+                                <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Shares</p>
+                                <p class="mt-1 text-[10px] font-semibold tabular-nums">{{ number_format($transaction->quantity, 2) }}</p>
                             </div>
-                        </div>
-                    </div>
+                            <div>
+                                <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Amount</p>
+                                <p class="mt-1 text-[10px] font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format($transaction->total_amount, 2) }}</p>
+                            </div>
+                            <i data-lucide="chevron-right" class="h-3.5 w-3.5 text-muted-foreground"></i>
+                        </a>
+                    @empty
+                        <div class="p-8 text-center text-[10px] text-muted-foreground">No transactions found for this stock.</div>
+                    @endforelse
                 </div>
             </div>
         </div>
-    </div>
+
+        <aside class="space-y-5">
+            <div class="ui-panel overflow-hidden">
+                <div class="border-b border-border/70 px-4 py-4">
+                    <h2 class="text-[13px] font-semibold">Market profile</h2>
+                    <p class="mt-1 text-[10px] text-muted-foreground">Catalog and quote metadata.</p>
+                </div>
+                <div class="divide-y divide-border/70">
+                    @foreach([
+                        ['Symbol',$stock->symbol],
+                        ['Sector',$stock->sector ?: '—'],
+                        ['Industry',$stock->industry ?: '—'],
+                        ['Status',$stock->is_active ? 'Active' : 'Inactive'],
+                        ['Last updated',$stock->last_updated ? $stock->last_updated->format('M d, Y · H:i') : 'Never'],
+                    ] as [$label,$value])
+                        <div class="flex items-center justify-between gap-4 px-4 py-3">
+                            <span class="text-[9px] text-muted-foreground">{{ $label }}</span>
+                            <span class="text-right text-[10px] font-semibold">{{ $value }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="ui-panel overflow-hidden">
+                <div class="border-b border-border/70 px-4 py-4">
+                    <h2 class="text-[13px] font-semibold">Position economics</h2>
+                    <p class="mt-1 text-[10px] text-muted-foreground">Aggregate customer exposure.</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-px bg-border/70">
+                    <div class="bg-background p-4">
+                        <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Value</p>
+                        <p class="mt-1.5 text-[12px] font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format($stats['total_value'], 2) }}</p>
+                    </div>
+                    <div class="bg-background p-4">
+                        <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Invested</p>
+                        <p class="mt-1.5 text-[12px] font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format($stats['total_invested'], 2) }}</p>
+                    </div>
+                    <div class="col-span-2 bg-background p-4">
+                        <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Unrealized gain / loss</p>
+                        <p class="mt-1.5 text-lg font-semibold tabular-nums {{ $stats['total_gain_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                            {{ $stats['total_gain_loss'] >= 0 ? '+' : '' }}{{ currency_symbol() }}{{ number_format($stats['total_gain_loss'], 2) }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </section>
+</div>
 </x-admin-layout>

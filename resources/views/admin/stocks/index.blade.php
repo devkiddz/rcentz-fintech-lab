@@ -1,157 +1,135 @@
 <x-admin-layout>
-    <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <div>
-                <h2 class="font-light text-lg text-foreground leading-tight mr-4">
-                    Stock Management
-                </h2>
-            </div>
+<x-slot name="header">Stock Management</x-slot>
+
+<div class="ui-page max-w-[1600px]">
+    <section class="ui-page-header">
+        <div>
+            <p class="ui-kicker text-[10px]">Trading Management</p>
+            <h1 class="ui-heading !text-2xl">Stocks</h1>
+            <p class="ui-lead !max-w-3xl !text-[13px]">
+                Monitor listed assets, market activity, customer holdings and execution volume.
+            </p>
         </div>
-    </x-slot>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('admin.stocks.transactions.index') }}" class="ui-btn ui-btn-secondary">
+                <i data-lucide="receipt-text" class="h-4 w-4"></i>
+                Transactions
+            </a>
+        </div>
+    </section>
 
-    <div class="py-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <!-- Statistics Overview -->
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 md:w-10 md:h-10 bg-tesla-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 md:w-5 md:h-5 text-tesla-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-2 md:ml-3">
-                            <p class="text-xs font-medium text-muted-foreground dark:text-gray-300">Total Stocks</p>
-                            <p class="text-sm md:text-lg font-light text-foreground">{{ $stats['total_stocks'] }}</p>
-                        </div>
+    <section class="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
+        @foreach([
+            ['bar-chart-3','Total stocks',$stats['total_stocks'],'sky'],
+            ['badge-check','Active stocks',$stats['active_stocks'],'emerald'],
+            ['wallet-cards','With holdings',$stats['stocks_with_holdings'],'violet'],
+            ['layers-3','Total holdings',$stats['total_holdings'],'amber'],
+            ['arrow-left-right','Transactions',$stats['total_transactions'],'rose'],
+        ] as [$icon,$label,$value,$tone])
+            <div class="ui-panel p-4">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-[8px] font-semibold uppercase tracking-[.13em] text-muted-foreground">{{ $label }}</p>
+                        <p class="mt-2 text-xl font-semibold tabular-nums">{{ number_format($value) }}</p>
                     </div>
-                </div>
-
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 md:w-10 md:h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 md:w-5 md:h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-2 md:ml-3">
-                            <p class="text-xs font-medium text-muted-foreground dark:text-gray-300">Active Stocks</p>
-                            <p class="text-sm md:text-lg font-light text-foreground">{{ $stats['active_stocks'] }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 md:w-10 md:h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 md:w-5 md:h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-2 md:ml-3">
-                            <p class="text-xs font-medium text-muted-foreground dark:text-gray-300">With Holdings</p>
-                            <p class="text-sm md:text-lg font-light text-foreground">{{ $stats['stocks_with_holdings'] }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 md:w-10 md:h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 md:w-5 md:h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-2 md:ml-3">
-                            <p class="text-xs font-medium text-muted-foreground dark:text-gray-300">Total Holdings</p>
-                            <p class="text-sm md:text-lg font-light text-foreground">{{ $stats['total_holdings'] }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 md:w-10 md:h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 md:w-5 md:h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-2 md:ml-3">
-                            <p class="text-xs font-medium text-muted-foreground dark:text-gray-300">Transactions</p>
-                            <p class="text-sm md:text-lg font-light text-foreground">{{ $stats['total_transactions'] }}</p>
-                        </div>
+                    <div class="rounded-lg border border-border bg-muted/40 p-2">
+                        <i data-lucide="{{ $icon }}" class="h-4 w-4"></i>
                     </div>
                 </div>
             </div>
+        @endforeach
+    </section>
 
-            <!-- Stocks List -->
-            <div class="bg-card border border-border overflow-hidden rounded-lg">
-                <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                    <h3 class="text-base font-medium text-foreground">Available Stocks</h3>
-                    <p class="text-xs text-muted-foreground mt-1">All stocks available for trading</p>
+    <section class="ui-panel mt-5 overflow-hidden">
+        <div class="flex flex-col gap-2 border-b border-border/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="candlestick-chart" class="h-4 w-4 text-emerald-500"></i>
+                    <h2 class="text-[13px] font-semibold">Listed market</h2>
                 </div>
-                
-                <div class="p-4">
-                    @if($stocks->count() > 0)
-                    <div class="space-y-4">
-                        @foreach($stocks as $stock)
-                        <div class="border border-border dark:border-gray-700 rounded-lg p-4 hover:bg-muted/40 transition-colors">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-3">
-                                    @if($stock->logo_url)
-                                        <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-card border border-border">
-                                            <img src="{{ $stock->logo_url }}" alt="{{ $stock->symbol }} Logo" class="w-10 h-10 object-contain" loading="lazy">
-                                        </div>
+                <p class="mt-1 text-[10px] text-muted-foreground">Current price, activity and customer exposure by stock.</p>
+            </div>
+            <span class="text-[9px] font-semibold uppercase tracking-[.12em] text-muted-foreground">
+                {{ number_format($stats['total_stocks']) }} assets
+            </span>
+        </div>
+
+        @if($stocks->count() > 0)
+            <div class="divide-y divide-border/70">
+                @foreach($stocks as $stock)
+                    <div class="group grid gap-4 px-4 py-4 transition hover:bg-muted/20 lg:grid-cols-[minmax(0,1.2fr)_repeat(3,minmax(100px,.42fr))_auto] lg:items-center">
+                        <div class="flex min-w-0 items-center gap-3">
+                            @if($stock->logo_url)
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-background">
+                                    <img src="{{ $stock->logo_url }}" alt="{{ $stock->symbol }} logo" class="h-7 w-7 object-contain" loading="lazy">
+                                </div>
+                            @else
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-muted text-[10px] font-semibold">
+                                    {{ $stock->symbol }}
+                                </div>
+                            @endif
+
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <p class="truncate text-[12px] font-semibold">{{ $stock->name }}</p>
+                                    @if($stock->is_active)
+                                        <span class="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[.11em] text-emerald-600">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                            Active
+                                        </span>
                                     @else
-                                        <div class="w-12 h-12 bg-gradient-to-br from-tesla-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                            <span class="text-white font-bold text-sm">{{ $stock->symbol }}</span>
-                                        </div>
+                                        <span class="rounded-full border border-border bg-muted px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[.11em] text-muted-foreground">
+                                            Inactive
+                                        </span>
                                     @endif
-                                    <div>
-                                        <h4 class="text-sm font-medium text-foreground">{{ $stock->name }}</h4>
-                                        <p class="text-xs text-muted-foreground dark:text-gray-300">{{ $stock->symbol }} • {{ $stock->sector }}</p>
-                                        <p class="text-xs text-muted-foreground dark:text-gray-300">{{ $stock->holdings_count }} holdings • {{ $stock->transactions_count }} transactions</p>
-                                    </div>
                                 </div>
-                                
-                                <div class="flex items-center space-x-3">
-                                    <div class="text-right">
-                                        <p class="text-xs text-muted-foreground dark:text-gray-300">Current Price</p>
-                                        <p class="text-sm font-medium text-foreground">${{ number_format($stock->current_price, 2) }}</p>
-                                        @if($stock->price_change_percentage)
-                                            <p class="text-xs {{ $stock->price_change_percentage >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                                {{ $stock->price_change_percentage >= 0 ? '+' : '' }}{{ number_format($stock->price_change_percentage, 2) }}%
-                                            </p>
-                                        @endif
-                                        @if($stock->last_updated)
-                                            <p class="text-xs text-muted-foreground dark:text-gray-300">{{ $stock->last_updated->diffForHumans() }}</p>
-                                        @endif
-                                    </div>
-                                    
-                                    <div class="flex space-x-2">
-                                        <a href="{{ route('admin.stocks.show', $stock) }}" 
-                                           class="px-3 py-1.5 bg-black dark:bg-card text-white dark:text-foreground text-xs font-medium rounded hover:opacity-90 transition-colors">
-                                            View
-                                        </a>
-                                    </div>
-                                </div>
+                                <p class="mt-1 truncate text-[9px] text-muted-foreground">{{ $stock->symbol }} · {{ $stock->sector ?: 'Unclassified sector' }}</p>
                             </div>
                         </div>
-                        @endforeach
-                    </div>
-                    @else
-                    <div class="text-center py-8">
-                        <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-gray-400 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                            </svg>
+
+                        <div>
+                            <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Market price</p>
+                            <div class="mt-1 flex items-baseline gap-2">
+                                <p class="text-[12px] font-semibold tabular-nums">${{ number_format($stock->current_price, 2) }}</p>
+                                @if($stock->price_change_percentage !== null)
+                                    <span class="text-[9px] font-semibold {{ $stock->price_change_percentage >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                                        {{ $stock->price_change_percentage >= 0 ? '+' : '' }}{{ number_format($stock->price_change_percentage, 2) }}%
+                                    </span>
+                                @endif
+                            </div>
                         </div>
-                        <h3 class="text-lg font-medium text-foreground dark:text-white mb-2">No stocks found</h3>
-                        <p class="text-xs text-muted-foreground dark:text-gray-300">There are no stocks available at the moment.</p>
+
+                        <div>
+                            <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Holdings</p>
+                            <p class="mt-1 text-[12px] font-semibold tabular-nums">{{ number_format($stock->holdings_count) }}</p>
+                        </div>
+
+                        <div>
+                            <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Transactions</p>
+                            <p class="mt-1 text-[12px] font-semibold tabular-nums">{{ number_format($stock->transactions_count) }}</p>
+                            @if($stock->last_updated)
+                                <p class="mt-0.5 text-[8px] text-muted-foreground">{{ $stock->last_updated->diffForHumans() }}</p>
+                            @endif
+                        </div>
+
+                        <div class="flex justify-end">
+                            <a href="{{ route('admin.stocks.show', $stock) }}" class="ui-btn ui-btn-secondary !h-8 !px-3">
+                                View
+                                <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
+                            </a>
+                        </div>
                     </div>
-                    @endif
-                </div>
+                @endforeach
             </div>
-        </div>
-    </div>
+        @else
+            <div class="p-10 text-center">
+                <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-muted">
+                    <i data-lucide="candlestick-chart" class="h-4 w-4 text-muted-foreground"></i>
+                </div>
+                <p class="mt-3 text-[12px] font-semibold">No stocks found</p>
+                <p class="mt-1 text-[10px] text-muted-foreground">There are no listed stocks available at the moment.</p>
+            </div>
+        @endif
+    </section>
+</div>
 </x-admin-layout>

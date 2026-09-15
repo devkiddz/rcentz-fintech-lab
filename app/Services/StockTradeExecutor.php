@@ -14,50 +14,259 @@ class StockTradeExecutor
 {
     public function __construct(private FinancialActivityService $activity) {}
 
-    public function buy(User $user, Stock $stock, float $quantity, string $source, ?int $sourceId = null): StockTransaction
-    {
-        if ($quantity <= 0 || ! $stock->is_active) throw new RuntimeException('Trade is not executable.');
-        $price=(float)$stock->current_price; $amount=round($quantity*$price,2);
-        if ($amount <= 0) throw new RuntimeException('Trade amount is invalid.');
+    public function buy(
+        User $user,
+        Stock $stock,
+        float $quantity,
+        string $source,
+        ?int $sourceId = null,
+        ?int $copyStrategyId = null,
+        string $actorType = 'system',
+        ?int $actorId = null
+    ): StockTransaction {
+        if ($quantity <= 0 || ! $stock->is_active) {
+            throw new RuntimeException('Trade is not executable.');
+        }
 
-        return DB::transaction(function() use($user,$stock,$quantity,$price,$amount,$source,$sourceId){
-            $wallet=$user->wallet()->lockForUpdate()->firstOrFail();
-            if(! $wallet->canWithdraw($amount)) throw new RuntimeException('Insufficient available balance.');
-            $before=$this->activity->snapshot($wallet); $reference=$this->activity->reference(strtoupper(substr($source,0,8)).'-BUY');
-            $method=$this->internalMethod();
-            $walletTx=$wallet->transactions()->create(['payment_method_id'=>$method->id,'type'=>'investment','direction'=>'debit','amount'=>$amount,'fee'=>0,'status'=>'completed','reference_id'=>$reference,'description'=>$this->label($source).' buy: '.$stock->symbol]);
-            $trade=StockTransaction::create(['user_id'=>$user->id,'stock_id'=>$stock->id,'wallet_transaction_id'=>$walletTx->id,'type'=>'buy','quantity'=>$quantity,'price_per_share'=>$price,'total_amount'=>$amount,'fee'=>0,'status'=>'completed','executed_at'=>now()]);
-            $holding=StockHolding::where('user_id',$user->id)->where('stock_id',$stock->id)->lockForUpdate()->first();
-            if($holding){$newQty=(float)$holding->quantity+$quantity;$newInvested=(float)$holding->total_invested+$amount;$current=$newQty*$price;$holding->update(['quantity'=>$newQty,'average_buy_price'=>$newInvested/$newQty,'total_invested'=>$newInvested,'current_value'=>$current,'unrealized_gain_loss'=>$current-$newInvested,'unrealized_gain_loss_percentage'=>$newInvested>0?(($current-$newInvested)/$newInvested)*100:0]);}
-            else{$holding=StockHolding::create(['user_id'=>$user->id,'stock_id'=>$stock->id,'quantity'=>$quantity,'average_buy_price'=>$price,'total_invested'=>$amount,'current_value'=>$amount,'unrealized_gain_loss'=>0,'unrealized_gain_loss_percentage'=>0]);}
+        $price = (float) $stock->current_price;
+        $amount = round($quantity * $price, 2);
+
+        if ($amount <= 0) {
+            throw new RuntimeException('Trade amount is invalid.');
+        }
+
+        return DB::transaction(function () use (
+            $user,$stock,$quantity,$price,$amount,$source,$sourceId,$copyStrategyId,$actorType,$actorId
+        ) {
+            $wallet = $user->wallet()->lockForUpdate()->firstOrFail();
+
+            if (! $wallet->canWithdraw($amount)) {
+                throw new RuntimeException('Insufficient available balance.');
+            }
+
+            $before = $this->activity->snapshot($wallet);
+            $reference = $this->activity->reference(strtoupper(substr($source,0,8)).'-BUY');
+            $method = $this->internalMethod();
+
+            $walletTx = $wallet->transactions()->create([
+                'payment_method_id'=>$method->id,
+                'type'=>'investment',
+                'direction'=>'debit',
+                'amount'=>$amount,
+                'fee'=>0,
+                'status'=>'completed',
+                'reference_id'=>$reference,
+                'description'=>$this->label($source).' buy: '.$stock->symbol,
+            ]);
+
+            $trade = StockTransaction::create([
+                'user_id'=>$user->id,
+                'stock_id'=>$stock->id,
+                'copy_strategy_id'=>$copyStrategyId,
+                'execution_source'=>$source,
+                'initiated_by_user_id'=>$actorId,
+                'wallet_transaction_id'=>$walletTx->id,
+                'type'=>'buy',
+                'quantity'=>$quantity,
+                'price_per_share'=>$price,
+                'total_amount'=>$amount,
+                'fee'=>0,
+                'status'=>'completed',
+                'executed_at'=>now(),
+            ]);
+
+            $holding = StockHolding::where('user_id',$user->id)
+                ->where('stock_id',$stock->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($holding) {
+                $newQty=(float)$holding->quantity+$quantity;
+                $newInvested=(float)$holding->total_invested+$amount;
+                $current=$newQty*$price;
+                $holding->update([
+                    'quantity'=>$newQty,
+                    'average_buy_price'=>$newInvested/$newQty,
+                    'total_invested'=>$newInvested,
+                    'current_value'=>$current,
+                    'unrealized_gain_loss'=>$current-$newInvested,
+                    'unrealized_gain_loss_percentage'=>$newInvested>0?(($current-$newInvested)/$newInvested)*100:0,
+                ]);
+            } else {
+                StockHolding::create([
+                    'user_id'=>$user->id,
+                    'stock_id'=>$stock->id,
+                    'quantity'=>$quantity,
+                    'average_buy_price'=>$price,
+                    'total_invested'=>$amount,
+                    'current_value'=>$amount,
+                    'unrealized_gain_loss'=>0,
+                    'unrealized_gain_loss_percentage'=>0,
+                ]);
+            }
+
             $wallet->deductFunds($amount);
-            $this->activity->record($user,$source.'.buy',$this->label($source).' buy','Purchased '.number_format($quantity,6).' shares of '.$stock->symbol.'.',$reference,'completed','debit',$amount,$wallet,$walletTx,null,$before,['source'=>$source,'source_id'=>$sourceId,'stock_id'=>$stock->id,'quantity'=>$quantity],'system');
+
+            $this->activity->record(
+                $user,
+                $source.'.buy',
+                $this->label($source).' buy',
+                'Purchased '.number_format($quantity,6).' shares of '.$stock->symbol.'.',
+                $reference,
+                'completed',
+                'debit',
+                $amount,
+                $wallet,
+                $walletTx,
+                null,
+                $before,
+                [
+                    'source'=>$source,
+                    'source_id'=>$sourceId,
+                    'copy_strategy_id'=>$copyStrategyId,
+                    'stock_id'=>$stock->id,
+                    'quantity'=>$quantity,
+                ],
+                $actorType,
+                $actorId
+            );
+
             return $trade;
         });
     }
 
-    public function sell(User $user, Stock $stock, float $quantity, string $source, ?int $sourceId = null): StockTransaction
-    {
-        if ($quantity <= 0 || ! $stock->is_active) throw new RuntimeException('Trade is not executable.');
+    public function sell(
+        User $user,
+        Stock $stock,
+        float $quantity,
+        string $source,
+        ?int $sourceId = null,
+        ?int $copyStrategyId = null,
+        string $actorType = 'system',
+        ?int $actorId = null
+    ): StockTransaction {
+        if ($quantity <= 0 || ! $stock->is_active) {
+            throw new RuntimeException('Trade is not executable.');
+        }
+
         $price=(float)$stock->current_price;
-        return DB::transaction(function() use($user,$stock,$quantity,$price,$source,$sourceId){
+
+        return DB::transaction(function () use (
+            $user,$stock,$quantity,$price,$source,$sourceId,$copyStrategyId,$actorType,$actorId
+        ) {
             $wallet=$user->wallet()->lockForUpdate()->firstOrFail();
-            $holding=StockHolding::where('user_id',$user->id)->where('stock_id',$stock->id)->lockForUpdate()->first();
-            if(! $holding || (float)$holding->quantity < $quantity) throw new RuntimeException('Insufficient stock holding.');
-            $amount=round($quantity*$price,2); $before=$this->activity->snapshot($wallet); $reference=$this->activity->reference(strtoupper(substr($source,0,8)).'-SELL'); $method=$this->internalMethod();
-            $walletTx=$wallet->transactions()->create(['payment_method_id'=>$method->id,'type'=>'investment','direction'=>'credit','amount'=>$amount,'fee'=>0,'status'=>'completed','reference_id'=>$reference,'description'=>$this->label($source).' sell: '.$stock->symbol]);
-            $trade=StockTransaction::create(['user_id'=>$user->id,'stock_id'=>$stock->id,'wallet_transaction_id'=>$walletTx->id,'type'=>'sell','quantity'=>$quantity,'price_per_share'=>$price,'total_amount'=>$amount,'fee'=>0,'status'=>'completed','executed_at'=>now()]);
-            $oldQty=(float)$holding->quantity; $remaining=$oldQty-$quantity; $proportion=$quantity/$oldQty; $remainingInvested=max(0,(float)$holding->total_invested-((float)$holding->total_invested*$proportion));
-            if($remaining>0){$current=$remaining*$price;$holding->update(['quantity'=>$remaining,'total_invested'=>$remainingInvested,'current_value'=>$current,'unrealized_gain_loss'=>$current-$remainingInvested,'unrealized_gain_loss_percentage'=>$remainingInvested>0?(($current-$remainingInvested)/$remainingInvested)*100:0]);}else{$holding->delete();}
+            $holding=StockHolding::where('user_id',$user->id)
+                ->where('stock_id',$stock->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $holding || (float)$holding->quantity < $quantity) {
+                throw new RuntimeException('Insufficient stock holding.');
+            }
+
+            $amount=round($quantity*$price,2);
+            $before=$this->activity->snapshot($wallet);
+            $reference=$this->activity->reference(strtoupper(substr($source,0,8)).'-SELL');
+            $method=$this->internalMethod();
+
+            $walletTx=$wallet->transactions()->create([
+                'payment_method_id'=>$method->id,
+                'type'=>'investment',
+                'direction'=>'credit',
+                'amount'=>$amount,
+                'fee'=>0,
+                'status'=>'completed',
+                'reference_id'=>$reference,
+                'description'=>$this->label($source).' sell: '.$stock->symbol,
+            ]);
+
+            $trade=StockTransaction::create([
+                'user_id'=>$user->id,
+                'stock_id'=>$stock->id,
+                'copy_strategy_id'=>$copyStrategyId,
+                'execution_source'=>$source,
+                'initiated_by_user_id'=>$actorId,
+                'wallet_transaction_id'=>$walletTx->id,
+                'type'=>'sell',
+                'quantity'=>$quantity,
+                'price_per_share'=>$price,
+                'total_amount'=>$amount,
+                'fee'=>0,
+                'status'=>'completed',
+                'executed_at'=>now(),
+            ]);
+
+            $oldQty=(float)$holding->quantity;
+            $remaining=$oldQty-$quantity;
+            $proportion=$quantity/$oldQty;
+            $remainingInvested=max(0,(float)$holding->total_invested-((float)$holding->total_invested*$proportion));
+
+            if($remaining>0){
+                $current=$remaining*$price;
+                $holding->update([
+                    'quantity'=>$remaining,
+                    'total_invested'=>$remainingInvested,
+                    'current_value'=>$current,
+                    'unrealized_gain_loss'=>$current-$remainingInvested,
+                    'unrealized_gain_loss_percentage'=>$remainingInvested>0?(($current-$remainingInvested)/$remainingInvested)*100:0,
+                ]);
+            }else{
+                $holding->delete();
+            }
+
             $wallet->addFunds($amount);
-            $this->activity->record($user,$source.'.sell',$this->label($source).' sell','Sold '.number_format($quantity,6).' shares of '.$stock->symbol.'.',$reference,'completed','credit',$amount,$wallet,$walletTx,null,$before,['source'=>$source,'source_id'=>$sourceId,'stock_id'=>$stock->id,'quantity'=>$quantity],'system');
+
+            $this->activity->record(
+                $user,
+                $source.'.sell',
+                $this->label($source).' sell',
+                'Sold '.number_format($quantity,6).' shares of '.$stock->symbol.'.',
+                $reference,
+                'completed',
+                'credit',
+                $amount,
+                $wallet,
+                $walletTx,
+                null,
+                $before,
+                [
+                    'source'=>$source,
+                    'source_id'=>$sourceId,
+                    'copy_strategy_id'=>$copyStrategyId,
+                    'stock_id'=>$stock->id,
+                    'quantity'=>$quantity,
+                ],
+                $actorType,
+                $actorId
+            );
+
             return $trade;
         });
     }
 
     private function internalMethod(): PaymentMethod
     {
-        return PaymentMethod::firstOrCreate(['name'=>'Internal Trading'],['type'=>'traditional','details'=>'Internal stock execution ledger method.','is_active'=>true,'allow_deposit'=>false,'allow_withdraw'=>false]);
+        return PaymentMethod::firstOrCreate(
+            ['name'=>'Internal Trading'],
+            [
+                'type'=>'traditional',
+                'details'=>'Internal stock execution ledger method.',
+                'is_active'=>true,
+                'allow_deposit'=>false,
+                'allow_withdraw'=>false,
+            ]
+        );
     }
-    private function label(string $source): string { return match($source){'copy_trade'=>'Copy trade','trading_bot'=>'Trading bot',default=>'Stock trade'}; }
+
+    private function label(string $source): string
+    {
+        return match($source){
+            'copy_trade'=>'Copy trade',
+            'trading_bot'=>'Trading bot',
+            'admin_strategy_trade'=>'Strategy trade',
+            'admin_direct_trade'=>'Admin trade',
+            'admin_user_trade'=>'Trade for user',
+            default=>'Stock trade',
+        };
+    }
 }

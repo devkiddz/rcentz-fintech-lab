@@ -188,7 +188,7 @@ class TradingPerformanceService
     private function fromCopyExecutions(Collection $executions, float $minimumAmount): array
     {
         $completed = $executions->where('status', 'completed');
-        $volume = (float) $completed->sum('copied_amount');
+        $volume = (float) $completed->sum('executed_amount');
         $pnl = 0.0;
         $positive = 0;
         $negative = 0;

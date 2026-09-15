@@ -305,6 +305,11 @@ Route::middleware(['auth', 'admin'])
             });
        });
 
+       // Admin Account Operations
+       Route::get('/users/{user}/account-operations', [\App\Http\Controllers\Admin\AccountOperationsController::class, 'show'])
+            ->name('users.account-operations');
+       Route::post('/users/{user}/account-operations', [\App\Http\Controllers\Admin\AccountOperationsController::class, 'store'])
+            ->name('users.account-operations.store');
        // Admin Stock Management
        Route::prefix('stocks')->name('stocks.')->group(function () {
         // Stocks
@@ -318,8 +323,13 @@ Route::middleware(['auth', 'admin'])
         Route::get('transactions', [AdminStockTransactionController::class, 'index'])->name('transactions.index');
         Route::get('transactions/{transaction}', [AdminStockTransactionController::class, 'show'])->name('transactions.show');
         
+        // Admin Strategy Trading Desk
+        Route::get('/{stock}/trade', [AdminStockController::class, 'trade'])->name('trade');
+        Route::post('/{stock}/trade', [AdminStockController::class, 'executeStrategyTrade'])->name('trade.execute');
+
         // Individual stock route (move this down)
-        Route::get('/{stock}', [AdminStockController::class, 'show'])->name('show');
+        Route::post('/{stock}/trade/direct', [AdminStockController::class, 'executeAdminTrade'])->name('trade.direct');
+        Route::post('/{stock}/trade/user', [AdminStockController::class, 'executeUserTrade'])->name('trade.user');        Route::get('/{stock}', [AdminStockController::class, 'show'])->name('show');
     });
 
     // Admin Wallet Transaction Management
@@ -337,7 +347,12 @@ Route::middleware(['auth', 'admin'])
         Route::post('/applications/{application}/approve', [AdminCopyTradingController::class, 'approve'])->name('applications.approve');
         Route::post('/applications/{application}/reject', [AdminCopyTradingController::class, 'reject'])->name('applications.reject');
         Route::get('/providers', [AdminCopyTradingController::class, 'providers'])->name('providers');
+        Route::get('/providers/{provider}', [AdminCopyTradingController::class, 'providerShow'])->name('providers.show');
+        Route::patch('/providers/{provider}/toggle', [AdminCopyTradingController::class, 'toggleProvider'])->name('providers.toggle');
         Route::get('/strategies', [AdminCopyTradingController::class, 'strategies'])->name('strategies');
+        Route::get('/strategies/{strategy}', [AdminCopyTradingController::class, 'strategyShow'])->name('strategies.show');
+        Route::patch('/strategies/{strategy}/retire', [AdminCopyTradingController::class, 'retireStrategy'])->name('strategies.retire');
+        Route::delete('/strategies/{strategy}', [AdminCopyTradingController::class, 'destroyStrategy'])->name('strategies.destroy');
         Route::get('/strategies/{strategy}/edit', [AdminCopyTradingController::class, 'editStrategy'])->name('strategies.edit');
         Route::patch('/strategies/{strategy}', [AdminCopyTradingController::class, 'updateStrategy'])->name('strategies.update');
         Route::patch('/strategies/{strategy}/toggle', [AdminCopyTradingController::class, 'toggleStrategy'])->name('strategies.toggle');

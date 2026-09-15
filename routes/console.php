@@ -8,6 +8,7 @@ use App\Jobs\FetchStockHistoryJob;
 use App\Jobs\ProcessStockNewsJob;
 use App\Jobs\UpdateStockQuotesJob;
 use App\Services\BotSubscriptionLifecycleService;
+use App\Services\CopyRelationshipLifecycleService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -75,5 +76,12 @@ Schedule::call(function () {
 Schedule::command('stocks:refresh-history')
     ->dailyAt('22:30')
     ->timezone('America/New_York')
+    ->withoutOverlapping()
+    ->onOneServer();
+
+
+Schedule::call(fn () => app(CopyRelationshipLifecycleService::class)->expireDue())
+    ->name('copy-relationships:expire-due')
+    ->everyMinute()
     ->withoutOverlapping()
     ->onOneServer();

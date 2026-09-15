@@ -1,217 +1,147 @@
 <x-admin-layout>
-    <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <div>
-                <h2 class="font-light text-lg text-foreground leading-tight mr-4">
-                    Stock Transactions
-                </h2>
-            </div>
+<x-slot name="header">Stock Transactions</x-slot>
+
+<div class="ui-page max-w-[1600px]">
+    <section class="ui-page-header">
+        <div>
+            <p class="ui-kicker text-[10px]">Trading Management</p>
+            <h1 class="ui-heading !text-2xl">Stock transactions</h1>
+            <p class="ui-lead !max-w-3xl !text-[13px]">Inspect customer buy and sell executions, execution value and current status.</p>
         </div>
-    </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <!-- Statistics Overview -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 md:w-10 md:h-10 bg-tesla-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 md:w-5 md:h-5 text-tesla-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-2 md:ml-3">
-                            <p class="text-xs font-medium text-muted-foreground dark:text-gray-300">Total Transactions</p>
-                            <p class="text-sm md:text-lg font-light text-foreground">{{ $stats['total_transactions'] }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 md:w-10 md:h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 md:w-5 md:h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-2 md:ml-3">
-                            <p class="text-xs font-medium text-muted-foreground dark:text-gray-300">Unique Users</p>
-                            <p class="text-sm md:text-lg font-light text-foreground">{{ $stats['unique_users'] }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 md:w-10 md:h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 md:w-5 md:h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-2 md:ml-3">
-                            <p class="text-xs font-medium text-muted-foreground dark:text-gray-300">Unique Stocks</p>
-                            <p class="text-sm md:text-lg font-light text-foreground">{{ $stats['unique_stocks'] }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <div class="w-8 h-8 md:w-10 md:h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-4 h-4 md:w-5 md:h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-2 md:ml-3">
-                            <p class="text-xs font-medium text-muted-foreground dark:text-gray-300">Total Volume</p>
-                            <p class="text-sm md:text-lg font-light text-foreground">${{ number_format($stats['total_volume'], 0) }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Transaction Type Stats -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="text-center">
-                        <p class="text-xs font-medium text-muted-foreground mb-1">Buy Transactions</p>
-                        <p class="text-lg font-light text-foreground">{{ $stats['buy_transactions'] }}</p>
-                    </div>
-                </div>
-
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="text-center">
-                        <p class="text-xs font-medium text-muted-foreground mb-1">Sell Transactions</p>
-                        <p class="text-lg font-light text-foreground">{{ $stats['sell_transactions'] }}</p>
-                    </div>
-                </div>
-
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="text-center">
-                        <p class="text-xs font-medium text-muted-foreground mb-1">Completed</p>
-                        <p class="text-lg font-light text-foreground">{{ $stats['completed_transactions'] }}</p>
-                    </div>
-                </div>
-
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="text-center">
-                        <p class="text-xs font-medium text-muted-foreground mb-1">Pending</p>
-                        <p class="text-lg font-light text-foreground">{{ $stats['pending_transactions'] }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Transactions List -->
-            <div class="bg-card border border-border overflow-hidden rounded-lg">
-                <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                    <h3 class="text-base font-medium text-foreground">Stock Transactions</h3>
-                    <p class="text-xs text-muted-foreground mt-1">All buy/sell transactions by users</p>
-                </div>
-                
-                <div class="p-4">
-                    @if($transactions->count() > 0)
-                    <div class="space-y-4">
-                        @foreach($transactions as $transaction)
-                        <div class="border border-border dark:border-gray-700 rounded-lg p-4 hover:bg-muted/40 transition-colors">
-                            <!-- Mobile Layout -->
-                            <div class="md:hidden">
-                                <div class="flex items-start space-x-3 mb-3">
-                                    @if($transaction->user->profile_image)
-                                        <img src="{{ asset('storage/' . $transaction->user->profile_image) }}" 
-                                             alt="{{ $transaction->user->name }}" 
-                                             class="w-10 h-10 rounded-lg object-cover">
-                                    @else
-                                        <div class="w-10 h-10 bg-gradient-to-br from-tesla-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                            <span class="text-white font-bold text-xs">{{ strtoupper(substr($transaction->user->name, 0, 2)) }}</span>
-                                        </div>
-                                    @endif
-                                    <div class="flex-1 min-w-0">
-                                        <h4 class="text-sm font-medium text-foreground truncate">{{ $transaction->user->name }}</h4>
-                                        <p class="text-xs text-muted-foreground truncate">{{ $transaction->stock->name }} ({{ $transaction->stock->symbol }})</p>
-                                        <p class="text-xs text-muted-foreground mt-1">{{ ucfirst($transaction->type) }} • {{ number_format($transaction->quantity, 2) }} shares</p>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="text-sm font-medium text-foreground">${{ number_format($transaction->total_amount, 2) }}</p>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                            {{ ucfirst($transaction->status) }}
-                                        </span>
-                                    </div>
-                                </div>
-                                
-                                <!-- Mobile Actions -->
-                                <div class="flex flex-wrap gap-2">
-                                    <a href="{{ route('admin.stocks.transactions.show', $transaction) }}" 
-                                       class="flex-1 px-3 py-2 bg-muted text-muted-foreground text-xs font-medium rounded text-center hover:bg-muted transition-colors">
-                                       View Details
-                                    </a>
-                                    <a href="{{ route('admin.users.show', $transaction->user) }}" 
-                                       class="flex-1 px-3 py-2 bg-black dark:bg-card text-white dark:text-foreground text-xs font-medium rounded text-center hover:opacity-90 transition-colors">
-                                       View User
-                                    </a>
-                                </div>
-                            </div>
-
-                            <!-- Desktop Layout -->
-                            <div class="hidden md:flex items-center justify-between">
-                                <div class="flex items-center space-x-4">
-                                    @if($transaction->user->profile_image)
-                                        <img src="{{ asset('storage/' . $transaction->user->profile_image) }}" 
-                                             alt="{{ $transaction->user->name }}" 
-                                             class="w-12 h-12 rounded-lg object-cover">
-                                    @else
-                                        <div class="w-12 h-12 bg-gradient-to-br from-tesla-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                            <span class="text-white font-bold text-sm">{{ strtoupper(substr($transaction->user->name, 0, 2)) }}</span>
-                                        </div>
-                                    @endif
-                                    <div>
-                                        <h4 class="text-sm font-medium text-foreground">{{ $transaction->user->name }}</h4>
-                                        <p class="text-xs text-muted-foreground dark:text-gray-300">{{ $transaction->stock->name }} ({{ $transaction->stock->symbol }})</p>
-                                        <p class="text-xs text-muted-foreground mt-1">{{ ucfirst($transaction->type) }} • {{ number_format($transaction->quantity, 2) }} shares</p>
-                                    </div>
-                                </div>
-                                
-                                <div class="flex items-center space-x-3">
-                                    <div class="text-right">
-                                        <p class="text-sm font-medium text-foreground">${{ number_format($transaction->total_amount, 2) }}</p>
-                                        <p class="text-xs text-muted-foreground dark:text-gray-300">${{ number_format($transaction->price_per_share, 2) }} per share</p>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                            {{ ucfirst($transaction->status) }}
-                                        </span>
-                                    </div>
-                                    
-                                    <div class="flex space-x-2">
-                                        <a href="{{ route('admin.stocks.transactions.show', $transaction) }}" 
-                                           class="px-3 py-1.5 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-muted transition-colors">
-                                           View
-                                        </a>
-                                        <a href="{{ route('admin.users.show', $transaction->user) }}" 
-                                           class="px-3 py-1.5 bg-black dark:bg-card text-white dark:text-foreground text-xs font-medium rounded hover:opacity-90 transition-colors">
-                                           User
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        @endforeach
-                    </div>
-
-                    <!-- Pagination -->
-                    <div class="mt-6">
-                        {{ $transactions->links() }}
-                    </div>
-                    @else
-                    <div class="text-center py-8">
-                        <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-gray-400 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-medium text-foreground dark:text-white mb-2">No stock transactions found</h3>
-                        <p class="text-xs text-muted-foreground dark:text-gray-300">There are no stock transactions at the moment.</p>
-                    </div>
-                    @endif
-                </div>
-            </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('admin.stocks.index') }}" class="ui-btn ui-btn-secondary">
+                <i data-lucide="candlestick-chart" class="h-4 w-4"></i>
+                Stocks
+            </a>
+            <a href="{{ route('admin.stocks.holdings.index') }}" class="ui-btn ui-btn-secondary">
+                <i data-lucide="layers-3" class="h-4 w-4"></i>
+                Holdings
+            </a>
         </div>
-    </div>
+    </section>
+
+    <section class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="ui-panel p-4">
+            <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Transactions</p>
+            <p class="mt-2 text-2xl font-semibold tabular-nums">{{ number_format($stats['total_transactions']) }}</p>
+            <p class="mt-2 text-[9px] text-muted-foreground">{{ number_format($stats['completed_transactions']) }} completed</p>
+        </div>
+        <div class="ui-panel p-4">
+            <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Customers</p>
+            <p class="mt-2 text-2xl font-semibold tabular-nums">{{ number_format($stats['unique_users']) }}</p>
+            <p class="mt-2 text-[9px] text-muted-foreground">Unique traders</p>
+        </div>
+        <div class="ui-panel p-4">
+            <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Stocks traded</p>
+            <p class="mt-2 text-2xl font-semibold tabular-nums">{{ number_format($stats['unique_stocks']) }}</p>
+            <p class="mt-2 text-[9px] text-muted-foreground">{{ number_format($stats['buy_transactions']) }} buys · {{ number_format($stats['sell_transactions']) }} sells</p>
+        </div>
+        <div class="ui-panel p-4">
+            <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Execution volume</p>
+            <p class="mt-2 text-2xl font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format($stats['total_volume'], 0) }}</p>
+            <p class="mt-2 text-[9px] text-muted-foreground">{{ number_format($stats['pending_transactions']) }} pending</p>
+        </div>
+    </section>
+
+    <section class="mt-5 flex flex-wrap items-center gap-2">
+        @php
+            $stockFilter = request('stock');
+            $typeFilter = request('type');
+        @endphp
+
+        <a href="{{ route('admin.stocks.transactions.index', array_filter(['stock'=>$stockFilter])) }}"
+           class="ui-btn {{ !$typeFilter ? 'ui-btn-primary' : 'ui-btn-secondary' }} !h-8 !px-3">
+            All
+        </a>
+        <a href="{{ route('admin.stocks.transactions.index', array_filter(['stock'=>$stockFilter,'type'=>'buy'])) }}"
+           class="ui-btn {{ $typeFilter === 'buy' ? 'ui-btn-primary' : 'ui-btn-secondary' }} !h-8 !px-3">
+            <i data-lucide="arrow-down-left" class="h-3.5 w-3.5"></i>
+            Buys
+        </a>
+        <a href="{{ route('admin.stocks.transactions.index', array_filter(['stock'=>$stockFilter,'type'=>'sell'])) }}"
+           class="ui-btn {{ $typeFilter === 'sell' ? 'ui-btn-primary' : 'ui-btn-secondary' }} !h-8 !px-3">
+            <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
+            Sells
+        </a>
+
+        @if($stockFilter)
+            <a href="{{ route('admin.stocks.transactions.index', array_filter(['type'=>$typeFilter])) }}"
+               class="ml-auto text-[10px] font-medium text-muted-foreground hover:text-foreground">
+                Clear stock filter
+            </a>
+        @endif
+    </section>
+
+    <section class="ui-panel mt-4 overflow-hidden">
+        <div class="border-b border-border/70 px-4 py-4">
+            <div class="flex items-center gap-2">
+                <i data-lucide="receipt-text" class="h-4 w-4 text-sky-500"></i>
+                <h2 class="text-[13px] font-semibold">Execution ledger</h2>
+            </div>
+            <p class="mt-1 text-[10px] text-muted-foreground">Newest stock executions first.</p>
+        </div>
+
+        <div class="divide-y divide-border/70">
+            @forelse($transactions as $transaction)
+                <div class="grid gap-4 px-4 py-4 xl:grid-cols-[1.15fr_.9fr_.45fr_.55fr_.65fr_.5fr_auto] xl:items-center">
+                    <div class="min-w-0">
+                        <p class="truncate text-[11px] font-semibold">{{ $transaction->user->name }}</p>
+                        <p class="mt-0.5 truncate text-[9px] text-muted-foreground">{{ $transaction->user->email }}</p>
+                    </div>
+
+                    <div class="min-w-0">
+                        <p class="truncate text-[11px] font-semibold">{{ $transaction->stock->symbol }}</p>
+                        <p class="mt-0.5 truncate text-[9px] text-muted-foreground">{{ $transaction->stock->name }}</p>
+                    </div>
+
+                    <div>
+                        <span class="inline-flex rounded-full px-2 py-1 text-[8px] font-semibold uppercase tracking-[.11em]
+                            {{ $transaction->type === 'buy' ? 'border border-emerald-500/20 bg-emerald-500/10 text-emerald-600' : 'border border-red-500/20 bg-red-500/10 text-red-600' }}">
+                            {{ ucfirst($transaction->type) }}
+                        </span>
+                    </div>
+
+                    <div>
+                        <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Shares</p>
+                        <p class="mt-1 text-[10px] font-semibold tabular-nums">{{ number_format($transaction->quantity, 2) }}</p>
+                    </div>
+
+                    <div>
+                        <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Amount</p>
+                        <p class="mt-1 text-[10px] font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format($transaction->total_amount, 2) }}</p>
+                        <p class="mt-0.5 text-[8px] text-muted-foreground">{{ currency_symbol() }}{{ number_format($transaction->price_per_share, 2) }} / share</p>
+                    </div>
+
+                    <div>
+                        <span class="inline-flex rounded-full px-2 py-1 text-[8px] font-semibold uppercase tracking-[.11em]
+                            {{ $transaction->status === 'completed' ? 'border border-emerald-500/20 bg-emerald-500/10 text-emerald-600' : 'border border-amber-500/20 bg-amber-500/10 text-amber-600' }}">
+                            {{ ucfirst($transaction->status) }}
+                        </span>
+                        <p class="mt-1 text-[8px] text-muted-foreground">{{ $transaction->created_at->format('M d · H:i') }}</p>
+                    </div>
+
+                    <div class="flex justify-end gap-2">
+                        <a href="{{ route('admin.stocks.transactions.show', $transaction) }}" class="ui-btn ui-btn-primary !h-8 !px-3">
+                            View
+                        </a>
+                        <a href="{{ route('admin.users.show', $transaction->user) }}" class="ui-btn ui-btn-secondary !h-8 !px-3">
+                            User
+                        </a>
+                    </div>
+                </div>
+            @empty
+                <div class="p-10 text-center">
+                    <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-muted">
+                        <i data-lucide="receipt-text" class="h-4 w-4 text-muted-foreground"></i>
+                    </div>
+                    <p class="mt-3 text-[12px] font-semibold">No stock transactions found</p>
+                    <p class="mt-1 text-[10px] text-muted-foreground">No executions match the current filter.</p>
+                </div>
+            @endforelse
+        </div>
+    </section>
+
+    <div class="mt-4">{{ $transactions->withQueryString()->links() }}</div>
+</div>
 </x-admin-layout>

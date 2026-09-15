@@ -15,6 +15,7 @@ use App\Services\FinancialActivityService;
 use App\Services\CopyTradingService;
 use App\Services\StockTradePlanService;
 use App\Services\StockAnalysisService;
+use App\Services\StockTradeExecutor;
 use App\Models\StockTradePlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -49,123 +50,102 @@ class TradingController extends Controller
     /**
      * Execute buy stock
      */
-    public function executeBuy(Request $request, Stock $stock, FinancialActivityService $activity, CopyTradingService $copyTrading, StockTradePlanService $tradePlans)
-    {
-        if (!$stock->is_active) {
+    public function executeBuy(
+        Request $request,
+        Stock $stock,
+        StockTradeExecutor $executor,
+        CopyTradingService $copyTrading,
+        StockTradePlanService $tradePlans
+    ) {
+        if (! $stock->is_active) {
             abort(404);
         }
 
-        $request->validate([
+        $data = $request->validate([
             'quantity' => 'required|numeric|min:1|max:10000',
             'plan_duration_minutes' => 'nullable|integer|min:0|max:10080',
             'plan_mode' => 'nullable|in:reminder,automatic',
         ]);
 
         $user = Auth::user();
-        $wallet = $user->wallet;
-        $quantity = $request->quantity;
-        $pricePerShare = $stock->current_price;
-        $totalCost = $quantity * $pricePerShare;
-        $fee = 0.00; // Could be calculated based on amount
-        $totalAmount = $totalCost + $fee;
+        $quantity = (float) $data['quantity'];
 
         try {
-            DB::beginTransaction();
-
-            $wallet = $user->wallet()->lockForUpdate()->firstOrFail();
-            if (! $wallet->canWithdraw($totalAmount)) throw new \RuntimeException('Insufficient available balance.');
-            $before = $activity->snapshot($wallet);
-            $reference = $activity->reference('STK-BUY');
-
-            // Create wallet transaction
-            $walletTransaction = $wallet->transactions()->create([
-                'payment_method_id' => 1, // Default payment method
-                'type' => 'investment',
-                'direction' => 'debit',
-                'amount' => $totalAmount,
-                'fee' => $fee,
-                'status' => 'completed',
-                'reference_id' => $reference,
-                'description' => "Purchase of {$quantity} shares of {$stock->symbol}",
-            ]);
-
-            // Create stock transaction
-            $stockTransaction = StockTransaction::create([
+            // Single source of truth for wallet mutation, holding mutation,
+            // stock transaction creation and financial activity.
+            $stockTransaction = $executor->buy(
+                $user,
+                $stock,
+                $quantity,
+                'stock_trade'
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Manual stock buy failed', [
                 'user_id' => $user->id,
                 'stock_id' => $stock->id,
-                'wallet_transaction_id' => $walletTransaction->id,
-                'type' => 'buy',
-                'quantity' => $quantity,
-                'price_per_share' => $pricePerShare,
-                'total_amount' => $totalAmount,
-                'fee' => $fee,
-                'status' => 'completed',
-                'executed_at' => now(),
+                'error' => $e->getMessage(),
             ]);
 
-            // Update or create holding
-            $holding = $user->stockHoldings()
-                ->where('stock_id', $stock->id)
-                ->first();
+            return back()->withErrors([
+                'error' => $e->getMessage() ?: 'Failed to process purchase. Please try again.',
+            ])->withInput();
+        }
 
-            if ($holding) {
-                // Update existing holding
-                $totalQuantity = $holding->quantity + $quantity;
-                $totalInvested = $holding->total_invested + $totalCost;
-                $averageBuyPrice = $totalInvested / $totalQuantity;
-
-                $holding->update([
-                    'quantity' => $totalQuantity,
-                    'average_buy_price' => $averageBuyPrice,
-                    'total_invested' => $totalInvested,
-                    'current_value' => $totalQuantity * $stock->current_price,
-                    'unrealized_gain_loss' => ($totalQuantity * $stock->current_price) - $totalInvested,
-                    'unrealized_gain_loss_percentage' => (($totalQuantity * $stock->current_price) - $totalInvested) / $totalInvested * 100,
-                ]);
-            } else {
-                // Create new holding
-                $user->stockHoldings()->create([
-                    'stock_id' => $stock->id,
-                    'quantity' => $quantity,
-                    'average_buy_price' => $pricePerShare,
-                    'total_invested' => $totalCost,
-                    'current_value' => $quantity * $stock->current_price,
-                    'unrealized_gain_loss' => 0,
-                    'unrealized_gain_loss_percentage' => 0,
-                ]);
-            }
-
-            // Deduct funds from wallet
-            $wallet->deductFunds($totalAmount);
-            $activity->record($user,'stock.buy','Bought '.$stock->symbol,'Purchased '.$quantity.' shares of '.$stock->symbol.'.',$reference,'completed','debit',(float)$totalAmount,$wallet,$walletTransaction,null,$before,['stock_id'=>$stock->id,'quantity'=>(float)$quantity],'user',$user->id);
-
-            // Create notification for successful stock purchase
+        // Everything below is post-execution side effect. A notification,
+        // email, copy mirror or trade-plan failure must never roll back a
+        // completed financial execution.
+        try {
             NotificationService::createInvestmentSuccessNotification(
                 $user,
                 $stock->symbol,
-                $totalCost
+                (float) $stockTransaction->total_amount
             );
-
-            // Calculate total portfolio value for email
-            $totalPortfolioValue = $user->stockHoldings->sum('current_value') + ($quantity * $stock->current_price);
-
-            // Send stock purchase email
-            Mail::to($user->email)->send(new StockBuyEmail($user, $stockTransaction, $totalPortfolioValue));
-
-            DB::commit();
-
-            // Provider trades are mirrored only after the provider trade commits.
-            // A follower failure can never roll back the provider's own trade.
-            try { $copyTrading->mirrorCompletedTrade($stockTransaction); } catch (\Throwable $e) { \Log::warning('Copy mirroring failed after provider buy', ['trade_id' => $stockTransaction->id, 'error' => $e->getMessage()]); }
-            $tradePlans->createForTransaction($stockTransaction, $request->only(['plan_duration_minutes','plan_mode']));
-
-            return redirect()->route('trading.portfolio')
-                ->with('success', "Successfully purchased {$quantity} shares of {$stock->symbol} for \${$totalCost}.");
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->withErrors(['error' => 'Failed to process purchase. Please try again.']);
+        } catch (\Throwable $e) {
+            \Log::warning('Stock buy notification failed', [
+                'trade_id' => $stockTransaction->id,
+                'error' => $e->getMessage(),
+            ]);
         }
+
+        try {
+            $totalPortfolioValue = (float) $user->stockHoldings()->sum('current_value');
+            Mail::to($user->email)->send(
+                new StockBuyEmail($user, $stockTransaction, $totalPortfolioValue)
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Stock buy email failed', [
+                'trade_id' => $stockTransaction->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        try {
+            $copyTrading->mirrorCompletedTrade($stockTransaction);
+        } catch (\Throwable $e) {
+            \Log::warning('Copy mirroring failed after provider buy', [
+                'trade_id' => $stockTransaction->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        try {
+            $tradePlans->createForTransaction(
+                $stockTransaction,
+                $request->only(['plan_duration_minutes', 'plan_mode'])
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Trade plan creation failed after stock buy', [
+                'trade_id' => $stockTransaction->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return redirect()->route('trading.portfolio')
+            ->with(
+                'success',
+                'Successfully purchased '.number_format($quantity, 6).' shares of '.
+                $stock->symbol.' for '.currency_symbol().number_format((float) $stockTransaction->total_amount, 2).'.'
+            );
     }
 
     /**
@@ -193,114 +173,99 @@ class TradingController extends Controller
     /**
      * Execute sell stock
      */
-    public function executeSell(Request $request, Stock $stock, FinancialActivityService $activity, CopyTradingService $copyTrading, StockTradePlanService $tradePlans)
-    {
-        if (!$stock->is_active) {
+    public function executeSell(
+        Request $request,
+        Stock $stock,
+        StockTradeExecutor $executor,
+        CopyTradingService $copyTrading,
+        StockTradePlanService $tradePlans
+    ) {
+        if (! $stock->is_active) {
             abort(404);
         }
 
-        $user = Auth::user();
-        $holding = $user->stockHoldings()
-            ->where('stock_id', $stock->id)
-            ->first();
-
-        if (!$holding) {
-            return redirect()->route('trading.portfolio')
-                ->with('error', 'You do not have any holdings in this stock.');
-        }
-
-        $request->validate([
-            'quantity' => 'required|numeric|min:1|max:' . $holding->quantity,
+        $data = $request->validate([
+            'quantity' => 'required|numeric|min:1|max:10000',
             'plan_duration_minutes' => 'nullable|integer|min:0|max:10080',
             'plan_mode' => 'nullable|in:reminder,automatic',
         ]);
 
-        $quantityToSell = $request->quantity;
-        $pricePerShare = $stock->current_price;
-        $totalAmount = $quantityToSell * $pricePerShare;
-        $fee = 0.00; // Could be calculated based on amount
-        $netAmount = $totalAmount - $fee;
+        $user = Auth::user();
+        $quantity = (float) $data['quantity'];
 
         try {
-            DB::beginTransaction();
-
-            $wallet=$user->wallet()->lockForUpdate()->firstOrFail(); $before=$activity->snapshot($wallet); $reference=$activity->reference('STK-SELL');
-            // Create wallet transaction
-            $walletTransaction = $wallet->transactions()->create([
-                'payment_method_id' => 1, // Default payment method
-                'type' => 'investment',
-                'direction' => 'credit',
-                'amount' => $netAmount,
-                'fee' => $fee,
-                'status' => 'completed',
-                'reference_id' => $reference,
-                'description' => "Sale of {$quantityToSell} shares of {$stock->symbol}",
-            ]);
-
-            // Create stock transaction
-            $stockTransaction = StockTransaction::create([
+            // StockTradeExecutor locks the holding and wallet inside the same
+            // database transaction and validates the final available quantity.
+            $stockTransaction = $executor->sell(
+                $user,
+                $stock,
+                $quantity,
+                'stock_trade'
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Manual stock sell failed', [
                 'user_id' => $user->id,
                 'stock_id' => $stock->id,
-                'wallet_transaction_id' => $walletTransaction->id,
-                'type' => 'sell',
-                'quantity' => $quantityToSell,
-                'price_per_share' => $pricePerShare,
-                'total_amount' => $totalAmount,
-                'fee' => $fee,
-                'status' => 'completed',
-                'executed_at' => now(),
+                'error' => $e->getMessage(),
             ]);
 
-            // Update holding
-            $remainingQuantity = $holding->quantity - $quantityToSell;
-            
-            if ($remainingQuantity > 0) {
-                // Update existing holding
-                $proportionSold = $quantityToSell / $holding->quantity;
-                $costBasisSold = $holding->total_invested * $proportionSold;
-                $remainingInvested = $holding->total_invested - $costBasisSold;
+            return back()->withErrors([
+                'error' => $e->getMessage() ?: 'Failed to process sale. Please try again.',
+            ])->withInput();
+        }
 
-                $holding->update([
-                    'quantity' => $remainingQuantity,
-                    'total_invested' => $remainingInvested,
-                    'current_value' => $remainingQuantity * $stock->current_price,
-                    'unrealized_gain_loss' => ($remainingQuantity * $stock->current_price) - $remainingInvested,
-                    'unrealized_gain_loss_percentage' => $remainingInvested > 0 ? (($remainingQuantity * $stock->current_price) - $remainingInvested) / $remainingInvested * 100 : 0,
-                ]);
-            } else {
-                // Delete holding if all shares sold
-                $holding->delete();
-            }
-
-            // Add funds to wallet
-            $wallet->addFunds($netAmount);
-            $activity->record($user,'stock.sell','Sold '.$stock->symbol,'Sold '.$quantityToSell.' shares of '.$stock->symbol.'.',$reference,'completed','credit',(float)$netAmount,$wallet,$walletTransaction,null,$before,['stock_id'=>$stock->id,'quantity'=>(float)$quantityToSell],'user',$user->id);
-
-            // Create notification for successful stock sale
+        try {
             NotificationService::createInvestmentSuccessNotification(
                 $user,
-                $stock->symbol . ' (Sale)',
-                $netAmount
+                $stock->symbol.' (Sale)',
+                (float) $stockTransaction->total_amount
             );
-
-            // Calculate total portfolio value for email
-            $totalPortfolioValue = $user->stockHoldings->sum('current_value');
-
-            // Send stock sale email
-            Mail::to($user->email)->send(new StockSellEmail($user, $stockTransaction, $totalPortfolioValue));
-
-            DB::commit();
-
-            try { $copyTrading->mirrorCompletedTrade($stockTransaction); } catch (\Throwable $e) { \Log::warning('Copy mirroring failed after provider sale', ['trade_id' => $stockTransaction->id, 'error' => $e->getMessage()]); }
-            $tradePlans->createForTransaction($stockTransaction, $request->only(['plan_duration_minutes','plan_mode']));
-
-            return redirect()->route('trading.portfolio')
-                ->with('success', "Successfully sold {$quantityToSell} shares of {$stock->symbol} for \${$netAmount}.");
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->withErrors(['error' => 'Failed to process sale. Please try again.']);
+        } catch (\Throwable $e) {
+            \Log::warning('Stock sell notification failed', [
+                'trade_id' => $stockTransaction->id,
+                'error' => $e->getMessage(),
+            ]);
         }
+
+        try {
+            $totalPortfolioValue = (float) $user->stockHoldings()->sum('current_value');
+            Mail::to($user->email)->send(
+                new StockSellEmail($user, $stockTransaction, $totalPortfolioValue)
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Stock sell email failed', [
+                'trade_id' => $stockTransaction->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        try {
+            $copyTrading->mirrorCompletedTrade($stockTransaction);
+        } catch (\Throwable $e) {
+            \Log::warning('Copy mirroring failed after provider sale', [
+                'trade_id' => $stockTransaction->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        try {
+            $tradePlans->createForTransaction(
+                $stockTransaction,
+                $request->only(['plan_duration_minutes', 'plan_mode'])
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Trade plan creation failed after stock sell', [
+                'trade_id' => $stockTransaction->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return redirect()->route('trading.portfolio')
+            ->with(
+                'success',
+                'Successfully sold '.number_format($quantity, 6).' shares of '.
+                $stock->symbol.' for '.currency_symbol().number_format((float) $stockTransaction->total_amount, 2).'.'
+            );
     }
 
     /**

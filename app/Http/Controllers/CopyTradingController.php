@@ -6,8 +6,6 @@ use App\Models\CopyRelationship;
 use App\Models\CopyStrategy;
 use App\Models\CopyTraderProfile;
 use App\Models\CopyTradeExecution;
-use App\Models\StockCandle;
-use App\Models\StockQuote;
 use App\Models\StrategyProviderApplication;
 use App\Services\MarketSessionService;
 use App\Services\TradingPerformanceService;
@@ -16,7 +14,6 @@ use Illuminate\Support\Facades\Auth;
 
 class CopyTradingController extends Controller
 {
-    /** Backward-compatible V1 entry point. */
     public function index()
     {
         return redirect()->route('copy-trading.marketplace');
@@ -28,7 +25,8 @@ class CopyTradingController extends Controller
 
         $strategies = CopyStrategy::with(['profile.user'])
             ->withCount([
-                'relationships as copier_count' => fn ($q) => $q->where('status', 'active'),
+                'relationships as copier_count' => fn ($q) => $q->where('status', 'active')
+                    ->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>', now())),
             ])
             ->where('is_public', true)
             ->where('is_active', true)
@@ -46,12 +44,11 @@ class CopyTradingController extends Controller
             $latestExecution = CopyTradeExecution::with('followerTrade.stock')
                 ->whereHas('relationship', fn ($q) => $q->where('copy_strategy_id', $strategy->id))
                 ->where('status', 'completed')
+                ->whereNotNull('follower_stock_transaction_id')
                 ->latest('executed_at')
                 ->first();
 
-            $symbol = $latestExecution?->followerTrade?->stock?->symbol;
-            $strategy->market_symbol = $symbol;
-            $strategy->market_series = $this->marketSeries($symbol, 36);
+            $strategy->market_symbol = $latestExecution?->followerTrade?->stock?->symbol;
         }
 
         $marketStatus = app(MarketSessionService::class)->status();
@@ -67,17 +64,24 @@ class CopyTradingController extends Controller
             ->get();
 
         foreach ($relationships as $relationship) {
+            if ($relationship->status === 'active' && $relationship->ends_at && $relationship->ends_at->isPast()) {
+                $relationship->update([
+                    'status' => 'completed',
+                    'completed_at' => $relationship->completed_at ?? now(),
+                ]);
+                $relationship->refresh();
+            }
+
             $relationship->performance_metrics = $performance->copyRelationship($relationship);
 
             $latestExecution = $relationship->executions()
                 ->with('followerTrade.stock')
                 ->where('status', 'completed')
+                ->whereNotNull('follower_stock_transaction_id')
                 ->latest('executed_at')
                 ->first();
 
-            $symbol = $latestExecution?->followerTrade?->stock?->symbol;
-            $relationship->market_symbol = $symbol;
-            $relationship->market_series = $this->marketSeries($symbol, 48);
+            $relationship->market_symbol = $latestExecution?->followerTrade?->stock?->symbol;
         }
 
         $marketStatus = app(MarketSessionService::class)->status();
@@ -118,10 +122,7 @@ class CopyTradingController extends Controller
 
     public function providerDashboard(TradingPerformanceService $performance)
     {
-        $profile = Auth::user()->copyTraderProfile()
-            ->with(['strategies.relationships'])
-            ->first();
-
+        $profile = Auth::user()->copyTraderProfile()->with(['strategies.relationships'])->first();
         abort_unless($profile && $profile->approved_at, 403, 'Strategy provider approval is required.');
 
         foreach ($profile->strategies as $strategy) {
@@ -159,7 +160,6 @@ class CopyTradingController extends Controller
     {
         abort_unless($strategy->profile?->user_id === Auth::id(), 403);
         $strategy->update(['is_active' => ! $strategy->is_active]);
-
         return back()->with('success', 'Strategy availability updated.');
     }
 
@@ -170,10 +170,10 @@ class CopyTradingController extends Controller
 
         abort_if($strategy->profile->user_id === $user->id, 422);
         abort_unless(
-            $strategy->is_public
-            && $strategy->is_active
-            && $strategy->profile->approved_at
-            && $strategy->profile->is_accepting_copiers,
+            $strategy->is_public &&
+            $strategy->is_active &&
+            $strategy->profile->approved_at &&
+            $strategy->profile->is_accepting_copiers,
             404
         );
 
@@ -181,22 +181,42 @@ class CopyTradingController extends Controller
             'allocation_limit' => 'required|numeric|min:'.$strategy->minimum_allocation.'|max:1000000',
             'max_trade_amount' => 'required|numeric|min:10|lte:allocation_limit',
             'copy_ratio_percent' => 'required|numeric|min:1|max:200',
+            'duration_minutes' => 'required|integer|in:60,240,1440,10080,43200',
         ]);
 
-        // Strategy identity belongs in the relationship key. A provider may publish
-        // several independent strategies without one overwriting another.
-        CopyRelationship::updateOrCreate(
-            [
-                'follower_id' => $user->id,
-                'copy_strategy_id' => $strategy->id,
-            ],
-            $data + [
-                'provider_id' => $strategy->profile->user_id,
-                'status' => 'active',
-                'started_at' => now(),
-                'stopped_at' => null,
-            ]
-        );
+        $existingActive = CopyRelationship::query()
+            ->where('follower_id', $user->id)
+            ->where('copy_strategy_id', $strategy->id)
+            ->where('status', 'active')
+            ->where(function ($query) {
+                $query->whereNull('ends_at')
+                    ->orWhere('ends_at', '>', now());
+            })
+            ->exists();
+
+        if ($existingActive) {
+            return redirect()->route('copy-trading.my-copies')
+                ->with('error', 'You already have a running contract for this strategy. Running copy contracts are locked until they end.');
+        }
+
+        $startedAt = now();
+        $durationMinutes = (int) $data['duration_minutes'];
+
+        CopyRelationship::create([
+            'follower_id' => $user->id,
+            'copy_strategy_id' => $strategy->id,
+            'provider_id' => $strategy->profile->user_id,
+            'allocation_limit' => $data['allocation_limit'],
+            'used_amount' => 0,
+            'max_trade_amount' => $data['max_trade_amount'],
+            'copy_ratio_percent' => $data['copy_ratio_percent'],
+            'duration_minutes' => $durationMinutes,
+            'status' => 'active',
+            'started_at' => $startedAt,
+            'ends_at' => $startedAt->copy()->addMinutes($durationMinutes),
+            'stopped_at' => null,
+            'completed_at' => null,
+        ]);
 
         return redirect()->route('copy-trading.my-copies')
             ->with('success', 'Copy trading activated for '.$strategy->name.'.');
@@ -205,30 +225,17 @@ class CopyTradingController extends Controller
     public function editRelationship(CopyRelationship $relationship)
     {
         abort_unless($relationship->follower_id === Auth::id(), 403);
-        $relationship->load(['strategy.profile.user', 'provider']);
 
-        return view('copy-trading.edit-relationship', compact('relationship'));
+        return redirect()->route('copy-trading.my-copies')
+            ->with('error', 'Copy contracts are immutable after activation. You can monitor the contract, but its allocation, duration and copy rules cannot be edited.');
     }
 
     public function updateRelationship(Request $request, CopyRelationship $relationship)
     {
         abort_unless($relationship->follower_id === Auth::id(), 403);
-        $relationship->load('strategy');
-
-        $minimum = (float) ($relationship->strategy?->minimum_allocation ?? 50);
-
-        $data = $request->validate([
-            'allocation_limit' => 'required|numeric|min:'.$minimum.'|max:1000000',
-            'max_trade_amount' => 'required|numeric|min:10|lte:allocation_limit',
-            'copy_ratio_percent' => 'required|numeric|min:1|max:200',
-            'status' => 'required|in:active,paused,stopped',
-        ]);
-
-        $data['stopped_at'] = $data['status'] === 'stopped' ? now() : null;
-        $relationship->update($data);
 
         return redirect()->route('copy-trading.my-copies')
-            ->with('success', 'Copy trading settings updated.');
+            ->with('error', 'This copy contract is locked. Contract terms cannot be changed after activation.');
     }
 
     public function executionShow(CopyTradeExecution $execution)
@@ -259,7 +266,6 @@ class CopyTradingController extends Controller
             : 0;
 
         $symbol = $trade?->stock?->symbol;
-        $quoteHistory = $this->marketSeries($symbol, 48);
         $marketStatus = app(MarketSessionService::class)->status();
 
         return view('copy-trading.execution-show', compact(
@@ -267,7 +273,7 @@ class CopyTradingController extends Controller
             'currentPrice',
             'profitLoss',
             'returnPercent',
-            'quoteHistory',
+            'symbol',
             'marketStatus'
         ));
     }
@@ -276,16 +282,8 @@ class CopyTradingController extends Controller
     {
         abort_unless($relationship->follower_id === Auth::id(), 403);
 
-        $data = $request->validate([
-            'status' => 'required|in:active,paused,stopped',
-        ]);
-
-        $relationship->update([
-            'status' => $data['status'],
-            'stopped_at' => $data['status'] === 'stopped' ? now() : null,
-        ]);
-
-        return back()->with('success', 'Copy relationship updated.');
+        return redirect()->route('copy-trading.my-copies')
+            ->with('error', 'Running copy contracts cannot be manually paused, resized or rewritten. Lifecycle changes are controlled by the contract.');
     }
 
     public function executions()
@@ -300,58 +298,5 @@ class CopyTradingController extends Controller
             ->paginate(30);
 
         return view('copy-trading.executions', compact('items'));
-    }
-
-    private function marketSeries(?string $symbol, int $limit = 48): array
-    {
-        if (! $symbol) {
-            return [];
-        }
-
-        $candles = StockCandle::query()
-            ->where('symbol', $symbol)
-            ->where('interval', '15m')
-            ->orderByDesc('started_at')
-            ->limit($limit)
-            ->get(['open','high','low','close','started_at'])
-            ->sortBy('started_at')
-            ->values();
-
-        if ($candles->isNotEmpty()) {
-            return $candles->map(fn ($candle) => [
-                'open' => (float) $candle->open,
-                'high' => (float) $candle->high,
-                'low' => (float) $candle->low,
-                'close' => (float) $candle->close,
-                'price' => (float) $candle->close,
-                'time' => optional($candle->started_at)->toIso8601String(),
-                'label' => optional($candle->started_at)
-                    ?->copy()
-                    ->setTimezone(MarketSessionService::TIMEZONE)
-                    ->format('H:i'),
-            ])->all();
-        }
-
-        $recentQuotes = StockQuote::query()
-            ->where('symbol', $symbol)
-            ->where('fetched_at', '>=', now()->subDay())
-            ->orderByDesc('fetched_at')
-            ->limit($limit)
-            ->get(['current_price','fetched_at'])
-            ->sortBy('fetched_at')
-            ->values();
-
-        if ($recentQuotes->count() < 2) {
-            return [];
-        }
-
-        return $recentQuotes->map(fn ($quote) => [
-            'price' => (float) $quote->current_price,
-            'time' => optional($quote->fetched_at)->toIso8601String(),
-            'label' => optional($quote->fetched_at)
-                ?->copy()
-                ->setTimezone(MarketSessionService::TIMEZONE)
-                ->format('H:i'),
-        ])->all();
     }
 }

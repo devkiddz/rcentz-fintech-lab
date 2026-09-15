@@ -75,7 +75,7 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
             </div>
         </div>
 
-        <div class="p-2">@include('trading.partials.mini-analysis-card',['symbol'=>$product->stock->symbol,'height'=>'h-[155px]'])</div></section>
+        <div class="p-2">@include('trading.partials.mini-analysis-card',['symbol'=>$product->stock->symbol,'height'=>'h-[230px] sm:h-[280px]'])</div></section>
 
     <section class="mt-3 overflow-hidden rounded-xl border border-border/70 bg-muted/10" data-bot-tabs>
         <div class="flex items-center gap-1 border-b border-border/70 px-2.5 pt-2.5">

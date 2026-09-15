@@ -1,263 +1,197 @@
 <x-admin-layout>
-    <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <div>
-                <h2 class="font-light text-lg text-foreground leading-tight mr-4">
-                    Stock Transaction Details
-                </h2>
+<x-slot name="header">Stock Transaction Details</x-slot>
+
+<div class="ui-page max-w-[1600px]">
+    <section class="ui-page-header">
+        <div>
+            <p class="ui-kicker text-[10px]">Trading Management · Transaction</p>
+            <div class="mt-1 flex flex-wrap items-center gap-2">
+                <h1 class="ui-heading !text-2xl">{{ $transaction->stock->symbol }} {{ ucfirst($transaction->type) }}</h1>
+                <span class="inline-flex rounded-full px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[.11em]
+                    {{ $transaction->type === 'buy' ? 'border border-emerald-500/20 bg-emerald-500/10 text-emerald-600' : 'border border-red-500/20 bg-red-500/10 text-red-600' }}">
+                    {{ ucfirst($transaction->type) }}
+                </span>
+                <span class="inline-flex rounded-full px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[.11em]
+                    {{ $transaction->status === 'completed' ? 'border border-emerald-500/20 bg-emerald-500/10 text-emerald-600' : 'border border-amber-500/20 bg-amber-500/10 text-amber-600' }}">
+                    {{ ucfirst($transaction->status) }}
+                </span>
             </div>
-            <div class="flex space-x-2">
-                <a href="{{ route('admin.stocks.transactions.index') }}" 
-                   class="px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-colors">
-                    Back to Transactions
-                </a>
-            </div>
+            <p class="ui-lead !mt-2 !text-[13px]">Execution #{{ $transaction->id }} · {{ $transaction->created_at->format('M d, Y · H:i') }}</p>
         </div>
-    </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <!-- Main Content -->
-                <div class="xl:col-span-2 space-y-6">
-                    <!-- Transaction Overview -->
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">Transaction Overview</h3>
-                        </div>
-                        <div class="p-4">
-                            <div class="flex items-start space-x-4 mb-4">
-                                @if($transaction->stock->logo_url)
-                                    <div class="w-16 h-16 rounded-lg flex items-center justify-center bg-card border border-border">
-                                        <img src="{{ $transaction->stock->logo_url }}" alt="{{ $transaction->stock->symbol }} Logo" class="w-14 h-14 object-contain" loading="lazy">
-                                    </div>
-                                @else
-                                    <div class="w-16 h-16 bg-gradient-to-br from-tesla-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                        <span class="text-white font-bold text-lg">{{ $transaction->stock->symbol }}</span>
-                                    </div>
-                                @endif
-                                <div class="flex-1">
-                                    <h4 class="text-lg font-medium text-foreground dark:text-white mb-2">{{ $transaction->stock->name }}</h4>
-                                    <p class="text-sm text-muted-foreground mb-3">{{ $transaction->stock->description }}</p>
-                                    <div class="flex flex-wrap gap-2">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->type === 'buy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                            {{ ucfirst($transaction->type) }}
-                                        </span>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                            {{ ucfirst($transaction->status) }}
-                                        </span>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-tesla-100 text-tesla-800">
-                                            {{ $transaction->stock->sector }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ route('admin.stocks.transactions.index') }}" class="ui-btn ui-btn-secondary">
+                <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                Transactions
+            </a>
+            <a href="{{ route('admin.stocks.show', $transaction->stock) }}" class="ui-btn ui-btn-secondary">
+                <i data-lucide="candlestick-chart" class="h-4 w-4"></i>
+                Stock
+            </a>
+            <a href="{{ route('admin.users.show', $transaction->user) }}" class="ui-btn ui-btn-primary">
+                <i data-lucide="user-round" class="h-4 w-4"></i>
+                Customer
+            </a>
+        </div>
+    </section>
+
+    <section class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="ui-panel p-4">
+            <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Shares</p>
+            <p class="mt-2 text-2xl font-semibold tabular-nums">{{ number_format($transaction->quantity, 2) }}</p>
+        </div>
+        <div class="ui-panel p-4">
+            <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Execution price</p>
+            <p class="mt-2 text-2xl font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format($transaction->price_per_share, 2) }}</p>
+        </div>
+        <div class="ui-panel p-4">
+            <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Total amount</p>
+            <p class="mt-2 text-2xl font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format($transaction->total_amount, 2) }}</p>
+        </div>
+        <div class="ui-panel p-4">
+            <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Executed</p>
+            <p class="mt-2 text-[13px] font-semibold">{{ $transaction->created_at->format('M d, Y') }}</p>
+            <p class="mt-1 text-[9px] text-muted-foreground">{{ $transaction->created_at->format('H:i:s') }}</p>
+        </div>
+    </section>
+
+    <section class="mt-5 grid gap-5 xl:grid-cols-[1.35fr_.65fr]">
+        <div class="space-y-5">
+            <div class="ui-panel overflow-hidden">
+                <div class="border-b border-border/70 px-4 py-4">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="candlestick-chart" class="h-4 w-4 text-emerald-500"></i>
+                        <h2 class="text-[13px] font-semibold">Stock context</h2>
                     </div>
+                    <p class="mt-1 text-[10px] text-muted-foreground">Market state at the time this execution is being reviewed.</p>
+                </div>
 
-                    <!-- Transaction Metrics -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="bg-card border border-border p-4 rounded-lg">
-                            <div class="text-center">
-                                <p class="text-xs font-medium text-muted-foreground mb-1">Shares</p>
-                                <p class="text-lg font-light text-foreground">{{ number_format($transaction->quantity, 2) }}</p>
+                <div class="p-4">
+                    <div class="flex items-start gap-4">
+                        @if($transaction->stock->logo_url)
+                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border">
+                                <img src="{{ $transaction->stock->logo_url }}" alt="{{ $transaction->stock->symbol }} logo" class="h-7 w-7 object-contain" loading="lazy">
                             </div>
-                        </div>
-
-                        <div class="bg-card border border-border p-4 rounded-lg">
-                            <div class="text-center">
-                                <p class="text-xs font-medium text-muted-foreground mb-1">Price per Share</p>
-                                <p class="text-lg font-light text-foreground">${{ number_format($transaction->price_per_share, 2) }}</p>
-                            </div>
-                        </div>
-
-                        <div class="bg-card border border-border p-4 rounded-lg">
-                            <div class="text-center">
-                                <p class="text-xs font-medium text-muted-foreground mb-1">Total Amount</p>
-                                <p class="text-lg font-light text-foreground">${{ number_format($transaction->total_amount, 2) }}</p>
-                            </div>
-                        </div>
-
-                        <div class="bg-card border border-border p-4 rounded-lg">
-                            <div class="text-center">
-                                <p class="text-xs font-medium text-muted-foreground mb-1">Transaction Date</p>
-                                <p class="text-lg font-light text-foreground">{{ $transaction->created_at->format('M d, Y') }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Stock Information -->
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">Stock Information</h3>
-                        </div>
-                        <div class="p-4">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Current Price</label>
-                                    <p class="text-sm font-medium text-foreground">${{ number_format($transaction->stock->current_price, 2) }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Previous Close</label>
-                                    <p class="text-sm font-medium text-foreground">${{ number_format($transaction->stock->previous_close, 2) }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Price Change</label>
-                                    <p class="text-sm font-medium {{ $transaction->stock->price_change >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $transaction->stock->price_change >= 0 ? '+' : '' }}${{ number_format($transaction->stock->price_change, 2) }}
-                                    </p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Price Change %</label>
-                                    <p class="text-sm font-medium {{ $transaction->stock->price_change_percentage >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $transaction->stock->price_change_percentage >= 0 ? '+' : '' }}{{ number_format($transaction->stock->price_change_percentage, 2) }}%
-                                    </p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Sector</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $transaction->stock->sector }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Industry</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $transaction->stock->industry }}</p>
-                                </div>
-                            </div>
+                        @else
+                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border bg-muted text-[10px] font-semibold">{{ $transaction->stock->symbol }}</div>
+                        @endif
+                        <div class="min-w-0">
+                            <p class="text-[13px] font-semibold">{{ $transaction->stock->name }}</p>
+                            <p class="mt-1 text-[9px] text-muted-foreground">{{ $transaction->stock->symbol }} · {{ $transaction->stock->sector ?: 'Unclassified sector' }}</p>
+                            <p class="mt-2 text-[10px] leading-5 text-muted-foreground">{{ $transaction->stock->description ?: 'No description available.' }}</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Sidebar -->
-                <div class="space-y-6">
-                    <!-- User Information -->
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">User Information</h3>
+                <div class="grid grid-cols-2 gap-px border-t border-border/70 bg-border/70 lg:grid-cols-4">
+                    @foreach([
+                        ['Current price',currency_symbol().number_format($transaction->stock->current_price,2)],
+                        ['Previous close',currency_symbol().number_format($transaction->stock->previous_close,2)],
+                        ['Change',($transaction->stock->price_change >= 0 ? '+' : '').currency_symbol().number_format($transaction->stock->price_change,2)],
+                        ['Change %',($transaction->stock->price_change_percentage >= 0 ? '+' : '').number_format($transaction->stock->price_change_percentage,2).'%'],
+                    ] as [$label,$value])
+                        <div class="bg-background p-4">
+                            <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">{{ $label }}</p>
+                            <p class="mt-1.5 text-[11px] font-semibold tabular-nums">{{ $value }}</p>
                         </div>
-                        <div class="p-4">
-                            <div class="flex items-center space-x-3 mb-4">
-                                @if($transaction->user->profile_image)
-                                    <img src="{{ asset('storage/' . $transaction->user->profile_image) }}" 
-                                         alt="{{ $transaction->user->name }}" 
-                                         class="w-12 h-12 rounded-lg object-cover">
-                                @else
-                                    <div class="w-12 h-12 bg-gradient-to-br from-tesla-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                        <span class="text-white font-bold text-sm">{{ strtoupper(substr($transaction->user->name, 0, 2)) }}</span>
-                                    </div>
-                                @endif
-                                <div>
-                                    <h4 class="text-sm font-medium text-foreground">{{ $transaction->user->name }}</h4>
-                                    <p class="text-xs text-muted-foreground dark:text-gray-300">{{ $transaction->user->email }}</p>
-                                </div>
-                            </div>
-                            
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Member Since</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $transaction->user->created_at->format('M d, Y') }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Email Status</label>
-                                    <p class="text-sm font-medium text-foreground">
-                                        @if($transaction->user->email_verified_at)
-                                            <span class="text-green-600">Verified</span>
-                                        @else
-                                            <span class="text-red-600">Unverified</span>
-                                        @endif
-                                    </p>
-                                </div>
-                            </div>
+                    @endforeach
+                </div>
+            </div>
 
-                            <div class="mt-4">
-                                <a href="{{ route('admin.users.show', $transaction->user) }}" 
-                                   class="w-full inline-flex items-center justify-center px-3 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-colors">
-                                   <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                   </svg>
-                                   View User Profile
-                                </a>
-                            </div>
-                        </div>
+            <div class="ui-panel overflow-hidden">
+                <div class="border-b border-border/70 px-4 py-4">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="fingerprint" class="h-4 w-4 text-sky-500"></i>
+                        <h2 class="text-[13px] font-semibold">Execution record</h2>
                     </div>
+                </div>
 
-                    <!-- Transaction Details -->
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">Transaction Details</h3>
+                <div class="grid gap-px bg-border/70 sm:grid-cols-2">
+                    @foreach([
+                        ['Transaction ID','#'.$transaction->id],
+                        ['Type',ucfirst($transaction->type)],
+                        ['Status',ucfirst($transaction->status)],
+                        ['Created',$transaction->created_at->format('M d, Y · H:i:s')],
+                        ['Updated',$transaction->updated_at->format('M d, Y · H:i:s')],
+                        ['Stock',$transaction->stock->symbol],
+                        ['Execution source',$transaction->execution_source ? str_replace('_',' ',ucwords($transaction->execution_source,'_')) : 'Legacy / unattributed'],
+                        ['Strategy',$transaction->strategy?->name ?? '—'],
+                        ['Initiated by',$transaction->initiatedBy?->name ?? 'System'],
+                    ] as [$label,$value])
+                        <div class="bg-background p-4">
+                            <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">{{ $label }}</p>
+                            <p class="mt-1.5 text-[10px] font-semibold">{{ $value }}</p>
                         </div>
-                        <div class="p-4">
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Transaction ID</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $transaction->id }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Type</label>
-                                    <p class="text-sm font-medium text-foreground">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->type === 'buy' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                            {{ ucfirst($transaction->type) }}
-                                        </span>
-                                    </p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Status</label>
-                                    <p class="text-sm font-medium text-foreground">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                            {{ ucfirst($transaction->status) }}
-                                        </span>
-                                    </p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Created</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $transaction->created_at->format('M d, Y h:i A') }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Updated</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $transaction->updated_at->format('M d, Y h:i A') }}</p>
-                                </div>
-                            </div>
-
-                            <div class="mt-4 space-y-2">
-                                <a href="{{ route('admin.stocks.show', $transaction->stock) }}" 
-                                   class="w-full inline-flex items-center justify-center px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-colors">
-                                   <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                   </svg>
-                                   View Stock Details
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Payment Information -->
-                    @if($transaction->walletTransaction)
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">Payment Information</h3>
-                        </div>
-                        <div class="p-4">
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Payment Method</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $transaction->walletTransaction->paymentMethod->name ?? 'N/A' }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Transaction Reference</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $transaction->walletTransaction->reference_id ?? 'N/A' }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Payment Status</label>
-                                    <p class="text-sm font-medium text-foreground">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->walletTransaction->status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                            {{ ucfirst($transaction->walletTransaction->status) }}
-                                        </span>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
+                    @endforeach
                 </div>
             </div>
         </div>
-    </div>
+
+        <aside class="space-y-5">
+            <div class="ui-panel overflow-hidden">
+                <div class="border-b border-border/70 px-4 py-4">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="user-round" class="h-4 w-4 text-violet-500"></i>
+                        <h2 class="text-[13px] font-semibold">Customer</h2>
+                    </div>
+                </div>
+
+                <div class="p-4">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-muted text-[10px] font-semibold">
+                            {{ strtoupper(substr($transaction->user->name,0,2)) }}
+                        </div>
+                        <div class="min-w-0">
+                            <p class="truncate text-[11px] font-semibold">{{ $transaction->user->name }}</p>
+                            <p class="mt-0.5 truncate text-[9px] text-muted-foreground">{{ $transaction->user->email }}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 space-y-3 border-t border-border/70 pt-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-[9px] text-muted-foreground">Member since</span>
+                            <span class="text-[10px] font-semibold">{{ $transaction->user->created_at->format('M d, Y') }}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-[9px] text-muted-foreground">Email</span>
+                            <span class="text-[10px] font-semibold {{ $transaction->user->email_verified_at ? 'text-emerald-600' : 'text-red-600' }}">
+                                {{ $transaction->user->email_verified_at ? 'Verified' : 'Unverified' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <a href="{{ route('admin.users.show', $transaction->user) }}" class="ui-btn ui-btn-secondary mt-4 w-full">
+                        View customer profile
+                    </a>
+                </div>
+            </div>
+
+            @if($transaction->walletTransaction)
+                <div class="ui-panel overflow-hidden">
+                    <div class="border-b border-border/70 px-4 py-4">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="wallet-cards" class="h-4 w-4 text-amber-500"></i>
+                            <h2 class="text-[13px] font-semibold">Wallet linkage</h2>
+                        </div>
+                    </div>
+
+                    <div class="divide-y divide-border/70">
+                        <div class="flex items-center justify-between gap-3 px-4 py-3">
+                            <span class="text-[9px] text-muted-foreground">Payment method</span>
+                            <span class="text-right text-[10px] font-semibold">{{ $transaction->walletTransaction->paymentMethod->name ?? 'N/A' }}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-3 px-4 py-3">
+                            <span class="text-[9px] text-muted-foreground">Reference</span>
+                            <span class="max-w-[180px] truncate text-right text-[10px] font-semibold">{{ $transaction->walletTransaction->reference_id ?? 'N/A' }}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-3 px-4 py-3">
+                            <span class="text-[9px] text-muted-foreground">Status</span>
+                            <span class="text-[10px] font-semibold">{{ ucfirst($transaction->walletTransaction->status) }}</span>
+                        </div>
+                    </div>
+                </div>
+            @endif
+        </aside>
+    </section>
+</div>
 </x-admin-layout>

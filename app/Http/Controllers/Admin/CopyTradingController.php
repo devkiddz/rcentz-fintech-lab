@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
@@ -14,71 +15,157 @@ class CopyTradingController extends Controller
 {
     public function applications()
     {
-        $applications=StrategyProviderApplication::with(['user','reviewer'])->latest()->paginate(30);
-        return view('admin.copy-trading.applications',compact('applications'));
+        $applications = StrategyProviderApplication::with([
+            'user.copyTraderProfile',
+            'reviewer',
+        ])->latest()->paginate(30);
+
+        return view('admin.copy-trading.applications', compact('applications'));
     }
 
     public function approve(StrategyProviderApplication $application)
     {
-        abort_unless($application->status==='pending',422,'Application is no longer pending.');
+        abort_unless($application->status === 'pending', 422, 'Application is no longer pending.');
 
-        DB::transaction(function() use($application){
-            $application->update(['status'=>'approved','reviewed_by'=>auth()->id(),'reviewed_at'=>now()]);
-            $profile=CopyTraderProfile::updateOrCreate(
-                ['user_id'=>$application->user_id],
+        DB::transaction(function () use ($application) {
+            $application->update([
+                'status' => 'approved',
+                'reviewed_by' => auth()->id(),
+                'reviewed_at' => now(),
+            ]);
+
+            $profile = CopyTraderProfile::updateOrCreate(
+                ['user_id' => $application->user_id],
                 [
-                    'strategy_name'=>$application->display_name,
-                    'bio'=>$application->strategy_summary,
-                    'risk_level'=>$application->risk_level,
-                    'is_public'=>true,
-                    'is_accepting_copiers'=>true,
-                    'approved_at'=>now(),
-                    'approved_by'=>auth()->id(),
+                    'strategy_name' => $application->display_name,
+                    'bio' => $application->strategy_summary,
+                    'risk_level' => $application->risk_level,
+                    'is_public' => true,
+                    'is_accepting_copiers' => true,
+                    'approved_at' => now(),
+                    'approved_by' => auth()->id(),
                 ]
             );
 
-            if(!$profile->strategies()->exists()){
+            if (! $profile->strategies()->exists()) {
                 $profile->strategies()->create([
-                    'name'=>$application->display_name,
-                    'description'=>$application->strategy_summary,
-                    'risk_level'=>$application->risk_level,
-                    'minimum_allocation'=>100,
-                    'is_public'=>true,
-                    'is_active'=>true,
+                    'name' => $application->display_name,
+                    'description' => $application->strategy_summary,
+                    'risk_level' => $application->risk_level,
+                    'minimum_allocation' => 100,
+                    'is_public' => true,
+                    'is_active' => true,
                 ]);
             }
         });
 
-        NotificationService::createSystemNotification($application->user,'Strategy provider approved','Your Copy Trading provider application has been approved.',['type'=>'copy_provider_approved']);
-        return back()->with('success','Provider application approved.');
+        NotificationService::createSystemNotification(
+            $application->user,
+            'Strategy provider approved',
+            'Your Copy Trading provider application has been approved.',
+            ['type' => 'copy_provider_approved']
+        );
+
+        return back()->with('success', 'Provider application approved.');
     }
 
     public function reject(Request $request, StrategyProviderApplication $application)
     {
-        abort_unless($application->status==='pending',422,'Application is no longer pending.');
-        $data=$request->validate(['admin_notes'=>'required|string|max:1500']);
-        $application->update(['status'=>'rejected','admin_notes'=>$data['admin_notes'],'reviewed_by'=>auth()->id(),'reviewed_at'=>now()]);
-        NotificationService::createSystemNotification($application->user,'Strategy provider application rejected',$data['admin_notes'],['type'=>'copy_provider_rejected']);
-        return back()->with('success','Provider application rejected.');
+        abort_unless($application->status === 'pending', 422, 'Application is no longer pending.');
+
+        $data = $request->validate([
+            'admin_notes' => 'required|string|max:1500',
+        ]);
+
+        $application->update([
+            'status' => 'rejected',
+            'admin_notes' => $data['admin_notes'],
+            'reviewed_by' => auth()->id(),
+            'reviewed_at' => now(),
+        ]);
+
+        NotificationService::createSystemNotification(
+            $application->user,
+            'Strategy provider application rejected',
+            $data['admin_notes'],
+            ['type' => 'copy_provider_rejected']
+        );
+
+        return back()->with('success', 'Provider application rejected.');
     }
 
     public function providers()
     {
-        $providers=CopyTraderProfile::with('user')->withCount(['strategies','activeRelationships'])->latest()->paginate(30);
-        return view('admin.copy-trading.providers',compact('providers'));
+        $providers = CopyTraderProfile::with('user')
+            ->withCount(['strategies', 'activeRelationships'])
+            ->latest()
+            ->paginate(30);
+
+        return view('admin.copy-trading.providers', compact('providers'));
+    }
+
+    public function providerShow(CopyTraderProfile $provider)
+    {
+        $provider->load([
+            'user',
+            'strategies' => fn ($query) => $query
+                ->withCount('relationships')
+                ->latest(),
+            'relationships' => fn ($query) => $query
+                ->with(['follower', 'strategy'])
+                ->latest()
+                ->limit(100),
+        ]);
+
+        return view('admin.copy-trading.provider-show', compact('provider'));
+    }
+
+    public function toggleProvider(CopyTraderProfile $provider)
+    {
+        $provider->update([
+            'is_accepting_copiers' => ! $provider->is_accepting_copiers,
+        ]);
+
+        return back()->with(
+            'success',
+            $provider->is_accepting_copiers
+                ? 'Provider is accepting new copiers.'
+                : 'Provider is no longer accepting new copiers.'
+        );
     }
 
     public function strategies(TradingPerformanceService $performance)
     {
-        $strategies=CopyStrategy::with('profile.user')->withCount('relationships')->latest()->paginate(30);
-        foreach ($strategies as $strategy) { $strategy->performance_metrics = $performance->copyStrategy($strategy); }
-        return view('admin.copy-trading.strategies',compact('strategies'));
+        $strategies = CopyStrategy::with('profile.user')
+            ->withCount('relationships')
+            ->latest()
+            ->paginate(30);
+
+        foreach ($strategies as $strategy) {
+            $strategy->performance_metrics = $performance->copyStrategy($strategy);
+        }
+
+        return view('admin.copy-trading.strategies', compact('strategies'));
     }
 
+    public function strategyShow(CopyStrategy $strategy, TradingPerformanceService $performance)
+    {
+        $strategy->load([
+            'profile.user',
+            'relationships' => fn ($query) => $query
+                ->with(['follower'])
+                ->latest(),
+        ]);
+
+        $strategy->performance_metrics = $performance->copyStrategy($strategy);
+
+        return view('admin.copy-trading.strategy-show', compact('strategy'));
+    }
 
     public function editStrategy(CopyStrategy $strategy)
     {
         $strategy->load('profile.user');
+
         return view('admin.copy-trading.edit-strategy', compact('strategy'));
     }
 
@@ -121,6 +208,7 @@ class CopyTradingController extends Controller
             $data['manual_performance_updated_by'] = auth()->id();
             $data['manual_performance_updated_at'] = now();
         } else {
+            unset($data['manual_performance_source']);
             $data['manual_performance_updated_by'] = null;
             $data['manual_performance_updated_at'] = null;
         }
@@ -133,7 +221,35 @@ class CopyTradingController extends Controller
 
     public function toggleStrategy(CopyStrategy $strategy)
     {
-        $strategy->update(['is_active'=>!$strategy->is_active]);
-        return back()->with('success','Strategy status updated.');
+        $strategy->update([
+            'is_active' => ! $strategy->is_active,
+        ]);
+
+        return back()->with('success', 'Strategy status updated.');
+    }
+
+    public function retireStrategy(CopyStrategy $strategy)
+    {
+        $strategy->update([
+            'is_active' => false,
+            'is_public' => false,
+        ]);
+
+        return back()->with('success', 'Strategy retired from the marketplace.');
+    }
+
+    public function destroyStrategy(CopyStrategy $strategy)
+    {
+        if ($strategy->relationships()->exists()) {
+            return back()->with(
+                'error',
+                'This strategy has copy-contract history and cannot be deleted. Retire it instead so the audit trail remains intact.'
+            );
+        }
+
+        $strategy->delete();
+
+        return redirect()->route('admin.copy-trading.strategies')
+            ->with('success', 'Unused strategy deleted.');
     }
 }

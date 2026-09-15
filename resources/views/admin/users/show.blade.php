@@ -16,6 +16,10 @@
                         Login as User
                     </a>
                 @endif
+                <a href="{{ route('admin.users.account-operations', $user) }}"
+                   class="inline-flex items-center px-4 py-2 bg-muted text-foreground text-sm font-medium rounded-lg hover:bg-muted/80 transition-all duration-200">
+                    Account Operations
+                </a>
                 <a href="{{ route('admin.users.edit', $user) }}" 
                    class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
