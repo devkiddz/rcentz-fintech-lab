@@ -12,7 +12,10 @@ use RuntimeException;
 
 class StockTradeExecutor
 {
-    public function __construct(private FinancialActivityService $activity) {}
+    public function __construct(
+        private FinancialActivityService $activity,
+        private MarketSessionService $marketSession
+    ) {}
 
     public function buy(
         User $user,
@@ -25,6 +28,8 @@ class StockTradeExecutor
         ?int $actorId = null,
         ?int $positionId = null
     ): StockTransaction {
+        $this->assertRegularMarketOpen();
+
         if ($quantity <= 0 || ! $stock->is_active) {
             throw new RuntimeException('Trade is not executable.');
         }
@@ -146,16 +151,29 @@ class StockTradeExecutor
         ?int $copyStrategyId = null,
         string $actorType = 'system',
         ?int $actorId = null,
-        ?int $positionId = null
+        ?int $positionId = null,
+        bool $allowClosedSessionSettlement = false,
+        ?float $executionPrice = null
     ): StockTransaction {
+        if (! $allowClosedSessionSettlement) {
+            $this->assertRegularMarketOpen();
+        }
+
         if ($quantity <= 0 || ! $stock->is_active) {
             throw new RuntimeException('Trade is not executable.');
         }
 
-        $price=(float)$stock->current_price;
+        $price=$executionPrice !== null
+            ? (float)$executionPrice
+            : (float)$stock->current_price;
+
+        if ($price <= 0) {
+            throw new RuntimeException('Execution market price is invalid.');
+        }
 
         return DB::transaction(function () use (
-            $user,$stock,$quantity,$price,$source,$sourceId,$copyStrategyId,$actorType,$actorId,$positionId
+            $user,$stock,$quantity,$price,$source,$sourceId,$copyStrategyId,$actorType,$actorId,$positionId,
+            $allowClosedSessionSettlement
         ) {
             $wallet=$user->wallet()->lockForUpdate()->firstOrFail();
             $holding=StockHolding::where('user_id',$user->id)
@@ -239,6 +257,8 @@ class StockTradeExecutor
                     'copy_strategy_id'=>$copyStrategyId,
                     'stock_id'=>$stock->id,
                     'quantity'=>$quantity,
+                    'execution_price'=>$price,
+                    'session_settlement'=>$allowClosedSessionSettlement,
                 ],
                 $actorType,
                 $actorId
@@ -246,6 +266,17 @@ class StockTradeExecutor
 
             return $trade;
         });
+    }
+
+    private function assertRegularMarketOpen(): void
+    {
+        if (! $this->marketSession->isOpen()) {
+            $status = str_replace('_', ' ', $this->marketSession->status());
+
+            throw new RuntimeException(
+                'Regular U.S. equity market is '.$status.'. This execution cannot be filled at a stale stored price.'
+            );
+        }
     }
 
     private function internalMethod(): PaymentMethod
@@ -270,6 +301,9 @@ class StockTradeExecutor
             'admin_strategy_trade'=>'Strategy trade',
             'admin_direct_trade'=>'Admin trade',
             'admin_user_trade'=>'Trade for user',
+            'position_exit'=>'Position exit',
+            'position_kill'=>'Killed trade',
+            'position_reentry'=>'Position re-entry',
             default=>'Stock trade',
         };
     }

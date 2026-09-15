@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\StockTransaction;
 use App\Models\TradePosition;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -32,7 +31,7 @@ class TradePositionService
             return TradePosition::findOrFail($entry->trade_position_id);
         }
 
-        $entryPrice = (float)$entry->price_per_share;
+        $entryPrice = (float) $entry->price_per_share;
         $slPct = $this->nullablePercent($risk['stop_loss_percent'] ?? null);
         $tpPct = $this->nullablePercent($risk['take_profit_percent'] ?? null);
         $duration = isset($risk['duration_minutes']) && (int)$risk['duration_minutes'] > 0
@@ -42,10 +41,21 @@ class TradePositionService
         $stop = $slPct ? round($entryPrice * (1 - ($slPct / 100)), 8) : null;
         $take = $tpPct ? round($entryPrice * (1 + ($tpPct / 100)), 8) : null;
         $openedAt = $entry->executed_at ?? now();
+        $end = $this->marketSession->effectiveEnd($openedAt, $duration);
+
+        $metadata = array_merge(
+            $risk['metadata'] ?? [],
+            [
+                'requested_duration_minutes' => $duration,
+                'requested_end_et' => $end['requested_at_et']->toIso8601String(),
+                'session_close_et' => $end['session_close_et']->toIso8601String(),
+                'effective_end_reason' => $end['reason'],
+            ]
+        );
 
         return DB::transaction(function () use (
-            $entry,$risk,$contextType,$contextId,$sourcePositionId,$actorType,$actorId,
-            $entryPrice,$slPct,$tpPct,$duration,$stop,$take,$openedAt
+            $entry,$contextType,$contextId,$sourcePositionId,$actorType,$actorId,
+            $entryPrice,$slPct,$tpPct,$duration,$stop,$take,$openedAt,$end,$metadata
         ) {
             $position = TradePosition::create([
                 'user_id'=>$entry->user_id,
@@ -64,22 +74,32 @@ class TradePositionService
                 'take_profit_percent'=>$tpPct,
                 'duration_minutes'=>$duration,
                 'opened_at'=>$openedAt,
-                'expires_at'=>$duration ? $openedAt->copy()->addMinutes($duration) : null,
+                'expires_at'=>$end['effective_at'],
                 'status'=>'open',
+                'exit_reason'=>null,
                 'realized_profit_loss'=>0,
                 'realized_return_percent'=>0,
-                'metadata'=>$risk['metadata'] ?? null,
+                'metadata'=>$metadata,
             ]);
 
             $entry->update(['trade_position_id'=>$position->id]);
 
             $this->event(
-                $position,'entry',(float)$entry->quantity,$entryPrice,0,
-                $entry,'Position opened',$actorType,$actorId,
+                $position,
+                'entry',
+                (float)$entry->quantity,
+                $entryPrice,
+                0,
+                $entry,
+                'Position opened.',
+                $actorType,
+                $actorId,
                 [
+                    'emp'=>$entryPrice,
                     'stop_loss_price'=>$stop,
                     'take_profit_price'=>$take,
-                    'expires_at'=>$position->expires_at?->toIso8601String(),
+                    'effective_close_at'=>$position->expires_at?->toIso8601String(),
+                    'effective_end_reason'=>$end['reason'],
                 ]
             );
 
@@ -87,47 +107,97 @@ class TradePositionService
         });
     }
 
+    /**
+     * Full manual kill.
+     *
+     * This is irreversible at product level: it closes 100% of remaining
+     * position quantity using the same sell/wallet/holding ledger as every exit.
+     * CMP is the price written to the exit transaction.
+     */
+    public function kill(
+        TradePosition $position,
+        string $actorType = 'user',
+        ?int $actorId = null
+    ): StockTransaction {
+        $position->refresh();
+        $position->loadMissing(['user','stock','entryTransaction']);
+
+        if (! $position->is_open) {
+            throw new RuntimeException('This trade contract is already closed.');
+        }
+
+        $cmp = (float) $position->stock->current_price;
+
+        if ($cmp <= 0) {
+            throw new RuntimeException('Current Market Price is unavailable.');
+        }
+
+        return $this->close(
+            $position,
+            'manual_kill',
+            null,
+            $actorType,
+            $actorId,
+            true,
+            $cmp,
+            'position_kill'
+        );
+    }
+
     public function close(
         TradePosition $position,
         string $reason = 'manual_close',
         ?float $quantity = null,
         string $actorType = 'system',
-        ?int $actorId = null
+        ?int $actorId = null,
+        bool $allowClosedSessionSettlement = false,
+        ?float $settlementPrice = null,
+        string $executionSource = 'position_exit'
     ): StockTransaction {
         $position->refresh();
-        $position->loadMissing(['user','stock']);
+        $position->loadMissing(['user','stock','entryTransaction']);
 
         if (! $position->is_open) {
             throw new RuntimeException('Position is already closed.');
         }
 
-        if (! $this->marketSession->isOpen()) {
-            $position->update([
-                'status'=>'exit_queued',
-                'exit_reason'=>$reason,
-            ]);
-            throw new RuntimeException('Market is closed. Exit queued for the next regular session.');
+        if (! $allowClosedSessionSettlement && ! $this->marketSession->isOpen()) {
+            throw new RuntimeException('Regular market session is closed.');
         }
 
         $qty = $quantity === null
             ? (float)$position->open_quantity
             : min((float)$quantity, (float)$position->open_quantity);
 
-        if ($qty <= 0) throw new RuntimeException('Close quantity must be greater than zero.');
+        if ($qty <= 0) {
+            throw new RuntimeException('Close quantity must be greater than zero.');
+        }
+
+        $cmp = $settlementPrice !== null
+            ? (float)$settlementPrice
+            : (float)$position->stock->current_price;
 
         $trade = $this->executor->sell(
             $position->user,
             $position->stock,
             $qty,
-            'position_exit',
+            $executionSource,
             $position->id,
             $position->entryTransaction?->copy_strategy_id,
             $actorType,
             $actorId,
-            $position->id
+            $position->id,
+            $allowClosedSessionSettlement,
+            $cmp
         );
 
-        $this->applyExitTransaction($position,$trade,$reason,$actorType,$actorId);
+        $this->applyExitTransaction(
+            $position,
+            $trade,
+            $reason,
+            $actorType,
+            $actorId
+        );
 
         return $trade;
     }
@@ -140,25 +210,36 @@ class TradePositionService
         ?int $actorId = null,
         bool $linkTransaction = true
     ): void {
-        DB::transaction(function () use ($position,$trade,$reason,$actorType,$actorId,$linkTransaction) {
+        DB::transaction(function () use (
+            $position,$trade,$reason,$actorType,$actorId,$linkTransaction
+        ) {
             $position = TradePosition::lockForUpdate()->findOrFail($position->id);
-            $qty = min((float)$trade->quantity,(float)$position->open_quantity);
+
+            $qty = min((float)$trade->quantity, (float)$position->open_quantity);
             if ($qty <= 0) return;
 
-            $exitPrice = (float)$trade->price_per_share;
-            $entryPrice = (float)$position->entry_price;
-            $pnl = ($exitPrice - $entryPrice) * $qty;
+            $cmp = (float)$trade->price_per_share;
+            $emp = (float)$position->entry_price;
+
+            // LONG POSITION CORE:
+            // P/L per share = CMP - EMP
+            // Total realized P/L = (CMP - EMP) × closed quantity
+            $pnl = ($cmp - $emp) * $qty;
+
             $oldOpen = (float)$position->open_quantity;
-            $remaining = max(0,$oldOpen-$qty);
+            $remaining = max(0, $oldOpen - $qty);
             $closedBefore = (float)$position->initial_quantity - $oldOpen;
             $closedAfter = $closedBefore + $qty;
 
             $avgExit = $closedAfter > 0
-                ? (((float)($position->average_exit_price ?? 0) * $closedBefore) + ($exitPrice * $qty)) / $closedAfter
-                : $exitPrice;
+                ? (
+                    ((float)($position->average_exit_price ?? 0) * $closedBefore)
+                    + ($cmp * $qty)
+                ) / $closedAfter
+                : $cmp;
 
             $realized = (float)$position->realized_profit_loss + $pnl;
-            $basis = (float)$position->entry_price * (float)$position->initial_quantity;
+            $basis = $emp * (float)$position->initial_quantity;
 
             $position->update([
                 'open_quantity'=>$remaining,
@@ -178,10 +259,20 @@ class TradePositionService
             $this->event(
                 $position,
                 $remaining <= 0 ? $reason : 'partial_close',
-                $qty,$exitPrice,$pnl,$trade,
-                $remaining <= 0 ? 'Position closed' : 'Position partially closed',
-                $actorType,$actorId,
-                ['remaining_quantity'=>$remaining]
+                $qty,
+                $cmp,
+                $pnl,
+                $trade,
+                $remaining <= 0 ? 'Trade contract closed.' : 'Position partially closed.',
+                $actorType,
+                $actorId,
+                [
+                    'emp'=>$emp,
+                    'cmp'=>$cmp,
+                    'price_difference'=>$cmp-$emp,
+                    'remaining_quantity'=>$remaining,
+                    'realized_profit_loss'=>$pnl,
+                ]
             );
         });
     }
@@ -213,16 +304,19 @@ class TradePositionService
 
             $consume = min($remaining,(float)$position->open_quantity);
 
-            // Create a lightweight proportional view of the actual sell transaction
-            // so one generic sell can close more than one position without another market order.
             $shadow = clone $sell;
             $shadow->quantity = $consume;
             $shadow->total_amount = $consume * (float)$sell->price_per_share;
 
-            // A single manual SELL may span multiple FIFO positions. The event
-            // ledger keeps the exact attribution; do not overwrite the one
-            // StockTransaction with several mutually-exclusive position ids.
-            $this->applyExitTransaction($position,$shadow,$reason,$actorType,$actorId,false);
+            $this->applyExitTransaction(
+                $position,
+                $shadow,
+                $reason,
+                $actorType,
+                $actorId,
+                false
+            );
+
             $remaining -= $consume;
         }
     }
@@ -235,28 +329,62 @@ class TradePositionService
         string $actorType = 'user',
         ?int $actorId = null
     ): TradePosition {
-        if (! $position->is_open) throw new RuntimeException('Only open positions can be updated.');
+        $position->refresh();
+
+        if (! $position->is_open) {
+            throw new RuntimeException('Only open positions can be managed.');
+        }
 
         $sl = $this->nullablePercent($stopLossPercent);
         $tp = $this->nullablePercent($takeProfitPercent);
-        $entry=(float)$position->entry_price;
+        $emp = (float)$position->entry_price;
+
+        $end = $this->marketSession->effectiveEnd(
+            now(),
+            $durationMinutes && $durationMinutes > 0 ? $durationMinutes : null
+        );
+
+        $metadata = array_merge(
+            $position->metadata ?? [],
+            [
+                'requested_duration_minutes'=>$durationMinutes,
+                'requested_end_et'=>$end['requested_at_et']->toIso8601String(),
+                'session_close_et'=>$end['session_close_et']->toIso8601String(),
+                'effective_end_reason'=>$end['reason'],
+            ]
+        );
 
         $position->update([
             'stop_loss_percent'=>$sl,
             'take_profit_percent'=>$tp,
-            'stop_loss_price'=>$sl ? round($entry*(1-$sl/100),8) : null,
-            'take_profit_price'=>$tp ? round($entry*(1+$tp/100),8) : null,
-            'duration_minutes'=>$durationMinutes && $durationMinutes > 0 ? $durationMinutes : null,
-            'expires_at'=>$durationMinutes && $durationMinutes > 0
-                ? $position->opened_at->copy()->addMinutes($durationMinutes)
+            'stop_loss_price'=>$sl ? round($emp*(1-$sl/100),8) : null,
+            'take_profit_price'=>$tp ? round($emp*(1+$tp/100),8) : null,
+            'duration_minutes'=>$durationMinutes && $durationMinutes > 0
+                ? $durationMinutes
                 : null,
+            'expires_at'=>$end['effective_at'],
+            'status'=>'open',
+            'exit_reason'=>null,
+            'metadata'=>$metadata,
         ]);
 
-        $this->event($position,'risk_updated',null,null,null,null,'Risk controls updated',$actorType,$actorId,[
-            'stop_loss_percent'=>$sl,
-            'take_profit_percent'=>$tp,
-            'duration_minutes'=>$durationMinutes,
-        ]);
+        $this->event(
+            $position,
+            'risk_updated',
+            null,
+            (float)($position->stock?->current_price ?? 0),
+            null,
+            null,
+            'Risk controls updated.',
+            $actorType,
+            $actorId,
+            [
+                'stop_loss_percent'=>$sl,
+                'take_profit_percent'=>$tp,
+                'effective_close_at'=>$end['effective_at']->toIso8601String(),
+                'effective_end_reason'=>$end['reason'],
+            ]
+        );
 
         return $position->refresh();
     }
@@ -267,71 +395,127 @@ class TradePositionService
         string $actorType = 'user',
         ?int $actorId = null
     ): TradePosition {
-        if ($closed->status !== 'closed') throw new RuntimeException('Only closed positions can be re-entered.');
+        if ($closed->status !== 'closed') {
+            throw new RuntimeException('Only closed positions can be re-entered.');
+        }
 
-        $closed->loadMissing(['user','stock']);
-        $qty = $quantity && $quantity > 0 ? $quantity : (float)$closed->initial_quantity;
+        $closed->loadMissing(['user','stock','entryTransaction']);
+
+        $qty = $quantity && $quantity > 0
+            ? $quantity
+            : (float)$closed->initial_quantity;
 
         $trade = $this->executor->buy(
-            $closed->user,$closed->stock,$qty,'position_reentry',$closed->id,
-            $closed->entryTransaction?->copy_strategy_id,$actorType,$actorId
+            $closed->user,
+            $closed->stock,
+            $qty,
+            'position_reentry',
+            $closed->id,
+            $closed->entryTransaction?->copy_strategy_id,
+            $actorType,
+            $actorId
         );
 
-        $new = $this->openLongFromTrade($trade,[
-            'stop_loss_percent'=>$closed->stop_loss_percent,
-            'take_profit_percent'=>$closed->take_profit_percent,
-            'duration_minutes'=>$closed->duration_minutes,
-            'metadata'=>['reentered_from_position_id'=>$closed->id],
-        ],$closed->context_type,$closed->context_id,$closed->id,$actorType,$actorId);
+        $new = $this->openLongFromTrade(
+            $trade,
+            [
+                'stop_loss_percent'=>$closed->stop_loss_percent,
+                'take_profit_percent'=>$closed->take_profit_percent,
+                'duration_minutes'=>$closed->duration_minutes,
+                'metadata'=>[
+                    'reentered_from_position_id'=>$closed->id,
+                ],
+            ],
+            $closed->context_type,
+            $closed->context_id,
+            $closed->id,
+            $actorType,
+            $actorId
+        );
 
-        $this->event($closed,'reentered',null,(float)$trade->price_per_share,null,$trade,'New position opened from this closed position',$actorType,$actorId,[
-            'new_position_id'=>$new->id
-        ]);
+        $this->event(
+            $closed,
+            'reentered',
+            null,
+            (float)$trade->price_per_share,
+            null,
+            $trade,
+            'New position opened from closed trade.',
+            $actorType,
+            $actorId,
+            ['new_position_id'=>$new->id]
+        );
 
         return $new;
     }
 
     public function processOpenPositions(): array
     {
-        $stats=['checked'=>0,'take_profit'=>0,'stop_loss'=>0,'time_exit'=>0,'queued'=>0,'failed'=>0];
+        $stats=[
+            'checked'=>0,
+            'take_profit'=>0,
+            'stop_loss'=>0,
+            'time_expiry'=>0,
+            'market_close'=>0,
+            'failed'=>0,
+        ];
 
         TradePosition::with(['user','stock','entryTransaction'])
             ->whereIn('status',['open','exit_queued'])
             ->where('open_quantity','>',0)
+            // Copy followers are closed by provider mirroring or copy-contract
+            // settlement, so they must not race the provider's automatic exit.
+            ->where('context_type','!=','copy_relationship')
             ->orderBy('id')
             ->chunkById(100,function($positions) use (&$stats){
                 foreach($positions as $position){
-                    $stats['checked']++;
-                    $price=(float)$position->stock->current_price;
-                    $reason=null;
+                    $position->refresh();
 
-                    if($position->status==='exit_queued'){
-                        $reason=$position->exit_reason ?: 'time_expiry';
-                    } elseif($position->stop_loss_price && $price <= (float)$position->stop_loss_price){
-                        $reason='stop_loss';
-                    } elseif($position->take_profit_price && $price >= (float)$position->take_profit_price){
-                        $reason='take_profit';
-                    } elseif($position->expires_at && $position->expires_at->isPast()){
-                        $reason='time_expiry';
+                    if (! $position->is_open) {
+                        continue;
                     }
 
-                    if(! $reason) continue;
+                    $stats['checked']++;
 
-                    if(! $this->marketSession->isOpen()){
-                        $position->update(['status'=>'exit_queued','exit_reason'=>$reason]);
-                        $stats['queued']++;
+                    $cmp=(float)$position->stock->current_price;
+                    $reason=null;
+
+                    if($position->stop_loss_price && $cmp <= (float)$position->stop_loss_price){
+                        $reason='stop_loss';
+                    } elseif($position->take_profit_price && $cmp >= (float)$position->take_profit_price){
+                        $reason='take_profit';
+                    } elseif($position->expires_at && $position->expires_at->isPast()){
+                        $reason=($position->metadata['effective_end_reason'] ?? null)==='market_close'
+                            ? 'market_close'
+                            : 'time_expiry';
+                    }
+
+                    if(! $reason) {
                         continue;
                     }
 
                     try{
-                        $trade=$this->close($position,$reason,null,'system',null);
+                        // Once a valid end condition fires, the trade contract ends.
+                        // If the scheduler observes it just after 16:00 ET, the stored
+                        // CMP is the session's closing/current market value used for
+                        // settlement rather than carrying the contract overnight.
+                        $allowSessionSettlement=! $this->marketSession->isOpen();
 
-                        // Strategy-provider automatic exits (SL / TP / time stop)
-                        // must propagate to the exact copy strategy just like a
-                        // manually submitted provider exit.
+                        $trade=$this->close(
+                            $position,
+                            $reason,
+                            null,
+                            'system',
+                            null,
+                            $allowSessionSettlement,
+                            $cmp,
+                            'position_exit'
+                        );
+
                         if($position->context_type==='copy_strategy'){
                             try{
-                                app(CopyTradingService::class)->mirrorCompletedTrade($trade);
+                                app(CopyTradingService::class)
+                                    ->mirrorCompletedTrade($trade);
                             }catch(\Throwable $mirrorError){
                                 \Log::warning('Automatic strategy exit mirroring failed',[
                                     'position_id'=>$position->id,
@@ -341,13 +525,14 @@ class TradePositionService
                             }
                         }
 
-                        $stats[$reason] = ($stats[$reason] ?? 0) + 1;
+                        $stats[$reason]=($stats[$reason] ?? 0)+1;
                     }catch(\Throwable $e){
                         \Log::warning('Position automatic exit failed',[
                             'position_id'=>$position->id,
                             'reason'=>$reason,
                             'error'=>$e->getMessage(),
                         ]);
+
                         $stats['failed']++;
                     }
                 }
@@ -356,23 +541,46 @@ class TradePositionService
         return $stats;
     }
 
-    public function settleContext(string $contextType,int $contextId,string $reason='contract_expiry'): array
-    {
-        $positions=TradePosition::where('context_type',$contextType)
+    public function settleContext(
+        string $contextType,
+        int $contextId,
+        string $reason='contract_expiry'
+    ): array {
+        $positions=TradePosition::with(['stock','user','entryTransaction'])
+            ->where('context_type',$contextType)
             ->where('context_id',$contextId)
             ->whereIn('status',['open','exit_queued'])
             ->where('open_quantity','>',0)
             ->get();
 
-        $result=['open'=>$positions->count(),'closed'=>0,'queued'=>0,'failed'=>0];
+        $result=[
+            'open'=>$positions->count(),
+            'closed'=>0,
+            'failed'=>0,
+        ];
 
         foreach($positions as $position){
             try{
-                $this->close($position,$reason);
+                $this->close(
+                    $position,
+                    $reason,
+                    null,
+                    'system',
+                    null,
+                    true,
+                    (float)$position->stock->current_price
+                );
+
                 $result['closed']++;
             }catch(\Throwable $e){
-                if(str_contains(strtolower($e->getMessage()),'market is closed')) $result['queued']++;
-                else $result['failed']++;
+                \Log::warning('Context settlement failed',[
+                    'context_type'=>$contextType,
+                    'context_id'=>$contextId,
+                    'position_id'=>$position->id,
+                    'error'=>$e->getMessage(),
+                ]);
+
+                $result['failed']++;
             }
         }
 
@@ -380,8 +588,16 @@ class TradePositionService
     }
 
     private function event(
-        TradePosition $position,string $type,?float $quantity,?float $price,?float $pnl,
-        ?StockTransaction $tx,?string $note,string $actorType,?int $actorId,array $metadata=[]
+        TradePosition $position,
+        string $type,
+        ?float $quantity,
+        ?float $price,
+        ?float $pnl,
+        ?StockTransaction $tx,
+        ?string $note,
+        string $actorType,
+        ?int $actorId,
+        array $metadata=[]
     ): void {
         $position->events()->create([
             'stock_transaction_id'=>$tx?->id,
@@ -399,8 +615,15 @@ class TradePositionService
     private function nullablePercent(mixed $value): ?float
     {
         if($value===null || $value==='') return null;
+
         $v=(float)$value;
-        if($v<=0 || $v>100) throw new RuntimeException('Risk percentage must be greater than 0 and at most 100.');
+
+        if($v<=0 || $v>100){
+            throw new RuntimeException(
+                'Risk percentage must be greater than 0 and at most 100.'
+            );
+        }
+
         return $v;
     }
 }

@@ -244,6 +244,12 @@ Route::middleware(['auth', 'admin'])
         // Admin Dashboard
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
         
+
+        // Admin Trading Command
+        Route::get('trading', [\App\Http\Controllers\Admin\TradingOperationsController::class, 'index'])->name('trading.index');
+        Route::get('trading/manual', [\App\Http\Controllers\Admin\TradingOperationsController::class, 'manual'])->name('trading.manual');
+        Route::get('trading/positions', [\App\Http\Controllers\Admin\TradingOperationsController::class, 'positions'])->name('trading.positions');
+        Route::get('trading/history', [\App\Http\Controllers\Admin\TradingOperationsController::class, 'history'])->name('trading.history');
         // Admin Car Management
         Route::resource('cars', AdminCarController::class);
         

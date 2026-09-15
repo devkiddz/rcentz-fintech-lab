@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\CopyRelationship;
+use App\Models\TradePosition;
 
 class CopyRelationshipLifecycleService
 {
@@ -18,21 +19,22 @@ class CopyRelationshipLifecycleService
                     $active->where('status','active')
                         ->whereNotNull('ends_at')
                         ->where('ends_at','<=',now());
-                })->orWhere('status','settling');
+                })->orWhereIn('status',['settling','settlement_failed']);
             })
             ->chunkById(100,function($relationships) use (&$completed){
                 foreach($relationships as $relationship){
-                    if($relationship->status==='active'){
-                        $relationship->update(['status'=>'settling']);
-                    }
+                    $relationship->update(['status'=>'settling']);
 
                     $result=$this->positions->settleContext(
                         'copy_relationship',
                         $relationship->id,
-                        'contract_expiry'
+                        'copy_contract_end'
                     );
 
-                    $remaining=\App\Models\TradePosition::where('context_type','copy_relationship')
+                    $remaining=TradePosition::where(
+                            'context_type',
+                            'copy_relationship'
+                        )
                         ->where('context_id',$relationship->id)
                         ->whereIn('status',['open','exit_queued'])
                         ->where('open_quantity','>',0)
@@ -44,9 +46,12 @@ class CopyRelationshipLifecycleService
                             'used_amount'=>0,
                             'completed_at'=>$relationship->completed_at ?? now(),
                         ]);
+
                         $completed++;
                     } elseif(($result['failed']??0)>0){
-                        $relationship->update(['status'=>'settlement_failed']);
+                        $relationship->update([
+                            'status'=>'settlement_failed',
+                        ]);
                     }
                 }
             });

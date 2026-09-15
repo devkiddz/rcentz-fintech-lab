@@ -3,24 +3,37 @@
 namespace App\Http\Controllers;
 
 use App\Models\TradePosition;
+use App\Services\MarketSessionService;
 use App\Services\TradePositionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class TradePositionController extends Controller
 {
-    public function index()
+    public function index(MarketSessionService $marketSession)
     {
-        $positions=TradePosition::with(['stock','events'=>fn($q)=>$q->latest()->limit(8)])
+        $positions=TradePosition::with([
+                'stock',
+                'events'=>fn($q)=>$q->latest()->limit(10),
+            ])
             ->where('user_id',Auth::id())
             ->latest('opened_at')
             ->paginate(30);
 
-        return view('trading.positions.index',compact('positions'));
+        $marketStatus=$marketSession->status();
+        $marketTime=$marketSession->now();
+
+        return view(
+            'trading.positions.index',
+            compact('positions','marketStatus','marketTime')
+        );
     }
 
-    public function updateRisk(Request $request,TradePosition $position,TradePositionService $service)
-    {
+    public function updateRisk(
+        Request $request,
+        TradePosition $position,
+        TradePositionService $service
+    ) {
         abort_unless($position->user_id===Auth::id(),403);
 
         $data=$request->validate([
@@ -32,9 +45,15 @@ class TradePositionController extends Controller
         try{
             $service->updateRisk(
                 $position,
-                isset($data['stop_loss_percent'])?(float)$data['stop_loss_percent']:null,
-                isset($data['take_profit_percent'])?(float)$data['take_profit_percent']:null,
-                isset($data['duration_minutes'])?(int)$data['duration_minutes']:null,
+                isset($data['stop_loss_percent'])
+                    ? (float)$data['stop_loss_percent']
+                    : null,
+                isset($data['take_profit_percent'])
+                    ? (float)$data['take_profit_percent']
+                    : null,
+                isset($data['duration_minutes'])
+                    ? (int)$data['duration_minutes']
+                    : null,
                 'user',
                 Auth::id()
             );
@@ -42,45 +61,104 @@ class TradePositionController extends Controller
             return back()->withErrors(['position'=>$e->getMessage()]);
         }
 
-        return back()->with('success','Position risk controls updated.');
+        return back()->with(
+            'success',
+            'Trade management updated. Effective close still cannot pass the regular market close.'
+        );
     }
 
-    public function close(Request $request,TradePosition $position,TradePositionService $service)
-    {
+    public function close(
+        Request $request,
+        TradePosition $position,
+        TradePositionService $service
+    ) {
         abort_unless($position->user_id===Auth::id(),403);
 
         try{
-            $service->close($position,'manual_close',null,'user',Auth::id());
+            $trade=$service->kill(
+                $position,
+                'user',
+                Auth::id()
+            );
         }catch(\Throwable $e){
             return back()->withErrors(['position'=>$e->getMessage()]);
         }
 
-        return back()->with('success','Position close submitted.');
+        $position->refresh();
+
+        return back()->with(
+            'success',
+            'Trade killed at CMP '.
+            currency_symbol().number_format((float)$trade->price_per_share,2).
+            '. Realized P/L: '.
+            (($position->realized_profit_loss >= 0) ? '+' : '').
+            currency_symbol().number_format((float)$position->realized_profit_loss,2).
+            '.'
+        );
     }
 
-    public function partialClose(Request $request,TradePosition $position,TradePositionService $service)
-    {
+    public function partialClose(
+        Request $request,
+        TradePosition $position,
+        TradePositionService $service,
+        MarketSessionService $marketSession
+    ) {
         abort_unless($position->user_id===Auth::id(),403);
-        $data=$request->validate(['quantity'=>'required|numeric|min:0.000001']);
+
+        if(! $marketSession->isOpen()){
+            return back()->withErrors([
+                'position'=>'Partial close is a managed execution and requires an open regular market session. Use Kill Trade for an immediate full contract termination at the current stored CMP.'
+            ]);
+        }
+
+        $data=$request->validate([
+            'quantity'=>'required|numeric|min:0.000001',
+        ]);
+
+        $quantity=(float)$data['quantity'];
+        $open=(float)$position->open_quantity;
+
+        if($quantity >= $open){
+            return back()->withErrors([
+                'position'=>'Partial close must be lower than the remaining quantity. Use Kill Trade to terminate the whole contract.'
+            ]);
+        }
 
         try{
-            $service->close($position,'manual_partial_close',(float)$data['quantity'],'user',Auth::id());
+            $service->close(
+                $position,
+                'manual_partial_close',
+                $quantity,
+                'user',
+                Auth::id()
+            );
         }catch(\Throwable $e){
             return back()->withErrors(['position'=>$e->getMessage()]);
         }
 
-        return back()->with('success','Partial close submitted.');
+        return back()->with(
+            'success',
+            'Partial close executed. Remaining exposure stays under the trade contract.'
+        );
     }
 
-    public function reenter(Request $request,TradePosition $position,TradePositionService $service)
-    {
+    public function reenter(
+        Request $request,
+        TradePosition $position,
+        TradePositionService $service
+    ) {
         abort_unless($position->user_id===Auth::id(),403);
-        $data=$request->validate(['quantity'=>'nullable|numeric|min:0.000001']);
+
+        $data=$request->validate([
+            'quantity'=>'nullable|numeric|min:0.000001',
+        ]);
 
         try{
             $new=$service->reenter(
                 $position,
-                isset($data['quantity'])?(float)$data['quantity']:null,
+                isset($data['quantity'])
+                    ? (float)$data['quantity']
+                    : null,
                 'user',
                 Auth::id()
             );
@@ -88,6 +166,9 @@ class TradePositionController extends Controller
             return back()->withErrors(['position'=>$e->getMessage()]);
         }
 
-        return back()->with('success','Re-entry opened as position #'.$new->id.'.');
+        return back()->with(
+            'success',
+            'New trade contract opened as position #'.$new->id.'.'
+        );
     }
 }

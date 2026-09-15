@@ -1,399 +1,120 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ site_name() }} - Admin</title>
+    <title>{{ site_name() }} - Admin</title>
 
-        <!-- Favicon -->
-        @if(site_favicon())
-            <link rel="icon" type="image/x-icon" href="{{ site_favicon() }}">
-        @endif
+    @if(site_favicon())
+        <link rel="icon" type="image/x-icon" href="{{ site_favicon() }}">
+    @endif
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=inter:300,400,500,600,700&display=swap" rel="stylesheet">
 
-        <!-- Lucide Icons -->
-        <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
-        @include('partials.theme-init')
+    @include('partials.theme-init')
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.shell.sidebar-behavior')
+</head>
 
-        <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-        
-        <script>
-            function toggleSidebar() {
-                const sidebar = document.getElementById('sidebar');
-                const overlay = document.getElementById('sidebar-overlay');
-                const isOpen = sidebar.classList.contains('translate-x-0');
-                
-                if (isOpen) {
-                    sidebar.classList.remove('translate-x-0');
-                    sidebar.classList.add('-translate-x-full');
-                    overlay.classList.add('hidden');
-                } else {
-                    sidebar.classList.remove('-translate-x-full');
-                    sidebar.classList.add('translate-x-0');
-                    overlay.classList.remove('hidden');
-                }
-            }
-            
-            function toggleSubmenu(id) {
-                const submenu = document.getElementById(id);
-                const icon = document.getElementById(id + '-icon');
-                const isOpen = !submenu.classList.contains('hidden');
-                
-                if (isOpen) {
-                    submenu.classList.add('hidden');
-                    icon.classList.remove('rotate-90');
-                } else {
-                    submenu.classList.remove('hidden');
-                    icon.classList.add('rotate-90');
-                }
-            }
-                    document.addEventListener('DOMContentLoaded', function () {
-                if (window.lucide) {
-                    lucide.createIcons();
-                }
-            });
-        </script>
-    </head>
-    <body class="admin-workspace font-sans antialiased bg-background text-foreground" data-theme-scope="admin">
-        <div class="min-h-screen flex">
-            <!-- Mobile Sidebar Overlay -->
-            <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
-            
-            <!-- Sidebar -->
-            <div id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-black shadow-2xl transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0">
-                <div class="flex flex-col h-full">
-                    <!-- Logo -->
-                    <div class="flex items-center justify-between h-16 px-4 border-b border-gray-800">
-                        <div class="flex items-center">
-                            @if(site_logo_dark() || site_logo_light())
-                                <img src="{{ site_logo_dark() ?? site_logo_light() }}" alt="{{ site_name() }}" class="h-6 w-auto mr-3">
-                            @else
-                                <span class="text-white font-bold text-lg">{{ site_name() }}</span>
-                            @endif
-                        </div>
-                        <button onclick="toggleSidebar()" class="lg:hidden text-gray-400 hover:text-white p-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
-                    </div>
+<body class="admin-workspace bg-background text-foreground font-sans antialiased" data-theme-scope="admin">
+<div class="min-h-screen">
+    <div id="sidebar-overlay"
+         class="fixed inset-0 z-[60] hidden bg-black/60 backdrop-blur-[1px] lg:hidden"
+         onclick="toggleSidebar()"></div>
 
-                    <!-- Navigation -->
-                    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto text-sm">
-                        <!-- Dashboard -->
-                        <a href="{{ route('admin.dashboard') }}" 
-                           class="group flex items-center px-3 py-2.5 font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.dashboard') ? 'bg-tesla-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                            <svg class="w-4 h-4 mr-3 {{ request()->routeIs('admin.dashboard') ? 'text-white' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6a2 2 0 002 2h4a2 2 0 002-2V9a2 2 0 00-2-2h-2"></path>
-                            </svg>
-                            <span>Overview</span>
-                        </a>
+    <aside id="sidebar"
+           class="fixed inset-y-0 left-0 z-[70] flex w-72 -translate-x-full flex-col border-r border-border bg-card text-card-foreground shadow-sm transition-all duration-300 lg:translate-x-0">
+        <div class="flex h-16 shrink-0 items-center justify-between border-b border-border px-4">
+            <a href="{{ route('admin.dashboard') }}" class="flex min-w-0 items-center gap-3">
+                @if(site_logo_light() || site_logo_dark())
+                    <img src="{{ site_logo_light() ?? site_logo_dark() }}"
+                         alt="{{ site_name() }}"
+                         class="h-7 w-auto max-w-[150px] object-contain dark:hidden">
+                    <img src="{{ site_logo_dark() ?? site_logo_light() }}"
+                         alt="{{ site_name() }}"
+                         class="hidden h-7 w-auto max-w-[150px] object-contain dark:block">
+                @else
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-xs font-bold text-background">R</div>
+                    <span class="sidebar-label truncate text-sm font-semibold">{{ site_name() }}</span>
+                @endif
+            </a>
 
-                        <!-- Investment Management -->
-                        <div class="space-y-1">
-                            <button onclick="toggleSubmenu('investment-submenu')" 
-                                    class="w-full group flex items-center justify-between px-3 py-2.5 font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.investments.*') ? 'bg-tesla-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-3 {{ request()->routeIs('admin.investments.*') ? 'text-white' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 13l3 3 7-7"></path>
-                                    </svg>
-                                    <span>Investment Management</span>
-                                </div>
-                                <svg id="investment-submenu-icon" class="w-4 h-4 transition-transform duration-200 {{ request()->routeIs('admin.investments.*') ? 'rotate-90' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                </svg>
-                            </button>
-                            <div id="investment-submenu" class="ml-6 space-y-1 {{ request()->routeIs('admin.investments.*') ? '' : 'hidden' }}">
-                                <a href="{{ route('admin.investments.plans.index') }}" 
-                                   class="flex items-center px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('admin.investments.plans.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                    </svg>
-                                    Investment Plans
-                                </a>
-                                <a href="{{ route('admin.investments.holdings.index') }}" 
-                                   class="flex items-center px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('admin.investments.holdings.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                    </svg>
-                                    Holdings
-                                </a>
-                                <a href="{{ route('admin.investments.transactions.index') }}" 
-                                   class="flex items-center px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('admin.investments.transactions.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                                    </svg>
-                                    Transactions
-                                </a>
-                                <a href="{{ route('admin.investments.nav-updates.index') }}" 
-                                   class="flex items-center px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('admin.investments.nav-updates.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                                    </svg>
-                                    NAV Updates
-                                </a>
-                                <a href="{{ route('admin.investments.automatic-nav-updates.index') }}" 
-                                   class="flex items-center px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('admin.investments.automatic-nav-updates.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    Automatic NAV Updates
-                                </a>
-                            </div>
-                        </div>
+            <button type="button"
+                    onclick="toggleSidebar()"
+                    class="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden">
+                <i data-lucide="x" class="h-4 w-4"></i>
+            </button>
+        </div>
 
-                        <!-- Stock Management -->
-                        <div class="space-y-1">
-                            <button onclick="toggleSubmenu('stocks-submenu')" 
-                                    class="w-full group flex items-center justify-between px-3 py-2.5 font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.stocks.*') ? 'bg-tesla-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-3 {{ request()->routeIs('admin.stocks.*') ? 'text-white' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3v18M3 13h18"></path>
-                                    </svg>
-                                    <span>Stock Management</span>
-                                </div>
-                                <svg id="stocks-submenu-icon" class="w-4 h-4 transition-transform duration-200 {{ request()->routeIs('admin.stocks.*') ? 'rotate-90' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                </svg>
-                            </button>
-                            <div id="stocks-submenu" class="ml-6 space-y-1 {{ request()->routeIs('admin.stocks.*') ? '' : 'hidden' }}">
-                                <a href="{{ route('admin.stocks.index') }}" 
-                                   class="flex items-center px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('admin.stocks.index') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3v18M3 13h18"></path>
-                                    </svg>
-                                    All Stocks
-                                </a>
-                                <a href="{{ route('admin.stocks.holdings.index') }}" 
-                                   class="flex items-center px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('admin.stocks.holdings.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                    </svg>
-                                    Holdings
-                                </a>
-                                <a href="{{ route('admin.stocks.transactions.index') }}" 
-                                   class="flex items-center px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('admin.stocks.transactions.*') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                                    </svg>
-                                    Transactions
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Cars Management -->
-                        <div class="space-y-1">
-                            <button onclick="toggleSubmenu('cars-submenu')" 
-                                    class="w-full group flex items-center justify-between px-3 py-2.5 font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.cars.*') ? 'bg-tesla-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-3 {{ request()->routeIs('admin.cars.*') ? 'text-white' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                                    </svg>
-                                    <span>Fleet Management</span>
-                                </div>
-                                <svg id="cars-submenu-icon" class="w-4 h-4 transition-transform duration-200 {{ request()->routeIs('admin.cars.*') ? 'rotate-90' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                </svg>
-                            </button>
-                            <div id="cars-submenu" class="ml-6 space-y-1 {{ request()->routeIs('admin.cars.*') ? '' : 'hidden' }}">
-                                <a href="{{ route('admin.cars.index') }}" 
-                                   class="flex items-center px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('admin.cars.index') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                                    </svg>
-                                    All Vehicles
-                                </a>
-                                <a href="{{ route('admin.cars.create') }}" 
-                                   class="flex items-center px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('admin.cars.create') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                    </svg>
-                                    Add New Vehicle
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Users Management -->
-                        <a href="{{ route('admin.users.index') }}" 
-                           class="group flex items-center px-3 py-2.5 font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.users.*') ? 'bg-tesla-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                            <svg class="w-4 h-4 mr-3 {{ request()->routeIs('admin.users.*') ? 'text-white' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
-                            <span>Customer Management</span>
-                        </a>
-
-                        <!-- KYC Management -->
-                        <a href="{{ route('admin.kyc.index') }}" 
-                           class="group flex items-center px-3 py-2.5 font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.kyc.*') ? 'bg-tesla-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                            <svg class="w-4 h-4 mr-3 {{ request()->routeIs('admin.kyc.*') ? 'text-white' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                            </svg>
-                            <span>KYC Management</span>
-                        </a>
-
-                        <!-- Copy Trading -->
-                        <details class="group rounded-xl" {{ request()->routeIs('admin.copy-trading.*') ? 'open' : '' }}>
-                            <summary class="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted">
-                                <span class="flex items-center"><i data-lucide="users-round" class="w-4 h-4 mr-3"></i>Copy Trading</span>
-                                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
-                            </summary>
-                            <div class="ml-5 mt-1 pl-5 border-l border-border space-y-1">
-                                <a href="{{ route('admin.copy-trading.applications') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="clipboard-check" class="w-4 h-4 mr-2"></i>Provider Applications</a>
-                                <a href="{{ route('admin.copy-trading.providers') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="badge-check" class="w-4 h-4 mr-2"></i>Providers</a>
-                                <a href="{{ route('admin.copy-trading.strategies') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="route" class="w-4 h-4 mr-2"></i>Strategies</a>
-                            </div>
-                        </details>
-
-                        <!-- AI Trading Bots -->
-                        <details class="group rounded-xl" {{ request()->routeIs('admin.ai-bots.*') ? 'open' : '' }}>
-                            <summary class="list-none cursor-pointer flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-muted">
-                                <span class="flex items-center"><i data-lucide="bot" class="w-4 h-4 mr-3"></i>AI Trading Bots</span>
-                                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
-                            </summary>
-                            <div class="ml-5 mt-1 pl-5 border-l border-border space-y-1">
-                                <a href="{{ route('admin.ai-bots.index') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="store" class="w-4 h-4 mr-2"></i>Bot Catalog</a>
-                                <a href="{{ route('admin.ai-bots.create') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="circle-plus" class="w-4 h-4 mr-2"></i>Create Bot</a>
-                                <a href="{{ route('admin.ai-bots.subscriptions') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="badge-dollar-sign" class="w-4 h-4 mr-2"></i>Subscriptions</a>
-                                <a href="{{ route('admin.ai-bots.executions') }}" class="flex items-center px-3 py-2 text-sm rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted"><i data-lucide="activity" class="w-4 h-4 mr-2"></i>Executions</a>
-                            </div>
-                        </details>
-
-                        <!-- Wallet Transactions -->
-                        <a href="{{ route('admin.wallet-transactions.index') }}" 
-                           class="group flex items-center px-3 py-2.5 font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.wallet-transactions.*') ? 'bg-tesla-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                            <svg class="w-4 h-4 mr-3 {{ request()->routeIs('admin.wallet-transactions.*') ? 'text-white' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                            </svg>
-                            <span>Wallet Transactions</span>
-                        </a>
-
-                        <!-- Settings -->
-                        <a href="{{ route('admin.settings.index') }}" 
-                           class="group flex items-center px-3 py-2.5 font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.settings.*') ? 'bg-tesla-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                            <svg class="w-4 h-4 mr-3 {{ request()->routeIs('admin.settings.*') ? 'text-white' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
-                            <span>Settings</span>
-                        </a>
-
-                        <!-- Payment Methods -->
-                        <a href="{{ route('admin.payment_methods.index') }}" 
-                           class="group flex items-center px-3 py-2.5 font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.payment_methods.*') ? 'bg-tesla-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                            <svg class="w-4 h-4 mr-3 {{ request()->routeIs('admin.payment_methods.*') ? 'text-white' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                            </svg>
-                            <span>Payment Methods</span>
-                        </a>
-
-                        <!-- Purchase History -->
-                        <a href="{{ route('admin.purchases.index') }}" 
-                           class="group flex items-center px-3 py-2.5 font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.purchases.*') ? 'bg-tesla-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                            <svg class="w-4 h-4 mr-3 {{ request()->routeIs('admin.purchases.*') ? 'text-white' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-                            </svg>
-                            <span>Orders</span>
-                        </a>
-
-                        <!-- Email Management -->
-                        <div class="space-y-1">
-                            <button onclick="toggleSubmenu('emails-submenu')" 
-                                    class="w-full group flex items-center justify-between px-3 py-2.5 font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.emails.*') ? 'bg-tesla-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                                <div class="flex items-center">
-                                    <svg class="w-4 h-4 mr-3 {{ request()->routeIs('admin.emails.*') ? 'text-white' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                                    </svg>
-                                    <span>Email Management</span>
-                                </div>
-                                <svg id="emails-submenu-icon" class="w-4 h-4 transition-transform duration-200 {{ request()->routeIs('admin.emails.*') ? 'rotate-90' : '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                </svg>
-                            </button>
-                            <div id="emails-submenu" class="ml-6 space-y-1 {{ request()->routeIs('admin.emails.*') ? '' : 'hidden' }}">
-                                <a href="{{ route('admin.emails.compose') }}" 
-                                   class="flex items-center px-3 py-2 text-sm rounded-md transition-colors {{ request()->routeIs('admin.emails.compose') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800' }}">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                                    </svg>
-                                    Send Email
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Divider -->
-                        <div class="border-t border-gray-800 pt-4 mt-6">
-                            <!-- Profile -->
-                            <a href="{{ route('admin.profile.edit') }}" 
-                               class="group flex items-center px-3 py-2.5 font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.profile.*') ? 'bg-tesla-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                                <svg class="w-4 h-4 mr-3 {{ request()->routeIs('admin.profile.*') ? 'text-white' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                </svg>
-                                <span>Profile Settings</span>
-                            </a>
-                            
-                              <!-- About -->
-                        <a href="{{ route('admin.about') }}" class="group flex items-center px-3 py-2.5 font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('admin.about') ? 'bg-tesla-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                            <svg class="w-4 h-4 mr-3 {{ request()->routeIs('admin.about') ? 'text-white' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20h.01"></path>
-                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8h.01" />
-                            </svg>
-                            <span>About Platform</span>
-                        </a>
-
-                            
-                        </div>
-                    </nav>
-
-                    <!-- User Menu -->
-                    <div class="p-4 border-t border-gray-800">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <div class="w-10 h-10 bg-card rounded-full flex items-center justify-center">
-                                    <span class="text-foreground font-medium text-sm">{{ substr(Auth::user()->name, 0, 1) }}</span>
-                                </div>
-                            </div>
-                            <div class="ml-3 flex-1">
-                                <p class="text-sm font-medium text-white">{{ Auth::user()->name }}</p>
-                                <p class="text-xs text-gray-400">Administrator</p>
-                            </div>
-                            <form method="POST" action="{{ route('logout') }}" class="inline">
-                                @csrf
-                                <button type="submit" class="flex items-center text-sm font-medium text-gray-400 hover:text-white transition-colors p-2 rounded-md hover:bg-gray-800" title="Sign Out">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                                    </svg>
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
+        <div class="flex items-center gap-3 border-b border-border px-4 py-3">
+            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-foreground text-xs font-semibold text-background">
+                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
             </div>
-
-            <!-- Main Content -->
-            <div class="flex-1 flex flex-col overflow-hidden lg:ml-72">
-                @include('partials.shell.admin-topbar')
-
-                <div class="shell-alert-stack">
-                    @include('partials.shell.flash-messages')
-                </div>
-
-
-
-                <!-- Page Content -->
-                <main class="flex-1 overflow-y-auto p-4 sm:p-6 bg-background">
-                    {{ $slot }}
-                </main>
+            <div class="sidebar-profile-copy min-w-0">
+                <p class="truncate text-xs font-semibold">{{ Auth::user()->name }}</p>
+                <p class="truncate text-[10px] text-muted-foreground">Administrator · Command Center</p>
             </div>
         </div>
-    </body>
-</html> 
+
+        @include('partials.shell.admin-sidebar-nav')
+
+        <div class="border-t border-border p-3">
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit"
+                        class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[12px] font-medium text-red-600 hover:bg-red-500/10">
+                    <i data-lucide="log-out" class="h-4 w-4 shrink-0"></i>
+                    <span class="sidebar-label">Sign out</span>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <div id="workspace-main" class="min-h-screen bg-background lg:ml-72">
+        @include('partials.shell.admin-topbar')
+
+        <div class="shell-alert-stack">
+            @include('partials.shell.flash-messages')
+        </div>
+
+        <main class="min-h-[calc(100vh-4rem)] px-4 py-5 pb-24 sm:px-6 lg:px-8 lg:py-7 lg:pb-8">
+            {{ $slot }}
+        </main>
+    </div>
+
+    <nav class="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 px-2 py-2 backdrop-blur lg:hidden">
+        <div class="mx-auto grid max-w-lg grid-cols-5 items-end">
+            <a href="{{ route('admin.dashboard') }}"
+               class="flex flex-col items-center gap-1 py-1 text-[10px] {{ request()->routeIs('admin.dashboard') ? 'text-foreground' : 'text-muted-foreground' }}">
+                <i data-lucide="home" class="h-5 w-5"></i><span>Home</span>
+            </a>
+
+            <a href="{{ route('admin.trading.index') }}"
+               class="flex flex-col items-center gap-1 py-1 text-[10px] {{ request()->routeIs('admin.trading.*','admin.stocks.*') ? 'text-foreground' : 'text-muted-foreground' }}">
+                <i data-lucide="candlestick-chart" class="h-5 w-5"></i><span>Trading</span>
+            </a>
+
+            <a href="{{ route('admin.users.index') }}"
+               class="flex flex-col items-center gap-1 py-1 text-[10px] {{ request()->routeIs('admin.users.*') ? 'text-foreground' : 'text-muted-foreground' }}">
+                <i data-lucide="users" class="h-5 w-5"></i><span>Users</span>
+            </a>
+
+            <a href="{{ route('admin.wallet-transactions.index') }}"
+               class="flex flex-col items-center gap-1 py-1 text-[10px] {{ request()->routeIs('admin.wallet-transactions.*') ? 'text-foreground' : 'text-muted-foreground' }}">
+                <i data-lucide="wallet-cards" class="h-5 w-5"></i><span>Wallet</span>
+            </a>
+
+            <button type="button" onclick="openSidebar()"
+                    class="flex flex-col items-center gap-1 py-1 text-[10px] text-muted-foreground">
+                <i data-lucide="menu" class="h-5 w-5"></i><span>Menu</span>
+            </button>
+        </div>
+    </nav>
+</div>
+</body>
+</html>

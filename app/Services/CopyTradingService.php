@@ -113,7 +113,15 @@ class CopyTradingService
                     return;
                 }
 
-                $trade=$this->positions->close($position,'provider_exit',$qty,'system',null);
+                $trade=$this->positions->close(
+                    $position,
+                    'provider_exit',
+                    $qty,
+                    'system',
+                    null,
+                    true,
+                    (float)$providerTrade->price_per_share
+                );
             }
 
             $executed=(float)$trade->total_amount;
