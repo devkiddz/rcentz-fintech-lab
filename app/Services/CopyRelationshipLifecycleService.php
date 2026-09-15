@@ -6,24 +6,51 @@ use App\Models\CopyRelationship;
 
 class CopyRelationshipLifecycleService
 {
+    public function __construct(private TradePositionService $positions) {}
+
     public function expireDue(): int
     {
-        $count = 0;
+        $completed=0;
 
         CopyRelationship::query()
-            ->where('status', 'active')
-            ->whereNotNull('ends_at')
-            ->where('ends_at', '<=', now())
-            ->chunkById(100, function ($relationships) use (&$count) {
-                foreach ($relationships as $relationship) {
-                    $relationship->update([
-                        'status' => 'completed',
-                        'completed_at' => $relationship->completed_at ?? now(),
-                    ]);
-                    $count++;
+            ->where(function($q){
+                $q->where(function($active){
+                    $active->where('status','active')
+                        ->whereNotNull('ends_at')
+                        ->where('ends_at','<=',now());
+                })->orWhere('status','settling');
+            })
+            ->chunkById(100,function($relationships) use (&$completed){
+                foreach($relationships as $relationship){
+                    if($relationship->status==='active'){
+                        $relationship->update(['status'=>'settling']);
+                    }
+
+                    $result=$this->positions->settleContext(
+                        'copy_relationship',
+                        $relationship->id,
+                        'contract_expiry'
+                    );
+
+                    $remaining=\App\Models\TradePosition::where('context_type','copy_relationship')
+                        ->where('context_id',$relationship->id)
+                        ->whereIn('status',['open','exit_queued'])
+                        ->where('open_quantity','>',0)
+                        ->exists();
+
+                    if(! $remaining){
+                        $relationship->update([
+                            'status'=>'completed',
+                            'used_amount'=>0,
+                            'completed_at'=>$relationship->completed_at ?? now(),
+                        ]);
+                        $completed++;
+                    } elseif(($result['failed']??0)>0){
+                        $relationship->update(['status'=>'settlement_failed']);
+                    }
                 }
             });
 
-        return $count;
+        return $completed;
     }
 }

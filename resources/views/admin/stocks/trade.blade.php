@@ -130,6 +130,12 @@
                             >
                         </div>
 
+
+                        <div class="grid grid-cols-3 gap-2">
+                            <input name="stop_loss_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input" placeholder="SL %">
+                            <input name="take_profit_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input" placeholder="TP %">
+                            <input name="duration_minutes" type="number" min="1" max="43200" class="ui-input" placeholder="Minutes">
+                        </div>
                         <button class="ui-btn ui-btn-primary w-full">
                             Execute strategy trade
                         </button>
@@ -178,6 +184,12 @@
                             </div>
                         </div>
 
+
+                        <div class="grid grid-cols-3 gap-2">
+                            <input name="stop_loss_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input" placeholder="SL %">
+                            <input name="take_profit_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input" placeholder="TP %">
+                            <input name="duration_minutes" type="number" min="1" max="43200" class="ui-input" placeholder="Minutes">
+                        </div>
                         <button class="ui-btn ui-btn-primary w-full">
                             Execute admin trade
                         </button>
@@ -234,6 +246,12 @@
                             required
                         ></textarea>
 
+
+                        <div class="grid grid-cols-3 gap-2">
+                            <input name="stop_loss_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input" placeholder="SL %">
+                            <input name="take_profit_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input" placeholder="TP %">
+                            <input name="duration_minutes" type="number" min="1" max="43200" class="ui-input" placeholder="Minutes">
+                        </div>
                         <button class="ui-btn ui-btn-primary w-full">
                             Execute for user
                         </button>

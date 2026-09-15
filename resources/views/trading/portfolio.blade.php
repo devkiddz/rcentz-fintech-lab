@@ -8,7 +8,7 @@
             <h1 class="ui-heading !text-2xl">Stock Portfolio</h1>
             <p class="ui-lead !text-[13px]">Positions, current performance and timed trade plans.</p>
         </div>
-        <a href="{{ route('stocks.index') }}" class="ui-btn ui-btn-primary"><i data-lucide="plus" class="h-4 w-4"></i> Browse Stocks</a>
+        <div class="flex gap-2"><a href="{{ route('trading.positions.index') }}" class="ui-btn ui-btn-secondary"><i data-lucide="route" class="h-4 w-4"></i> Positions</a><a href="{{ route('stocks.index') }}" class="ui-btn ui-btn-primary"><i data-lucide="plus" class="h-4 w-4"></i> Browse Stocks</a></div>
     </section>
 
     <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

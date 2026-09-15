@@ -16,6 +16,8 @@ use App\Services\CopyTradingService;
 use App\Services\StockTradePlanService;
 use App\Services\StockAnalysisService;
 use App\Services\StockTradeExecutor;
+use App\Services\TradePositionService;
+use App\Models\TradePosition;
 use App\Models\StockTradePlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -55,7 +57,8 @@ class TradingController extends Controller
         Stock $stock,
         StockTradeExecutor $executor,
         CopyTradingService $copyTrading,
-        StockTradePlanService $tradePlans
+        StockTradePlanService $tradePlans,
+        TradePositionService $positions
     ) {
         if (! $stock->is_active) {
             abort(404);
@@ -65,6 +68,8 @@ class TradingController extends Controller
             'quantity' => 'required|numeric|min:1|max:10000',
             'plan_duration_minutes' => 'nullable|integer|min:0|max:10080',
             'plan_mode' => 'nullable|in:reminder,automatic',
+            'stop_loss_percent' => 'nullable|numeric|min:0.01|max:100',
+            'take_profit_percent' => 'nullable|numeric|min:0.01|max:100',
         ]);
 
         $user = Auth::user();
@@ -91,6 +96,28 @@ class TradingController extends Controller
             ])->withInput();
         }
 
+        try {
+            // BUY creates the living position BEFORE mirroring so strategy/copy
+            // followers can inherit its risk and timing context.
+            $positions->openLongFromTrade(
+                $stockTransaction,
+                [
+                    'stop_loss_percent' => $request->input('stop_loss_percent'),
+                    'take_profit_percent' => $request->input('take_profit_percent'),
+                    'duration_minutes' => $request->integer('plan_duration_minutes') ?: null,
+                ],
+                'manual_trade',
+                null,
+                null,
+                'user',
+                $user->id
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Position creation failed after stock buy', [
+                'trade_id' => $stockTransaction->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
         // Everything below is post-execution side effect. A notification,
         // email, copy mirror or trade-plan failure must never roll back a
         // completed financial execution.
@@ -128,17 +155,6 @@ class TradingController extends Controller
             ]);
         }
 
-        try {
-            $tradePlans->createForTransaction(
-                $stockTransaction,
-                $request->only(['plan_duration_minutes', 'plan_mode'])
-            );
-        } catch (\Throwable $e) {
-            \Log::warning('Trade plan creation failed after stock buy', [
-                'trade_id' => $stockTransaction->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
 
         return redirect()->route('trading.portfolio')
             ->with(
@@ -178,7 +194,8 @@ class TradingController extends Controller
         Stock $stock,
         StockTradeExecutor $executor,
         CopyTradingService $copyTrading,
-        StockTradePlanService $tradePlans
+        StockTradePlanService $tradePlans,
+        TradePositionService $positions
     ) {
         if (! $stock->is_active) {
             abort(404);
@@ -215,6 +232,24 @@ class TradingController extends Controller
         }
 
         try {
+            // Reconcile the SELL with open positions BEFORE copy mirroring.
+            // This gives provider exits a concrete source position.
+            $positions->consumeSellTransaction(
+                $stockTransaction,
+                'manual_close',
+                null,
+                null,
+                'user',
+                $user->id
+            );
+            $stockTransaction->refresh();
+        } catch (\Throwable $e) {
+            \Log::warning('Position reconciliation failed after manual sell', [
+                'trade_id' => $stockTransaction->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+        try {
             NotificationService::createInvestmentSuccessNotification(
                 $user,
                 $stock->symbol.' (Sale)',
@@ -248,17 +283,6 @@ class TradingController extends Controller
             ]);
         }
 
-        try {
-            $tradePlans->createForTransaction(
-                $stockTransaction,
-                $request->only(['plan_duration_minutes', 'plan_mode'])
-            );
-        } catch (\Throwable $e) {
-            \Log::warning('Trade plan creation failed after stock sell', [
-                'trade_id' => $stockTransaction->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
 
         return redirect()->route('trading.portfolio')
             ->with(
@@ -287,10 +311,11 @@ class TradingController extends Controller
         // Sort holdings by current value
         $holdings = $holdings->sortByDesc('current_value')->values();
 
-        $tradePlans = StockTradePlan::with('stock')
+        $tradePlans = collect(); // Legacy rows stay readable; new entries use TradePosition.
+        $positions = TradePosition::with(['stock','events' => fn ($q) => $q->latest()->limit(3)])
             ->where('user_id', $user->id)
-            ->whereIn('status', ['active','due'])
-            ->orderBy('due_at')
+            ->whereIn('status', ['open','exit_queued'])
+            ->orderBy('expires_at')
             ->get();
 
         $recentTransactions = $user->stockTransactions()
@@ -306,7 +331,8 @@ class TradingController extends Controller
             'totalGainLoss',
             'totalGainLossPercentage',
             'recentTransactions',
-            'tradePlans'
+            'tradePlans',
+            'positions'
         ));
     }
 

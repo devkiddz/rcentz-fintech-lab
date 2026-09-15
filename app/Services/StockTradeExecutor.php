@@ -22,7 +22,8 @@ class StockTradeExecutor
         ?int $sourceId = null,
         ?int $copyStrategyId = null,
         string $actorType = 'system',
-        ?int $actorId = null
+        ?int $actorId = null,
+        ?int $positionId = null
     ): StockTransaction {
         if ($quantity <= 0 || ! $stock->is_active) {
             throw new RuntimeException('Trade is not executable.');
@@ -36,7 +37,7 @@ class StockTradeExecutor
         }
 
         return DB::transaction(function () use (
-            $user,$stock,$quantity,$price,$amount,$source,$sourceId,$copyStrategyId,$actorType,$actorId
+            $user,$stock,$quantity,$price,$amount,$source,$sourceId,$copyStrategyId,$actorType,$actorId,$positionId
         ) {
             $wallet = $user->wallet()->lockForUpdate()->firstOrFail();
 
@@ -65,6 +66,7 @@ class StockTradeExecutor
                 'copy_strategy_id'=>$copyStrategyId,
                 'execution_source'=>$source,
                 'initiated_by_user_id'=>$actorId,
+                'trade_position_id'=>$positionId,
                 'wallet_transaction_id'=>$walletTx->id,
                 'type'=>'buy',
                 'quantity'=>$quantity,
@@ -143,7 +145,8 @@ class StockTradeExecutor
         ?int $sourceId = null,
         ?int $copyStrategyId = null,
         string $actorType = 'system',
-        ?int $actorId = null
+        ?int $actorId = null,
+        ?int $positionId = null
     ): StockTransaction {
         if ($quantity <= 0 || ! $stock->is_active) {
             throw new RuntimeException('Trade is not executable.');
@@ -152,7 +155,7 @@ class StockTradeExecutor
         $price=(float)$stock->current_price;
 
         return DB::transaction(function () use (
-            $user,$stock,$quantity,$price,$source,$sourceId,$copyStrategyId,$actorType,$actorId
+            $user,$stock,$quantity,$price,$source,$sourceId,$copyStrategyId,$actorType,$actorId,$positionId
         ) {
             $wallet=$user->wallet()->lockForUpdate()->firstOrFail();
             $holding=StockHolding::where('user_id',$user->id)
@@ -186,6 +189,7 @@ class StockTradeExecutor
                 'copy_strategy_id'=>$copyStrategyId,
                 'execution_source'=>$source,
                 'initiated_by_user_id'=>$actorId,
+                'trade_position_id'=>$positionId,
                 'wallet_transaction_id'=>$walletTx->id,
                 'type'=>'sell',
                 'quantity'=>$quantity,

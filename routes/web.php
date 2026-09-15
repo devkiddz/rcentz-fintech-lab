@@ -171,6 +171,11 @@ Route::middleware(['auth', 'verified', 'wallet', 'block.admin'])->group(function
         Route::patch('/trading/watchlist/update/{stock}', [TradingController::class, 'updateWatchlist'])->name('trading.watchlist.update');
         Route::delete('/trading/watchlist/{stock}', [TradingController::class, 'removeFromWatchlist'])->name('trading.watchlist.remove');
         Route::delete('/trading/plans/{plan}', [StockTradePlanController::class, 'cancel'])->name('trading.plans.cancel');
+        Route::get('/trading/positions', [\App\Http\Controllers\TradePositionController::class, 'index'])->name('trading.positions.index');
+        Route::patch('/trading/positions/{position}/risk', [\App\Http\Controllers\TradePositionController::class, 'updateRisk'])->name('trading.positions.risk');
+        Route::post('/trading/positions/{position}/close', [\App\Http\Controllers\TradePositionController::class, 'close'])->name('trading.positions.close');
+        Route::post('/trading/positions/{position}/partial-close', [\App\Http\Controllers\TradePositionController::class, 'partialClose'])->name('trading.positions.partial-close');
+        Route::post('/trading/positions/{position}/reenter', [\App\Http\Controllers\TradePositionController::class, 'reenter'])->name('trading.positions.reenter');
     // Legacy /trading entry points are redirects only; V2 domains own the handlers.
     });
     

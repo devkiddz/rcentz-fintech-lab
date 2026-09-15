@@ -253,7 +253,21 @@
                     </div>
 
 
-                    <div class="mt-4 border-t border-border pt-4">
+                    <div class="mt-4 rounded-xl border border-border bg-muted/10 p-3">
+    <div class="flex items-center justify-between gap-3">
+        <div>
+            <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Risk management</p>
+            <h3 class="mt-1 text-xs font-semibold">Stop loss + take profit</h3>
+        </div>
+        <span class="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[9px] font-semibold text-emerald-600">First trigger wins</span>
+    </div>
+    <div class="mt-3 grid grid-cols-2 gap-2">
+        <div><label class="ui-label">Stop loss %</label><input name="stop_loss_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input w-full" placeholder="e.g. 2"></div>
+        <div><label class="ui-label">Take profit %</label><input name="take_profit_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input w-full" placeholder="e.g. 5"></div>
+    </div>
+    <p class="mt-2 text-[9px] leading-4 text-muted-foreground">Trade Horizon is the maximum exposure time. Stop loss, take profit, manual close or time expiry — whichever happens first — closes the position.</p>
+</div>
+<div class="mt-4 border-t border-border pt-4">
                         <div class="flex items-start justify-between gap-3">
                             <div>
                                 <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Trade horizon</p>

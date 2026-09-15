@@ -56,21 +56,17 @@ class CopyTradingController extends Controller
         return view('copy-trading.marketplace', compact('strategies', 'marketStatus'));
     }
 
-    public function myCopies(TradingPerformanceService $performance)
+    public function myCopies(TradingPerformanceService $performance, \App\Services\CopyRelationshipLifecycleService $lifecycle)
     {
+        // Due contracts settle their attributed positions before completion.
+        $lifecycle->expireDue();
+
         $relationships = CopyRelationship::with(['strategy.profile.user', 'provider'])
             ->where('follower_id', Auth::id())
             ->latest()
             ->get();
 
         foreach ($relationships as $relationship) {
-            if ($relationship->status === 'active' && $relationship->ends_at && $relationship->ends_at->isPast()) {
-                $relationship->update([
-                    'status' => 'completed',
-                    'completed_at' => $relationship->completed_at ?? now(),
-                ]);
-                $relationship->refresh();
-            }
 
             $relationship->performance_metrics = $performance->copyRelationship($relationship);
 

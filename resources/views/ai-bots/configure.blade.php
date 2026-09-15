@@ -103,6 +103,16 @@
                     </div>
                 </div>
 
+                <div class="rounded-xl border border-border bg-muted/10 p-4">
+                    <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Position risk</p>
+                    <h3 class="mt-1 text-sm font-semibold">Exit rules for bot-opened positions</h3>
+                    <div class="mt-3 grid gap-3 sm:grid-cols-3">
+                        <div><label class="ui-label">Stop Loss %</label><input name="stop_loss_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input" value="{{ old('stop_loss_percent',$bot?->stop_loss_percent) }}"></div>
+                        <div><label class="ui-label">Take Profit %</label><input name="take_profit_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input" value="{{ old('take_profit_percent',$bot?->take_profit_percent) }}"></div>
+                        <div><label class="ui-label">Max Holding (min)</label><input name="position_duration_minutes" type="number" min="1" max="43200" class="ui-input" value="{{ old('position_duration_minutes',$bot?->position_duration_minutes) }}"></div>
+                    </div>
+                    <p class="mt-2 text-xs text-muted-foreground">The first of stop loss, take profit or time expiry closes the bot-attributed position.</p>
+                </div>
                 <div>
                     <label class="ui-label">Allocation Cap</label>
                     <input name="max_total_spend" type="number" min="1" step="0.01" class="ui-input" value="{{ old('max_total_spend',$bot?->max_total_spend) }}">

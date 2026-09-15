@@ -301,6 +301,9 @@ class TradingBotController extends Controller
             'interval_minutes'=>'required|integer|min:5|max:10080',
             'max_daily_trades'=>'required|integer|min:1|max:24',
             'max_total_spend'=>'nullable|numeric|min:1|max:1000000',
+            'stop_loss_percent'=>'nullable|numeric|min:0.01|max:100',
+            'take_profit_percent'=>'nullable|numeric|min:0.01|max:100',
+            'position_duration_minutes'=>'nullable|integer|min:1|max:43200',
         ]);
 
         if(!$product->allow_user_trade_amount){

@@ -85,3 +85,6 @@ Schedule::call(fn () => app(CopyRelationshipLifecycleService::class)->expireDue(
     ->everyMinute()
     ->withoutOverlapping()
     ->onOneServer();
+
+// Position Engine: stop-loss, take-profit, time expiry and queued exits.
+Schedule::command('trade-positions:process')->everyMinute()->withoutOverlapping();
