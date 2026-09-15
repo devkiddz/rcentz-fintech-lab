@@ -62,13 +62,12 @@
 
             <div class="grid gap-5 md:grid-cols-2">
                 <div>
-                    <label class="ui-label">Access price</label>
+                    <label class="ui-label">Subscription price</label>
                     <input name="price" type="number" min="0" step="0.01" class="ui-input" value="{{ old('price', 0) }}" required>
                 </div>
                 <div>
                     <label class="ui-label">Billing period</label>
                     <select name="billing_period" class="ui-input">
-                        <option value="one_time" @selected(old('billing_period', 'one_time') === 'one_time')>One time</option>
                         <option value="monthly" @selected(old('billing_period') === 'monthly')>Monthly</option>
                         <option value="quarterly" @selected(old('billing_period') === 'quarterly')>Quarterly</option>
                         <option value="yearly" @selected(old('billing_period') === 'yearly')>Yearly</option>

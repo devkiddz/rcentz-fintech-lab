@@ -78,7 +78,11 @@ class FetchStockHistoryJob implements ShouldQueue
 
         // Get historical data from Yahoo Finance API
         $yahooFinanceService = app(YahooFinanceApiService::class);
-        $historicalData = $yahooFinanceService->getHistoricalData($symbol, $this->interval, 30);
+        // Yahoo's history endpoint expects lower-case interval tokens such as
+        // "1d". Keep our DB interval canonical ("1D") but normalize only the API
+        // request. Pull enough rows to support SMA20/50/200 when available.
+        $apiInterval = strtolower($this->interval);
+        $historicalData = $yahooFinanceService->getHistoricalData($symbol, $apiInterval, 220);
         
         if (!$historicalData || !isset($historicalData['body'])) {
             // info/warning logs suppressed; only log errors

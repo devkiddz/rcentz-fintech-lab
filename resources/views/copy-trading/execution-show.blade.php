@@ -1,33 +1,69 @@
 <x-user-layout>
 <x-slot name="header">Copy Execution</x-slot>
-<div class="ui-page max-w-3xl">
+<div class="ui-page max-w-[1280px]">
 <section class="ui-page-header">
-    <div><p class="ui-kicker">Copy Trading History</p><h1 class="ui-heading">{{ $execution->relationship?->strategy?->name }}</h1><p class="ui-lead">Concise mirrored-trade record and current mark-to-market preview.</p></div>
+    <div>
+        <p class="ui-kicker text-[10px]">Execution History</p>
+        <h1 class="ui-heading !text-xl">{{ $execution->relationship?->strategy?->name ?? 'Copied Strategy' }}</h1>
+        <p class="ui-lead !text-[13px]">Mirrored execution context with live market movement.</p>
+    </div>
     <a href="{{ route('copy-trading.executions') }}" class="ui-btn ui-btn-secondary">Back to History</a>
 </section>
 
-<div class="ui-panel p-6">
-    <div class="flex items-start justify-between gap-4">
-        <div><p class="text-xs text-muted-foreground">Execution #{{ $execution->id }}</p><h2 class="mt-1 text-xl font-semibold">{{ strtoupper($execution->action) }} {{ $execution->followerTrade?->stock?->symbol ?? $execution->providerTrade?->stock?->symbol }}</h2><p class="mt-1 text-sm text-muted-foreground">Provider: {{ $execution->relationship?->provider?->name }}</p></div>
-        <span class="ui-status">{{ ucfirst($execution->status) }}</span>
-    </div>
+@php
+    $trade = $execution->followerTrade;
+    $symbol = $trade?->stock?->symbol;
+@endphp
 
-    <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <div class="rounded-xl border border-border p-4"><p class="text-xs text-muted-foreground">Requested Amount</p><p class="mt-1 font-semibold">{{ format_currency($execution->requested_amount) }}</p></div>
-        <div class="rounded-xl border border-border p-4"><p class="text-xs text-muted-foreground">Executed Amount</p><p class="mt-1 font-semibold">{{ format_currency($execution->executed_amount) }}</p></div>
-        <div class="rounded-xl border border-border p-4"><p class="text-xs text-muted-foreground">Copy Percentage</p><p class="mt-1 font-semibold">{{ number_format((float)$execution->relationship?->copy_ratio_percent,0) }}%</p></div>
-        <div class="rounded-xl border border-border p-4"><p class="text-xs text-muted-foreground">Current Price</p><p class="mt-1 font-semibold">{{ format_currency($currentPrice) }}</p></div>
-        <div class="rounded-xl border border-border p-4"><p class="text-xs text-muted-foreground">Current P/L</p><p class="mt-1 font-semibold {{ $profitLoss<0?'text-red-600':($profitLoss>0?'text-green-600':'') }}">{{ $profitLoss>0?'+':'' }}{{ format_currency($profitLoss) }}</p></div>
-        <div class="rounded-xl border border-border p-4"><p class="text-xs text-muted-foreground">Current Return</p><p class="mt-1 font-semibold">{{ $returnPercent>0?'+':'' }}{{ number_format($returnPercent,2) }}%</p></div>
-    </div>
+<div class="grid gap-4 xl:grid-cols-[1.45fr_.55fr]">
+    <section class="ui-panel overflow-hidden">
+        <div class="flex items-center justify-between border-b border-border/70 px-4 py-3">
+            <div>
+                <p class="text-[10px] uppercase tracking-[.12em] text-muted-foreground">Copied execution #{{ $execution->id }}</p>
+                <h2 class="mt-1 text-base font-semibold">{{ strtoupper($trade?->type ?? 'trade') }} {{ $symbol }}</h2>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="rounded-full border border-border bg-muted px-2 py-1 text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">{{ str_replace('_',' ',$marketStatus ?? 'closed') }}</span>
+                <span class="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-600">{{ ucfirst($execution->status) }}</span>
+            </div>
+        </div>
 
-    @if($execution->failure_reason)
-        <div class="mt-5 rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">{{ $execution->failure_reason }}</div>
-    @endif
+        <div class="relative h-[300px] p-3">
+            @if(count($quoteHistory ?? []) >= 2)
+                @include('trading.partials.mini-analysis-card',['symbol'=>$symbol,'height'=>'h-[280px]'])
+            @else
+                <div class="absolute inset-0 flex items-center justify-center p-6">
+                    <div class="max-w-sm rounded-2xl border border-border bg-background/80 px-5 py-4 text-center">
+                        <p class="text-xs font-medium">Building live price history</p>
+                        <p class="mt-1 text-[10px] leading-4 text-muted-foreground">The copied execution chart appears as regular-session quotes are collected.</p>
+                    </div>
+                </div>
+            @endif
+        </div>
+    </section>
 
-    <div class="mt-5 border-t border-border pt-4 text-xs text-muted-foreground">
-        Executed {{ optional($execution->executed_at)->format('M d, Y · h:i A') ?? '—' }}
-    </div>
+    <aside class="ui-panel p-4">
+        <div class="grid grid-cols-2 gap-2">
+            @foreach([
+                ['Amount', format_currency($execution->executed_amount)],
+                ['Quantity', number_format((float)($trade?->quantity ?? 0),6)],
+                ['Entry', format_currency($trade?->price_per_share ?? 0)],
+                ['Current', format_currency($currentPrice)],
+                ['Current P/L', ($profitLoss > 0 ? '+' : '').format_currency($profitLoss)],
+                ['Current Return', ($returnPercent > 0 ? '+' : '').number_format($returnPercent,2).'%'],
+            ] as [$label,$value])
+                <div class="rounded-lg border border-border bg-muted/10 p-2.5">
+                    <p class="text-[8px] uppercase tracking-[.11em] text-muted-foreground">{{ $label }}</p>
+                    <p class="mt-1 text-[12px] font-semibold">{{ $value }}</p>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="mt-4 border-t border-border pt-3 text-[10px] text-muted-foreground">
+            <p>Provider: <span class="font-medium text-foreground">{{ $execution->relationship?->provider?->name }}</span></p>
+            <p class="mt-1">Executed: <span class="font-medium text-foreground">{{ optional($execution->executed_at)->format('M d, Y · H:i') }}</span></p>
+        </div>
+    </aside>
 </div>
 </div>
 </x-user-layout>

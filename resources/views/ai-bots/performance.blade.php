@@ -15,7 +15,7 @@
         ['wallet-minimal','Executed Volume',format_currency($summary['volume'])],
         ['badge-dollar-sign','Profit / Loss',($summary['profit_loss']>0?'+':'').format_currency($summary['profit_loss'])],
         ['trending-up','Return',($summary['return_percent']>0?'+':'').number_format($summary['return_percent'],2).'%'],
-        ['target','Win Rate',number_format($summary['win_rate'],1).'%'],
+        ['target','Positive Rate',number_format($summary['win_rate'],1).'%'],
     ] as [$icon,$label,$value])
         <div class="ui-panel p-3.5">
             <div class="flex items-center gap-2 text-[10px] uppercase tracking-[.13em] text-muted-foreground">
@@ -34,7 +34,12 @@
                 <i data-lucide="chart-candlestick" class="h-4 w-4 text-sky-500"></i>
                 <p class="text-[10px] font-semibold uppercase tracking-[.15em] text-muted-foreground">Stock Performance</p>
             </div>
-            <h2 class="mt-1 text-sm font-semibold">Live market performance & related intelligence</h2>
+            <div class="mt-1 flex items-center gap-2">
+            <h2 class="text-sm font-semibold">Live market performance & related intelligence</h2>
+            <span class="rounded-full border border-border bg-muted px-2 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-muted-foreground">
+                {{ str_replace('_', ' ', $marketStatus ?? 'closed') }}
+            </span>
+        </div>
         </div>
 
         @if($marketContext->count())
@@ -74,10 +79,24 @@
                 </div>
 
                 <div class="relative h-[300px] px-3 py-3">
-                    <div class="h-full w-full"
-                     data-rcentz-candles
-                     data-compact="true"
-                     data-quotes='@json($primaryBot["quotes"] ?? [])'></div>
+                    @if(count($primaryBot['quotes'] ?? []) >= 2)
+                        <div class="h-full w-full"
+                             data-rcentz-candles
+                             data-compact="true"
+                             data-quotes='@json($primaryBot["quotes"] ?? [])'></div>
+                    @else
+                        <div class="absolute inset-0 flex items-center justify-center p-6">
+                            <div class="max-w-sm rounded-2xl border border-border bg-background/80 px-5 py-4 text-center shadow-sm backdrop-blur">
+                                <div class="mx-auto flex h-8 w-8 items-center justify-center rounded-full border border-sky-500/20 bg-sky-500/10 text-sky-500">
+                                    <i data-lucide="chart-no-axes-combined" class="h-4 w-4"></i>
+                                </div>
+                                <p class="mt-3 text-xs font-medium">Building live price history</p>
+                                <p class="mt-1 text-[10px] leading-4 text-muted-foreground">
+                                    The chart appears as regular-session market quotes are collected.
+                                </p>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <div class="grid grid-cols-3 gap-2 border-t border-border/70 p-3">

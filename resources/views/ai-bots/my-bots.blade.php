@@ -75,24 +75,7 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
             </div>
         </div>
 
-        <div class="relative h-[150px] px-2 py-2 sm:h-[165px]">
-            <div class="h-full w-full"
-                 data-rcentz-candles
-                 data-compact="true"
-                 data-quotes='@json($chart["quotes"] ?? [])'
-                 data-executions='@json($chart["executions"] ?? [])'
-                 data-average-entry="{{ $chart['average_entry'] ?? '' }}"></div>
-
-            @if(count($chart['quotes'] ?? []) < 2)
-                <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    <div class="rounded-lg border border-border bg-background/90 px-4 py-3 text-center shadow-sm">
-                        <p class="text-xs font-medium">Building live price history</p>
-                        <p class="mt-1 text-[10px] text-muted-foreground">The chart fills as Finnhub quotes arrive from the scheduler.</p>
-                    </div>
-                </div>
-            @endif
-        </div>
-    </section>
+        <div class="p-2">@include('trading.partials.mini-analysis-card',['symbol'=>$product->stock->symbol,'height'=>'h-[155px]'])</div></section>
 
     <section class="mt-3 overflow-hidden rounded-xl border border-border/70 bg-muted/10" data-bot-tabs>
         <div class="flex items-center gap-1 border-b border-border/70 px-2.5 pt-2.5">
@@ -266,7 +249,145 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 @endonce
 
+@once
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const NS = 'http://www.w3.org/2000/svg';
 
+    const make = (name, attrs = {}) => {
+        const el = document.createElementNS(NS, name);
+        Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+        return el;
+    };
 
-@include('ai-bots.partials.lightweight-charts')
+    document.querySelectorAll('[data-bot-price-chart]').forEach((svg) => {
+        let payload = {};
+        try { payload = JSON.parse(svg.dataset.chart || '{}'); } catch (_) { return; }
+
+        const quotes = Array.isArray(payload.quotes) ? payload.quotes.filter(q => Number.isFinite(Number(q.price))) : [];
+        const executions = Array.isArray(payload.executions) ? payload.executions.filter(e => Number.isFinite(Number(e.price))) : [];
+        if (!quotes.length) return;
+
+        const W = 760, H = 220;
+        const pad = { l: 42, r: 22, t: 18, b: 30 };
+
+        const values = quotes.map(q => Number(q.price));
+        if (Number.isFinite(Number(payload.average_entry))) values.push(Number(payload.average_entry));
+        executions.forEach(e => values.push(Number(e.price)));
+
+        let min = Math.min(...values);
+        let max = Math.max(...values);
+        if (min === max) { min *= .995; max *= 1.005; }
+        const range = Math.max(max - min, 0.01);
+        min -= range * .08;
+        max += range * .08;
+
+        const quoteTimes = quotes.map(q => Date.parse(q.time)).filter(Number.isFinite);
+        const execTimes = executions.map(e => Date.parse(e.time)).filter(Number.isFinite);
+        const allTimes = [...quoteTimes, ...execTimes];
+        let tMin = allTimes.length ? Math.min(...allTimes) : 0;
+        let tMax = allTimes.length ? Math.max(...allTimes) : 1;
+        if (tMin === tMax) tMax = tMin + 1;
+
+        const x = (time, fallbackIndex = 0) => {
+            const parsed = Date.parse(time);
+            if (Number.isFinite(parsed)) return pad.l + ((parsed - tMin) / (tMax - tMin)) * (W - pad.l - pad.r);
+            const denom = Math.max(quotes.length - 1, 1);
+            return pad.l + (fallbackIndex / denom) * (W - pad.l - pad.r);
+        };
+        const y = (price) => pad.t + ((max - Number(price)) / (max - min)) * (H - pad.t - pad.b);
+
+        // Horizontal reference grid.
+        const grid = svg.querySelector('[data-grid]');
+        [0, .25, .5, .75, 1].forEach((p) => {
+            const yy = pad.t + p * (H - pad.t - pad.b);
+            grid.appendChild(make('line', {
+                x1: pad.l, y1: yy, x2: W - pad.r, y2: yy,
+                stroke: 'currentColor', 'stroke-opacity': '.10', 'stroke-width': '1'
+            }));
+        });
+
+        const pts = quotes.map((q, i) => [x(q.time, i), y(q.price)]);
+        if (pts.length === 1) {
+            pts.unshift([pad.l, pts[0][1]]);
+            pts.push([W - pad.r, pts[1][1]]);
+        }
+
+        const lineD = pts.map((p, i) => `${i ? 'L' : 'M'} ${p[0].toFixed(2)} ${p[1].toFixed(2)}`).join(' ');
+        svg.querySelector('[data-price-line]').setAttribute('d', lineD);
+
+        const areaD = `${lineD} L ${pts[pts.length-1][0].toFixed(2)} ${(H-pad.b).toFixed(2)} L ${pts[0][0].toFixed(2)} ${(H-pad.b).toFixed(2)} Z`;
+        svg.querySelector('[data-price-area]').setAttribute('d', areaD);
+
+        if (Number.isFinite(Number(payload.average_entry))) {
+            const ey = y(Number(payload.average_entry));
+            svg.querySelector('[data-entry-line]').setAttribute('d', `M ${pad.l} ${ey} L ${W-pad.r} ${ey}`);
+        }
+
+        const markers = svg.querySelector('[data-markers]');
+        executions.forEach((e, i) => {
+            const cx = x(e.time, i);
+            const cy = y(e.price);
+            const isSell = String(e.action).toLowerCase() === 'sell';
+            const circle = make('circle', {
+                cx, cy, r: 5.5,
+                fill: isSell ? '#ef4444' : '#10b981',
+                stroke: 'currentColor', 'stroke-width': '2',
+                class: 'text-background'
+            });
+            const title = make('title');
+            title.textContent = `${isSell ? 'Sell' : 'Buy'} ${e.label || ''} · $${Number(e.price).toFixed(2)} · $${Number(e.amount || 0).toFixed(2)}`;
+            circle.appendChild(title);
+            markers.appendChild(circle);
+        });
+
+        // Current point pulse-style ring.
+        const last = pts[pts.length - 1];
+        markers.appendChild(make('circle', {
+            cx: last[0], cy: last[1], r: 8,
+            fill: 'none', stroke: '#0ea5e9', 'stroke-opacity': '.30', 'stroke-width': '5'
+        }));
+        markers.appendChild(make('circle', {
+            cx: last[0], cy: last[1], r: 4.5,
+            fill: '#0ea5e9'
+        }));
+
+        const labels = svg.querySelector('[data-labels]');
+        const labelStyle = {
+            fill: 'currentColor',
+            'font-size': '11',
+            'font-family': 'ui-sans-serif, system-ui, sans-serif'
+        };
+
+        // Price labels: high / low / current.
+        [
+            { price: max, text: `$${max.toFixed(2)}`, yy: pad.t + 3 },
+            { price: min, text: `$${min.toFixed(2)}`, yy: H - pad.b },
+        ].forEach(item => {
+            const t = make('text', { x: 0, y: item.yy, ...labelStyle, opacity: '.55' });
+            t.textContent = item.text;
+            labels.appendChild(t);
+        });
+
+        const current = Number(payload.current);
+        if (Number.isFinite(current)) {
+            const t = make('text', { x: W - pad.r, y: Math.max(14, y(current) - 8), ...labelStyle, 'text-anchor': 'end' });
+            t.textContent = `$${current.toFixed(2)}`;
+            labels.appendChild(t);
+        }
+
+        if (quotes.length) {
+            const first = quotes[0], lastQ = quotes[quotes.length - 1];
+            const left = make('text', { x: pad.l, y: H - 6, ...labelStyle, opacity: '.55' });
+            left.textContent = first.label || '';
+            labels.appendChild(left);
+            const right = make('text', { x: W - pad.r, y: H - 6, ...labelStyle, opacity: '.55', 'text-anchor': 'end' });
+            right.textContent = lastQ.label || '';
+            labels.appendChild(right);
+        }
+    });
+});
+</script>
+@endonce
+
 </x-user-layout>

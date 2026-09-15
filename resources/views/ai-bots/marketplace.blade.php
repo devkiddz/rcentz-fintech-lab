@@ -50,7 +50,16 @@
                 </span>
             </div>
             <div class="relative h-[110px] px-2 pb-2">
-                <div class="h-full w-full" data-rcentz-sparkline data-quotes='@json($product->quote_history ?? [])'></div>
+                @if(count($product->quote_history ?? []) >= 2)
+                    @include('trading.partials.mini-analysis-card',['symbol'=>$stock->symbol,'height'=>'h-[110px]'])
+                @else
+                    <div class="absolute inset-0 flex items-center justify-center px-3 pb-2">
+                        <div class="text-center">
+                            <p class="text-[10px] font-medium text-foreground">Building live price history</p>
+                            <p class="mt-1 text-[9px] text-muted-foreground">Waiting for regular-session quotes.</p>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
 

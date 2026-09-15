@@ -13,6 +13,9 @@ use App\Models\StockPriceHistory;
 use App\Services\NotificationService;
 use App\Services\FinancialActivityService;
 use App\Services\CopyTradingService;
+use App\Services\StockTradePlanService;
+use App\Services\StockAnalysisService;
+use App\Models\StockTradePlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -36,16 +39,17 @@ class TradingController extends Controller
             ->where('stock_id', $stock->id)
             ->first();
 
-        // Get chart data for the stock
+        // Legacy chart payload retained while the new analysis engine owns the workstation chart.
         $chartData = $this->getStockChartData($stock->symbol);
+        $analysis = app(StockAnalysisService::class)->forStock($stock);
 
-        return view('trading.buy', compact('stock', 'wallet', 'userHolding', 'chartData'));
+        return view('trading.buy', compact('stock', 'wallet', 'userHolding', 'chartData', 'analysis'));
     }
 
     /**
      * Execute buy stock
      */
-    public function executeBuy(Request $request, Stock $stock, FinancialActivityService $activity, CopyTradingService $copyTrading)
+    public function executeBuy(Request $request, Stock $stock, FinancialActivityService $activity, CopyTradingService $copyTrading, StockTradePlanService $tradePlans)
     {
         if (!$stock->is_active) {
             abort(404);
@@ -53,6 +57,8 @@ class TradingController extends Controller
 
         $request->validate([
             'quantity' => 'required|numeric|min:1|max:10000',
+            'plan_duration_minutes' => 'nullable|integer|min:0|max:10080',
+            'plan_mode' => 'nullable|in:reminder,automatic',
         ]);
 
         $user = Auth::user();
@@ -151,6 +157,7 @@ class TradingController extends Controller
             // Provider trades are mirrored only after the provider trade commits.
             // A follower failure can never roll back the provider's own trade.
             try { $copyTrading->mirrorCompletedTrade($stockTransaction); } catch (\Throwable $e) { \Log::warning('Copy mirroring failed after provider buy', ['trade_id' => $stockTransaction->id, 'error' => $e->getMessage()]); }
+            $tradePlans->createForTransaction($stockTransaction, $request->only(['plan_duration_minutes','plan_mode']));
 
             return redirect()->route('trading.portfolio')
                 ->with('success', "Successfully purchased {$quantity} shares of {$stock->symbol} for \${$totalCost}.");
@@ -176,16 +183,17 @@ class TradingController extends Controller
                 ->with('error', 'You do not have any holdings in this stock.');
         }
         
-        // Get chart data for 1M period by default
+        // Legacy chart payload retained while the new analysis engine owns the workstation chart.
         $chartData = $this->getStockChartData($stock->symbol, '1m');
+        $analysis = app(StockAnalysisService::class)->forStock($stock);
         
-        return view('trading.sell', compact('stock', 'wallet', 'holding', 'chartData'));
+        return view('trading.sell', compact('stock', 'wallet', 'holding', 'chartData', 'analysis'));
     }
 
     /**
      * Execute sell stock
      */
-    public function executeSell(Request $request, Stock $stock, FinancialActivityService $activity, CopyTradingService $copyTrading)
+    public function executeSell(Request $request, Stock $stock, FinancialActivityService $activity, CopyTradingService $copyTrading, StockTradePlanService $tradePlans)
     {
         if (!$stock->is_active) {
             abort(404);
@@ -203,6 +211,8 @@ class TradingController extends Controller
 
         $request->validate([
             'quantity' => 'required|numeric|min:1|max:' . $holding->quantity,
+            'plan_duration_minutes' => 'nullable|integer|min:0|max:10080',
+            'plan_mode' => 'nullable|in:reminder,automatic',
         ]);
 
         $quantityToSell = $request->quantity;
@@ -282,6 +292,7 @@ class TradingController extends Controller
             DB::commit();
 
             try { $copyTrading->mirrorCompletedTrade($stockTransaction); } catch (\Throwable $e) { \Log::warning('Copy mirroring failed after provider sale', ['trade_id' => $stockTransaction->id, 'error' => $e->getMessage()]); }
+            $tradePlans->createForTransaction($stockTransaction, $request->only(['plan_duration_minutes','plan_mode']));
 
             return redirect()->route('trading.portfolio')
                 ->with('success', "Successfully sold {$quantityToSell} shares of {$stock->symbol} for \${$netAmount}.");
@@ -311,6 +322,12 @@ class TradingController extends Controller
         // Sort holdings by current value
         $holdings = $holdings->sortByDesc('current_value')->values();
 
+        $tradePlans = StockTradePlan::with('stock')
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['active','due'])
+            ->orderBy('due_at')
+            ->get();
+
         $recentTransactions = $user->stockTransactions()
             ->with('stock')
             ->orderBy('created_at', 'desc')
@@ -323,7 +340,8 @@ class TradingController extends Controller
             'totalCurrentValue',
             'totalGainLoss',
             'totalGainLossPercentage',
-            'recentTransactions'
+            'recentTransactions',
+            'tradePlans'
         ));
     }
 

@@ -1,409 +1,432 @@
 <x-user-layout>
-    <x-slot name="header">
-        Buy {{ $stock->symbol }}
-    </x-slot>
+<x-slot name="header">Buy {{ $stock->symbol }}</x-slot>
 
-    <div class="max-w-4xl mx-auto">
-        <!-- Enhanced Header -->
-        <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
-            <!-- Background Pattern -->
-            <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-32 h-32 bg-card rounded-full -translate-y-16 translate-x-16"></div>
-                <div class="absolute bottom-0 left-0 w-16 h-16 bg-card rounded-full translate-y-8 -translate-x-8"></div>
+@php
+    $availableBalance = (float) $wallet->available_balance;
+    $price = (float) $stock->current_price;
+    $latestQuote = App\Models\StockQuote::getLatestQuote($stock->symbol);
+@endphp
+
+<div class="ui-page max-w-[1280px]">
+    <section class="ui-page-header">
+        <div>
+            <div class="flex items-center gap-2">
+                <p class="ui-kicker text-[10px]">Stock Order</p>
+                <span class="rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-1 text-[9px] font-semibold text-sky-600">{{ $stock->symbol }}</span>
             </div>
-            
-            <div class="relative z-10">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                    <div class="mb-4 lg:mb-0 lg:flex-1">
-                        <h1 class="text-xl font-light mb-1">Buy {{ $stock->symbol }}</h1>
-                        <p class="text-tesla-100 dark:text-gray-300 text-sm">{{ $stock->company_name }} • {{ $stock->sector }}</p>
-                    </div>
-                    
-                    <!-- Enhanced Stock Stats Card -->
-                    <div class="bg-card bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-64">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-xs text-tesla-100 dark:text-gray-300 mb-1">Current Price</p>
-                                <p class="text-lg font-light">{{ currency_symbol() }}{{ number_format($stock->current_price, 2) }}</p>
-                                <p class="text-xs {{ $stock->change_percentage >= 0 ? 'text-green-400' : 'text-red-400' }}">
-                                    {{ $stock->change_percentage >= 0 ? '+' : '' }}{{ number_format($stock->change_percentage, 2) }}%
-                                </p>
-                            </div>
-                            <div class="w-10 h-10 flex items-center justify-center">
-                                @if($stock->logo_url)
-                                    <img src="{{ $stock->logo_url }}" alt="{{ $stock->symbol }}" class="w-8 h-8 rounded">
-                                @else
-                                    <i data-lucide="trending-up" class="w-5 h-5 text-white"></i>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <h1 class="ui-heading !text-2xl">Buy {{ $stock->company_name }}</h1>
+            <p class="ui-lead !text-[13px]">{{ $stock->sector }} · Live execution at the current stored market price.</p>
         </div>
 
-        <!-- Stock Chart Widget -->
-        <div class="bg-card rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-medium text-gray-900">{{ $stock->symbol }} Price Chart</h3>
-                <div class="flex space-x-2">
-                    <button type="button" class="chart-period-btn px-3 py-1 text-xs rounded-lg border border-border bg-foreground text-background" data-period="1m">1M</button>
-                </div>
-            </div>
-            <div class="relative">
-                <canvas id="stockChart" class="w-full h-64"></canvas>
-            </div>
-        </div>
-
-        <!-- Enhanced Buy Form -->
-        <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
-            <form action="{{ route('trading.execute-buy', $stock) }}" method="POST" class="space-y-6">
-                @csrf
-                
-                <!-- Quantity Input -->
+        <div class="ui-panel min-w-[240px] p-3.5">
+            <div class="flex items-end justify-between gap-4">
                 <div>
-                    <label for="quantity" class="block text-sm font-medium text-foreground mb-2">Number of Shares</label>
-                    <div class="relative">
-                        <input type="number" 
-                               id="quantity" 
-                               name="quantity" 
-                               step="1" 
-                               min="1" 
-                               max="10000"
-                               value="{{ old('quantity') }}"
-                               class="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
-                               placeholder="0"
-                               required>
-                    </div>
-                    <p class="text-xs text-muted-foreground mt-1">Maximum shares: 10,000</p>
-                    @error('quantity')
-                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                    @enderror
+                    <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Current price</p>
+                    <p class="mt-1 text-2xl font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format($price,2) }}</p>
                 </div>
-
-                <!-- Stock Information -->
-                <div class="bg-gradient-to-br from-tesla-50 to-tesla-100 rounded-lg p-4 border border-tesla-200">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-xs font-medium text-tesla-800">Stock Information</span>
-                        <div class="w-8 h-8 flex items-center justify-center">
-                            @if($stock->logo_url)
-                                <img src="{{ $stock->logo_url }}" alt="{{ $stock->symbol }}" class="w-6 h-6 rounded">
-                            @else
-                                <i data-lucide="info" class="w-4 h-4 text-tesla-600"></i>
-                            @endif
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-xs text-tesla-700 mb-1">Current Price</p>
-                            <p class="text-sm font-medium text-tesla-800">{{ currency_symbol() }}{{ number_format($stock->current_price, 2) }}</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-tesla-700 mb-1">Today's Change</p>
-                            <p class="text-sm font-medium {{ $stock->change_percentage >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                {{ $stock->change_percentage >= 0 ? '+' : '' }}{{ number_format($stock->change_percentage, 2) }}%
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-tesla-700 mb-1">Volume</p>
-                            <p class="text-sm font-medium text-tesla-800">{{ number_format($stock->volume) }}</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-tesla-700 mb-1">Market Cap</p>
-                            <p class="text-sm font-medium text-tesla-800">{{ $stock->market_cap ? '$' . number_format($stock->market_cap) : 'N/A' }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Analyst Recommendations -->
-                @php
-                    $latestQuote = App\Models\StockQuote::getLatestQuote($stock->symbol);
-                @endphp
-                @if($latestQuote && $latestQuote->total_recommendations > 0)
-                <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-xs font-medium text-purple-800">Analyst Recommendations</span>
-                        <div class="w-8 h-8 flex items-center justify-center">
-                            <i data-lucide="users" class="w-4 h-4 text-purple-600"></i>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs text-purple-700">Consensus</span>
-                            <span class="text-sm font-medium {{ $latestQuote->recommendation_color }}">
-                                {{ $latestQuote->recommendation_label }}
-                            </span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs text-purple-700">Buy Rating</span>
-                            <span class="text-sm font-medium text-purple-800">{{ $latestQuote->recommendation_percentage }}%</span>
-                        </div>
-                        <div class="w-full bg-purple-200 rounded-full h-2">
-                            <div class="bg-purple-600 h-2 rounded-full" style="width: {{ $latestQuote->recommendation_percentage }}%"></div>
-                        </div>
-                        <div class="grid grid-cols-5 gap-2 text-xs text-purple-700">
-                            <div class="text-center">
-                                <div class="font-medium">Strong Buy</div>
-                                <div>{{ $latestQuote->strong_buy }}</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="font-medium">Buy</div>
-                                <div>{{ $latestQuote->buy }}</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="font-medium">Hold</div>
-                                <div>{{ $latestQuote->hold }}</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="font-medium">Sell</div>
-                                <div>{{ $latestQuote->sell }}</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="font-medium">Strong Sell</div>
-                                <div>{{ $latestQuote->strong_sell }}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                @endif
-
-                <!-- Enhanced Calculation Breakdown -->
-                <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-xs font-medium text-green-800">Purchase Breakdown</span>
-                        <div class="w-8 h-8 flex items-center justify-center">
-                            <i data-lucide="calculator" class="w-4 h-4 text-green-600"></i>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <div class="flex justify-between">
-                            <span class="text-sm text-green-700">Price per Share</span>
-                            <span class="text-sm font-medium text-green-800">{{ currency_symbol() }}{{ number_format($stock->current_price, 2) }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-sm text-green-700">Number of Shares</span>
-                            <span class="text-sm font-medium text-green-800" id="shares-display">0</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-sm text-green-700">Subtotal</span>
-                            <span class="text-sm font-medium text-green-800" id="subtotal-display">{{ currency_symbol() }}0.00</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-sm text-green-700">Trading Fee</span>
-                            <span class="text-sm font-medium text-green-800">{{ currency_symbol() }}0.00</span>
-                        </div>
-                        <hr class="border-green-300">
-                        <div class="flex justify-between">
-                            <span class="text-sm font-medium text-green-800">Total Cost</span>
-                            <span class="text-sm font-bold text-green-800" id="total-display">{{ currency_symbol() }}0.00</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Wallet Balance -->
-                <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 border border-border">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-xs font-medium text-foreground">Wallet Balance</span>
-                        <div class="w-8 h-8 flex items-center justify-center">
-                            <i data-lucide="wallet" class="w-4 h-4 text-muted-foreground"></i>
-                        </div>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm text-foreground">Available Funds</span>
-                        <span class="text-sm font-medium text-foreground">{{ currency_symbol() }}{{ number_format($wallet->balance, 2) }}</span>
-                    </div>
-                    <div class="flex justify-between items-center mt-1">
-                        <span class="text-sm text-foreground">After Purchase</span>
-                        <span class="text-sm font-medium text-foreground" id="remaining-display">{{ currency_symbol() }}{{ number_format($wallet->balance, 2) }}</span>
-                    </div>
-                </div>
-
-                <!-- Current Holdings -->
-                @if($userHolding)
-                <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="text-xs font-medium text-orange-800">Current Holdings</span>
-                        <div class="w-8 h-8 flex items-center justify-center">
-                            <i data-lucide="pie-chart" class="w-4 h-4 text-orange-600"></i>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-xs text-orange-700 mb-1">Shares Owned</p>
-                            <p class="text-sm font-medium text-orange-800">{{ number_format($userHolding->quantity) }}</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-orange-700 mb-1">Average Price</p>
-                            <p class="text-sm font-medium text-orange-800">{{ currency_symbol() }}{{ number_format($userHolding->average_buy_price, 2) }}</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-orange-700 mb-1">Total Value</p>
-                            <p class="text-sm font-medium text-orange-800">{{ currency_symbol() }}{{ number_format($userHolding->current_value, 2) }}</p>
-                        </div>
-                        <div>
-                            <p class="text-xs text-orange-700 mb-1">Gain/Loss</p>
-                            <p class="text-sm font-medium {{ $userHolding->unrealized_gain_loss >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                {{ $userHolding->unrealized_gain_loss >= 0 ? '+' : '' }}{{ currency_symbol() }}{{ number_format($userHolding->unrealized_gain_loss, 2) }}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                @endif
-
-                <!-- Submit Button -->
-                <button type="submit" 
-                        class="w-full bg-foreground text-background py-3 px-6 rounded-lg font-medium hover:opacity-90 transition-colors duration-200 flex items-center justify-center">
-                    <i data-lucide="shopping-cart" class="w-4 h-4 mr-2"></i>
-                    Buy Shares
-                </button>
-            </form>
+                <p class="text-xs font-semibold {{ $stock->change_percentage >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                    {{ $stock->change_percentage >= 0 ? '+' : '' }}{{ number_format($stock->change_percentage,2) }}%
+                </p>
+            </div>
         </div>
+    </section>
+
+
+    <div class="mb-4">
+        @include('trading.partials.analysis-chart',['stock'=>$stock,'analysis'=>$analysis,'chartHeight'=>'h-[300px] sm:h-[360px] lg:h-[420px]'])
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize stock chart
-            const chartData = @json($chartData ?? []);
-            const ctx = document.getElementById('stockChart').getContext('2d');
-            let stockChart = new Chart(ctx, {
-                type: 'line',
-                data: chartData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        intersect: false,
-                        mode: 'index',
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                            titleColor: 'white',
-                            bodyColor: 'white',
-                            borderColor: 'rgba(255, 255, 255, 0.1)',
-                            borderWidth: 1,
-                            callbacks: {
-                                label: function(context) {
-                                    return '$' + context.parsed.y.toFixed(2);
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            display: true,
-                            grid: {
-                                display: false
-                            },
-                            ticks: {
-                                color: '#6B7280',
-                                font: {
-                                    size: 10
-                                }
-                            }
-                        },
-                        y: {
-                            display: true,
-                            position: 'right',
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            ticks: {
-                                color: '#6B7280',
-                                font: {
-                                    size: 10
-                                },
-                                callback: function(value) {
-                                    return '$' + value.toFixed(2);
-                                }
-                            }
-                        }
-                    },
-                    elements: {
-                        point: {
-                            radius: 0,
-                            hoverRadius: 4
-                        },
-                        line: {
-                            borderWidth: 2,
-                            tension: 0.4
-                        }
-                    }
-                }
-            });
+    <form action="{{ route('trading.execute-buy',$stock) }}" method="POST" id="buy-stock-form" class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_390px]">
+        @csrf
 
-            // Chart period button (only 1M available)
-            const periodButton = document.querySelector('.chart-period-btn');
-            if (periodButton) {
-                periodButton.addEventListener('click', function() {
-                    // Fetch chart data for 1M period
-                    fetchChartData('1m');
-                });
-            }
+        <div class="space-y-4">
+            <section class="ui-panel overflow-hidden">
+                <div class="border-b border-border px-4 py-3">
+                    <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Order composer</p>
+                    <h2 class="mt-1 text-sm font-semibold">Choose your position size</h2>
+                </div>
 
-            // Function to fetch chart data
-            function fetchChartData(period) {
-                const symbol = '{{ $stock->symbol }}';
-                
-                // Show loading state
-                const canvas = document.getElementById('stockChart');
-                const ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                // Fetch data from server
-                fetch(`/api/stocks/${symbol}/chart-data?period=${period}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success && data.chartData) {
-                            // Update chart with new data
-                            stockChart.data = data.chartData;
-                            stockChart.update();
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching chart data:', error);
-                    });
-            }
+                <div class="p-4">
+                    <label for="quantity" class="ui-label !text-[10px]">Number of shares</label>
 
-            // Original calculation logic
-            const quantityInput = document.getElementById('quantity');
-            const sharesDisplay = document.getElementById('shares-display');
-            const subtotalDisplay = document.getElementById('subtotal-display');
-            const totalDisplay = document.getElementById('total-display');
-            const remainingDisplay = document.getElementById('remaining-display');
-            
-            const currentPrice = {{ $stock->current_price }};
-            const walletBalance = {{ $wallet->balance }};
-            
-            function updateCalculations() {
-                const quantity = parseInt(quantityInput.value) || 0;
-                const subtotal = quantity * currentPrice;
-                const fee = 0; // No trading fee for now
-                const total = subtotal + fee;
-                const remaining = walletBalance - total;
-                
-                sharesDisplay.textContent = quantity.toLocaleString();
-                subtotalDisplay.textContent = '$' + subtotal.toFixed(2);
-                totalDisplay.textContent = '$' + total.toFixed(2);
-                remainingDisplay.textContent = '$' + remaining.toFixed(2);
-                
-                // Update button state
-                const submitButton = document.querySelector('button[type="submit"]');
-                if (quantity <= 0 || total > walletBalance) {
-                    submitButton.disabled = true;
-                    submitButton.classList.add('opacity-50', 'cursor-not-allowed');
-                } else {
-                    submitButton.disabled = false;
-                    submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                }
-            }
-            
-            quantityInput.addEventListener('input', updateCalculations);
-            updateCalculations();
+                    <div class="grid gap-3 sm:grid-cols-[1fr_220px]">
+                        <div>
+                            <input
+                                id="quantity"
+                                name="quantity"
+                                type="number"
+                                min="1"
+                                max="10000"
+                                step="1"
+                                value="{{ old('quantity',1) }}"
+                                class="ui-input !h-14 !text-lg !font-semibold"
+                                placeholder="0"
+                                required
+                            >
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                @foreach([1,5,10,25] as $quick)
+                                    <button type="button" data-quick-shares="{{ $quick }}" class="ui-btn ui-btn-secondary !h-7 !px-2.5 !text-[10px]">{{ $quick }}</button>
+                                @endforeach
+                                <span class="ml-auto self-center text-[9px] text-muted-foreground">Maximum 10,000 shares</span>
+                            </div>
+                            @error('quantity')
+                                <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="rounded-xl border border-border bg-muted/20 p-3">
+                            <p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">Live value</p>
+                            <p id="inline-order-value" class="mt-1 text-xl font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format($price,2) }}</p>
+                            <div class="mt-2 flex items-center justify-between text-[10px]">
+                                <span class="text-muted-foreground">Price / share</span>
+                                <span class="font-medium tabular-nums">{{ currency_symbol() }}{{ number_format($price,2) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="ui-panel p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Market snapshot</p>
+                        <h2 class="mt-1 text-sm font-semibold">{{ $stock->symbol }} trading context</h2>
+                    </div>
+                    <i data-lucide="chart-no-axes-combined" class="h-4 w-4 text-sky-500"></i>
+                </div>
+
+                <div class="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                    @foreach([
+                        ['Current Price', currency_symbol().number_format($price,2)],
+                        ['Day Change', ($stock->change_percentage >= 0 ? '+' : '').number_format($stock->change_percentage,2).'%'],
+                        ['Volume', number_format((float)$stock->volume)],
+                        ['Market Cap', $stock->market_cap ? currency_symbol().number_format((float)$stock->market_cap) : 'N/A'],
+                    ] as [$label,$value])
+                        <div class="rounded-lg border border-border bg-muted/10 p-2.5">
+                            <p class="text-[8px] uppercase tracking-[.11em] text-muted-foreground">{{ $label }}</p>
+                            <p class="mt-1 text-[11px] font-semibold tabular-nums">{{ $value }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+
+            @if($latestQuote && $latestQuote->total_recommendations > 0)
+            <section class="ui-panel p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Analyst sentiment</p>
+                        <h2 class="mt-1 text-sm font-semibold">{{ $latestQuote->recommendation_label }}</h2>
+                    </div>
+                    <span class="rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-1 text-[10px] font-semibold text-violet-600">
+                        {{ number_format($latestQuote->recommendation_percentage,1) }}% buy rating
+                    </span>
+                </div>
+
+                <div class="mt-4 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div class="h-full bg-violet-500" style="width:{{ min(100,$latestQuote->recommendation_percentage) }}%"></div>
+                </div>
+
+                <div class="mt-3 grid grid-cols-5 gap-2">
+                    @foreach([
+                        ['Strong Buy',$latestQuote->strong_buy],
+                        ['Buy',$latestQuote->buy],
+                        ['Hold',$latestQuote->hold],
+                        ['Sell',$latestQuote->sell],
+                        ['Strong Sell',$latestQuote->strong_sell],
+                    ] as [$label,$value])
+                        <div class="rounded-lg border border-border p-2 text-center">
+                            <p class="text-[8px] text-muted-foreground">{{ $label }}</p>
+                            <p class="mt-1 text-xs font-semibold">{{ $value }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+            @endif
+
+
+            <section class="ui-panel p-4">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Analysis & signal</p>
+                        <h2 class="mt-1 text-sm font-semibold">What the stored market data says</h2>
+                    </div>
+                    <span class="rounded-full border px-2 py-1 text-[9px] font-semibold {{ $analysis['trend']==='Bullish' ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600' : ($analysis['trend']==='Bearish' ? 'border-red-500/20 bg-red-500/10 text-red-600' : 'border-border bg-muted text-muted-foreground') }}">
+                        {{ $analysis['trend'] }}
+                    </span>
+                </div>
+
+                <div class="mt-4 grid grid-cols-2 gap-2.5 md:grid-cols-4">
+                    @foreach([
+                        ['Momentum',$analysis['momentum_label'],($analysis['momentum_percent']>=0?'+':'').number_format($analysis['momentum_percent'],2).'%'],
+                        ['Support',$analysis['support'] ? currency_symbol().number_format($analysis['support'],2) : '—','Recent range'],
+                        ['Resistance',$analysis['resistance'] ? currency_symbol().number_format($analysis['resistance'],2) : '—','Recent range'],
+                        ['Risk / Reward',$analysis['risk_reward'],'Derived from range'],
+                    ] as [$label,$value,$meta])
+                        <div class="rounded-xl border border-border bg-muted/10 p-2.5">
+                            <p class="text-[8px] uppercase tracking-[.11em] text-muted-foreground">{{ $label }}</p>
+                            <p class="mt-1 text-xs font-semibold">{{ $value }}</p>
+                            <p class="mt-1 text-[9px] text-muted-foreground">{{ $meta }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+
+            @if($userHolding)
+            <section class="ui-panel p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Existing position</p>
+                        <h2 class="mt-1 text-sm font-semibold">Current {{ $stock->symbol }} holding</h2>
+                    </div>
+                    <i data-lucide="pie-chart" class="h-4 w-4 text-amber-500"></i>
+                </div>
+
+                <div class="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                    @foreach([
+                        ['Shares', number_format((float)$userHolding->quantity,6)],
+                        ['Average Price', currency_symbol().number_format((float)$userHolding->average_buy_price,2)],
+                        ['Current Value', currency_symbol().number_format((float)$userHolding->current_value,2)],
+                        ['Unrealized P/L', (($userHolding->unrealized_gain_loss >= 0 ? '+' : '').currency_symbol().number_format((float)$userHolding->unrealized_gain_loss,2))],
+                    ] as [$label,$value])
+                        <div class="rounded-lg border border-border bg-muted/10 p-2.5">
+                            <p class="text-[8px] uppercase tracking-[.11em] text-muted-foreground">{{ $label }}</p>
+                            <p class="mt-1 text-[11px] font-semibold">{{ $value }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+            @endif
+        </div>
+
+        <aside class="space-y-4">
+            <section class="ui-panel overflow-hidden">
+                <div class="border-b border-border px-4 py-3">
+                    <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Live order calculator</p>
+                    <h2 class="mt-1 text-sm font-semibold">Purchase preview</h2>
+                </div>
+
+                <div class="p-4">
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div class="rounded-xl border border-sky-500/20 bg-sky-500/5 p-3">
+                            <p class="text-[8px] uppercase tracking-[.11em] text-muted-foreground">Shares</p>
+                            <p id="shares-display" class="mt-1 text-lg font-semibold tabular-nums">1</p>
+                        </div>
+                        <div class="rounded-xl border border-sky-500/20 bg-sky-500/5 p-3">
+                            <p class="text-[8px] uppercase tracking-[.11em] text-muted-foreground">Order value</p>
+                            <p id="total-display" class="mt-1 text-lg font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format($price,2) }}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 space-y-2.5 rounded-xl border border-border bg-muted/10 p-3">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-muted-foreground">Price per share</span>
+                            <span class="font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format($price,2) }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-muted-foreground">Available balance</span>
+                            <span class="font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format($availableBalance,2) }}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-muted-foreground">Reserved balance</span>
+                            <span class="font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format((float)$wallet->reserved_balance,2) }}</span>
+                        </div>
+                        <div class="border-t border-border pt-2.5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-medium">Balance after purchase</span>
+                                <span id="remaining-display" class="text-sm font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format(max(0,$availableBalance-$price),2) }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="flex items-center justify-between text-[10px]">
+                            <span class="text-muted-foreground">Available balance used</span>
+                            <span id="balance-used-percent" class="font-semibold">0.0%</span>
+                        </div>
+                        <div class="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                            <div id="balance-used-bar" class="h-full bg-sky-500 transition-all duration-200" style="width:0%"></div>
+                        </div>
+                    </div>
+
+                    <div id="order-message" class="mt-4 rounded-xl border border-border bg-muted/10 px-3 py-2.5 text-[10px] text-muted-foreground">
+                        Enter the number of shares to preview your total purchase value and remaining balance.
+                    </div>
+
+
+                    <div class="mt-4 border-t border-border pt-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Trade horizon</p>
+                                <h3 class="mt-1 text-xs font-semibold">How long should this position stay open?</h3>
+                            </div>
+                            <span class="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[9px] font-semibold text-amber-600">Plan after buy</span>
+                        </div>
+
+                        <div class="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
+                            @foreach([[15,'15m'],[30,'30m'],[60,'1h'],[240,'4h'],[1440,'1d'],[10080,'1w']] as [$minutes,$label])
+                                <button type="button"
+                                        data-plan-minutes="{{ $minutes }}"
+                                        class="trade-horizon-btn ui-btn ui-btn-secondary !h-8 !px-2 !text-[10px] {{ $minutes === 60 ? '!border-sky-500/40 !bg-sky-500/10' : '' }}">
+                                    {{ $label }}
+                                </button>
+                            @endforeach
+                        </div>
+
+                        <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                            <div>
+                                <label for="custom-plan-minutes" class="ui-label !text-[10px]">Custom minutes</label>
+                                <input id="custom-plan-minutes" type="number" min="1" max="10080" class="ui-input" placeholder="e.g. 90">
+                            </div>
+                            <div>
+                                <label for="plan_mode" class="ui-label !text-[10px]">At expiry</label>
+                                <select id="plan_mode" name="plan_mode" class="ui-input">
+                                    <option value="reminder">Notify me to review & sell</option>
+                                    <option value="automatic">Automatically sell this quantity</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <input type="hidden" id="plan_duration_minutes" name="plan_duration_minutes" value="60">
+
+                        <div class="mt-3 flex items-center justify-between rounded-lg border border-border bg-muted/10 px-3 py-2.5">
+                            <div>
+                                <p class="text-[9px] uppercase tracking-[.11em] text-muted-foreground">Planned action</p>
+                                <p class="mt-1 text-[11px] font-semibold">Sell this purchased quantity</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-[9px] uppercase tracking-[.11em] text-muted-foreground">Due after</p>
+                                <p id="plan-horizon-label" class="mt-1 text-[11px] font-semibold">1 hour</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="buy-submit" type="submit" class="ui-btn ui-btn-primary mt-4 h-11 w-full">
+                        <i data-lucide="shopping-cart" class="h-4 w-4"></i>
+                        Buy Shares
+                    </button>
+                </div>
+            </section>
+
+            <section class="ui-panel p-4">
+                <div class="flex items-start gap-3">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted">
+                        <i data-lucide="shield-check" class="h-4 w-4 text-emerald-600"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold">Execution truth</p>
+                        <p class="mt-1 text-[10px] leading-4 text-muted-foreground">
+                            The server re-checks your available balance and the current stored stock price before creating the transaction.
+                        </p>
+                    </div>
+                </div>
+            </section>
+        </aside>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const quantityInput = document.getElementById('quantity');
+    const sharesDisplay = document.getElementById('shares-display');
+    const totalDisplay = document.getElementById('total-display');
+    const inlineOrderValue = document.getElementById('inline-order-value');
+    const remainingDisplay = document.getElementById('remaining-display');
+    const balanceUsedPercent = document.getElementById('balance-used-percent');
+    const balanceUsedBar = document.getElementById('balance-used-bar');
+    const orderMessage = document.getElementById('order-message');
+    const submitButton = document.getElementById('buy-submit');
+    const quickButtons = document.querySelectorAll('[data-quick-shares]');
+
+    const currentPrice = @json($price);
+    const availableBalance = @json($availableBalance);
+    const currency = @json(currency_symbol());
+
+    function money(value) {
+        return currency + Number(value).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
         });
-    </script>
+    }
+
+    function updateCalculator() {
+        const quantity = Math.max(0, Math.floor(Number(quantityInput.value) || 0));
+        const total = quantity * currentPrice;
+        const remaining = availableBalance - total;
+        const usedPercent = availableBalance > 0 ? Math.min(100, (total / availableBalance) * 100) : 0;
+        const affordable = quantity > 0 && total <= availableBalance;
+
+        sharesDisplay.textContent = quantity.toLocaleString();
+        totalDisplay.textContent = money(total);
+        inlineOrderValue.textContent = money(total);
+        remainingDisplay.textContent = money(Math.max(0, remaining));
+        balanceUsedPercent.textContent = usedPercent.toFixed(1) + '%';
+        balanceUsedBar.style.width = usedPercent + '%';
+
+        balanceUsedBar.classList.toggle('bg-red-500', total > availableBalance);
+        balanceUsedBar.classList.toggle('bg-sky-500', total <= availableBalance);
+        remainingDisplay.classList.toggle('text-red-600', remaining < 0);
+        remainingDisplay.classList.toggle('text-emerald-600', remaining >= 0 && quantity > 0);
+
+        submitButton.disabled = !affordable;
+        submitButton.classList.toggle('opacity-50', !affordable);
+        submitButton.classList.toggle('cursor-not-allowed', !affordable);
+
+        if (quantity <= 0) {
+            orderMessage.textContent = 'Enter the number of shares to preview your total purchase value and remaining balance.';
+            orderMessage.className = 'mt-4 rounded-xl border border-border bg-muted/10 px-3 py-2.5 text-[10px] text-muted-foreground';
+        } else if (total > availableBalance) {
+            orderMessage.textContent = 'This order exceeds your available balance by ' + money(total - availableBalance) + '. Reduce the number of shares.';
+            orderMessage.className = 'mt-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2.5 text-[10px] text-red-600';
+        } else {
+            orderMessage.textContent = quantity.toLocaleString() + ' share' + (quantity === 1 ? '' : 's') + ' × ' + money(currentPrice) + ' = ' + money(total) + '.';
+            orderMessage.className = 'mt-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-3 py-2.5 text-[10px] text-emerald-600';
+        }
+    }
+
+    quantityInput.addEventListener('input', updateCalculator);
+
+    quickButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            quantityInput.value = button.dataset.quickShares;
+            updateCalculator();
+            quantityInput.focus();
+        });
+    });
+
+    updateCalculator();
+
+    const planMinutesInput = document.getElementById('plan_duration_minutes');
+    const planLabel = document.getElementById('plan-horizon-label');
+    const customPlanMinutes = document.getElementById('custom-plan-minutes');
+    const horizonButtons = document.querySelectorAll('[data-plan-minutes]');
+
+    function prettyDuration(minutes) {
+        minutes = Number(minutes) || 0;
+        if (minutes % 10080 === 0 && minutes >= 10080) return (minutes / 10080) + ' week' + (minutes === 10080 ? '' : 's');
+        if (minutes % 1440 === 0 && minutes >= 1440) return (minutes / 1440) + ' day' + (minutes === 1440 ? '' : 's');
+        if (minutes % 60 === 0 && minutes >= 60) return (minutes / 60) + ' hour' + (minutes === 60 ? '' : 's');
+        return minutes + ' minutes';
+    }
+
+    function setHorizon(minutes, sourceButton) {
+        minutes = Math.max(1, Math.min(10080, Math.floor(Number(minutes) || 60)));
+        planMinutesInput.value = minutes;
+        planLabel.textContent = prettyDuration(minutes);
+        horizonButtons.forEach(btn => btn.classList.remove('!border-sky-500/40','!bg-sky-500/10'));
+        if (sourceButton) sourceButton.classList.add('!border-sky-500/40','!bg-sky-500/10');
+    }
+
+    horizonButtons.forEach(function (button) {
+        button.addEventListener('click', function () {
+            customPlanMinutes.value = '';
+            setHorizon(button.dataset.planMinutes, button);
+        });
+    });
+
+    customPlanMinutes.addEventListener('input', function () {
+        if (customPlanMinutes.value) setHorizon(customPlanMinutes.value, null);
+    });
+
+});
+</script>
 </x-user-layout>

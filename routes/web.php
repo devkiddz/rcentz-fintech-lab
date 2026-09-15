@@ -11,6 +11,7 @@ use App\Http\Controllers\StockController;
 use App\Http\Controllers\TradingController;
 use App\Http\Controllers\CopyTradingController;
 use App\Http\Controllers\TradingBotController;
+use App\Http\Controllers\StockTradePlanController;
 use App\Http\Controllers\Admin\CopyTradingController as AdminCopyTradingController;
 use App\Http\Controllers\Admin\TradingBotController as AdminTradingBotController;
 use App\Http\Controllers\InvestmentDashboardController;
@@ -169,22 +170,8 @@ Route::middleware(['auth', 'verified', 'wallet', 'block.admin'])->group(function
         Route::post('/trading/watchlist/{stock}', [TradingController::class, 'addToWatchlist'])->name('trading.watchlist.add');
         Route::patch('/trading/watchlist/update/{stock}', [TradingController::class, 'updateWatchlist'])->name('trading.watchlist.update');
         Route::delete('/trading/watchlist/{stock}', [TradingController::class, 'removeFromWatchlist'])->name('trading.watchlist.remove');
-
-        // Copy Trading
-        Route::get('/trading/copy', [CopyTradingController::class, 'index'])->name('trading.copy.index');
-        Route::post('/trading/copy/profile', [CopyTradingController::class, 'saveProfile'])->name('trading.copy.profile');
-        Route::post('/trading/copy/{provider}/follow', [CopyTradingController::class, 'follow'])->name('trading.copy.follow');
-        Route::patch('/trading/copy/relationships/{relationship}', [CopyTradingController::class, 'status'])->name('trading.copy.relationships.status');
-        Route::get('/trading/copy-executions', [CopyTradingController::class, 'executions'])->name('trading.copy.executions');
-
-        // Trading Bots
-        Route::get('/trading/bots', [TradingBotController::class, 'index'])->name('trading.bots.index');
-        Route::post('/trading/bots', [TradingBotController::class, 'store'])->name('trading.bots.store');
-        Route::patch('/trading/bots/{bot}', [TradingBotController::class, 'update'])->name('trading.bots.update');
-        Route::post('/trading/bots/{bot}/toggle', [TradingBotController::class, 'toggle'])->name('trading.bots.toggle');
-        Route::post('/trading/bots/{bot}/run', [TradingBotController::class, 'run'])->name('trading.bots.run');
-        Route::delete('/trading/bots/{bot}', [TradingBotController::class, 'destroy'])->name('trading.bots.destroy');
-        Route::get('/trading/bot-executions', [TradingBotController::class, 'executions'])->name('trading.bots.executions');
+        Route::delete('/trading/plans/{plan}', [StockTradePlanController::class, 'cancel'])->name('trading.plans.cancel');
+    // Legacy /trading entry points are redirects only; V2 domains own the handlers.
     });
     
     // Legacy Trading Intelligence V1 entry points: keep old bookmarks safe.

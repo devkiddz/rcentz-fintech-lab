@@ -6,6 +6,7 @@ use App\Models\Stock;
 use App\Models\StockNews;
 use Illuminate\Http\Request;
 use App\Services\StockDataService;
+use App\Services\StockAnalysisService;
 
 class StockController extends Controller
 {
@@ -111,7 +112,10 @@ class StockController extends Controller
             $isInWatchlist = $watchlistItem !== null;
         }
 
-        // Get stock performance data (in real app, this would come from external API)
+        // Stored-state market analysis for charts, moving averages and signal context.
+        $analysis = app(StockAnalysisService::class)->forStock($stock);
+
+        // Legacy performance payload retained temporarily for untouched consumers.
         $performanceData = $this->getPerformanceData($stock);
 
         // Latest news for this stock from DB; fallback to API cache if empty
@@ -132,7 +136,8 @@ class StockController extends Controller
             'isInWatchlist',
             'watchlistItem',
             'newsFromDb',
-            'newsFromApi'
+            'newsFromApi',
+            'analysis'
         ));
     }
 

@@ -7,10 +7,12 @@ use App\Models\PaymentMethod;
 use App\Models\TradingBot;
 use App\Models\TradingBotExecution;
 use App\Models\StockQuote;
+use App\Models\StockCandle;
 use App\Models\StockNews;
 use App\Services\FinancialActivityService;
 use App\Services\TradingBotService;
 use App\Services\TradingPerformanceService;
+use App\Services\MarketSessionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -35,19 +37,7 @@ class TradingBotController extends Controller
             $product->performance_metrics = $performance->botProduct($product);
 
             $symbol = $product->stock?->symbol;
-            $product->quote_history = $symbol
-                ? StockQuote::where('symbol', $symbol)
-                    ->orderByDesc('fetched_at')
-                    ->limit(36)
-                    ->get(['current_price','fetched_at'])
-                    ->sortBy('fetched_at')
-                    ->values()
-                    ->map(fn ($quote) => [
-                        'price' => (float) $quote->current_price,
-                        'time' => optional($quote->fetched_at)->toIso8601String(),
-                        'label' => optional($quote->fetched_at)->format('H:i'),
-                    ])->all()
-                : [];
+            $product->quote_history = $this->marketSeries($symbol, 36);
         }
 
         return view('ai-bots.marketplace', compact('products'));
@@ -67,26 +57,16 @@ class TradingBotController extends Controller
         $metrics = $performance->botProduct($product);
         $symbol = $product->stock?->symbol;
 
-        $quoteHistory = $symbol
-            ? StockQuote::where('symbol', $symbol)
-                ->orderByDesc('fetched_at')
-                ->limit(48)
-                ->get(['current_price','fetched_at'])
-                ->sortBy('fetched_at')
-                ->values()
-                ->map(fn ($quote) => [
-                    'price' => (float) $quote->current_price,
-                    'time' => optional($quote->fetched_at)->toIso8601String(),
-                    'label' => optional($quote->fetched_at)->format('H:i'),
-                ])->all()
-            : [];
+        $quoteHistory = $this->marketSeries($symbol, 48);
 
         $latestNews = $symbol
             ? StockNews::where('symbol', $symbol)->latest('published_at')->limit(4)->get()
             : collect();
 
+        $marketStatus = app(MarketSessionService::class)->status();
+
         return view('ai-bots.show', compact(
-            'product','existing','metrics','quoteHistory','latestNews'
+            'product','existing','metrics','quoteHistory','latestNews','marketStatus'
         ));
     }
 
@@ -116,11 +96,10 @@ class TradingBotController extends Controller
                     $activity->record($user,'bot.subscription','AI Bot subscription','Purchased access to '.$product->name.'.',$reference,'completed','debit',$price,$wallet,$walletTx,null,$before,['bot_product_id'=>$product->id],'user',$user->id);
                 }
 
-                $endsAt=match($product->billing_period){
-                    'monthly'=>now()->addMonth(),
-                    'quarterly'=>now()->addMonths(3),
-                    'yearly'=>now()->addYear(),
-                    default=>null,
+                $endsAt = match($product->billing_period){
+                    'quarterly' => now()->addMonths(3),
+                    'yearly' => now()->addYear(),
+                    default => now()->addMonth(),
                 };
 
                 $bot=TradingBot::create([
@@ -164,26 +143,7 @@ class TradingBotController extends Controller
 
             $symbol = $subscription->product?->stock?->symbol;
 
-            $quotes = $symbol
-                ? StockQuote::where('symbol', $symbol)
-                    ->where('fetched_at', '>=', now()->subDay())
-                    ->orderByDesc('fetched_at')
-                    ->limit(96)
-                    ->get(['current_price','fetched_at'])
-                    ->sortBy('fetched_at')
-                    ->values()
-                : collect();
-
-            // If there is not enough intraday history yet, keep the latest stored
-            // samples so the chart can begin filling naturally as the scheduler runs.
-            if ($symbol && $quotes->count() < 2) {
-                $quotes = StockQuote::where('symbol', $symbol)
-                    ->orderByDesc('fetched_at')
-                    ->limit(48)
-                    ->get(['current_price','fetched_at'])
-                    ->sortBy('fetched_at')
-                    ->values();
-            }
+            $quotes = collect($this->marketSeries($symbol, 96));
 
             $executions = TradingBotExecution::where('bot_subscription_id', $subscription->id)
                 ->where('status', 'completed')
@@ -201,11 +161,7 @@ class TradingBotController extends Controller
                 'current' => (float) ($subscription->product?->stock?->current_price ?? 0),
                 'previous_close' => (float) ($subscription->product?->stock?->previous_close ?? 0),
                 'average_entry' => $weightedEntry,
-                'quotes' => $quotes->map(fn ($quote) => [
-                    'price' => (float) $quote->current_price,
-                    'time' => optional($quote->fetched_at)->toIso8601String(),
-                    'label' => optional($quote->fetched_at)->format('H:i'),
-                ])->values()->all(),
+                'quotes' => $quotes->values()->all(),
                 'executions' => $executions->map(fn ($execution) => [
                     'action' => strtolower((string) $execution->action),
                     'price' => (float) $execution->price,
@@ -229,23 +185,20 @@ class TradingBotController extends Controller
     public function performance(TradingPerformanceService $performance)
     {
         $subscriptions = Auth::user()->botSubscriptions()->with(['product.stock','bot'])->latest()->get();
-        $summary = ['trade_count'=>0,'completed_count'=>0,'volume'=>0.0,'profit_loss'=>0.0,'winning_trades'=>0,'losing_trades'=>0];
+        $summary = ['trade_count'=>0,'completed_count'=>0,'volume'=>0.0,'profit_loss'=>0.0,'realized_profit_loss'=>0.0,'open_profit_loss'=>0.0,'performance_basis'=>0.0,'positive_count'=>0,'negative_count'=>0,'neutral_count'=>0];
         $botCards = collect();
 
         foreach ($subscriptions as $subscription) {
             $metrics = $performance->botSubscription($subscription);
-            foreach (['trade_count','completed_count','winning_trades','losing_trades'] as $key) $summary[$key] += $metrics[$key];
-            foreach (['volume','profit_loss'] as $key) $summary[$key] += $metrics[$key];
+            foreach (['trade_count','completed_count','positive_count','negative_count','neutral_count'] as $key) {
+                $summary[$key] += $metrics[$key] ?? 0;
+            }
+            foreach (['volume','profit_loss','realized_profit_loss','open_profit_loss','performance_basis'] as $key) {
+                $summary[$key] += $metrics[$key] ?? 0;
+            }
 
             $symbol = $subscription->product?->stock?->symbol;
-            $quotes = $symbol
-                ? StockQuote::where('symbol', $symbol)
-                    ->orderByDesc('fetched_at')
-                    ->limit(48)
-                    ->get(['current_price','fetched_at'])
-                    ->sortBy('fetched_at')
-                    ->values()
-                : collect();
+            $quotes = collect($this->marketSeries($symbol, 48));
 
             $stock = $subscription->product?->stock;
 
@@ -261,17 +214,18 @@ class TradingBotController extends Controller
                 'high' => (float) ($stock?->high ?? 0),
                 'low' => (float) ($stock?->low ?? 0),
                 'metrics' => $metrics,
-                'quotes' => $quotes->map(fn ($quote) => [
-                    'price' => (float) $quote->current_price,
-                    'time' => optional($quote->fetched_at)->toIso8601String(),
-                    'label' => optional($quote->fetched_at)->format('H:i'),
-                ])->all(),
+                'quotes' => $quotes->all(),
             ]);
         }
 
-        $summary['return_percent'] = $summary['volume'] > 0 ? ($summary['profit_loss'] / $summary['volume']) * 100 : 0;
-        $resolved = $summary['winning_trades'] + $summary['losing_trades'];
-        $summary['win_rate'] = $resolved > 0 ? ($summary['winning_trades'] / $resolved) * 100 : 0;
+        $summary['return_percent'] = $summary['performance_basis'] > 0
+            ? ($summary['profit_loss'] / $summary['performance_basis']) * 100
+            : 0;
+        $resolved = $summary['positive_count'] + $summary['negative_count'];
+        $summary['positive_execution_rate'] = $resolved > 0
+            ? ($summary['positive_count'] / $resolved) * 100
+            : 0;
+        $summary['win_rate'] = $summary['positive_execution_rate'];
 
         $executions = TradingBotExecution::with(['subscription.product','bot.stock'])
             ->whereHas('subscription', fn ($q) => $q->where('user_id', Auth::id()))
@@ -289,8 +243,10 @@ class TradingBotController extends Controller
             ->unique('symbol')
             ->values();
 
+        $marketStatus = app(MarketSessionService::class)->status();
+
         return view('ai-bots.performance', compact(
-            'executions','summary','botCards','marketNews','marketContext'
+            'executions','summary','botCards','marketNews','marketContext','marketStatus'
         ));
     }
 
@@ -324,19 +280,7 @@ class TradingBotController extends Controller
             : 0;
 
         $symbol = $execution->bot?->stock?->symbol;
-        $quoteHistory = $symbol
-            ? StockQuote::where('symbol', $symbol)
-                ->orderByDesc('fetched_at')
-                ->limit(48)
-                ->get(['current_price','fetched_at'])
-                ->sortBy('fetched_at')
-                ->values()
-                ->map(fn ($quote) => [
-                    'price' => (float) $quote->current_price,
-                    'time' => optional($quote->fetched_at)->toIso8601String(),
-                    'label' => optional($quote->fetched_at)->format('H:i'),
-                ])->all()
-            : [];
+        $quoteHistory = $this->marketSeries($symbol, 48);
 
         return view('ai-bots.execution-show', compact(
             'execution','currentPrice','profitLoss','returnPercent','quoteHistory'
@@ -401,6 +345,64 @@ class TradingBotController extends Controller
         $subscription->update(['status'=>'cancelled','cancelled_at'=>now()]);
         if($subscription->bot)$subscription->bot->update(['status'=>'paused']);
         return back()->with('success','Bot subscription cancelled.');
+    }
+
+
+    private function marketSeries(?string $symbol, int $limit = 48): array
+    {
+        if (! $symbol) {
+            return [];
+        }
+
+        $candles = StockCandle::query()
+            ->where('symbol', $symbol)
+            ->where('interval', '15m')
+            ->orderByDesc('started_at')
+            ->limit($limit)
+            ->get(['open','high','low','close','started_at'])
+            ->sortBy('started_at')
+            ->values();
+
+        if ($candles->isNotEmpty()) {
+            return $candles->map(fn ($candle) => [
+                'open' => (float) $candle->open,
+                'high' => (float) $candle->high,
+                'low' => (float) $candle->low,
+                'close' => (float) $candle->close,
+                'price' => (float) $candle->close,
+                'time' => optional($candle->started_at)->toIso8601String(),
+                'label' => optional($candle->started_at)
+                    ?->copy()
+                    ->setTimezone(MarketSessionService::TIMEZONE)
+                    ->format('H:i'),
+            ])->all();
+        }
+
+        // Migration-safe fallback while the first real 15-minute candles accumulate.
+        // Only use recent snapshots so old seeded/stale prices cannot destroy the
+        // scale of the live chart before fresh candle truth exists.
+        $recentQuotes = StockQuote::query()
+            ->where('symbol', $symbol)
+            ->where('fetched_at', '>=', now()->subDay())
+            ->orderByDesc('fetched_at')
+            ->limit($limit)
+            ->get(['current_price','fetched_at'])
+            ->sortBy('fetched_at')
+            ->values();
+
+        if ($recentQuotes->count() < 2) {
+            return [];
+        }
+
+        return $recentQuotes
+            ->map(fn ($quote) => [
+                'price' => (float) $quote->current_price,
+                'time' => optional($quote->fetched_at)->toIso8601String(),
+                'label' => optional($quote->fetched_at)
+                    ?->copy()
+                    ->setTimezone(MarketSessionService::TIMEZONE)
+                    ->format('H:i'),
+            ])->all();
     }
 
     private function own(BotSubscription $subscription):void
