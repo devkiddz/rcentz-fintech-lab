@@ -18,7 +18,8 @@
         <div class="mt-4 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
             <div class="flex items-center justify-between gap-3"><span class="text-[9px] uppercase tracking-[.1em] text-zinc-400">Return cycle</span><strong class="text-[10px]">{{ $actionStory['cycle_return_label'] }} / {{ $actionStory['return_interval_label'] }}</strong></div>
             <div class="mt-2 flex items-center justify-between gap-3"><span class="text-[9px] uppercase tracking-[.1em] text-zinc-400">Duration</span><strong class="text-[10px]">{{ $actionStory['duration_label'] }}</strong></div>
-            <div class="mt-2 flex items-center justify-between gap-3"><span class="text-[9px] uppercase tracking-[.1em] text-zinc-400">Entry fee</span><strong class="text-[10px]">{{ number_format((float)$instrument->subscription_fee_percent,2) }}%</strong></div>
+            <div class="mt-2 flex items-center justify-between gap-3"><span class="text-[9px] uppercase tracking-[.1em] text-zinc-400">Subscription fee</span><strong class="text-[10px]">{{ number_format((float)$instrument->subscription_fee_percent,2) }}%</strong></div>
+            <div class="mt-2 flex items-center justify-between gap-3"><span class="text-[9px] uppercase tracking-[.1em] text-zinc-400">Redemption fee</span><strong class="text-[10px]">{{ number_format((float)$instrument->redemption_fee_percent,2) }}%</strong></div>
         </div>
 
         <div class="mt-4 grid grid-cols-2 gap-3">

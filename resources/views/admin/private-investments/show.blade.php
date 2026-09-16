@@ -13,12 +13,18 @@
 <div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Minimum Investment</label><input class="ui-input w-full" type="number" step="0.01" name="minimum_investment" value="{{ $instrument->minimum_investment }}" required></div>
 <div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Maximum Investment</label><input class="ui-input w-full" type="number" step="0.01" name="maximum_investment" value="{{ $instrument->maximum_investment }}"></div>
 <div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Management Fee (%)</label><input class="ui-input w-full" type="number" step="0.0001" name="management_fee_percent" value="{{ $instrument->management_fee_percent }}" required></div>
-<div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Lock Period (Days)</label><input class="ui-input w-full" type="number" name="lock_period_days" value="{{ $instrument->lock_period_days }}" required></div>
-<div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Total Unit Supply</label><input class="ui-input w-full" type="number" step="0.000001" name="unit_supply" value="{{ $instrument->unit_supply }}" required></div>
+<div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Lock Period (Days)</label><input class="ui-input w-full" type="number" min="0" max="3650" name="lock_period_days" value="{{ $instrument->lock_period_days }}" required></div>
+<div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Investment Duration (Days)</label><input class="ui-input w-full" type="number" min="1" max="3650" name="duration_days" value="{{ $instrument->duration_days }}" required><p class="mt-1 text-[9px] text-muted-foreground">Full lifespan of the investment.</p></div>
+<div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Return Cycle (Days)</label><input class="ui-input w-full" type="number" min="1" max="3650" name="return_interval_days" value="{{ $instrument->return_interval_days }}" required><p class="mt-1 text-[9px] text-muted-foreground">Configured return interval; may be 3 days, weekly, fortnightly, monthly, etc.</p></div>
+<div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Projected Minimum Return / Cycle (%)</label><input class="ui-input w-full" type="number" step="0.0001" min="0" max="100" name="projected_return_min_percent" value="{{ $instrument->projected_return_min_percent }}" required></div>
+<div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Projected Maximum Return / Cycle (%)</label><input class="ui-input w-full" type="number" step="0.0001" min="0" max="100" name="projected_return_max_percent" value="{{ $instrument->projected_return_max_percent }}" required></div>
+<div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Subscription Fee (%)</label><input class="ui-input w-full" type="number" step="0.0001" min="0" max="100" name="subscription_fee_percent" value="{{ $instrument->subscription_fee_percent }}" required></div>
+<div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Redemption Fee (%)</label><input class="ui-input w-full" type="number" step="0.0001" min="0" max="100" name="redemption_fee_percent" value="{{ $instrument->redemption_fee_percent }}" required></div>
+<div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Total Unit Supply</label><input class="ui-input w-full" type="number" step="0.000001" min="0" name="unit_supply" value="{{ $instrument->unit_supply }}" required></div>
 <div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Available Units</label><input class="ui-input w-full" type="number" step="0.000001" name="available_units" value="{{ $instrument->available_units }}" required></div>
 <div class="sm:col-span-2"><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Description</label><textarea class="ui-input w-full" name="description" rows="3">{{ $instrument->description }}</textarea></div>
-<label class="text-xs"><input type="checkbox" name="is_featured" value="1" @checked($instrument->is_featured)> Featured</label>
-<label class="text-xs"><input type="checkbox" name="is_visible" value="1" @checked($instrument->is_visible)> Visible</label>
+<label class="inline-flex items-center gap-2 text-xs"><input type="checkbox" name="is_featured" value="1" @checked($instrument->is_featured)><span>Feature on marketplace</span></label>
+<label class="inline-flex items-center gap-2 text-xs"><input type="checkbox" name="is_visible" value="1" @checked($instrument->is_visible)><span>Visible to customers</span></label>
 <button class="ui-btn ui-btn-primary sm:col-span-2">Save Instrument</button>
 </form>
 <form method="POST" action="{{ route('admin.investments.control.instruments.toggle',$instrument) }}" class="mt-3">@csrf @method('PATCH')<button class="ui-btn ui-btn-secondary">{{ $instrument->status==='active'?'Pause Instrument':'Resume Instrument' }}</button></form>
@@ -46,26 +52,32 @@
     <form method="POST" action="{{ route('admin.investments.account-operations.subscribe',$instrument) }}" class="rounded-xl border border-border p-4">
         @csrf
         <p class="text-xs font-semibold">Admin Subscription</p>
-        <select class="ui-input mt-3" name="user_id" required>
+        <label class="ui-label mt-3">Customer Account</label>
+        <select class="ui-input mt-1 w-full" name="user_id" required>
             <option value="">Select customer</option>
             @foreach($customers as $customer)
                 <option value="{{ $customer->id }}">{{ $customer->name }} · {{ $customer->email }} · {{ currency_symbol() }}{{ number_format((float)($customer->wallet?->available_balance ?? 0),2) }}</option>
             @endforeach
         </select>
-        <input class="ui-input mt-2" type="number" step="0.01" min="{{ max(.01,(float)$instrument->minimum_investment) }}" name="amount" placeholder="Subscription amount" required>
+        <label class="ui-label mt-3">Investment Amount</label>
+        <input class="ui-input mt-1 w-full" type="number" step="0.01" min="{{ max(.01,(float)$instrument->minimum_investment) }}" name="amount" placeholder="Minimum {{ currency_symbol() }}{{ number_format((float)$instrument->minimum_investment,2) }}" required>
+        <p class="mt-1 text-[9px] text-muted-foreground">Subscription fee {{ number_format((float)$instrument->subscription_fee_percent,2) }}% · Current unit price {{ currency_symbol() }}{{ number_format((float)$instrument->current_price,2) }}</p>
         <button class="ui-btn ui-btn-primary mt-3 w-full justify-center">Subscribe Customer</button>
     </form>
 
     <form method="POST" action="{{ route('admin.investments.account-operations.redeem',$instrument) }}" class="rounded-xl border border-border p-4">
         @csrf
         <p class="text-xs font-semibold">Admin Redemption</p>
-        <select class="ui-input mt-3" name="user_id" required>
+        <label class="ui-label mt-3">Customer Account</label>
+        <select class="ui-input mt-1 w-full" name="user_id" required>
             <option value="">Select customer</option>
             @foreach($customers as $customer)
                 <option value="{{ $customer->id }}">{{ $customer->name }} · {{ $customer->email }}</option>
             @endforeach
         </select>
-        <input class="ui-input mt-2" type="number" step="0.000001" min="0.000001" name="units" placeholder="Units to redeem" required>
+        <label class="ui-label mt-3">Units to Redeem</label>
+        <input class="ui-input mt-1 w-full" type="number" step="0.000001" min="0.000001" name="units" placeholder="Enter units" required>
+        <p class="mt-1 text-[9px] text-muted-foreground">Redemption fee {{ number_format((float)$instrument->redemption_fee_percent,2) }}% · Lock period {{ $instrument->lock_period_days }} days</p>
         <button class="ui-btn ui-btn-secondary mt-3 w-full justify-center">Redeem Customer Units</button>
     </form>
 </div>
@@ -73,11 +85,15 @@
 
 <section class="mt-4 grid gap-4 xl:grid-cols-[1fr_1fr]">
 <div class="ui-panel p-5"><p class="ui-kicker">Underlying composition</p><h2 class="mt-1 text-lg font-semibold">Assets</h2>
-<form method="POST" action="{{ route('admin.investments.control.assets.store',$instrument) }}" class="mt-4 grid gap-2 sm:grid-cols-2">@csrf
-<input class="ui-input" name="asset_type" placeholder="Asset type" required><input class="ui-input" name="name" placeholder="Asset name" required>
-<input class="ui-input" type="number" step="0.01" name="acquisition_value" placeholder="Acquisition value" required><input class="ui-input" type="number" step="0.01" name="current_valuation" placeholder="Current valuation" required>
-<input class="ui-input" type="number" step="0.0001" min="0" max="100" name="ownership_percentage" placeholder="Weight %" required><textarea class="ui-input" name="description" placeholder="Description"></textarea>
-<textarea class="ui-input sm:col-span-2" name="notes" placeholder="Notes"></textarea><button class="ui-btn ui-btn-primary sm:col-span-2">Add Asset</button>
+<form method="POST" action="{{ route('admin.investments.control.assets.store',$instrument) }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf
+<div><label class="ui-label">Asset Type</label><input class="ui-input mt-1 w-full" name="asset_type" placeholder="e.g. residential_property" required></div>
+<div><label class="ui-label">Asset Name</label><input class="ui-input mt-1 w-full" name="name" placeholder="Asset name" required></div>
+<div><label class="ui-label">Acquisition Value</label><input class="ui-input mt-1 w-full" type="number" step="0.01" min="0" name="acquisition_value" placeholder="Original acquisition value" required></div>
+<div><label class="ui-label">Current Valuation</label><input class="ui-input mt-1 w-full" type="number" step="0.01" min="0" name="current_valuation" placeholder="Current internal valuation" required></div>
+<div><label class="ui-label">Portfolio Weight (%)</label><input class="ui-input mt-1 w-full" type="number" step="0.0001" min="0" max="100" name="ownership_percentage" placeholder="Weight %" required></div>
+<div><label class="ui-label">Asset Description</label><textarea class="ui-input mt-1 w-full" name="description" rows="2" placeholder="What this asset contributes"></textarea></div>
+<div class="sm:col-span-2"><label class="ui-label">Internal Notes</label><textarea class="ui-input mt-1 w-full" name="notes" rows="2" placeholder="Optional operational notes"></textarea></div>
+<button class="ui-btn ui-btn-primary sm:col-span-2">Add Asset</button>
 </form>
 <div class="mt-4 space-y-2">@foreach($instrument->assets as $asset)<div class="rounded-xl border border-border p-3"><div class="flex justify-between gap-3"><div><p class="text-xs font-semibold">{{ $asset->name }}</p><p class="text-[9px] text-muted-foreground">{{ $asset->asset_type }} · {{ $asset->status }}</p></div><div class="text-right"><p class="text-xs font-semibold">{{ currency_symbol() }}{{ number_format((float)$asset->current_valuation,0) }}</p>@if($asset->status==='active')<form method="POST" action="{{ route('admin.investments.control.assets.destroy',[$instrument,$asset]) }}">@csrf @method('DELETE')<button class="mt-1 text-[9px] text-red-600">Remove</button></form>@endif</div></div></div>@endforeach</div>
 </div>
