@@ -14,6 +14,8 @@ use App\Services\NotificationService;
 use App\Services\FinancialActivityService;
 use App\Services\CopyTradingService;
 use App\Services\MarketTradeContractEngine;
+use App\Services\MarketPriceRouter;
+use App\Services\PortfolioValuationService;
 use App\Services\StockAnalysisService;
 use App\Models\TradePosition;
 use App\Models\StockTradePlan;
@@ -34,9 +36,11 @@ class TradingController extends Controller
         }
 
         $user = Auth::user();
+        $marketplace = app(MarketPriceRouter::class)->activeMarketplace();
         $wallet = $user->wallet;
         $userHolding = $user->stockHoldings()
             ->where('stock_id', $stock->id)
+            ->where('marketplace', $marketplace)
             ->first();
 
         // V5.6 active-position workstation controls.
@@ -47,6 +51,7 @@ class TradingController extends Controller
         $currentPosition = TradePosition::with('stock')
             ->where('user_id', $user->id)
             ->where('stock_id', $stock->id)
+            ->where('marketplace', $marketplace)
             ->whereNotIn('context_type', ['copy_relationship', 'trading_bot'])
             ->whereIn('status', ['open', 'exit_queued'])
             ->where('open_quantity', '>', 0)
@@ -56,6 +61,7 @@ class TradingController extends Controller
         $activePositionCount = TradePosition::query()
             ->where('user_id', $user->id)
             ->where('stock_id', $stock->id)
+            ->where('marketplace', $marketplace)
             ->whereNotIn('context_type', ['copy_relationship', 'trading_bot'])
             ->whereIn('status', ['open', 'exit_queued'])
             ->where('open_quantity', '>', 0)
@@ -63,7 +69,7 @@ class TradingController extends Controller
 
         // Legacy chart payload retained while the new analysis engine owns the workstation chart.
         $chartData = $this->getStockChartData($stock->symbol);
-        $analysis = app(StockAnalysisService::class)->forStock($stock);
+        $analysis = app(StockAnalysisService::class)->forStockInMarketplace($stock, $marketplace);
 
         return view('trading.buy', compact(
             'stock',
@@ -184,18 +190,22 @@ class TradingController extends Controller
     public function sell(Stock $stock)
     {
         $user = auth()->user();
+        $marketplace = app(MarketPriceRouter::class)->activeMarketplace();
         $wallet = $user->wallet;
-        $holding = $user->stockHoldings()->where('stock_id', $stock->id)->first();
+        $holding = $user->stockHoldings()
+            ->where('stock_id', $stock->id)
+            ->where('marketplace', $marketplace)
+            ->first();
 
-        // Redirect if user doesn't have holdings in this stock
+        // A Live holding and Controlled holding are different exposures.
         if (!$holding) {
             return redirect()->route('trading.portfolio')
-                ->with('error', 'You do not have any holdings in this stock.');
+                ->with('error', 'You do not have any '.strtoupper($marketplace).' holdings in this stock.');
         }
         
         // Legacy chart payload retained while the new analysis engine owns the workstation chart.
         $chartData = $this->getStockChartData($stock->symbol, '1m');
-        $analysis = app(StockAnalysisService::class)->forStock($stock);
+        $analysis = app(StockAnalysisService::class)->forStockInMarketplace($stock, $marketplace);
         
         return view('trading.sell', compact('stock', 'wallet', 'holding', 'chartData', 'analysis'));
     }
@@ -297,31 +307,36 @@ class TradingController extends Controller
     /**
      * Show stock portfolio
      */
-    public function portfolio()
+    public function portfolio(
+        MarketPriceRouter $prices,
+        PortfolioValuationService $valuation
+    )
     {
         $user = Auth::user();
-        
-        $holdings = $user->stockHoldings()
-            ->with('stock')
-            ->get();
+        $activeMarketplace = $prices->activeMarketplace();
 
-        $totalInvested = $holdings->sum('total_invested');
-        $totalCurrentValue = $holdings->sum('current_value');
+        // A user's Live and Controlled exposures are independent portfolios.
+        // Revalue only the active portfolio against its own price authority.
+        $holdings = $valuation->syncUser($user, $activeMarketplace);
+
+        $totalInvested = (float) $holdings->sum('total_invested');
+        $totalCurrentValue = (float) $holdings->sum('current_value');
         $totalGainLoss = $totalCurrentValue - $totalInvested;
-        $totalGainLossPercentage = $totalInvested > 0 ? ($totalGainLoss / $totalInvested) * 100 : 0;
-
-        // Sort holdings by current value
-        $holdings = $holdings->sortByDesc('current_value')->values();
+        $totalGainLossPercentage = $totalInvested > 0
+            ? ($totalGainLoss / $totalInvested) * 100
+            : 0;
 
         $tradePlans = collect(); // Legacy rows stay readable; new entries use TradePosition.
         $positions = TradePosition::with(['stock','events' => fn ($q) => $q->latest()->limit(3)])
             ->where('user_id', $user->id)
+            ->where('marketplace', $activeMarketplace)
             ->whereIn('status', ['open','exit_queued'])
             ->orderBy('expires_at')
             ->get();
 
         $recentTransactions = $user->stockTransactions()
             ->with('stock')
+            ->where('marketplace', $activeMarketplace)
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
@@ -334,7 +349,8 @@ class TradingController extends Controller
             'totalGainLossPercentage',
             'recentTransactions',
             'tradePlans',
-            'positions'
+            'positions',
+            'activeMarketplace'
         ));
     }
 

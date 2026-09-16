@@ -48,7 +48,10 @@
         @php
             $focusIsOpen = $focusPosition->is_open;
             $focusExitPrice = $focusIsOpen
-                ? (float)$focusPosition->stock->current_price
+                ? app(\App\Services\MarketPriceRouter::class)->price(
+                    $focusPosition->stock,
+                    $focusPosition->marketplace ?: 'live'
+                )
                 : (float)($focusPosition->average_exit_price ?: $focusPosition->lastExitTransaction?->price_per_share ?: 0);
             $focusPnl = $focusIsOpen
                 ? (float)$focusPosition->current_profit_loss
@@ -74,7 +77,7 @@
                             <p class="ui-kicker">Latest trade focus</p>
                             <h2 class="mt-1 text-base font-semibold">{{ $focusPosition->stock->symbol }} · Position #{{ $focusPosition->id }}</h2>
                             <p class="mt-1 text-[10px] text-muted-foreground">
-                                {{ $focusPosition->user?->name ?? 'Unknown user' }}
+                                {{ $focusPosition->user?->name ?? 'Unknown user' }} · {{ strtoupper($focusPosition->marketplace ?: 'live') }} Market
                             </p>
                         </div>
                         <span class="rounded-full border px-2 py-1 text-[9px] font-semibold

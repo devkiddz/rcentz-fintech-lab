@@ -4,9 +4,9 @@
 <div class="ui-page max-w-[1440px]">
     <section class="ui-page-header">
         <div>
-            <p class="ui-kicker text-[10px]">Trading</p>
+            <p class="ui-kicker text-[10px]">Trading · {{ strtoupper($activeMarketplace) }} Market</p>
             <h1 class="ui-heading !text-2xl">Stock Portfolio</h1>
-            <p class="ui-lead !text-[13px]">Positions, current performance and timed trade plans.</p>
+            <p class="ui-lead !text-[13px]">This portfolio shows only {{ strtoupper($activeMarketplace) }} holdings, contracts and executions.</p>
         </div>
         <div class="flex gap-2"><a href="{{ route('trading.positions.index') }}" class="ui-btn ui-btn-secondary"><i data-lucide="route" class="h-4 w-4"></i> Positions</a><a href="{{ route('stocks.index') }}" class="ui-btn ui-btn-primary"><i data-lucide="plus" class="h-4 w-4"></i> Browse Stocks</a></div>
     </section>
@@ -108,7 +108,7 @@
                                 <td class="px-4 py-3"><p class="text-xs font-semibold">{{ $holding->stock->symbol }}</p><p class="mt-0.5 text-[9px] text-muted-foreground">{{ $holding->stock->company_name }}</p></td>
                                 <td class="px-4 py-3 text-xs tabular-nums">{{ number_format((float)$holding->quantity,6) }}</td>
                                 <td class="px-4 py-3 text-xs tabular-nums">{{ currency_symbol() }}{{ number_format((float)$holding->average_buy_price,2) }}</td>
-                                <td class="px-4 py-3 text-xs tabular-nums">{{ currency_symbol() }}{{ number_format((float)$holding->stock->current_price,2) }}</td>
+                                <td class="px-4 py-3 text-xs tabular-nums">{{ currency_symbol() }}{{ number_format((float)($holding->market_price ?? $holding->stock->current_price),2) }}</td>
                                 <td class="px-4 py-3 text-xs font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format((float)$holding->current_value,2) }}</td>
                                 <td class="px-4 py-3"><p class="text-xs font-semibold {{ $holding->unrealized_gain_loss>=0?'text-emerald-600':'text-red-600' }}">{{ $holding->unrealized_gain_loss>=0?'+':'' }}{{ currency_symbol() }}{{ number_format((float)$holding->unrealized_gain_loss,2) }}</p><p class="text-[9px] {{ $holding->unrealized_gain_loss_percentage>=0?'text-emerald-600':'text-red-600' }}">{{ number_format((float)$holding->unrealized_gain_loss_percentage,2) }}%</p></td>
                                 <td class="px-4 py-3"><div class="flex justify-end gap-2"><a href="{{ route('trading.buy',$holding->stock) }}" class="ui-btn ui-btn-secondary !h-8 !px-3 !text-[10px]">Buy More</a><a href="{{ route('trading.sell',$holding->stock) }}" class="ui-btn ui-btn-primary !h-8 !px-3 !text-[10px]">Sell</a></div></td>
@@ -132,7 +132,7 @@
             @foreach($recentTransactions as $transaction)
                 <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                     <div>
-                        <p class="text-xs font-semibold">{{ $transaction->stock->symbol }} · {{ ucfirst($transaction->type) }}</p>
+                        <p class="text-xs font-semibold">{{ $transaction->stock->symbol }} · {{ ucfirst($transaction->type) }} · {{ strtoupper($transaction->marketplace ?: 'live') }}</p>
                         <p class="mt-1 text-[9px] text-muted-foreground">{{ number_format((float)$transaction->quantity,6) }} shares · {{ optional($transaction->executed_at)->format('M d · H:i') }}</p>
                     </div>
                     <div class="text-right">

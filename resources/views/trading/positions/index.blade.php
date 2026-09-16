@@ -4,7 +4,7 @@
 <div class="ui-page max-w-[1480px]">
     <section class="ui-page-header">
         <div>
-            <p class="ui-kicker text-[10px]">Trading · Position Contracts</p>
+            <p class="ui-kicker text-[10px]">Trading · {{ strtoupper($activeMarketplace) }} Position Contracts</p>
             <h1 class="ui-heading !text-2xl">Positions & exits</h1>
             <p class="ui-lead !text-[13px]">
                 EMP is fixed at entry. CMP is the closing/current market price.
@@ -31,12 +31,15 @@
 
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/10 px-4 py-3">
         <div>
-            <p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">Regular U.S. market</p>
-            <p class="mt-1 text-xs font-semibold">{{ ucfirst(str_replace('_',' ',$marketStatus)) }}</p>
+            <p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">Active marketplace</p>
+            <p class="mt-1 text-xs font-semibold">{{ strtoupper($activeMarketplace) }}</p>
         </div>
         <p class="text-[10px] text-muted-foreground">
-            New York · {{ $marketTime->format('M d, Y · H:i') }} ET
-            · Session 09:30–16:00 ET
+            @if($activeMarketplace === 'live')
+                New York · {{ $marketTime->format('M d, Y · H:i') }} ET · {{ ucfirst(str_replace('_',' ',$marketStatus)) }} · Session 09:30–16:00 ET
+            @else
+                Controlled price clock · 24/7 contract environment
+            @endif
         </p>
     </div>
 
@@ -46,7 +49,10 @@
                 $isOpen=$position->is_open;
                 $closed=$position->status==='closed';
 
-                $cmp=(float)$position->stock->current_price;
+                $cmp=app(\App\Services\MarketPriceRouter::class)->price(
+                    $position->stock,
+                    $position->marketplace ?: 'live'
+                );
                 $emp=(float)$position->entry_price;
                 $difference=$cmp-$emp;
                 $pl=$position->current_profit_loss;
@@ -84,8 +90,8 @@
                                 {{ $isOpen ? 'Open' : ucfirst(str_replace('_',' ',$position->status)) }}
                             </span>
 
-                            <span class="rounded-full border border-border px-2 py-1 text-[9px] text-muted-foreground">
-                                {{ str_replace('_',' ',ucfirst($position->context_type)) }}
+                            <span class="rounded-full border border-border px-2 py-1 text-[9px] font-semibold text-muted-foreground">
+                                {{ strtoupper($position->marketplace ?: 'live') }} Market
                             </span>
 
                             @if($closed && $position->exit_reason)

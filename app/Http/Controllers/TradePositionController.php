@@ -11,13 +11,16 @@ use Illuminate\Support\Facades\Auth;
 
 class TradePositionController extends Controller
 {
-    public function index(MarketSessionService $marketSession)
+    public function index(MarketSessionService $marketSession, MarketPriceRouter $prices)
     {
+        $activeMarketplace=$prices->activeMarketplace();
+
         $positions=TradePosition::with([
                 'stock',
                 'events'=>fn($q)=>$q->latest()->limit(10),
             ])
             ->where('user_id',Auth::id())
+            ->where('marketplace',$activeMarketplace)
             ->latest('opened_at')
             ->paginate(30);
 
@@ -26,7 +29,7 @@ class TradePositionController extends Controller
 
         return view(
             'trading.positions.index',
-            compact('positions','marketStatus','marketTime')
+            compact('positions','marketStatus','marketTime','activeMarketplace')
         );
     }
 

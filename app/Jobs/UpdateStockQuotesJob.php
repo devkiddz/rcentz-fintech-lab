@@ -167,8 +167,13 @@ class UpdateStockQuotesJob implements ShouldQueue
             $stockUpdateData['volume_updated_at'] = Carbon::now();
         }
 
-        // Update stock with latest data
+        // Update stock with latest Live data.
         $stock->update($stockUpdateData);
+
+        // V5.13: revalue only Live holdings for this instrument. Controlled
+        // holdings keep their independent Controlled Market price authority.
+        app(\App\Services\PortfolioValuationService::class)
+            ->syncStock($stock, 'live');
 
         // Get the latest quote for broadcasting
         $latestQuote = StockQuote::where('symbol', $stock->symbol)

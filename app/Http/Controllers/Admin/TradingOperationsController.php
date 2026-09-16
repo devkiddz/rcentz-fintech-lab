@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Stock;
 use App\Models\StockTransaction;
 use App\Models\TradePosition;
+use App\Services\MarketPriceRouter;
 use App\Services\StockAnalysisService;
 
 class TradingOperationsController extends Controller
@@ -63,7 +64,10 @@ class TradingOperationsController extends Controller
         $focusAnalysis = [];
         if ($focusPosition?->stock) {
             try {
-                $focusAnalysis = $analysisService->forStock($focusPosition->stock);
+                $focusAnalysis = $analysisService->forStockInMarketplace(
+                    $focusPosition->stock,
+                    $focusPosition->marketplace ?: 'live'
+                );
             } catch (\Throwable $e) {
                 \Log::warning('Trading overview analysis unavailable', [
                     'position_id' => $focusPosition->id,
@@ -122,7 +126,7 @@ class TradingOperationsController extends Controller
         return view('admin.trading.history', compact('positions', 'historyStats'));
     }
 
-    public function show(TradePosition $position, StockAnalysisService $analysisService)
+    public function show(TradePosition $position, StockAnalysisService $analysisService, MarketPriceRouter $prices)
     {
         $position->load([
             'user',
@@ -137,7 +141,10 @@ class TradingOperationsController extends Controller
         $analysis = [];
         if ($position->stock) {
             try {
-                $analysis = $analysisService->forStock($position->stock);
+                $analysis = $analysisService->forStockInMarketplace(
+                    $position->stock,
+                    $position->marketplace ?: 'live'
+                );
             } catch (\Throwable $e) {
                 \Log::warning('Trade record analysis unavailable', [
                     'position_id' => $position->id,
@@ -149,8 +156,8 @@ class TradingOperationsController extends Controller
 
         $isOpen = $position->is_open;
 
-        $displayExitPrice = $isOpen
-            ? (float) ($position->stock?->current_price ?? 0)
+        $displayExitPrice = $isOpen && $position->stock
+            ? $prices->price($position->stock, $position->marketplace ?: 'live')
             : (float) (
                 $position->average_exit_price
                 ?: $position->lastExitTransaction?->price_per_share

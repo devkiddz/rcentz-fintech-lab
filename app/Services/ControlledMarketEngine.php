@@ -12,6 +12,10 @@ use RuntimeException;
 
 final class ControlledMarketEngine
 {
+    public function __construct(
+        private PortfolioValuationService $valuation
+    ) {}
+
     public function registerInstrument(Stock $stock, string $label, float $startingPrice): ControlledMarketInstrument
     {
         if ($startingPrice <= 0) {
@@ -93,6 +97,10 @@ final class ControlledMarketEngine
             'change_percent' => $old > 0 ? (($price - $old) / $old) * 100 : 0,
             'ticked_at' => now(),
         ]);
+
+        if ($instrument->stock) {
+            $this->valuation->syncStock($instrument->stock, 'controlled');
+        }
 
         return $instrument->refresh();
     }
@@ -199,6 +207,9 @@ final class ControlledMarketEngine
             ]);
 
             if ($instrument->stock) {
+                $this->valuation->syncStock($instrument->stock, 'controlled');
+
+
                 try {
                     broadcast(new StockPriceUpdated($instrument->stock, [
                         'current_price' => $close,

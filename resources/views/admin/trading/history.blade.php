@@ -41,6 +41,7 @@
                         <th class="px-4 py-3">Trade</th>
                         <th class="px-4 py-3">Customer</th>
                         <th class="px-4 py-3">Asset</th>
+                        <th class="px-4 py-3">Market</th>
                         <th class="px-4 py-3">Entry</th>
                         <th class="px-4 py-3">Exit / CMP</th>
                         <th class="px-4 py-3">Qty</th>
@@ -55,8 +56,11 @@
                     @forelse($positions as $position)
                         @php
                             $isOpen = $position->is_open;
-                            $exit = $isOpen
-                                ? (float)($position->stock?->current_price ?? 0)
+                            $exit = $isOpen && $position->stock
+                                ? app(\App\Services\MarketPriceRouter::class)->price(
+                                    $position->stock,
+                                    $position->marketplace ?: 'live'
+                                )
                                 : (float)($position->average_exit_price ?: $position->lastExitTransaction?->price_per_share ?: 0);
                             $pnl = $isOpen ? (float)$position->current_profit_loss : (float)$position->realized_profit_loss;
                             $ret = $isOpen ? (float)$position->current_return_percent : (float)$position->realized_return_percent;
@@ -67,6 +71,7 @@
                             </td>
                             <td class="px-4 py-3">{{ $position->user?->name ?? '—' }}</td>
                             <td class="px-4 py-3 font-semibold">{{ $position->stock?->symbol ?? '—' }}</td>
+                            <td class="px-4 py-3"><span class="rounded-full border border-border bg-muted/20 px-2 py-1 text-[9px] font-semibold">{{ strtoupper($position->marketplace ?: 'live') }}</span></td>
                             <td class="px-4 py-3 font-medium tabular-nums">{{ currency_symbol() }}{{ number_format((float)$position->entry_price,2) }}</td>
                             <td class="px-4 py-3 font-medium tabular-nums">{{ currency_symbol() }}{{ number_format($exit,2) }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ number_format((float)$position->initial_quantity,6) }}</td>
@@ -88,7 +93,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="11" class="px-4 py-10 text-center text-muted-foreground">No trade contracts found.</td></tr>
+                        <tr><td colspan="12" class="px-4 py-10 text-center text-muted-foreground">No trade contracts found.</td></tr>
                     @endforelse
                 </tbody>
             </table>

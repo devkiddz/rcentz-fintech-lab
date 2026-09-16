@@ -13,11 +13,24 @@ class StockAnalysisService
 {
     public function forStock(Stock $stock): array
     {
-        if (app(MarketPriceRouter::class)->activeMarketplace() === 'controlled') {
+        return $this->forStockInMarketplace(
+            $stock,
+            app(MarketPriceRouter::class)->activeMarketplace()
+        );
+    }
+
+    public function forStockInMarketplace(Stock $stock, string $marketplace): array
+    {
+        $marketplace = app(MarketPriceRouter::class)->normalizeMarketplace($marketplace);
+
+        if ($marketplace === 'controlled') {
             return $this->forControlledStock($stock);
         }
 
-        $currentPrice = (float)($stock->current_price ?? 0);
+        // Read the raw persisted Live price. Stock::current_price intentionally
+        // follows the active display marketplace and is therefore not suitable
+        // when rendering a historical/non-active Live contract.
+        $currentPrice = (float)($stock->live_current_price ?? 0);
 
         $dailyRows = StockPriceHistory::query()
             ->where('symbol', $stock->symbol)
