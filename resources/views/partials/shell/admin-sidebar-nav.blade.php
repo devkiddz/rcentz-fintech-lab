@@ -1,15 +1,15 @@
 @php
     $parentBase = 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-[12px] font-semibold transition-colors';
-    $parentIdle = 'text-foreground bg-muted/70 hover:bg-muted';
-    $parentActive = 'text-foreground bg-muted shadow-sm';
+    $parentIdle = 'text-foreground bg-transparent hover:bg-muted/70';
+    $parentActive = 'text-foreground bg-red-500/[.07] ring-1 ring-red-500/15 shadow-sm';
 
     $childBase = 'flex items-center gap-3 rounded-lg px-3 py-2 text-[11px] font-medium transition-colors';
-    $childIdle = 'text-muted-foreground hover:bg-muted/50 hover:text-foreground';
-    $childActive = 'bg-muted/55 text-foreground';
+    $childIdle = 'text-muted-foreground hover:bg-muted/55 hover:text-foreground';
+    $childActive = 'bg-red-500/[.08] text-red-600 dark:text-red-400';
 
     $standaloneBase = 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-[12px] font-semibold transition-colors';
-    $standaloneIdle = 'text-foreground bg-muted/70 hover:bg-muted';
-    $standaloneActive = 'text-foreground bg-muted shadow-sm';
+    $standaloneIdle = 'text-foreground bg-transparent hover:bg-muted/70';
+    $standaloneActive = 'text-foreground bg-red-500/[.07] ring-1 ring-red-500/15 shadow-sm';
 @endphp
 
 <div class="px-3 pt-3 pb-1">
@@ -94,16 +94,47 @@
             </span>
             <i data-lucide="chevron-down" class="sidebar-chevron h-4 w-4 transition-transform group-open:rotate-180"></i>
         </summary>
+
         <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
-            <a href="{{ route('admin.investments.plans.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.plans.*') ? $childActive : $childIdle }}"><i data-lucide="layers-3" class="h-4 w-4"></i><span>Investment Plans</span></a>
-            <a href="{{ route('admin.investments.holdings.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.holdings.*') ? $childActive : $childIdle }}"><i data-lucide="briefcase" class="h-4 w-4"></i><span>Holdings</span></a>
-            <a href="{{ route('admin.investments.transactions.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.transactions.*') ? $childActive : $childIdle }}"><i data-lucide="receipt" class="h-4 w-4"></i><span>Transactions</span></a>
-            <a href="{{ route('admin.investments.nav-updates.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.nav-updates.*') ? $childActive : $childIdle }}"><i data-lucide="refresh-cw" class="h-4 w-4"></i><span>NAV Updates</span></a>
-            <a href="{{ route('admin.investments.automatic-nav-updates.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.automatic-nav-updates.*') ? $childActive : $childIdle }}"><i data-lucide="timer-reset" class="h-4 w-4"></i><span>Automatic NAV</span></a>
+            <a href="{{ route('admin.investments.control.index') }}"
+               class="{{ $childBase }} {{ request()->routeIs('admin.investments.control.*') ? $childActive : $childIdle }}">
+                <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
+                <span>Investment Control</span>
+            </a>
+
+            <a href="{{ route('investments.index') }}" class="{{ $childBase }}">
+                <i data-lucide="eye" class="h-4 w-4"></i>
+                <span>Customer Market</span>
+            </a>
+
+            <details class="group/legacy rounded-lg">
+                <summary class="{{ $childBase }} cursor-pointer justify-between text-muted-foreground hover:text-foreground">
+                    <span class="flex items-center gap-3">
+                        <i data-lucide="flask-conical" class="h-4 w-4"></i>
+                        <span>Legacy Lab</span>
+                    </span>
+                    <i data-lucide="chevron-down" class="h-3.5 w-3.5 transition-transform group-open/legacy:rotate-180"></i>
+                </summary>
+
+                <div class="mt-1 space-y-1 pl-5">
+                    <a href="{{ route('admin.investments.holdings.index') }}"
+                       class="{{ $childBase }} {{ request()->routeIs('admin.investments.holdings.*') ? $childActive : $childIdle }}">
+                        <i data-lucide="archive" class="h-3.5 w-3.5"></i><span>Old Holdings</span>
+                    </a>
+                    <a href="{{ route('admin.investments.transactions.index') }}"
+                       class="{{ $childBase }} {{ request()->routeIs('admin.investments.transactions.*') ? $childActive : $childIdle }}">
+                        <i data-lucide="receipt" class="h-3.5 w-3.5"></i><span>Old Transactions</span>
+                    </a>
+                    <a href="{{ route('admin.investments.plans.index') }}"
+                       class="{{ $childBase }} {{ request()->routeIs('admin.investments.plans.*','admin.investments.nav-updates.*','admin.investments.automatic-nav-updates.*') ? $childActive : $childIdle }}">
+                        <i data-lucide="layers-3" class="h-3.5 w-3.5"></i><span>NAV Plans</span>
+                    </a>
+                </div>
+            </details>
         </div>
     </details>
 
-    <div class="sidebar-section-label px-3 pt-4 pb-1 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Finance & Customers</div>
+    <div class="sidebar-section-label px-3 pt-4 pb-1 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Customers & Finance</div>
 
     <a href="{{ route('admin.wallet-transactions.index') }}" title="Wallet Transactions"
        class="{{ $standaloneBase }} {{ request()->routeIs('admin.wallet-transactions.*') ? $standaloneActive : $standaloneIdle }}">

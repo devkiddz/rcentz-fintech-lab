@@ -22,7 +22,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'wallet' => \App\Http\Middleware\EnsureUserHasWallet::class,
             'kyc' => \App\Http\Middleware\KYCMiddleware::class,
-            'block.admin' => \App\Http\Middleware\PreventAdminAccessToUserPages::class,
+            'customer.access' => \App\Http\Middleware\CustomerSurfaceAccess::class,
+            'account.owner' => \App\Http\Middleware\AccountOwnershipBoundary::class,
             'can.impersonate' => \App\Http\Middleware\EnsureUserCanImpersonate::class,
         ]);
 

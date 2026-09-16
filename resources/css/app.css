@@ -855,3 +855,97 @@
 .admin-workspace main .shadow-2xl:not([role="dialog"]) {
     box-shadow: none !important;
 }
+
+
+/* V5.26.6 Tesla shell boundary refinement */
+@layer components {
+    .customer-workspace #sidebar {
+        @apply bg-white/95 dark:bg-[#111418];
+    }
+
+    .customer-workspace #workspace-main {
+        @apply bg-[#f7f7f7] dark:bg-[#0d1014];
+    }
+
+    .customer-workspace .shell-topbar {
+        @apply border-b border-border/80 bg-white/90 backdrop-blur dark:bg-[#0d1014]/90;
+    }
+
+    .customer-workspace [data-sidebar-nav] {
+        scrollbar-width: thin;
+    }
+
+    .customer-workspace [data-sidebar-nav] summary {
+        @apply select-none;
+    }
+}
+
+
+/* V5.26.8 admin Tesla reconciliation */
+@layer components {
+    .admin-workspace #sidebar {
+        @apply bg-white/95 dark:bg-[#111418];
+    }
+
+    .admin-workspace #workspace-main {
+        @apply bg-[#f7f7f7] dark:bg-[#0d1014];
+    }
+
+    .admin-workspace .shell-topbar {
+        @apply border-b border-border/80 bg-white/90 backdrop-blur dark:bg-[#0d1014]/90;
+    }
+
+    .admin-workspace .ui-page-header {
+        @apply mb-5 border-b border-border/80 pb-5;
+    }
+
+    .admin-workspace .ui-heading {
+        @apply text-2xl font-semibold tracking-tight text-foreground;
+    }
+
+    .admin-workspace .ui-kicker {
+        @apply text-[9px] font-semibold uppercase tracking-[.16em] text-red-600 dark:text-red-400;
+    }
+
+    .admin-workspace .ui-lead {
+        @apply mt-2 text-xs leading-5 text-muted-foreground;
+    }
+
+    .admin-workspace .ui-panel {
+        @apply rounded-2xl border border-border/80 bg-white text-card-foreground shadow-sm dark:bg-[#15191f];
+    }
+
+    .admin-workspace .ui-input {
+        @apply rounded-xl border-border bg-white shadow-none dark:bg-[#0f1318];
+    }
+
+    .admin-workspace .ui-btn {
+        @apply rounded-xl font-semibold shadow-none;
+    }
+
+    .admin-workspace .ui-btn-primary {
+        @apply border border-red-600 bg-red-600 hover:bg-red-700;
+        color: rgb(255 255 255);
+    }
+
+    .admin-workspace .ui-btn-secondary {
+        @apply border border-border bg-white text-foreground hover:bg-muted dark:bg-[#111418];
+    }
+
+    .admin-workspace .sidebar-section-label {
+        @apply text-[8px] font-semibold tracking-[.18em] text-muted-foreground;
+    }
+
+    .admin-workspace [data-sidebar-nav] > a,
+    .admin-workspace [data-sidebar-nav] > details > summary {
+        @apply min-h-10;
+    }
+
+    .admin-workspace table thead {
+        @apply bg-muted/35;
+    }
+
+    .admin-workspace table tbody tr {
+        @apply transition-colors hover:bg-muted/30;
+    }
+}

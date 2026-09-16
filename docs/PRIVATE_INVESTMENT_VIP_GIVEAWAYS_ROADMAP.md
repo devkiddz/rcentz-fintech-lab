@@ -532,15 +532,15 @@ These are not all new modules, but they are part of the supplied navigation refe
 
 ## Phase A — Current Platform Hardening
 
-- [ ] Controlled/internal market continuity when active source changes
-- [ ] Marketplace-safe portfolio totals in emails
-- [ ] Prevent synthetic/internal instruments from inappropriate external quote jobs
-- [ ] Marketplace-aware admin SELL position selection
-- [ ] Audit global/current price usage
-- [ ] Marketplace consistency across admin/customer transaction history
-- [ ] Remove obsolete compatibility routes after caller audit
-- [ ] Final acceptance test
-- [ ] Git checkpoint
+- [x] Controlled/internal market continuity when active source changes
+- [x] Marketplace-safe portfolio totals in emails
+- [x] Prevent synthetic/internal instruments from inappropriate external quote jobs
+- [x] Marketplace-aware admin SELL position selection
+- [x] Audit global/current price usage
+- [x] Marketplace consistency across admin/customer transaction history
+- [x] Remove obsolete compatibility routes after caller audit
+- [x] Final acceptance test
+- [x] Git checkpoint
 
 ## Phase B — Private Investment Market
 

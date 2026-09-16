@@ -7,6 +7,8 @@ use App\Http\Controllers\UserDashboardController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\InvestmentPlanController;
 use App\Http\Controllers\InvestmentController;
+use App\Http\Controllers\PrivateInvestmentMarketController;
+use App\Http\Controllers\PrivateInvestmentOrderController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\TradingController;
 use App\Http\Controllers\CopyTradingController;
@@ -15,6 +17,7 @@ use App\Http\Controllers\StockTradePlanController;
 use App\Http\Controllers\Admin\CopyTradingController as AdminCopyTradingController;
 use App\Http\Controllers\Admin\TradingBotController as AdminTradingBotController;
 use App\Http\Controllers\InvestmentDashboardController;
+use App\Http\Controllers\PrivateInvestmentAccountController;
 use App\Http\Controllers\KYCController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SupportController;
@@ -27,6 +30,9 @@ use App\Http\Controllers\Admin\PurchaseController as AdminPurchaseController;
 use App\Http\Controllers\Admin\EmailController as AdminEmailController;
 use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
 use App\Http\Controllers\Admin\InvestmentPlanController as AdminInvestmentPlanController;
+use App\Http\Controllers\Admin\PrivateInvestmentAccountAdminController;
+use App\Http\Controllers\Admin\PrivateInvestmentAdminController;
+use App\Http\Controllers\Admin\PrivateInvestmentAccountOperationController;
 use App\Http\Controllers\Admin\InvestmentHoldingController as AdminInvestmentHoldingController;
 use App\Http\Controllers\Admin\InvestmentTransactionController as AdminInvestmentTransactionController;
 use App\Http\Controllers\Admin\InvestmentNavController as AdminInvestmentNavController;
@@ -70,7 +76,7 @@ Route::get('/terms', [FrontendController::class, 'terms'])->name('terms');
 Route::get('/privacy', [FrontendController::class, 'privacy'])->name('privacy');
 
 // Authenticated User Routes
-Route::middleware(['auth', 'verified', 'wallet', 'block.admin'])->group(function () {
+Route::middleware(['auth', 'verified', 'wallet', 'customer.access'])->group(function () {
     // Checkout Routes
     Route::get('/checkout/{car_id}', [CheckoutController::class, 'checkoutForm'])->name('checkout.form');
     Route::post('/checkout/{car_id}', [CheckoutController::class, 'processCheckout'])->name('checkout.process');
@@ -127,30 +133,86 @@ Route::middleware(['auth', 'verified', 'wallet', 'block.admin'])->group(function
     Route::delete('/wallet/connections/{linkedWallet}', [WalletController::class, 'destroyConnection'])->name('wallet.connections.destroy');
     Route::get('/wallet/transactions', [WalletController::class, 'transactions'])->name('wallet.transactions');
     
-    // Investment Plan Routes
-    Route::get('/investments', [InvestmentPlanController::class, 'index'])->name('investments.index');
-    Route::get('/investments/search', [InvestmentPlanController::class, 'search'])->name('investments.search');
-    Route::get('/investments/categories', [InvestmentPlanController::class, 'categories'])->name('investments.categories');
-    Route::get('/investments/featured', [InvestmentPlanController::class, 'featured'])->name('investments.featured');
-    Route::get('/investments/type/{type}', [InvestmentPlanController::class, 'byType'])->name('investments.by-type');
-    Route::get('/investments/category/{category}', [InvestmentPlanController::class, 'byCategory'])->name('investments.by-category');
-    Route::get('/investments/{plan}', [InvestmentPlanController::class, 'show'])->name('investments.show');
+    // V5.25.2 canonical Private Investment Market read surfaces.
+    // Every listing below uses PrivateInvestmentInstrument pricing/history only.
+    Route::get('/investments', [PrivateInvestmentMarketController::class, 'index'])->name('investments.index');
+    Route::get('/investments/stocks', [PrivateInvestmentMarketController::class, 'stocks'])->name('investments.stocks');
+    Route::get('/investments/crypto', [PrivateInvestmentMarketController::class, 'crypto'])->name('investments.crypto');
+    Route::get('/investments/real-estate', [PrivateInvestmentMarketController::class, 'realEstate'])->name('investments.real-estate');
+    Route::get('/investments/bonds', [PrivateInvestmentMarketController::class, 'bonds'])->name('investments.bonds');
+    Route::get('/account/investments', [PrivateInvestmentMarketController::class, 'account'])->middleware('account.owner')->name('account.investments');
+    Route::get('/account/investments/portfolio', [PrivateInvestmentMarketController::class, 'portfolio'])->middleware('account.owner')->name('account.investments.portfolio');
+    Route::get('/account/investments/performance', [PrivateInvestmentMarketController::class, 'performance'])->middleware('account.owner')->name('account.investments.performance');
+    Route::get('/account/investments/transactions', [PrivateInvestmentAccountController::class, 'transactions'])
+        ->middleware('account.owner')
+        ->name('account.investments.transactions');
+    Route::get('/account/investments/watchlist', [PrivateInvestmentAccountController::class, 'watchlist'])
+        ->middleware('account.owner')
+        ->name('account.investments.watchlist');
+    Route::post('/account/investments/{instrument}/subscribe', [PrivateInvestmentOrderController::class, 'subscribe'])
+        ->middleware('account.owner')
+        ->name('account.investments.subscribe');
+    Route::post('/account/investments/{instrument}/redeem', [PrivateInvestmentOrderController::class, 'redeem'])
+        ->middleware('account.owner')
+        ->name('account.investments.redeem');
+    Route::post('/account/investments/watchlist/{instrument}', [PrivateInvestmentAccountController::class, 'storeWatchlist'])
+        ->middleware('account.owner')
+        ->name('account.investments.watchlist.store');
+    Route::patch('/account/investments/watchlist/{instrument}', [PrivateInvestmentAccountController::class, 'updateWatchlist'])
+        ->middleware('account.owner')
+        ->name('account.investments.watchlist.update');
+    Route::delete('/account/investments/watchlist/{instrument}', [PrivateInvestmentAccountController::class, 'destroyWatchlist'])
+        ->middleware('account.owner')
+        ->name('account.investments.watchlist.destroy');
+
+    // Compatibility redirects: owned state belongs under /account, not the discovery market.
+    Route::get('/investments/portfolio', fn () => redirect()->route('account.investments.portfolio'))->name('investments.portfolio');
+    Route::get('/investments/performance', fn () => redirect()->route('account.investments.performance'))->name('investments.performance');
+    Route::get('/investments/search', [PrivateInvestmentMarketController::class, 'search'])->name('investments.search');
+
+    // Compatibility redirects for old category URLs/bookmarks.
+    Route::get('/investments/categories', fn () => redirect()->route('investments.index'))->name('investments.categories');
+    Route::get('/investments/featured', fn () => redirect()->route('investments.index', ['featured'=>1]))->name('investments.featured');
+    Route::get('/investments/type/{type}', [PrivateInvestmentMarketController::class, 'legacyType'])->name('investments.by-type');
+    Route::get('/investments/category/{category}', [PrivateInvestmentMarketController::class, 'legacyCategory'])->name('investments.by-category');
+
+    Route::get('/investments/{instrument:slug}', [PrivateInvestmentMarketController::class, 'show'])->name('investments.show');
     
-    // Investment Trading Routes
-    Route::get('/investments/{plan}/buy', [InvestmentController::class, 'buy'])->name('investments.buy');
-    Route::post('/investments/{plan}/buy', [InvestmentController::class, 'executeBuy'])->name('investments.execute-buy');
-    Route::get('/investments/{plan}/sell', [InvestmentController::class, 'sell'])->name('investments.sell');
-    Route::post('/investments/{plan}/sell', [InvestmentController::class, 'executeSell'])->name('investments.execute-sell');
-    
-    // Investment Portfolio Routes
-    Route::get('/portfolio', [InvestmentController::class, 'portfolio'])->name('portfolio.index');
-    Route::get('/portfolio/holdings', [InvestmentController::class, 'holdings'])->name('portfolio.holdings');
-    Route::get('/portfolio/transactions', [InvestmentController::class, 'transactions'])->name('portfolio.transactions');
-    Route::get('/portfolio/analytics', [InvestmentController::class, 'analytics'])->name('portfolio.analytics');
-    Route::get('/watchlist', [InvestmentController::class, 'watchlist'])->name('watchlist.index');
-    Route::post('/watchlist/{plan}', [InvestmentController::class, 'addToWatchlist'])->name('watchlist.add');
-    Route::delete('/watchlist/{plan}', [InvestmentController::class, 'removeFromWatchlist'])->name('watchlist.remove');
-    
+    // V5.26.4 legacy investment compatibility routes.
+    // Legacy InvestmentPlan financial mutations are disabled while the Private
+    // Investment subscription/redemption engine becomes canonical.
+    Route::get('/investments/{plan}/buy', function () {
+        return redirect()->route('investments.index')
+            ->with('warning', 'This legacy investment purchase link has moved to the Private Investment market.');
+    })->name('investments.buy');
+    Route::post('/investments/{plan}/buy', function () {
+        return redirect()->route('investments.index')
+            ->with('warning', 'Legacy InvestmentPlan purchases are disabled. No financial mutation was performed.');
+    })->name('investments.execute-buy');
+    Route::get('/investments/{plan}/sell', function () {
+        return redirect()->route('account.investments')
+            ->with('warning', 'This legacy investment redemption link has moved to your Investment Account.');
+    })->name('investments.sell');
+    Route::post('/investments/{plan}/sell', function () {
+        return redirect()->route('account.investments')
+            ->with('warning', 'Legacy InvestmentPlan redemptions are disabled. No financial mutation was performed.');
+    })->name('investments.execute-sell');
+
+    Route::get('/portfolio', fn () => redirect()->route('account.investments'))->name('portfolio.index');
+    Route::get('/portfolio/holdings', fn () => redirect()->route('account.investments.portfolio'))->name('portfolio.holdings');
+    Route::get('/portfolio/transactions', fn () => redirect()->route('account.investments.transactions'))->name('portfolio.transactions');
+    Route::get('/portfolio/analytics', fn () => redirect()->route('account.investments.performance'))->name('portfolio.analytics');
+
+    Route::get('/watchlist', fn () => redirect()->route('account.investments.watchlist'))->name('watchlist.index');
+    Route::post('/watchlist/{plan}', function () {
+        return redirect()->route('account.investments.watchlist')
+            ->with('warning', 'The old InvestmentPlan watchlist has been replaced by the Private Investment watchlist.');
+    })->name('watchlist.add');
+    Route::delete('/watchlist/{plan}', function () {
+        return redirect()->route('account.investments.watchlist')
+            ->with('warning', 'The old InvestmentPlan watchlist has been replaced by the Private Investment watchlist.');
+    })->name('watchlist.remove');
+
     // Stock Routes
     Route::get('/stocks', [StockController::class, 'index'])->name('stocks.index');
     Route::get('/stocks/search', [StockController::class, 'search'])->name('stocks.search');
@@ -298,7 +360,24 @@ Route::middleware(['auth', 'admin'])
 
         // Admin Investment Management
         Route::prefix('investments')->name('investments.')->group(function () {
-            // Investment Plans
+            // V5.26 canonical Private Investment control plane.
+            Route::get('/', [PrivateInvestmentAdminController::class, 'index'])->name('control.index');
+            Route::post('/instruments', [PrivateInvestmentAdminController::class, 'storeInstrument'])->name('control.instruments.store');
+            Route::get('/instruments/{instrument}', [PrivateInvestmentAdminController::class, 'show'])->name('control.show');
+            Route::patch('/instruments/{instrument}', [PrivateInvestmentAdminController::class, 'updateInstrument'])->name('control.instruments.update');
+            Route::patch('/instruments/{instrument}/toggle', [PrivateInvestmentAdminController::class, 'toggle'])->name('control.instruments.toggle');
+            Route::post('/instruments/{instrument}/assets', [PrivateInvestmentAdminController::class, 'storeAsset'])->name('control.assets.store');
+            Route::delete('/instruments/{instrument}/assets/{asset}', [PrivateInvestmentAdminController::class, 'destroyAsset'])->name('control.assets.destroy');
+            Route::post('/instruments/{instrument}/valuation-events', [PrivateInvestmentAdminController::class, 'applyValuation'])->name('control.valuation.apply');
+            Route::delete('/instruments/{instrument}/valuation-events/test-history', [PrivateInvestmentAdminController::class, 'resetTestValuations'])->name('control.valuation.reset-test');
+            Route::patch('/presentation', [PrivateInvestmentAdminController::class, 'updatePresentation'])->name('control.presentation.update');
+            Route::post('/instruments/{instrument}/account-operations/subscribe', [PrivateInvestmentAccountOperationController::class, 'subscribe'])->name('account-operations.subscribe');
+            Route::post('/instruments/{instrument}/account-operations/redeem', [PrivateInvestmentAccountOperationController::class, 'redeem'])->name('account-operations.redeem');
+            Route::post('/accounts/{user}/watchlist/{instrument}', [PrivateInvestmentAccountAdminController::class, 'storeWatchlist'])->name('accounts.watchlist.store');
+            Route::patch('/accounts/{user}/watchlist/{instrument}', [PrivateInvestmentAccountAdminController::class, 'updateWatchlist'])->name('accounts.watchlist.update');
+            Route::delete('/accounts/{user}/watchlist/{instrument}', [PrivateInvestmentAccountAdminController::class, 'destroyWatchlist'])->name('accounts.watchlist.destroy');
+
+            // Legacy NAV InvestmentPlan control remains available during migration.
             Route::resource('plans', AdminInvestmentPlanController::class);
             
             // Investment Holdings

@@ -24,6 +24,12 @@
         </div>
 
         <div class="flex items-center gap-2 sm:gap-2.5">
+            @if(auth()->user()->isAdmin() && !app('impersonate')->isImpersonating())
+                <a href="{{ route('admin.dashboard') }}" class="hidden items-center gap-1.5 rounded-full border border-red-500/20 bg-red-500/[.06] px-3 py-1.5 text-[10px] font-semibold text-red-600 hover:bg-red-500/10 sm:inline-flex dark:text-red-400">
+                    <i data-lucide="shield-check" class="h-3.5 w-3.5"></i>
+                    <span>Return to Admin</span>
+                </a>
+            @endif
             @include('partials.shell.theme-toggle')
 
             @if(app('impersonate')->isImpersonating())

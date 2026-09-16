@@ -30,7 +30,7 @@
     <aside id="sidebar"
            class="fixed inset-y-0 left-0 z-[70] flex w-72 -translate-x-full flex-col border-r border-border bg-card text-card-foreground shadow-sm transition-all duration-300 lg:translate-x-0">
         <div class="flex h-16 shrink-0 items-center justify-between border-b border-border px-4">
-            <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-3">
+            <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('dashboard') }}" class="flex min-w-0 items-center gap-3">
                 @if(site_logo_light() || site_logo_dark())
                     <img src="{{ site_logo_light() ?? site_logo_dark() }}"
                          alt="{{ site_name() }}"
@@ -62,6 +62,11 @@
             <div class="sidebar-profile-copy min-w-0">
                 <p class="truncate text-xs font-semibold">{{ auth()->user()->name }}</p>
                 <p class="truncate text-[10px] text-muted-foreground">{{ auth()->user()->email }}</p>
+                @if(auth()->user()->isAdmin())
+                    <p class="mt-1 inline-flex items-center rounded-full bg-red-500/10 px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[.12em] text-red-600 dark:text-red-400">Customer Audit Mode</p>
+                @else
+                    <p class="mt-1 text-[9px] font-medium text-muted-foreground">Customer account</p>
+                @endif
             </div>
         </div>
 

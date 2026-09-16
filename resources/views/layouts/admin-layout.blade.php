@@ -64,7 +64,7 @@
             </div>
             <div class="sidebar-profile-copy min-w-0">
                 <p class="truncate text-xs font-semibold">{{ Auth::user()->name }}</p>
-                <p class="truncate text-[10px] text-muted-foreground">Administrator · Command Center</p>
+                <p class="truncate text-[10px] text-muted-foreground">Administrator · Platform Control</p>
             </div>
         </div>
 
