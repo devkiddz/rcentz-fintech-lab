@@ -12,6 +12,7 @@ class StockHolding extends Model
     protected $fillable = [
         'user_id',
         'stock_id',
+        'marketplace',
         'quantity',
         'average_buy_price',
         'total_invested',
@@ -41,8 +42,6 @@ class StockHolding extends Model
         return $this->belongsTo(Stock::class);
     }
 
-
-
     public function getFormattedCurrentValueAttribute()
     {
         return '$' . number_format($this->current_value, 2);
@@ -52,7 +51,7 @@ class StockHolding extends Model
     {
         $value = $this->unrealized_gain_loss;
         $formatted = '$' . number_format(abs($value), 2);
-        
+
         if ($value > 0) {
             return '+' . $formatted;
         } elseif ($value < 0) {
@@ -65,7 +64,7 @@ class StockHolding extends Model
     {
         $percentage = $this->unrealized_gain_loss_percentage;
         $formatted = number_format($percentage, 2) . '%';
-        
+
         if ($percentage > 0) {
             return '+' . $formatted;
         } elseif ($percentage < 0) {

@@ -17,7 +17,7 @@ final class TradingEngineCatalog
                 'status' => 'ACTIVE',
                 'execution' => MarketTradeContractEngine::class,
                 'position' => TradePositionService::class,
-                'price_source' => 'stocks.current_price (API-fed persisted quote)',
+                'price_source' => 'MarketPriceRouter (Live or Controlled)',
                 'financial_mutation' => 'YES',
                 'purpose' => 'Canonical atomic user/admin/bot/copy trading path.',
             ],

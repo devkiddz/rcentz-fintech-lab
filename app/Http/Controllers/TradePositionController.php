@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TradePosition;
+use App\Services\MarketPriceRouter;
 use App\Services\MarketSessionService;
 use App\Services\TradePositionService;
 use Illuminate\Http\Request;
@@ -63,7 +64,7 @@ class TradePositionController extends Controller
 
         return back()->with(
             'success',
-            'Trade management updated. Effective close still cannot pass the regular market close.'
+            'Trade management updated for this contract marketplace.'
         );
     }
 
@@ -101,13 +102,14 @@ class TradePositionController extends Controller
         Request $request,
         TradePosition $position,
         TradePositionService $service,
-        MarketSessionService $marketSession
+        MarketSessionService $marketSession,
+        MarketPriceRouter $prices
     ) {
         abort_unless($position->user_id===Auth::id(),403);
 
-        if(! $marketSession->isOpen()){
+        if($prices->requiresRegularSession($position->marketplace ?: 'live') && ! $marketSession->isOpen()){
             return back()->withErrors([
-                'position'=>'Partial close is a managed execution and requires an open regular market session. Use Kill Trade for an immediate full contract termination at the current stored CMP.'
+                'position'=>'Partial close for a Live contract requires an open regular market session. Controlled contracts use the controlled marketplace session.'
             ]);
         }
 

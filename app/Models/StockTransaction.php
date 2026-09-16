@@ -10,7 +10,7 @@ class StockTransaction extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id','stock_id','copy_strategy_id','execution_source','initiated_by_user_id',
+        'user_id','stock_id','copy_strategy_id','execution_source','marketplace','initiated_by_user_id',
         'trade_position_id','wallet_transaction_id','type','quantity','price_per_share',
         'total_amount','fee','status','executed_at',
     ];

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\MarketPriceRouter;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -69,6 +70,28 @@ class Stock extends Model
     public function priceHistory()
     {
         return $this->hasMany(StockPriceHistory::class, 'symbol', 'symbol');
+    }
+
+    /**
+     * Public market price follows the active marketplace authority.
+     * The raw database column remains the latest Live feed price.
+     */
+    public function getCurrentPriceAttribute($value)
+    {
+        try {
+            if (app()->bound(MarketPriceRouter::class)) {
+                return app(MarketPriceRouter::class)->displayPrice($this, (float) $value);
+            }
+        } catch (\Throwable) {
+            // During boot/migrations, fall back to the persisted Live value.
+        }
+
+        return $value;
+    }
+
+    public function getLiveCurrentPriceAttribute(): float
+    {
+        return (float) ($this->getRawOriginal('current_price') ?? 0);
     }
 
     // Accessors

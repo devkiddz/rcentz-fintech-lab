@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Services\MarketPriceRouter;
 use Illuminate\Database\Eloquent\Model;
 
 class TradePosition extends Model
 {
     protected $fillable = [
         'user_id','stock_id','entry_transaction_id','last_exit_transaction_id',
-        'source_position_id','context_type','context_id','direction',
+        'source_position_id','context_type','context_id','marketplace','direction',
         'initial_quantity','open_quantity','entry_price','average_exit_price',
         'stop_loss_price','take_profit_price','stop_loss_percent','take_profit_percent',
         'duration_minutes','opened_at','expires_at','closed_at','status','exit_reason',
@@ -47,7 +48,17 @@ class TradePosition extends Model
     public function getCurrentProfitLossAttribute(): float
     {
         if (! $this->stock) return (float)$this->realized_profit_loss;
-        $open = ((float)$this->stock->current_price - (float)$this->entry_price) * (float)$this->open_quantity;
+
+        try {
+            $cmp = app(MarketPriceRouter::class)->price(
+                $this->stock,
+                $this->marketplace ?: 'live'
+            );
+        } catch (\Throwable) {
+            $cmp = (float)$this->stock->current_price;
+        }
+
+        $open = ($cmp - (float)$this->entry_price) * (float)$this->open_quantity;
         return (float)$this->realized_profit_loss + $open;
     }
 

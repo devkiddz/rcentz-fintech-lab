@@ -250,6 +250,13 @@ Route::middleware(['auth', 'admin'])
         Route::get('trading/manual', [\App\Http\Controllers\Admin\TradingOperationsController::class, 'manual'])->name('trading.manual');
         Route::get('trading/positions', [\App\Http\Controllers\Admin\TradingOperationsController::class, 'positions'])->name('trading.positions');
         Route::get('trading/history', [\App\Http\Controllers\Admin\TradingOperationsController::class, 'history'])->name('trading.history');
+        Route::get('trading/marketplace', [\App\Http\Controllers\Admin\MarketEnvironmentController::class, 'index'])->name('trading.marketplace');
+        Route::post('trading/marketplace/mode', [\App\Http\Controllers\Admin\MarketEnvironmentController::class, 'updateMode'])->name('trading.marketplace.mode');
+        Route::post('trading/marketplace/drive', [\App\Http\Controllers\Admin\MarketEnvironmentController::class, 'updateDrive'])->name('trading.marketplace.drive');
+        Route::post('trading/marketplace/tick', [\App\Http\Controllers\Admin\MarketEnvironmentController::class, 'tick'])->name('trading.marketplace.tick');
+        Route::post('trading/marketplace/instruments', [\App\Http\Controllers\Admin\MarketEnvironmentController::class, 'storeInstrument'])->name('trading.marketplace.instruments.store');
+        Route::patch('trading/marketplace/instruments/{instrument}/price', [\App\Http\Controllers\Admin\MarketEnvironmentController::class, 'resetInstrumentPrice'])->name('trading.marketplace.instruments.price');
+        Route::patch('trading/marketplace/instruments/{instrument}/toggle', [\App\Http\Controllers\Admin\MarketEnvironmentController::class, 'toggleInstrument'])->name('trading.marketplace.instruments.toggle');
         Route::get('trading/positions/{position}', [\App\Http\Controllers\Admin\TradingOperationsController::class, 'show'])->name('trading.positions.show');
         // Admin Car Management
         Route::resource('cars', AdminCarController::class);

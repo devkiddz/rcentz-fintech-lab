@@ -12,11 +12,11 @@ class TradingBotService
         private MarketTradeContractEngine $marketTrades
     ){}
 
-    // V5.10 canonical market-contract wiring.
     public function run(TradingBot $bot,bool $manual=false):TradingBotExecution
     {
         $bot->loadMissing(['user.kyc','stock','subscription.product']);
         $stock=$bot->stock; $user=$bot->user; $price=(float)$stock->current_price; $subscription=$bot->subscription;
+        $marketplace=$this->marketTrades->activeMarketplace();
 
         if(!$subscription || !$subscription->is_usable) return $this->log($bot,null,0,$price,0,'skipped','Bot subscription is not active.');
         if(!$manual && ($bot->status!=='active' || ($bot->next_run_at && $bot->next_run_at->isFuture()))) return $this->log($bot,null,0,$price,0,'skipped','Bot is not due.');
@@ -55,12 +55,15 @@ class TradingBotService
                     $bot->id,
                     null,
                     'system',
-                    null
+                    null,
+                    null,
+                    $marketplace
                 );
                 $bot->increment('spent_total',(float)$trade->total_amount);
             }else{
                 $position=TradePosition::where('user_id',$user->id)
                     ->where('stock_id',$stock->id)
+                    ->where('marketplace',$marketplace)
                     ->where('context_type','trading_bot')
                     ->where('context_id',$bot->id)
                     ->whereIn('status',['open','exit_queued'])
@@ -69,7 +72,7 @@ class TradingBotService
                     ->first();
 
                 if(! $position){
-                    return $this->finish($bot,$this->log($bot,null,$qty,$price,0,'skipped','No bot-attributed open position is available to sell.'));
+                    return $this->finish($bot,$this->log($bot,null,$qty,$price,0,'skipped','No bot-attributed open position is available to sell in the active marketplace.'));
                 }
 
                 $qty=min($qty,(float)$position->open_quantity);
@@ -77,7 +80,7 @@ class TradingBotService
             }
 
             $amount=(float)$trade->total_amount;
-            $execution=$this->log($bot,$trade,$qty,$price,$amount,'completed',null);
+            $execution=$this->log($bot,$trade,$qty,(float)$trade->price_per_share,$amount,'completed',null);
 
             NotificationService::createSystemNotification(
                 $user,'Trading bot executed',

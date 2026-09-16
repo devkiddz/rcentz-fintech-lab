@@ -11,7 +11,8 @@ class TradePositionService
 {
     public function __construct(
         private StockTradeExecutor $executor,
-        private MarketSessionService $marketSession
+        private MarketSessionService $marketSession,
+        private MarketPriceRouter $prices
     ) {}
 
     public function openLongFromTrade(
@@ -41,21 +42,22 @@ class TradePositionService
         $stop = $slPct ? round($entryPrice * (1 - ($slPct / 100)), 8) : null;
         $take = $tpPct ? round($entryPrice * (1 + ($tpPct / 100)), 8) : null;
         $openedAt = $entry->executed_at ?? now();
-        $end = $this->marketSession->effectiveEnd($openedAt, $duration);
+        $marketplace = $entry->marketplace ?: $this->prices->activeMarketplace();
+        $end = $this->effectiveEndForMarketplace($marketplace, $openedAt, $duration);
 
         $metadata = array_merge(
             $risk['metadata'] ?? [],
             [
                 'requested_duration_minutes' => $duration,
-                'requested_end_et' => $end['requested_at_et']->toIso8601String(),
-                'session_close_et' => $end['session_close_et']->toIso8601String(),
+                'requested_end_et' => $end['requested_at_et']?->toIso8601String(),
+                'session_close_et' => $end['session_close_et']?->toIso8601String(),
                 'effective_end_reason' => $end['reason'],
             ]
         );
 
         return DB::transaction(function () use (
             $entry,$contextType,$contextId,$sourcePositionId,$actorType,$actorId,
-            $entryPrice,$slPct,$tpPct,$duration,$stop,$take,$openedAt,$end,$metadata
+            $entryPrice,$slPct,$tpPct,$duration,$stop,$take,$openedAt,$end,$metadata,$marketplace
         ) {
             $position = TradePosition::create([
                 'user_id'=>$entry->user_id,
@@ -64,6 +66,7 @@ class TradePositionService
                 'source_position_id'=>$sourcePositionId,
                 'context_type'=>$contextType,
                 'context_id'=>$contextId,
+                'marketplace'=>$marketplace,
                 'direction'=>'long',
                 'initial_quantity'=>$entry->quantity,
                 'open_quantity'=>$entry->quantity,
@@ -126,7 +129,7 @@ class TradePositionService
             throw new RuntimeException('This trade contract is already closed.');
         }
 
-        $cmp = (float) $position->stock->current_price;
+        $cmp = $this->prices->price($position->stock, $position->marketplace ?: 'live');
 
         if ($cmp <= 0) {
             throw new RuntimeException('Current Market Price is unavailable.');
@@ -161,8 +164,14 @@ class TradePositionService
             throw new RuntimeException('Position is already closed.');
         }
 
-        if (! $allowClosedSessionSettlement && ! $this->marketSession->isOpen()) {
-            throw new RuntimeException('Regular market session is closed.');
+        $marketplace = $position->marketplace ?: 'live';
+
+        if (
+            ! $allowClosedSessionSettlement
+            && $this->prices->requiresRegularSession($marketplace)
+            && ! $this->marketSession->isOpen()
+        ) {
+            throw new RuntimeException('Regular market session is closed for this Live contract.');
         }
 
         $qty = $quantity === null
@@ -175,7 +184,7 @@ class TradePositionService
 
         $cmp = $settlementPrice !== null
             ? (float)$settlementPrice
-            : (float)$position->stock->current_price;
+            : $this->prices->price($position->stock, $marketplace);
 
         $trade = $this->executor->sell(
             $position->user,
@@ -188,7 +197,8 @@ class TradePositionService
             $actorId,
             $position->id,
             $allowClosedSessionSettlement,
-            $cmp
+            $cmp,
+            $marketplace
         );
 
         $this->applyExitTransaction(
@@ -249,7 +259,7 @@ class TradePositionService
                 'realized_return_percent'=>$basis > 0 ? ($realized/$basis)*100 : 0,
                 'status'=>$remaining <= 0 ? 'closed' : 'open',
                 'exit_reason'=>$remaining <= 0 ? $reason : $position->exit_reason,
-                'closed_at'=>$remaining <= 0 ? now() : null,
+                'closed_at'=>$remaining <= 0 ? ($trade->executed_at ?? now()) : null,
             ]);
 
             if ($linkTransaction && $trade->exists && ! $trade->trade_position_id) {
@@ -292,6 +302,7 @@ class TradePositionService
         $query = TradePosition::with('stock')
             ->where('user_id',$sell->user_id)
             ->where('stock_id',$sell->stock_id)
+            ->where('marketplace',$sell->marketplace ?: 'live')
             ->whereIn('status',['open','exit_queued'])
             ->where('open_quantity','>',0)
             ->orderBy('opened_at');
@@ -339,7 +350,9 @@ class TradePositionService
         $tp = $this->nullablePercent($takeProfitPercent);
         $emp = (float)$position->entry_price;
 
-        $end = $this->marketSession->effectiveEnd(
+        $marketplace = $position->marketplace ?: 'live';
+        $end = $this->effectiveEndForMarketplace(
+            $marketplace,
             now(),
             $durationMinutes && $durationMinutes > 0 ? $durationMinutes : null
         );
@@ -348,8 +361,8 @@ class TradePositionService
             $position->metadata ?? [],
             [
                 'requested_duration_minutes'=>$durationMinutes,
-                'requested_end_et'=>$end['requested_at_et']->toIso8601String(),
-                'session_close_et'=>$end['session_close_et']->toIso8601String(),
+                'requested_end_et'=>$end['requested_at_et']?->toIso8601String(),
+                'session_close_et'=>$end['session_close_et']?->toIso8601String(),
                 'effective_end_reason'=>$end['reason'],
             ]
         );
@@ -372,7 +385,7 @@ class TradePositionService
             $position,
             'risk_updated',
             null,
-            (float)($position->stock?->current_price ?? 0),
+            $position->stock ? $this->prices->price($position->stock, $marketplace) : 0,
             null,
             null,
             'Risk controls updated.',
@@ -381,7 +394,7 @@ class TradePositionService
             [
                 'stop_loss_percent'=>$sl,
                 'take_profit_percent'=>$tp,
-                'effective_close_at'=>$end['effective_at']->toIso8601String(),
+                'effective_close_at'=>$end['effective_at']?->toIso8601String(),
                 'effective_end_reason'=>$end['reason'],
             ]
         );
@@ -413,7 +426,9 @@ class TradePositionService
             $closed->id,
             $closed->entryTransaction?->copy_strategy_id,
             $actorType,
-            $actorId
+            $actorId,
+            null,
+            $closed->marketplace ?: 'live'
         );
 
         $new = $this->openLongFromTrade(
@@ -477,7 +492,7 @@ class TradePositionService
 
                     $stats['checked']++;
 
-                    $cmp=(float)$position->stock->current_price;
+                    $cmp=$this->prices->price($position->stock, $position->marketplace ?: 'live');
                     $reason=null;
 
                     if($position->stop_loss_price && $cmp <= (float)$position->stop_loss_price){
@@ -499,7 +514,8 @@ class TradePositionService
                         // If the scheduler observes it just after 16:00 ET, the stored
                         // CMP is the session's closing/current market value used for
                         // settlement rather than carrying the contract overnight.
-                        $allowSessionSettlement=! $this->marketSession->isOpen();
+                        $allowSessionSettlement=$this->prices->requiresRegularSession($position->marketplace ?: 'live')
+                            && ! $this->marketSession->isOpen();
 
                         $trade=$this->close(
                             $position,
@@ -568,7 +584,7 @@ class TradePositionService
                     'system',
                     null,
                     true,
-                    (float)$position->stock->current_price
+                    $this->prices->price($position->stock, $position->marketplace ?: 'live')
                 );
 
                 $result['closed']++;
@@ -610,6 +626,29 @@ class TradePositionService
             'note'=>$note,
             'metadata'=>$metadata ?: null,
         ]);
+    }
+
+    private function effectiveEndForMarketplace(
+        string $marketplace,
+        \Carbon\CarbonInterface $openedAt,
+        ?int $durationMinutes
+    ): array {
+        if ($this->prices->requiresRegularSession($marketplace)) {
+            return $this->marketSession->effectiveEnd($openedAt, $durationMinutes);
+        }
+
+        $opened = \Carbon\Carbon::instance($openedAt)->copy();
+        $requested = $durationMinutes && $durationMinutes > 0
+            ? $opened->copy()->addMinutes($durationMinutes)
+            : null;
+
+        return [
+            'effective_at' => $requested,
+            'effective_at_et' => $requested?->copy()->setTimezone(MarketSessionService::TIMEZONE),
+            'requested_at_et' => $requested?->copy()->setTimezone(MarketSessionService::TIMEZONE),
+            'session_close_et' => null,
+            'reason' => $requested ? 'time_expiry' : 'open_until_closed',
+        ];
     }
 
     private function nullablePercent(mixed $value): ?float

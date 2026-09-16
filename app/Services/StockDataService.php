@@ -46,7 +46,7 @@ class StockDataService
 
             // Update stock with new data
             $stock->update([
-                'current_price' => $quote['c'] ?? $stock->current_price,
+                'current_price' => $quote['c'] ?? (float) $stock->getRawOriginal('current_price'),
                 'previous_close' => $quote['pc'] ?? $stock->previous_close,
                 'change_amount' => ($quote['c'] ?? 0) - ($quote['pc'] ?? 0),
                 'change_percentage' => $this->calculateChangePercentage($quote['c'] ?? 0, $quote['pc'] ?? 0),

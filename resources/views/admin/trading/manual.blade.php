@@ -5,12 +5,17 @@
             <p class="ui-kicker">Admin · Trading Command</p>
             <h1 class="ui-heading">Trading Desk</h1>
             <p class="ui-lead max-w-3xl">
-                Select a market, inspect its live context, then open the execution desk for
+                Select a market, inspect its active marketplace context, then open the execution desk for
                 Strategy Trade, Admin Direct Trade or Trade for User.
             </p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+            <a href="{{ route('admin.trading.marketplace') }}" class="ui-btn ui-btn-primary">
+                <i data-lucide="sliders-horizontal" class="h-4 w-4"></i>
+                Marketplace Control
+            </a>
+
             <a href="{{ route('admin.trading.index') }}" class="ui-btn ui-btn-secondary">
                 <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
                 Trading Overview

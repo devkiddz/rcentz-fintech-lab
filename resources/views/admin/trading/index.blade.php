@@ -8,7 +8,8 @@
             <p class="ui-lead">Performance, position lifecycle, instrument context and execution history from one command surface.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-            <a href="{{ route('admin.trading.manual') }}" class="ui-btn ui-btn-primary">Manual Trade Desk</a>
+            <a href="{{ route('admin.trading.marketplace') }}" class="ui-btn ui-btn-primary">Marketplace Control</a>
+            <a href="{{ route('admin.trading.manual') }}" class="ui-btn ui-btn-secondary">Trading Desk</a>
             <a href="{{ route('admin.trading.history') }}" class="ui-btn ui-btn-secondary">Trade History</a>
         </div>
     </section>

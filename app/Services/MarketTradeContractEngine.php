@@ -10,22 +10,23 @@ use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
- * V5.10 canonical market-contract wiring.
+ * Canonical orchestration boundary for NEW financial trades.
  *
- * This is the orchestration boundary for NEW real trades. It deliberately
- * composes the financial executor and the living TradePosition engine inside
- * one outer database transaction, so a ledger mutation cannot survive without
- * its required contract mutation (and vice versa).
- *
- * Price policy remains owned by StockTradeExecutor. V5.10 does NOT introduce
- * the future live/manual-price contract switcher.
+ * V5.11 keeps the trade rules shared while routing execution prices through
+ * the selected marketplace authority (Live or Controlled).
  */
 final class MarketTradeContractEngine
 {
     public function __construct(
         private StockTradeExecutor $executor,
-        private TradePositionService $positions
+        private TradePositionService $positions,
+        private MarketPriceRouter $prices
     ) {}
+
+    public function activeMarketplace(): string
+    {
+        return $this->prices->activeMarketplace();
+    }
 
     public function openLong(
         User $user,
@@ -39,8 +40,11 @@ final class MarketTradeContractEngine
         ?int $copyStrategyId = null,
         string $actorType = 'system',
         ?int $actorId = null,
-        ?int $sourcePositionId = null
+        ?int $sourcePositionId = null,
+        ?string $marketplace = null
     ): StockTransaction {
+        $marketplace = $this->prices->normalizeMarketplace($marketplace ?: $this->prices->activeMarketplace());
+
         return DB::transaction(function () use (
             $user,
             $stock,
@@ -53,7 +57,8 @@ final class MarketTradeContractEngine
             $copyStrategyId,
             $actorType,
             $actorId,
-            $sourcePositionId
+            $sourcePositionId,
+            $marketplace
         ) {
             $trade = $this->executor->buy(
                 $user,
@@ -63,7 +68,9 @@ final class MarketTradeContractEngine
                 $executionSourceId,
                 $copyStrategyId,
                 $actorType,
-                $actorId
+                $actorId,
+                null,
+                $marketplace
             );
 
             $position = $this->positions->openLongFromTrade(
@@ -86,13 +93,6 @@ final class MarketTradeContractEngine
         });
     }
 
-    /**
-     * Raw user-facing SELL plus position reconciliation, atomically.
-     *
-     * Null context filters intentionally preserve the existing FIFO exposure
-     * reconciliation behavior for legacy holdings while preventing a completed
-     * financial sell from surviving a reconciliation exception.
-     */
     public function sellExposure(
         User $user,
         Stock $stock,
@@ -104,8 +104,11 @@ final class MarketTradeContractEngine
         ?int $executionSourceId = null,
         ?int $copyStrategyId = null,
         string $actorType = 'system',
-        ?int $actorId = null
+        ?int $actorId = null,
+        ?string $marketplace = null
     ): StockTransaction {
+        $marketplace = $this->prices->normalizeMarketplace($marketplace ?: $this->prices->activeMarketplace());
+
         return DB::transaction(function () use (
             $user,
             $stock,
@@ -117,7 +120,8 @@ final class MarketTradeContractEngine
             $executionSourceId,
             $copyStrategyId,
             $actorType,
-            $actorId
+            $actorId,
+            $marketplace
         ) {
             $trade = $this->executor->sell(
                 $user,
@@ -127,7 +131,11 @@ final class MarketTradeContractEngine
                 $executionSourceId,
                 $copyStrategyId,
                 $actorType,
-                $actorId
+                $actorId,
+                null,
+                false,
+                null,
+                $marketplace
             );
 
             $this->positions->consumeSellTransaction(
@@ -144,7 +152,7 @@ final class MarketTradeContractEngine
     }
 
     /**
-     * Close a known living contract through the canonical position engine.
+     * Close a known living contract through its own marketplace authority.
      */
     public function closePosition(
         TradePosition $position,

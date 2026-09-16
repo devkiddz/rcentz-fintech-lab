@@ -176,17 +176,16 @@ class UpdateStockQuotesJob implements ShouldQueue
             ->first();
 
         // Dispatch broadcasting events
-        if ($latestQuote) {
-            // Broadcast stock quote change
+        if ($latestQuote && app(\App\Services\MarketPriceRouter::class)->activeMarketplace() === 'live') {
+            // Live broadcasts are suppressed while Controlled Market owns the visible price authority.
             broadcast(new StockQuoteChanged($latestQuote));
-            
-            // Broadcast price update
+
             $priceData = [
                 'current_price' => $currentPrice,
                 'previous_close' => $previousClose,
                 'change' => $changeAmount,
                 'change_percent' => $changePercentage,
-                'volume' => $stock->volume, // Use current volume from database
+                'volume' => $stock->volume,
                 'high' => $finnhubQuote['h'] ?? $stock->high,
                 'low' => $finnhubQuote['l'] ?? $stock->low,
                 'open' => $finnhubQuote['o'] ?? $stock->open,

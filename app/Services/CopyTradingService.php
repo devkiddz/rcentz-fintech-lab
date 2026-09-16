@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\CopyRelationship;
 use App\Models\CopyTradeExecution;
-use App\Models\StockHolding;
 use App\Models\StockTransaction;
 use App\Models\TradePosition;
 use Illuminate\Support\Facades\Log;
@@ -15,7 +14,6 @@ class CopyTradingService
         private MarketTradeContractEngine $marketTrades
     ) {}
 
-    // V5.10 canonical market-contract wiring.
     public function mirrorCompletedTrade(StockTransaction $providerTrade): void
     {
         if($providerTrade->status!=='completed') return;
@@ -64,6 +62,7 @@ class CopyTradingService
         try{
             $providerPrice=(float)$providerTrade->price_per_share;
             $qty=$requested/$providerPrice;
+            $marketplace=$providerTrade->marketplace ?: 'live';
 
             if($providerTrade->type==='buy'){
                 $providerPosition=$providerTrade->position;
@@ -87,13 +86,15 @@ class CopyTradingService
                     $relationship->copy_strategy_id,
                     'system',
                     null,
-                    $providerPosition?->id
+                    $providerPosition?->id,
+                    $marketplace
                 );
             }else{
                 $providerPositionId=$providerTrade->trade_position_id;
 
                 $position=TradePosition::where('user_id',$follower->id)
                     ->where('stock_id',$providerTrade->stock_id)
+                    ->where('marketplace',$marketplace)
                     ->where('context_type','copy_relationship')
                     ->where('context_id',$relationship->id)
                     ->when($providerPositionId,fn($q)=>$q->where('source_position_id',$providerPositionId))
@@ -103,7 +104,7 @@ class CopyTradingService
                     ->first();
 
                 if(!$position){
-                    $this->execution($relationship,$providerTrade,null,$requested,0,'skipped','No relationship-attributed open position is available to sell.');
+                    $this->execution($relationship,$providerTrade,null,$requested,0,'skipped','No relationship-attributed open position is available to sell in the provider marketplace.');
                     return;
                 }
 

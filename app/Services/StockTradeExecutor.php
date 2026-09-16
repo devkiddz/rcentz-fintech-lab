@@ -14,7 +14,8 @@ class StockTradeExecutor
 {
     public function __construct(
         private FinancialActivityService $activity,
-        private MarketSessionService $marketSession
+        private MarketSessionService $marketSession,
+        private MarketPriceRouter $prices
     ) {}
 
     public function buy(
@@ -26,15 +27,17 @@ class StockTradeExecutor
         ?int $copyStrategyId = null,
         string $actorType = 'system',
         ?int $actorId = null,
-        ?int $positionId = null
+        ?int $positionId = null,
+        ?string $marketplace = null
     ): StockTransaction {
-        $this->assertRegularMarketOpen();
+        $marketplace = $this->prices->normalizeMarketplace($marketplace ?: $this->prices->activeMarketplace());
+        $this->assertRegularMarketOpen($marketplace);
 
         if ($quantity <= 0 || ! $stock->is_active) {
             throw new RuntimeException('Trade is not executable.');
         }
 
-        $price = (float) $stock->current_price;
+        $price = $this->prices->price($stock, $marketplace);
         $amount = round($quantity * $price, 2);
 
         if ($amount <= 0) {
@@ -42,7 +45,7 @@ class StockTradeExecutor
         }
 
         return DB::transaction(function () use (
-            $user,$stock,$quantity,$price,$amount,$source,$sourceId,$copyStrategyId,$actorType,$actorId,$positionId
+            $user,$stock,$quantity,$price,$amount,$source,$sourceId,$copyStrategyId,$actorType,$actorId,$positionId,$marketplace
         ) {
             $wallet = $user->wallet()->lockForUpdate()->firstOrFail();
 
@@ -70,6 +73,7 @@ class StockTradeExecutor
                 'stock_id'=>$stock->id,
                 'copy_strategy_id'=>$copyStrategyId,
                 'execution_source'=>$source,
+                'marketplace'=>$marketplace,
                 'initiated_by_user_id'=>$actorId,
                 'trade_position_id'=>$positionId,
                 'wallet_transaction_id'=>$walletTx->id,
@@ -84,6 +88,7 @@ class StockTradeExecutor
 
             $holding = StockHolding::where('user_id',$user->id)
                 ->where('stock_id',$stock->id)
+                ->where('marketplace',$marketplace)
                 ->lockForUpdate()
                 ->first();
 
@@ -103,6 +108,7 @@ class StockTradeExecutor
                 StockHolding::create([
                     'user_id'=>$user->id,
                     'stock_id'=>$stock->id,
+                    'marketplace'=>$marketplace,
                     'quantity'=>$quantity,
                     'average_buy_price'=>$price,
                     'total_invested'=>$amount,
@@ -133,6 +139,8 @@ class StockTradeExecutor
                     'copy_strategy_id'=>$copyStrategyId,
                     'stock_id'=>$stock->id,
                     'quantity'=>$quantity,
+                    'marketplace'=>$marketplace,
+                    'execution_price'=>$price,
                 ],
                 $actorType,
                 $actorId
@@ -153,10 +161,13 @@ class StockTradeExecutor
         ?int $actorId = null,
         ?int $positionId = null,
         bool $allowClosedSessionSettlement = false,
-        ?float $executionPrice = null
+        ?float $executionPrice = null,
+        ?string $marketplace = null
     ): StockTransaction {
+        $marketplace = $this->prices->normalizeMarketplace($marketplace ?: $this->prices->activeMarketplace());
+
         if (! $allowClosedSessionSettlement) {
-            $this->assertRegularMarketOpen();
+            $this->assertRegularMarketOpen($marketplace);
         }
 
         if ($quantity <= 0 || ! $stock->is_active) {
@@ -165,7 +176,7 @@ class StockTradeExecutor
 
         $price=$executionPrice !== null
             ? (float)$executionPrice
-            : (float)$stock->current_price;
+            : $this->prices->price($stock, $marketplace);
 
         if ($price <= 0) {
             throw new RuntimeException('Execution market price is invalid.');
@@ -173,11 +184,12 @@ class StockTradeExecutor
 
         return DB::transaction(function () use (
             $user,$stock,$quantity,$price,$source,$sourceId,$copyStrategyId,$actorType,$actorId,$positionId,
-            $allowClosedSessionSettlement
+            $allowClosedSessionSettlement,$marketplace
         ) {
             $wallet=$user->wallet()->lockForUpdate()->firstOrFail();
             $holding=StockHolding::where('user_id',$user->id)
                 ->where('stock_id',$stock->id)
+                ->where('marketplace',$marketplace)
                 ->lockForUpdate()
                 ->first();
 
@@ -206,6 +218,7 @@ class StockTradeExecutor
                 'stock_id'=>$stock->id,
                 'copy_strategy_id'=>$copyStrategyId,
                 'execution_source'=>$source,
+                'marketplace'=>$marketplace,
                 'initiated_by_user_id'=>$actorId,
                 'trade_position_id'=>$positionId,
                 'wallet_transaction_id'=>$walletTx->id,
@@ -257,6 +270,7 @@ class StockTradeExecutor
                     'copy_strategy_id'=>$copyStrategyId,
                     'stock_id'=>$stock->id,
                     'quantity'=>$quantity,
+                    'marketplace'=>$marketplace,
                     'execution_price'=>$price,
                     'session_settlement'=>$allowClosedSessionSettlement,
                 ],
@@ -268,13 +282,17 @@ class StockTradeExecutor
         });
     }
 
-    private function assertRegularMarketOpen(): void
+    private function assertRegularMarketOpen(?string $marketplace = null): void
     {
+        if (! $this->prices->requiresRegularSession($marketplace)) {
+            return;
+        }
+
         if (! $this->marketSession->isOpen()) {
             $status = str_replace('_', ' ', $this->marketSession->status());
 
             throw new RuntimeException(
-                'Regular U.S. equity market is '.$status.'. This execution cannot be filled at a stale stored price.'
+                'Regular U.S. equity market is '.$status.'. This live execution cannot be filled at a stale stored price.'
             );
         }
     }

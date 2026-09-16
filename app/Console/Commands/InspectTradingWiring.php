@@ -51,7 +51,7 @@ class InspectTradingWiring extends Command
         $this->table(['Surface', 'Lane', 'Engine boundary', 'Status'], $rows);
         $this->newLine();
         $this->line('Presentation/manual P/L and OutcomeScenarioEngine remain outside all financial lanes.');
-        $this->line('V5.10 does not implement the future live/manual-price contract switcher.');
+        $this->line('V5.11 routes canonical execution prices through the Live / Controlled marketplace authority.');
 
         if (! $ok) {
             $this->error('One or more trading surfaces are not wired to the expected engine.');

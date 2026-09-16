@@ -9,6 +9,8 @@ use App\Jobs\ProcessStockNewsJob;
 use App\Jobs\UpdateStockQuotesJob;
 use App\Services\BotSubscriptionLifecycleService;
 use App\Services\CopyRelationshipLifecycleService;
+use App\Services\ControlledMarketEngine;
+use App\Services\MarketPriceRouter;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -21,6 +23,15 @@ Schedule::job(new UpdateStockQuotesJob())
     ->everyFiveMinutes()
     ->timezone(MarketSessionService::TIMEZONE)
     ->when(fn () => app(MarketSessionService::class)->isOpen())
+    ->withoutOverlapping()
+    ->onOneServer();
+
+// Controlled Market has its own price clock. It runs only while that marketplace
+// is active, so no simulated tick can overwrite the persisted Live feed.
+Schedule::call(fn () => app(ControlledMarketEngine::class)->tickAll())
+    ->name('controlled-market:tick')
+    ->everyMinute()
+    ->when(fn () => app(MarketPriceRouter::class)->activeMarketplace() === 'controlled')
     ->withoutOverlapping()
     ->onOneServer();
 

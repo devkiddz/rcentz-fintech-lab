@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Stock;
+use App\Models\ControlledMarketInstrument;
 use App\Models\StockCandle;
 use App\Models\StockPriceHistory;
 use App\Models\StockQuote;
@@ -12,6 +13,10 @@ class StockAnalysisService
 {
     public function forStock(Stock $stock): array
     {
+        if (app(MarketPriceRouter::class)->activeMarketplace() === 'controlled') {
+            return $this->forControlledStock($stock);
+        }
+
         $currentPrice = (float)($stock->current_price ?? 0);
 
         $dailyRows = StockPriceHistory::query()
@@ -158,6 +163,120 @@ class StockAnalysisService
                 'strong_sell' => (int)($latestQuote?->strong_sell ?? 0),
                 'total' => (int)($latestQuote?->total_recommendations ?? 0),
             ],
+        ];
+    }
+
+    private function forControlledStock(Stock $stock): array
+    {
+        $instrument = ControlledMarketInstrument::query()
+            ->where('stock_id', $stock->id)
+            ->first();
+
+        if (! $instrument) {
+            return [
+                'source' => 'controlled_market_unavailable',
+                'series' => [],
+                'has_chart' => false,
+                'current_price' => 0,
+                'previous_close' => 0,
+                'support' => null,
+                'resistance' => null,
+                'sma20' => null,
+                'sma50' => null,
+                'sma200' => null,
+                'momentum_percent' => 0,
+                'momentum_label' => 'Neutral',
+                'trend' => 'Neutral',
+                'risk_reward' => 'Balanced',
+                'volume_current' => 0,
+                'volume_average' => 0,
+                'volume_vs_average' => null,
+                'timeframes' => ['5m'=>[],'15m'=>[],'1h'=>[],'4h'=>[],'1d'=>[],'1w'=>[],'1m'=>[],'3m'=>[],'1y'=>[]],
+                'default_timeframe' => '5m',
+                'analyst' => ['label'=>null,'percentage'=>null,'strong_buy'=>0,'buy'=>0,'hold'=>0,'sell'=>0,'strong_sell'=>0,'total'=>0],
+            ];
+        }
+
+        $rows = $instrument->ticks()
+            ->orderByDesc('ticked_at')
+            ->limit(240)
+            ->get()
+            ->sortBy('ticked_at')
+            ->values();
+
+        $series = $rows->map(fn ($tick) => [
+            'time' => optional($tick->ticked_at)?->toIso8601String(),
+            'open' => (float)$tick->open,
+            'high' => (float)$tick->high,
+            'low' => (float)$tick->low,
+            'close' => (float)$tick->close,
+            'volume' => 0,
+        ])->filter(fn ($row) => $row['time'] && $row['close'] > 0)->values()->all();
+
+        if (! count($series)) {
+            $current = (float)$instrument->current_price;
+            $series = [[
+                'time' => now()->toIso8601String(),
+                'open' => $current,
+                'high' => $current,
+                'low' => $current,
+                'close' => $current,
+                'volume' => 0,
+            ]];
+        }
+
+        $series = $this->withMovingAverages($series);
+        $closes = collect($series)->pluck('close')->map(fn ($v) => (float)$v)->values();
+        $last = (float)($closes->last() ?? $instrument->current_price);
+        $first = (float)($closes->first() ?? $last);
+        $momentum = $first > 0 ? (($last - $first) / $first) * 100 : 0;
+        $recent = collect($series)->take(-min(30, count($series)));
+        $support = (float)($recent->min('low') ?? 0);
+        $resistance = (float)($recent->max('high') ?? 0);
+        $sma20 = $this->lastSma($series, 'sma20');
+        $sma50 = $this->lastSma($series, 'sma50');
+        $sma200 = $this->lastSma($series, 'sma200');
+
+        $trend = 'Neutral';
+        if ($momentum > 0.10) $trend = 'Bullish';
+        elseif ($momentum < -0.10) $trend = 'Bearish';
+
+        $fiveMinute = $this->normalizePointSeries($series);
+        $fifteenMinute = $this->aggregateCandles($fiveMinute, 15);
+        $oneHour = $this->aggregateCandles($fiveMinute, 60);
+        $fourHour = $this->aggregateCandles($fiveMinute, 240);
+
+        return [
+            'source' => 'controlled_market_ticks',
+            'series' => $series,
+            'has_chart' => count($series) >= 1,
+            'current_price' => $last,
+            'previous_close' => (float)$instrument->previous_price,
+            'support' => $support ?: null,
+            'resistance' => $resistance ?: null,
+            'sma20' => $sma20,
+            'sma50' => $sma50,
+            'sma200' => $sma200,
+            'momentum_percent' => $momentum,
+            'momentum_label' => $momentum > 0.10 ? 'Bullish' : ($momentum < -0.10 ? 'Bearish' : 'Neutral'),
+            'trend' => $trend,
+            'risk_reward' => 'Controlled',
+            'volume_current' => 0,
+            'volume_average' => 0,
+            'volume_vs_average' => null,
+            'timeframes' => [
+                '5m' => $fiveMinute,
+                '15m' => $fifteenMinute ?: $fiveMinute,
+                '1h' => $oneHour ?: $fiveMinute,
+                '4h' => $fourHour ?: $fiveMinute,
+                '1d' => $fiveMinute,
+                '1w' => $fiveMinute,
+                '1m' => $fiveMinute,
+                '3m' => $fiveMinute,
+                '1y' => $fiveMinute,
+            ],
+            'default_timeframe' => '5m',
+            'analyst' => ['label'=>null,'percentage'=>null,'strong_buy'=>0,'buy'=>0,'hold'=>0,'sell'=>0,'strong_sell'=>0,'total'=>0],
         ];
     }
 
