@@ -156,7 +156,11 @@ class TradingController extends Controller
         }
 
         try {
-            $totalPortfolioValue = (float) $user->stockHoldings()->sum('current_value');
+            $tradeMarketplace = $stockTransaction->marketplace
+                ?: app(MarketPriceRouter::class)->activeMarketplace();
+            $portfolioHoldings = app(PortfolioValuationService::class)
+                ->syncUser($user, $tradeMarketplace);
+            $totalPortfolioValue = (float) $portfolioHoldings->sum('current_value');
             Mail::to($user->email)->send(
                 new StockBuyEmail($user, $stockTransaction, $totalPortfolioValue)
             );
@@ -276,7 +280,11 @@ class TradingController extends Controller
         }
 
         try {
-            $totalPortfolioValue = (float) $user->stockHoldings()->sum('current_value');
+            $tradeMarketplace = $stockTransaction->marketplace
+                ?: app(MarketPriceRouter::class)->activeMarketplace();
+            $portfolioHoldings = app(PortfolioValuationService::class)
+                ->syncUser($user, $tradeMarketplace);
+            $totalPortfolioValue = (float) $portfolioHoldings->sum('current_value');
             Mail::to($user->email)->send(
                 new StockSellEmail($user, $stockTransaction, $totalPortfolioValue)
             );
@@ -360,9 +368,11 @@ class TradingController extends Controller
     public function transactions(Request $request)
     {
         $user = Auth::user();
+        $activeMarketplace = app(MarketPriceRouter::class)->activeMarketplace();
         
         $query = $user->stockTransactions()
-            ->with('stock');
+            ->with('stock')
+            ->where('marketplace', $activeMarketplace);
 
         // Filter by type
         if ($request->filled('type')) {

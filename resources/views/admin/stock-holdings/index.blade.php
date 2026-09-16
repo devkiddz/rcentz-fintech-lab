@@ -96,8 +96,11 @@
                                     @endif
                                     <div class="flex-1 min-w-0">
                                         <h4 class="text-sm font-medium text-foreground truncate">{{ $holding->user->name }}</h4>
-                                        <p class="text-xs text-muted-foreground truncate">{{ $holding->stock->name }} ({{ $holding->stock->symbol }})</p>
+                                        <p class="text-xs text-muted-foreground truncate">{{ $holding->stock->company_name }} ({{ $holding->stock->symbol }})</p>
                                         <p class="text-xs text-muted-foreground mt-1">{{ number_format($holding->quantity, 2) }} shares</p>
+                                        <p class="mt-1 text-[10px] font-medium {{ $holding->marketplace === 'controlled' ? 'text-violet-600' : 'text-sky-600' }}">
+                                            {{ $holding->marketplace === 'controlled' ? 'Internal Feed' : 'External Feed' }}
+                                        </p>
                                     </div>
                                     <div class="text-right">
                                         <p class="text-sm font-medium text-foreground">${{ number_format($holding->current_value, 2) }}</p>
@@ -134,8 +137,11 @@
                                     @endif
                                     <div>
                                         <h4 class="text-sm font-medium text-foreground">{{ $holding->user->name }}</h4>
-                                        <p class="text-xs text-muted-foreground dark:text-gray-300">{{ $holding->stock->name }} ({{ $holding->stock->symbol }})</p>
+                                        <p class="text-xs text-muted-foreground dark:text-gray-300">{{ $holding->stock->company_name }} ({{ $holding->stock->symbol }})</p>
                                         <p class="text-xs text-muted-foreground mt-1">{{ number_format($holding->quantity, 2) }} shares</p>
+                                        <p class="mt-1 text-[10px] font-medium {{ $holding->marketplace === 'controlled' ? 'text-violet-600' : 'text-sky-600' }}">
+                                            {{ $holding->marketplace === 'controlled' ? 'Internal Feed' : 'External Feed' }}
+                                        </p>
                                     </div>
                                 </div>
                                 

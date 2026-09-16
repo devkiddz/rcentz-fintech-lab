@@ -94,9 +94,12 @@ class MarketEnvironmentController extends Controller
         $symbol = strtoupper($data['symbol']);
         $price = (float) $data['current_price'];
 
-        $stock = Stock::query()->firstOrCreate(
-            ['symbol' => $symbol],
-            [
+        // A newly-created internal instrument is not automatically a real
+        // external-feed symbol. Existing public stocks keep their feed eligibility.
+        $stock = Stock::query()->firstOrNew(['symbol' => $symbol]);
+
+        if (! $stock->exists) {
+            $stock->fill([
                 'company_name' => $data['label'],
                 'current_price' => $price,
                 'previous_close' => $price,
@@ -107,9 +110,11 @@ class MarketEnvironmentController extends Controller
                 'open' => $price,
                 'is_active' => true,
                 'is_featured' => false,
+                'external_feed_enabled' => false,
                 'last_updated' => now(),
-            ]
-        );
+            ]);
+            $stock->save();
+        }
 
         if (ControlledMarketInstrument::query()->where('stock_id', $stock->id)->exists()) {
             return back()->withErrors(['symbol' => 'This instrument already exists.'])->withInput();

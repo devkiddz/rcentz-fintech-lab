@@ -37,7 +37,7 @@
                                     </div>
                                 @endif
                                 <div class="flex-1">
-                                    <h4 class="text-lg font-medium text-foreground dark:text-white mb-2">{{ $holding->stock->name }}</h4>
+                                    <h4 class="text-lg font-medium text-foreground dark:text-white mb-2">{{ $holding->stock->company_name }}</h4>
                                     <p class="text-sm text-muted-foreground mb-3">{{ $holding->stock->description }}</p>
                                     <div class="flex flex-wrap gap-2">
                                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-tesla-100 text-tesla-800">
@@ -99,7 +99,7 @@
                         <div class="bg-card border border-border p-4 rounded-lg">
                             <div class="text-center">
                                 <p class="text-xs font-medium text-muted-foreground mb-1">Average Cost</p>
-                                <p class="text-lg font-light text-foreground">${{ number_format($holding->average_cost, 2) }}</p>
+                                <p class="text-lg font-light text-foreground">${{ number_format($holding->average_buy_price, 2) }}</p>
                             </div>
                         </div>
                     </div>
@@ -112,23 +112,22 @@
                         <div class="p-4">
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Current Price</label>
-                                    <p class="text-sm font-medium text-foreground">${{ number_format($holding->stock->current_price, 2) }}</p>
+                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Price Source</label>
+                                    <p class="text-sm font-medium text-foreground">{{ $marketContext['source_label'] }}</p>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Previous Close</label>
-                                    <p class="text-sm font-medium text-foreground">${{ number_format($holding->stock->previous_close, 2) }}</p>
+                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Current Price</label>
+                                    <p class="text-sm font-medium text-foreground">${{ number_format($marketContext['current_price'], 2) }}</p>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Previous Price</label>
+                                    <p class="text-sm font-medium text-foreground">${{ number_format($marketContext['previous_price'], 2) }}</p>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Price Change</label>
-                                    <p class="text-sm font-medium {{ $holding->stock->price_change >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $holding->stock->price_change >= 0 ? '+' : '' }}${{ number_format($holding->stock->price_change, 2) }}
-                                    </p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Price Change %</label>
-                                    <p class="text-sm font-medium {{ $holding->stock->price_change_percentage >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                        {{ $holding->stock->price_change_percentage >= 0 ? '+' : '' }}{{ number_format($holding->stock->price_change_percentage, 2) }}%
+                                    <p class="text-sm font-medium {{ $marketContext['change'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                        {{ $marketContext['change'] >= 0 ? '+' : '-' }}${{ number_format(abs($marketContext['change']), 2) }}
+                                        <span class="ml-1 text-xs">({{ $marketContext['change_percent'] >= 0 ? '+' : '' }}{{ number_format($marketContext['change_percent'], 2) }}%)</span>
                                     </p>
                                 </div>
                             </div>

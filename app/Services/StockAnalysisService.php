@@ -310,7 +310,10 @@ class StockAnalysisService
 
     private function sessionSnapshotSeries(Stock $stock, array $compatibleQuotes = []): array
     {
-        $current = (float)($stock->current_price ?? 0);
+        // V5.23.1: this helper is part of the explicit Live analysis path.
+        // Never consult Stock::current_price here because that accessor follows
+        // the globally active desk and can therefore leak Internal Feed context.
+        $current = (float)($stock->live_current_price ?? 0);
         $open = (float)($stock->open ?? $stock->previous_close ?? $current);
         $high = (float)($stock->high ?? max($open, $current));
         $low = (float)($stock->low ?? min($open, $current));

@@ -42,7 +42,9 @@ class UpdateStockQuotesJob implements ShouldQueue
 
         try {
             // Get active stocks
-            $stocks = Stock::where('is_active', true)->get();
+            $stocks = Stock::where('is_active', true)
+                ->where('external_feed_enabled', true)
+                ->get();
             
             if ($stocks->isEmpty()) {
                 // info/warning logs suppressed; only log errors
@@ -232,16 +234,19 @@ class UpdateStockQuotesJob implements ShouldQueue
         try {
             // Get top gainers, losers, and most active stocks
             $gainers = Stock::where('is_active', true)
+                ->where('external_feed_enabled', true)
                 ->orderBy('change_percentage', 'desc')
                 ->limit(5)
                 ->get(['symbol', 'company_name', 'current_price', 'change_percentage']);
 
             $losers = Stock::where('is_active', true)
+                ->where('external_feed_enabled', true)
                 ->orderBy('change_percentage', 'asc')
                 ->limit(5)
                 ->get(['symbol', 'company_name', 'current_price', 'change_percentage']);
 
             $mostActive = Stock::where('is_active', true)
+                ->where('external_feed_enabled', true)
                 ->orderBy('volume', 'desc')
                 ->limit(5)
                 ->get(['symbol', 'company_name', 'current_price', 'volume']);

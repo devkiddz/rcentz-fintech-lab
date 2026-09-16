@@ -31,6 +31,7 @@ class Stock extends Model
         'fifty_two_week_low',
         'is_active',
         'is_featured',
+        'external_feed_enabled',
         'last_updated',
         'volume_updated_at',
     ];
@@ -48,6 +49,7 @@ class Stock extends Model
         'fifty_two_week_low' => 'decimal:2',
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
+        'external_feed_enabled' => 'boolean',
         'last_updated' => 'datetime',
         'volume_updated_at' => 'datetime',
     ];

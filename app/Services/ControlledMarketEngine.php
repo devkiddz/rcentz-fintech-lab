@@ -111,17 +111,6 @@ final class ControlledMarketEngine
         $environment = MarketEnvironment::current();
         $interval = max(5, min(300, (int) ($environment->controlled_tick_seconds ?: 60)));
 
-        if ($environment->active_marketplace !== 'controlled') {
-            return [
-                'ticked' => false,
-                'mode' => $environment->controlled_drive_mode ?: 'range',
-                'updated' => 0,
-                'failed' => 0,
-                'interval_seconds' => $interval,
-                'reason' => 'inactive_marketplace',
-            ];
-        }
-
         $lock = Cache::lock('rcentz-controlled-market-auto-tick', max(10, $interval));
 
         if (! $lock->get()) {
@@ -268,19 +257,21 @@ final class ControlledMarketEngine
                 $this->valuation->syncStock($instrument->stock, 'controlled');
 
 
-                try {
-                    broadcast(new StockPriceUpdated($instrument->stock, [
-                        'current_price' => $close,
-                        'previous_close' => $open,
-                        'change' => $changeAmount,
-                        'change_percent' => $changePercent,
-                        'volume' => 0,
-                        'high' => round($high, $precision),
-                        'low' => round($low, $precision),
-                        'open' => $open,
-                    ]));
-                } catch (\Throwable $e) {
-                    \Log::debug('Controlled market broadcast skipped', ['error' => $e->getMessage()]);
+                if (MarketEnvironment::current()->active_marketplace === 'controlled') {
+                    try {
+                        broadcast(new StockPriceUpdated($instrument->stock, [
+                            'current_price' => $close,
+                            'previous_close' => $open,
+                            'change' => $changeAmount,
+                            'change_percent' => $changePercent,
+                            'volume' => 0,
+                            'high' => round($high, $precision),
+                            'low' => round($low, $precision),
+                            'open' => $open,
+                        ]));
+                    } catch (\Throwable $e) {
+                        \Log::debug('Controlled market broadcast skipped', ['error' => $e->getMessage()]);
+                    }
                 }
             }
 

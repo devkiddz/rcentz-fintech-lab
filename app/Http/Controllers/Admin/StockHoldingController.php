@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ControlledMarketInstrument;
 use App\Models\StockHolding;
+use App\Services\MarketPriceRouter;
 use Illuminate\Http\Request;
 
 class StockHoldingController extends Controller
@@ -31,12 +33,37 @@ class StockHoldingController extends Controller
         return view('admin.stock-holdings.index', compact('holdings', 'stats'));
     }
 
-    public function show(StockHolding $holding)
+    public function show(StockHolding $holding, MarketPriceRouter $prices)
     {
         $holding->load(['user', 'stock', 'stock.priceHistory' => function($query) {
                 $query->orderBy('timestamp', 'desc')->limit(30);
             }]);
 
-        return view('admin.stock-holdings.show', compact('holding'));
+        // V5.23.1: render the holding through the market authority that owns it.
+        $marketplace = $prices->normalizeMarketplace($holding->marketplace ?: 'live');
+        $current = $prices->price($holding->stock, $marketplace);
+
+        if ($marketplace === 'controlled') {
+            $instrument = ControlledMarketInstrument::query()
+                ->where('stock_id', $holding->stock_id)
+                ->first();
+            $previous = (float) ($instrument?->previous_price ?? $current);
+        } else {
+            $previous = (float) ($holding->stock->previous_close ?: $current);
+        }
+
+        $change = $current - $previous;
+        $changePercent = $previous > 0 ? ($change / $previous) * 100 : 0;
+
+        $marketContext = [
+            'marketplace' => $marketplace,
+            'source_label' => $marketplace === 'controlled' ? 'Internal Feed' : 'External Feed',
+            'current_price' => $current,
+            'previous_price' => $previous,
+            'change' => $change,
+            'change_percent' => $changePercent,
+        ];
+
+        return view('admin.stock-holdings.show', compact('holding', 'marketContext'));
     }
 }

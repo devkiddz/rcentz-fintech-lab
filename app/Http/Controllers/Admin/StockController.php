@@ -8,6 +8,7 @@ use App\Models\Stock;
 use App\Models\User;
 use App\Services\CopyTradingService;
 use App\Services\MarketTradeContractEngine;
+use App\Services\MarketPriceRouter;
 use App\Services\StockAnalysisService;
 use App\Models\TradePosition;
 use Illuminate\Http\Request;
@@ -99,7 +100,8 @@ class StockController extends Controller
         Request $request,
         Stock $stock,
         MarketTradeContractEngine $marketTrades,
-        CopyTradingService $copyTrading
+        CopyTradingService $copyTrading,
+        MarketPriceRouter $prices
     ) {
         // V5.10 canonical market-contract wiring.
         $data=$request->validate([
@@ -145,6 +147,7 @@ class StockController extends Controller
                 );
             }else{
                 $position=TradePosition::where('user_id',$provider->id)->where('stock_id',$stock->id)
+                    ->where('marketplace',$prices->activeMarketplace())
                     ->where('context_type','copy_strategy')->where('context_id',$strategy->id)
                     ->whereIn('status',['open','exit_queued'])->where('open_quantity','>',0)
                     ->oldest('opened_at')->firstOrFail();
@@ -164,7 +167,8 @@ class StockController extends Controller
     public function executeAdminTrade(
         Request $request,
         Stock $stock,
-        MarketTradeContractEngine $marketTrades
+        MarketTradeContractEngine $marketTrades,
+        MarketPriceRouter $prices
     ) {
         // V5.10 canonical market-contract wiring.
         $data=$request->validate([
@@ -204,6 +208,7 @@ class StockController extends Controller
                 );
             }else{
                 $position=TradePosition::where('user_id',$admin->id)->where('stock_id',$stock->id)
+                    ->where('marketplace',$prices->activeMarketplace())
                     ->where('context_type','admin_direct')->whereIn('status',['open','exit_queued'])
                     ->where('open_quantity','>',0)->oldest('opened_at')->firstOrFail();
                 $trade=$marketTrades->closePosition($position,'admin_manual_exit',$quantity,'admin',$admin->id);
@@ -219,7 +224,8 @@ class StockController extends Controller
     public function executeUserTrade(
         Request $request,
         Stock $stock,
-        MarketTradeContractEngine $marketTrades
+        MarketTradeContractEngine $marketTrades,
+        MarketPriceRouter $prices
     ) {
         // V5.10 canonical market-contract wiring.
         $data=$request->validate([
@@ -270,6 +276,7 @@ class StockController extends Controller
                 );
             }else{
                 $position=TradePosition::where('user_id',$user->id)->where('stock_id',$stock->id)
+                    ->where('marketplace',$prices->activeMarketplace())
                     ->whereIn('status',['open','exit_queued'])->where('open_quantity','>',0)
                     ->oldest('opened_at')->firstOrFail();
                 $trade=$marketTrades->closePosition($position,'admin_user_exit',$quantity,'admin',auth()->id());

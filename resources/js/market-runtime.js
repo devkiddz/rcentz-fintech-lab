@@ -19,6 +19,67 @@ const tone = (el, value) => {
     if (Number(value) < 0) el.classList.add('text-red-600');
 };
 
+// V5.20.1 price movement tick.
+// This is deliberately a transient tick-to-tick indicator, not the session/day change.
+// The authoritative price remains the server runtime payload; the browser only compares
+// the previous rendered value with the newest authoritative value.
+const movementState = new WeakMap();
+const movementBadges = new WeakMap();
+const movementTimers = new WeakMap();
+
+const applyMovementTick = (el, row) => {
+    if (!el || !row) return;
+
+    const current = Number(row.price);
+    if (!Number.isFinite(current)) return;
+
+    const previous = movementState.get(el);
+    movementState.set(el, current);
+
+    // First authoritative snapshot seeds the comparator without displaying movement.
+    if (!Number.isFinite(previous) || previous === current) return;
+
+    const delta = current - previous;
+    const percent = previous !== 0 ? (delta / previous) * 100 : 0;
+    const rising = delta > 0;
+    const arrow = rising ? '↑' : '↓';
+    const sign = rising ? '+' : '';
+
+    let badge = movementBadges.get(el);
+    if (!badge || !badge.isConnected) {
+        badge = document.createElement('span');
+        badge.setAttribute('data-price-movement-tick', '');
+        badge.setAttribute('aria-live', 'polite');
+        badge.className = 'ml-1.5 inline-flex items-center rounded-md border px-1.5 py-0.5 align-middle text-[9px] font-semibold tabular-nums transition-opacity duration-300';
+        el.insertAdjacentElement('afterend', badge);
+        movementBadges.set(el, badge);
+    }
+
+    badge.classList.remove(
+        'border-emerald-500/20', 'bg-emerald-500/10', 'text-emerald-600',
+        'border-red-500/20', 'bg-red-500/10', 'text-red-600',
+        'opacity-0', 'opacity-100'
+    );
+
+    badge.classList.add(
+        rising ? 'border-emerald-500/20' : 'border-red-500/20',
+        rising ? 'bg-emerald-500/10' : 'bg-red-500/10',
+        rising ? 'text-emerald-600' : 'text-red-600',
+        'opacity-100'
+    );
+
+    badge.textContent = arrow + ' ' + sign + percent.toFixed(2) + '%';
+    badge.title = 'Movement since the previous price update';
+
+    const oldTimer = movementTimers.get(el);
+    if (oldTimer) window.clearTimeout(oldTimer);
+
+    movementTimers.set(el, window.setTimeout(() => {
+        badge.classList.remove('opacity-100');
+        badge.classList.add('opacity-0');
+    }, 2200));
+};
+
 const collect = () => {
     const symbols = new Set();
     const positions = new Set();
@@ -55,7 +116,10 @@ const apply = (payload) => {
     document.querySelectorAll('[data-market-price-symbol]').forEach((el) => {
         const symbol = String(el.dataset.marketPriceSymbol || '').toUpperCase();
         const row = marketRowFor(payload, el, symbol);
-        if (row) el.textContent = row.formatted_price;
+        if (row) {
+            applyMovementTick(el, row);
+            el.textContent = row.formatted_price;
+        }
     });
 
     document.querySelectorAll('[data-market-previous-symbol]').forEach((el) => {
