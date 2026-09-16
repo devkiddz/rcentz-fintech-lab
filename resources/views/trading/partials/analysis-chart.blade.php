@@ -1,24 +1,28 @@
 @php
     $analysis = $analysis ?? [];
     $chartHeight = $chartHeight ?? 'h-[300px] md:h-[380px]';
+    $analysisMarketplace = str_starts_with((string)($analysis['source'] ?? ''), 'controlled_') ? 'controlled' : 'live';
+    $analysisCurrent = (float)($analysis['current_price'] ?? $stock->current_price ?? 0);
+    $analysisPrevious = (float)($analysis['previous_close'] ?? $analysisCurrent);
+    $analysisChange = $analysisCurrent - $analysisPrevious;
+    $analysisChangePercent = $analysisPrevious > 0 ? ($analysisChange / $analysisPrevious) * 100 : 0;
 @endphp
 
-<section class="ui-panel overflow-hidden">
+<section class="ui-panel overflow-hidden" data-market-runtime>
     <div class="flex flex-col gap-3 border-b border-border px-4 py-3 md:flex-row md:items-center md:justify-between">
         <div>
             <div class="flex flex-wrap items-center gap-2">
                 <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Price analysis</p>
-                @if(!empty($analysis['source']))
-                    <span class="rounded-full border border-border bg-muted px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[.1em] text-muted-foreground">
-                        {{ str_replace('_',' ',$analysis['source']) }}
-                    </span>
-                @endif
             </div>
             <div class="mt-1 flex flex-wrap items-baseline gap-2">
                 <h2 class="text-sm font-semibold">{{ $stock->symbol }}</h2>
-                <span class="text-base font-semibold tabular-nums">{{ $stock->formatted_current_price }}</span>
-                <span class="text-xs font-semibold {{ $stock->change_percentage >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
-                    {{ $stock->formatted_change_percentage }}
+                <span class="text-base font-semibold tabular-nums"
+                      data-market-price-symbol="{{ $stock->symbol }}"
+                      data-marketplace="{{ $analysisMarketplace }}">{{ currency_symbol() }}{{ number_format($analysisCurrent,2) }}</span>
+                <span class="text-xs font-semibold {{ $analysisChangePercent >= 0 ? 'text-emerald-600' : 'text-red-600' }}"
+                      data-market-change-percent-symbol="{{ $stock->symbol }}"
+                      data-marketplace="{{ $analysisMarketplace }}">
+                    {{ $analysisChangePercent >= 0 ? '+' : '' }}{{ number_format($analysisChangePercent,2) }}%
                 </span>
             </div>
         </div>
@@ -78,7 +82,7 @@
     @if(!empty($analysis['has_chart']))
         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2">
             <p class="text-[9px] text-muted-foreground">
-                Historical: Alpha Vantage daily OHLCV · Intraday: persisted live feed
+                Market price history · automatic updates
             </p>
             <p class="text-[9px] text-muted-foreground">
                 Grey timeframes unlock as enough real observations accumulate.
@@ -108,6 +112,8 @@
         <div class="{{ $chartHeight }} p-2 md:p-3">
             <div class="h-full w-full"
                  data-rcentz-analysis
+                 data-market-analysis-symbol="{{ $stock->symbol }}"
+                 data-marketplace="{{ $analysisMarketplace }}"
                  data-default-timeframe="{{ $defaultFrame }}"
                  data-analysis='@json($analysis)'></div>
         </div>

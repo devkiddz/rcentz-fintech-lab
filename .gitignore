@@ -28,6 +28,7 @@ Thumbs.db
 
 # Local delivery archives
 *.zip
+/Rcentz_V*.exe
 /storage/framework/sessions/*
 !/storage/framework/sessions/.gitignore
 /storage/framework/views/*

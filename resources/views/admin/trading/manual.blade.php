@@ -1,19 +1,19 @@
 <x-admin-layout>
-<div class="ui-page max-w-[1500px]">
+<div class="ui-page max-w-[1500px]" data-market-runtime>
     <section class="ui-page-header !mb-5">
         <div class="min-w-0">
             <p class="ui-kicker">Admin · Trading Command</p>
             <h1 class="ui-heading">Trading Desk</h1>
             <p class="ui-lead max-w-3xl">
-                Select a market, inspect its active marketplace context, then open the execution desk for
+                Select an instrument, inspect its price context, then open the execution desk for
                 Strategy Trade, Admin Direct Trade or Trade for User.
             </p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-            <a href="{{ route('admin.trading.marketplace') }}" class="ui-btn ui-btn-primary">
+            <a href="{{ route('admin.settings.index', ['section' => 'market']) }}" class="ui-btn ui-btn-primary">
                 <i data-lucide="sliders-horizontal" class="h-4 w-4"></i>
-                Marketplace Control
+                Market Settings
             </a>
 
             <a href="{{ route('admin.trading.index') }}" class="ui-btn ui-btn-secondary">
@@ -115,7 +115,9 @@
                             </td>
 
                             <td class="px-4 py-4">
-                                <p class="text-xs font-semibold">
+                                <p class="text-xs font-semibold"
+                                   data-market-price-symbol="{{ $stock->symbol }}"
+                                   data-marketplace="{{ app(\App\Services\MarketPriceRouter::class)->activeMarketplace() }}">
                                     {{ currency_symbol() }}{{ number_format((float)$stock->current_price,2) }}
                                 </p>
                             </td>
@@ -173,7 +175,9 @@
                             </div>
                         </div>
 
-                        <p class="shrink-0 text-xs font-semibold">
+                        <p class="shrink-0 text-xs font-semibold"
+                           data-market-price-symbol="{{ $stock->symbol }}"
+                           data-marketplace="{{ app(\App\Services\MarketPriceRouter::class)->activeMarketplace() }}">
                             {{ currency_symbol() }}{{ number_format((float)$stock->current_price,2) }}
                         </p>
                     </div>

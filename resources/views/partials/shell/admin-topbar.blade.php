@@ -4,10 +4,38 @@
             <button
                 type="button"
                 onclick="toggleSidebar()"
+                data-sidebar-mobile-toggle
+                aria-controls="sidebar"
+                aria-expanded="false"
                 class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-foreground transition hover:bg-muted lg:hidden"
                 aria-label="Open admin navigation"
             >
                 <i data-lucide="menu" class="h-4 w-4"></i>
+            </button>
+
+            <button
+                type="button"
+                onclick="toggleDesktopSidebar()"
+                data-sidebar-desktop-toggle
+                aria-controls="sidebar"
+                aria-expanded="true"
+                class="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground lg:inline-flex"
+                title="Collapse admin navigation"
+                aria-label="Collapse admin navigation"
+            >
+                <i data-lucide="panel-left-close" class="sidebar-desktop-expanded-icon h-4 w-4"></i>
+                <i data-lucide="panel-left-open" class="sidebar-desktop-collapsed-icon hidden h-4 w-4"></i>
+            </button>
+
+            <button
+                type="button"
+                onclick="adminGoBack('{{ route('admin.dashboard') }}')"
+                class="inline-flex h-9 shrink-0 items-center gap-2 rounded-lg border border-border bg-card px-2.5 text-sm font-medium text-foreground transition hover:bg-muted sm:px-3"
+                aria-label="Go back"
+                title="Back"
+            >
+                <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                <span class="hidden sm:inline">Back</span>
             </button>
 
             <div class="min-w-0">

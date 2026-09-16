@@ -162,10 +162,29 @@
         </div>
     </details>
 
-    <a href="{{ route('admin.settings.index') }}" title="System Settings"
-       class="{{ $standaloneBase }} {{ request()->routeIs('admin.settings.*') ? $standaloneActive : $standaloneIdle }}">
-        <i data-lucide="settings-2" class="h-4 w-4 shrink-0"></i><span class="sidebar-label">System Settings</span>
-    </a>
+    <details class="sidebar-group group rounded-xl"
+             data-nav-group="admin-settings"
+             {{ request()->routeIs('admin.settings.*') ? 'open' : '' }}>
+        <summary title="System Settings"
+                 class="{{ $parentBase }} justify-between {{ request()->routeIs('admin.settings.*') ? $parentActive : $parentIdle }}">
+            <span class="flex min-w-0 items-center gap-3">
+                <i data-lucide="settings-2" class="h-4 w-4 shrink-0"></i>
+                <span class="sidebar-label truncate">System Settings</span>
+            </span>
+            <i data-lucide="chevron-down" class="sidebar-chevron h-4 w-4 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
+            <a href="{{ route('admin.settings.index', ['section' => 'overview']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.settings.*') && request()->query('section', 'overview') === 'overview' ? $childActive : $childIdle }}"><i data-lucide="layout-dashboard" class="h-4 w-4"></i><span>Overview</span></a>
+            <a href="{{ route('admin.settings.index', ['section' => 'general']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.settings.*') && request()->query('section') === 'general' ? $childActive : $childIdle }}"><i data-lucide="settings-2" class="h-4 w-4"></i><span>General</span></a>
+            <a href="{{ route('admin.settings.index', ['section' => 'appearance']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.settings.*') && request()->query('section') === 'appearance' ? $childActive : $childIdle }}"><i data-lucide="palette" class="h-4 w-4"></i><span>Appearance</span></a>
+            <a href="{{ route('admin.settings.index', ['section' => 'market']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.settings.*') && request()->query('section') === 'market' ? $childActive : $childIdle }}"><i data-lucide="chart-candlestick" class="h-4 w-4"></i><span>Market</span></a>
+            <a href="{{ route('admin.settings.index', ['section' => 'trading']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.settings.*') && request()->query('section') === 'trading' ? $childActive : $childIdle }}"><i data-lucide="chart-no-axes-combined" class="h-4 w-4"></i><span>Trading</span></a>
+            <a href="{{ route('admin.settings.index', ['section' => 'security']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.settings.*') && request()->query('section') === 'security' ? $childActive : $childIdle }}"><i data-lucide="shield-check" class="h-4 w-4"></i><span>Security</span></a>
+            <a href="{{ route('admin.settings.index', ['section' => 'mail']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.settings.*') && request()->query('section') === 'mail' ? $childActive : $childIdle }}"><i data-lucide="mail" class="h-4 w-4"></i><span>Mail & Notifications</span></a>
+            <a href="{{ route('admin.settings.index', ['section' => 'integrations']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.settings.*') && request()->query('section') === 'integrations' ? $childActive : $childIdle }}"><i data-lucide="plug-zap" class="h-4 w-4"></i><span>Integrations</span></a>
+            <a href="{{ route('admin.settings.index', ['section' => 'system']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.settings.*') && request()->query('section') === 'system' ? $childActive : $childIdle }}"><i data-lucide="server-cog" class="h-4 w-4"></i><span>System</span></a>
+        </div>
+    </details>
     <a href="{{ route('cron.setup') }}" title="Scheduler & Cron"
        class="{{ $standaloneBase }} {{ request()->routeIs('cron.setup') ? $standaloneActive : $standaloneIdle }}">
         <i data-lucide="clock-3" class="h-4 w-4 shrink-0"></i><span class="sidebar-label">Scheduler & Cron</span>

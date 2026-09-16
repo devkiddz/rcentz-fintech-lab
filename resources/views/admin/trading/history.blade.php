@@ -35,13 +35,12 @@
 
     <div class="ui-panel mt-4 overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[1120px] text-left text-xs">
+            <table class="w-full min-w-[1040px] text-left text-xs">
                 <thead class="border-b border-border bg-muted/30 text-[9px] uppercase tracking-[.12em] text-muted-foreground">
                     <tr>
                         <th class="px-4 py-3">Trade</th>
                         <th class="px-4 py-3">Customer</th>
                         <th class="px-4 py-3">Asset</th>
-                        <th class="px-4 py-3">Market</th>
                         <th class="px-4 py-3">Entry</th>
                         <th class="px-4 py-3">Exit / CMP</th>
                         <th class="px-4 py-3">Qty</th>
@@ -71,7 +70,6 @@
                             </td>
                             <td class="px-4 py-3">{{ $position->user?->name ?? '—' }}</td>
                             <td class="px-4 py-3 font-semibold">{{ $position->stock?->symbol ?? '—' }}</td>
-                            <td class="px-4 py-3"><span class="rounded-full border border-border bg-muted/20 px-2 py-1 text-[9px] font-semibold">{{ strtoupper($position->marketplace ?: 'live') }}</span></td>
                             <td class="px-4 py-3 font-medium tabular-nums">{{ currency_symbol() }}{{ number_format((float)$position->entry_price,2) }}</td>
                             <td class="px-4 py-3 font-medium tabular-nums">{{ currency_symbol() }}{{ number_format($exit,2) }}</td>
                             <td class="px-4 py-3 tabular-nums">{{ number_format((float)$position->initial_quantity,6) }}</td>
@@ -93,7 +91,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="12" class="px-4 py-10 text-center text-muted-foreground">No trade contracts found.</td></tr>
+                        <tr><td colspan="11" class="px-4 py-10 text-center text-muted-foreground">No trade contracts found.</td></tr>
                     @endforelse
                 </tbody>
             </table>

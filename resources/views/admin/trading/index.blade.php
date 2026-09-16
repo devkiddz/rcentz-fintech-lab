@@ -8,7 +8,7 @@
             <p class="ui-lead">Performance, position lifecycle, instrument context and execution history from one command surface.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-            <a href="{{ route('admin.trading.marketplace') }}" class="ui-btn ui-btn-primary">Marketplace Control</a>
+            <a href="{{ route('admin.settings.index', ['section' => 'market']) }}" class="ui-btn ui-btn-primary">Market Settings</a>
             <a href="{{ route('admin.trading.manual') }}" class="ui-btn ui-btn-secondary">Trading Desk</a>
             <a href="{{ route('admin.trading.history') }}" class="ui-btn ui-btn-secondary">Trade History</a>
         </div>
@@ -77,7 +77,7 @@
                             <p class="ui-kicker">Latest trade focus</p>
                             <h2 class="mt-1 text-base font-semibold">{{ $focusPosition->stock->symbol }} · Position #{{ $focusPosition->id }}</h2>
                             <p class="mt-1 text-[10px] text-muted-foreground">
-                                {{ $focusPosition->user?->name ?? 'Unknown user' }} · {{ strtoupper($focusPosition->marketplace ?: 'live') }} Market
+                                {{ $focusPosition->user?->name ?? 'Unknown user' }}
                             </p>
                         </div>
                         <span class="rounded-full border px-2 py-1 text-[9px] font-semibold

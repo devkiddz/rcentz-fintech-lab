@@ -200,7 +200,7 @@ class TradingController extends Controller
         // A Live holding and Controlled holding are different exposures.
         if (!$holding) {
             return redirect()->route('trading.portfolio')
-                ->with('error', 'You do not have any '.strtoupper($marketplace).' holdings in this stock.');
+                ->with('error', 'You do not have any holdings in this stock.');
         }
         
         // Legacy chart payload retained while the new analysis engine owns the workstation chart.

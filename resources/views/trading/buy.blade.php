@@ -15,7 +15,7 @@
                 <span class="rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-1 text-[9px] font-semibold text-sky-600">{{ $stock->symbol }}</span>
             </div>
             <h1 class="ui-heading !text-2xl">Buy {{ $stock->company_name }}</h1>
-            <p class="ui-lead !text-[13px]">{{ $stock->sector }} · Live execution at the current stored market price.</p>
+            <p class="ui-lead !text-[13px]">{{ $stock->sector }} · Execution at the current market price.</p>
         </div>
 
         <div class="ui-panel min-w-[240px] p-3.5">
@@ -88,7 +88,7 @@
                         </div>
 
                         <div class="rounded-xl border border-border bg-muted/20 p-3">
-                            <p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">Live value</p>
+                            <p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">Order value</p>
                             <p id="inline-order-value" class="mt-1 text-xl font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format($price,2) }}</p>
                             <div class="mt-2 flex items-center justify-between text-[10px]">
                                 <span class="text-muted-foreground">Price / share</span>

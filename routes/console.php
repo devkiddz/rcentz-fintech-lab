@@ -28,9 +28,9 @@ Schedule::job(new UpdateStockQuotesJob())
 
 // Controlled Market has its own price clock. It runs only while that marketplace
 // is active, so no simulated tick can overwrite the persisted Live feed.
-Schedule::call(fn () => app(ControlledMarketEngine::class)->tickAll())
+Schedule::call(fn () => app(ControlledMarketEngine::class)->tickIfDue())
     ->name('controlled-market:tick')
-    ->everyMinute()
+    ->everyFiveSeconds()
     ->when(fn () => app(MarketPriceRouter::class)->activeMarketplace() === 'controlled')
     ->withoutOverlapping()
     ->onOneServer();

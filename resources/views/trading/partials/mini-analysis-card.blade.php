@@ -11,6 +11,7 @@
         $miniDefault = in_array('1d', $miniFrames, true) ? '1d' : ($miniFrames[0] ?? null);
     }
     $miniHeight = $height ?? 'h-[150px]';
+    $miniMarketplace = str_starts_with((string)($miniAnalysis['source'] ?? ''), 'controlled_') ? 'controlled' : 'live';
 @endphp
 
 <div class="overflow-hidden rounded-xl border border-border/70 bg-background/30">
@@ -39,6 +40,8 @@
         <div class="{{ $miniHeight }} p-2">
             <div class="h-full w-full"
                  data-rcentz-analysis
+                 data-market-analysis-symbol="{{ $miniSymbol }}"
+                 data-marketplace="{{ $miniMarketplace }}"
                  data-compact="true"
                  data-default-timeframe="{{ $miniDefault }}"
                  data-analysis='@json($miniAnalysis)'></div>

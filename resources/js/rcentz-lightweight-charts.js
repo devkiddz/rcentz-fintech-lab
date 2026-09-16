@@ -299,7 +299,7 @@ const parseAnalysis = (value) => {
 };
 
 const renderAnalysis = (el) => {
-    const payload = parseAnalysis(el.dataset.analysis);
+    let payload = parseAnalysis(el.dataset.analysis);
     const compact = el.dataset.compact === 'true';
     const wrapper = el.closest('section');
     const timeframeButtons = wrapper ? wrapper.querySelectorAll('[data-rcentz-timeframe]') : [];
@@ -519,8 +519,33 @@ const renderAnalysis = (el) => {
             renderFrame(activeFrame, button.dataset.rcentzChartMode);
         });
     });
+
+    // V5.14.3: refresh the existing chart instance in place. Button listeners are
+    // installed once, so automatic market polling does not accumulate handlers.
+    el.__rcentzRefreshAnalysis = (nextPayload) => {
+        payload = parseAnalysis(JSON.stringify(nextPayload || {}));
+        el.dataset.analysis = JSON.stringify(nextPayload || {});
+
+        const nextPreferred = payload.timeframes?.[activeFrame]?.length >= 2
+            ? activeFrame
+            : ['1d','15m','5m','1h','4h','1w','1m','3m','1y']
+                .find((key) => (payload.timeframes?.[key]?.length || 0) >= 2);
+
+        if (!nextPreferred) return;
+
+        activeFrame = nextPreferred;
+        renderFrame(activeFrame, activeMode);
+    };
 };
 
+
+window.RcentzCharts = {
+    refreshAnalysis(el, payload) {
+        if (el && typeof el.__rcentzRefreshAnalysis === 'function') {
+            el.__rcentzRefreshAnalysis(payload);
+        }
+    },
+};
 
 const bootCharts = () => {
     document.querySelectorAll('[data-rcentz-candles]').forEach(renderCandles);

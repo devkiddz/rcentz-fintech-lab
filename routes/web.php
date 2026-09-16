@@ -54,6 +54,11 @@ Route::get('/', [FrontendController::class, 'index'])->name('home');
 Route::get('/refresh-csrf', function() {
     return response()->json(['token' => csrf_token()]);
 })->middleware('web');
+
+// V5.14.3 lightweight runtime heartbeat for automatic market/chart updates.
+Route::get('/market-runtime', [\App\Http\Controllers\MarketRuntimeController::class, 'snapshot'])
+    ->middleware('auth')
+    ->name('market.runtime');
 Route::get('/cars', [FrontendController::class, 'browse'])->name('cars.browse');
 Route::get('/cars/{id}', [FrontendController::class, 'show'])->name('cars.show');
 
@@ -391,19 +396,32 @@ Route::middleware(['auth', 'admin'])
         Route::delete('/{botProduct}', [AdminTradingBotController::class, 'destroy'])->name('destroy');
     });
 
-    // Admin Settings Management
+    // Admin Settings Control Plane
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/', [AdminSettingController::class, 'index'])->name('index');
-        Route::post('/', [AdminSettingController::class, 'update'])->name('update');
-        Route::post('/fix-storage', [AdminSettingController::class, 'fixStorage'])->name('fix-storage');
-        Route::post('/storage-link', [AdminSettingController::class, 'storageLink'])->name('storage-link');
-        Route::post('/clear-cache', [AdminSettingController::class, 'clearCache'])->name('clear-cache');
-        Route::post('/clear-config', [AdminSettingController::class, 'clearConfig'])->name('clear-config');
-        Route::post('/clear-views', [AdminSettingController::class, 'clearViews'])->name('clear-views');
-        Route::post('/clear-routes', [AdminSettingController::class, 'clearRoutes'])->name('clear-routes');
-        Route::post('/optimize-clear', [AdminSettingController::class, 'optimizeClear'])->name('optimize-clear');
-        Route::post('/test-mail', [AdminSettingController::class, 'testMail'])->name('test-mail');
-        Route::post('/reset-defaults', [AdminSettingController::class, 'resetToDefaults'])->name('reset-defaults');
+
+        // Core settings domains
+        Route::patch('/general', [AdminSettingController::class, 'updateGeneral'])->name('general.update');
+        Route::patch('/appearance', [AdminSettingController::class, 'updateAppearance'])->name('appearance.update');
+        Route::patch('/security', [AdminSettingController::class, 'updateSecurity'])->name('security.update');
+
+        // Specialized settings domains keep their own storage/service boundaries.
+        Route::post('/market/source', [\App\Http\Controllers\Admin\MarketEnvironmentController::class, 'updateMode'])->name('market.source');
+        Route::post('/market/movement', [\App\Http\Controllers\Admin\MarketEnvironmentController::class, 'updateDrive'])->name('market.movement');
+        Route::patch('/mail', [AdminSettingController::class, 'updateMail'])->name('mail.update');
+        Route::post('/mail/test', [AdminSettingController::class, 'testMail'])->name('mail.test');
+
+        // System actions
+        Route::post('/system/cache/clear', [AdminSettingController::class, 'clearCache'])->name('system.cache.clear');
+        Route::post('/system/config/clear', [AdminSettingController::class, 'clearConfig'])->name('system.config.clear');
+        Route::post('/system/views/clear', [AdminSettingController::class, 'clearViews'])->name('system.views.clear');
+        Route::post('/system/routes/clear', [AdminSettingController::class, 'clearRoutes'])->name('system.routes.clear');
+        Route::post('/system/optimize/clear', [AdminSettingController::class, 'optimizeClear'])->name('system.optimize.clear');
+        Route::post('/system/storage/link', [AdminSettingController::class, 'storageLink'])->name('system.storage.link');
+        Route::post('/system/storage/repair', [AdminSettingController::class, 'fixStorage'])->name('system.storage.repair');
+        Route::post('/system/defaults/reset', [AdminSettingController::class, 'resetToDefaults'])->name('system.defaults.reset');
+
+        // Compatibility aliases for the previous settings surface.
     });
         
         // Admin Profile Management

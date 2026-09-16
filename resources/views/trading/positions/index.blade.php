@@ -4,7 +4,7 @@
 <div class="ui-page max-w-[1480px]">
     <section class="ui-page-header">
         <div>
-            <p class="ui-kicker text-[10px]">Trading · {{ strtoupper($activeMarketplace) }} Position Contracts</p>
+            <p class="ui-kicker text-[10px]">Trading · Position Contracts</p>
             <h1 class="ui-heading !text-2xl">Positions & exits</h1>
             <p class="ui-lead !text-[13px]">
                 EMP is fixed at entry. CMP is the closing/current market price.
@@ -31,14 +31,14 @@
 
     <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/10 px-4 py-3">
         <div>
-            <p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">Active marketplace</p>
-            <p class="mt-1 text-xs font-semibold">{{ strtoupper($activeMarketplace) }}</p>
+            <p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">Market session</p>
+            <p class="mt-1 text-xs font-semibold">{{ $activeMarketplace === 'live' ? 'Regular session' : 'Continuous session' }}</p>
         </div>
         <p class="text-[10px] text-muted-foreground">
             @if($activeMarketplace === 'live')
                 New York · {{ $marketTime->format('M d, Y · H:i') }} ET · {{ ucfirst(str_replace('_',' ',$marketStatus)) }} · Session 09:30–16:00 ET
             @else
-                Controlled price clock · 24/7 contract environment
+                Continuous pricing · 24/7 contract environment
             @endif
         </p>
     </div>
@@ -75,7 +75,7 @@
                 $endReason=$position->metadata['effective_end_reason'] ?? null;
             @endphp
 
-            <article class="ui-panel overflow-hidden">
+            <article class="ui-panel overflow-hidden" data-market-runtime data-market-position="{{ $position->id }}">
                 <div class="grid gap-5 p-4 xl:grid-cols-[1fr_auto]">
                     <div>
                         <div class="flex flex-wrap items-center gap-2">
@@ -88,10 +88,6 @@
                                     ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600'
                                     : 'border-border bg-muted text-muted-foreground' }}">
                                 {{ $isOpen ? 'Open' : ucfirst(str_replace('_',' ',$position->status)) }}
-                            </span>
-
-                            <span class="rounded-full border border-border px-2 py-1 text-[9px] font-semibold text-muted-foreground">
-                                {{ strtoupper($position->marketplace ?: 'live') }} Market
                             </span>
 
                             @if($closed && $position->exit_reason)
@@ -125,7 +121,12 @@
                             ] as [$label,$value])
                                 <div class="rounded-lg border border-border bg-muted/10 p-2.5">
                                     <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">{{ $label }}</p>
-                                    <p class="mt-1 text-[10px] font-semibold">{{ $value }}</p>
+                                    <p class="mt-1 text-[10px] font-semibold"
+                                       @if($label === 'CMP') data-market-position-cmp="{{ $position->id }}"
+                                       @elseif(in_array($label,['CMP - EMP','Difference'],true)) data-market-position-difference="{{ $position->id }}"
+                                       @elseif(in_array($label,['P/L','Current P/L'],true)) data-market-position-pnl="{{ $position->id }}"
+                                       @elseif($label === 'Return') data-market-position-return="{{ $position->id }}"
+                                       @endif>{{ $value }}</p>
                                 </div>
                             @endforeach
                         </div>
@@ -264,7 +265,12 @@
                                     ] as [$label,$value])
                                         <div class="rounded-lg border border-border bg-background/60 p-2.5">
                                             <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">{{ $label }}</p>
-                                            <p class="mt-1 text-[10px] font-semibold">{{ $value }}</p>
+                                            <p class="mt-1 text-[10px] font-semibold"
+                                       @if($label === 'CMP') data-market-position-cmp="{{ $position->id }}"
+                                       @elseif(in_array($label,['CMP - EMP','Difference'],true)) data-market-position-difference="{{ $position->id }}"
+                                       @elseif(in_array($label,['P/L','Current P/L'],true)) data-market-position-pnl="{{ $position->id }}"
+                                       @elseif($label === 'Return') data-market-position-return="{{ $position->id }}"
+                                       @endif>{{ $value }}</p>
                                         </div>
                                     @endforeach
                                 </div>

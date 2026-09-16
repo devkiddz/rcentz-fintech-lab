@@ -55,7 +55,7 @@ class MarketEnvironmentController extends Controller
         // operator can change the active desk without re-pricing existing exposure.
         $prices->setActiveMarketplace($requested, auth()->id());
 
-        return back()->with('success', 'Active marketplace switched to '.strtoupper($requested).'. New browsing and executions now use that marketplace price authority. Existing exposure remains bound to its original marketplace.');
+        return back()->with('success', 'Price source updated. New browsing and executions now use the selected source. Existing exposure remains bound to its opening source.');
     }
 
     public function updateDrive(Request $request)
@@ -63,22 +63,24 @@ class MarketEnvironmentController extends Controller
         $data = $request->validate([
             'controlled_drive_mode' => 'required|in:up,down,range',
             'controlled_drive_strength' => 'required|numeric|min:0.1|max:3',
+            'controlled_tick_seconds' => 'required|integer|in:5,10,15,30,60,120,300',
         ]);
 
         MarketEnvironment::current()->update([
             'controlled_drive_mode' => $data['controlled_drive_mode'],
             'controlled_drive_strength' => $data['controlled_drive_strength'],
+            'controlled_tick_seconds' => $data['controlled_tick_seconds'],
             'updated_by_user_id' => auth()->id(),
         ]);
 
-        return back()->with('success', 'Controlled market drive updated.');
+        return back()->with('success', 'Market drive updated. Automatic movement interval: '.$data['controlled_tick_seconds'].' seconds.');
     }
 
     public function tick(ControlledMarketEngine $engine)
     {
         $result = $engine->tickAll();
 
-        return back()->with('success', 'Controlled market tick completed: '.$result['updated'].' updated, '.$result['failed'].' failed.');
+        return back()->with('success', 'Market tick completed: '.$result['updated'].' updated, '.$result['failed'].' failed.');
     }
 
     public function storeInstrument(Request $request, ControlledMarketEngine $engine)
@@ -110,12 +112,12 @@ class MarketEnvironmentController extends Controller
         );
 
         if (ControlledMarketInstrument::query()->where('stock_id', $stock->id)->exists()) {
-            return back()->withErrors(['symbol' => 'This instrument already exists in the Controlled Market.'])->withInput();
+            return back()->withErrors(['symbol' => 'This instrument already exists.'])->withInput();
         }
 
         $engine->registerInstrument($stock, $data['label'], $price);
 
-        return back()->with('success', $symbol.' added to the Controlled Market.');
+        return back()->with('success', $symbol.' added.');
     }
 
     public function resetInstrumentPrice(
@@ -129,13 +131,13 @@ class MarketEnvironmentController extends Controller
 
         $engine->resetPrice($instrument, (float) $data['current_price']);
 
-        return back()->with('success', $instrument->symbol.' controlled price reset.');
+        return back()->with('success', $instrument->symbol.' price reset.');
     }
 
     public function toggleInstrument(ControlledMarketInstrument $instrument)
     {
         $instrument->update(['is_active' => ! $instrument->is_active]);
 
-        return back()->with('success', $instrument->symbol.' is now '.($instrument->is_active ? 'active' : 'paused').' in Controlled Market.');
+        return back()->with('success', $instrument->symbol.' is now '.($instrument->is_active ? 'active' : 'paused').'.');
     }
 }

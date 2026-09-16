@@ -26,8 +26,20 @@
         body.sidebar-collapsed #sidebar .sidebar-section-label,
         body.sidebar-collapsed #sidebar .sidebar-chevron,
         body.sidebar-collapsed #sidebar .sidebar-subnav,
-        body.sidebar-collapsed #sidebar .sidebar-profile-copy {
+        body.sidebar-collapsed #sidebar .sidebar-profile-copy,
+        body.sidebar-collapsed #sidebar .sidebar-brand-full {
             display: none !important;
+        }
+
+        body.sidebar-collapsed #sidebar .sidebar-brand-compact {
+            display: flex !important;
+        }
+
+        body.sidebar-collapsed #sidebar .sidebar-header,
+        body.sidebar-collapsed #sidebar .sidebar-profile {
+            justify-content: center !important;
+            padding-left: .75rem !important;
+            padding-right: .75rem !important;
         }
 
         body.sidebar-collapsed #sidebar [data-sidebar-nav] > a,
@@ -38,8 +50,12 @@
             padding-right: .75rem !important;
         }
 
-        body.sidebar-collapsed #sidebar .sidebar-collapse-icon {
-            transform: rotate(180deg);
+        body.sidebar-collapsed .sidebar-desktop-expanded-icon {
+            display: none !important;
+        }
+
+        body.sidebar-collapsed .sidebar-desktop-collapsed-icon {
+            display: block !important;
         }
     }
 </style>
@@ -47,26 +63,85 @@
 <script>
     (() => {
         const scope = window.location.pathname.startsWith('/admin') ? 'admin' : 'customer';
+        const desktopStorageKey = `rcentz_sidebar_collapsed:${scope}`;
+        const desktopBreakpoint = 1024;
 
-        window.toggleSidebar = function () {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
+
+        const elements = () => ({
+            sidebar: document.getElementById('sidebar'),
+            overlay: document.getElementById('sidebar-overlay'),
+            mobileToggles: document.querySelectorAll('[data-sidebar-mobile-toggle]'),
+            desktopToggle: document.querySelector('[data-sidebar-desktop-toggle]'),
+        });
+
+        const setMobileState = (open) => {
+            const { sidebar, overlay, mobileToggles } = elements();
             if (!sidebar || !overlay) return;
 
-            const open = sidebar.classList.contains('translate-x-0');
+            sidebar.classList.toggle('translate-x-0', open);
+            sidebar.classList.toggle('-translate-x-full', !open);
+            overlay.classList.toggle('hidden', !open);
+            overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+            document.body.classList.toggle('overflow-hidden', open && window.innerWidth < desktopBreakpoint);
 
-            sidebar.classList.toggle('translate-x-0', !open);
-            sidebar.classList.toggle('-translate-x-full', open);
-            overlay.classList.toggle('hidden', open);
+            mobileToggles.forEach((button) => {
+                button.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+        };
+
+        const syncDesktopState = () => {
+            const { desktopToggle } = elements();
+            const collapsed = document.body.classList.contains('sidebar-collapsed');
+            if (!desktopToggle) return;
+
+            desktopToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            desktopToggle.setAttribute('aria-label', collapsed ? 'Expand admin navigation' : 'Collapse admin navigation');
+            desktopToggle.setAttribute('title', collapsed ? 'Expand admin navigation' : 'Collapse admin navigation');
         };
 
         window.openSidebar = function () {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            if (!sidebar || !overlay) return;
-            sidebar.classList.remove('-translate-x-full');
-            sidebar.classList.add('translate-x-0');
-            overlay.classList.remove('hidden');
+            if (window.innerWidth >= desktopBreakpoint) {
+                document.body.classList.remove('sidebar-collapsed');
+                localStorage.setItem(desktopStorageKey, '0');
+                syncDesktopState();
+                return;
+            }
+
+            setMobileState(true);
+        };
+
+        window.closeSidebar = function () {
+            if (window.innerWidth >= desktopBreakpoint) return;
+            setMobileState(false);
+        };
+
+        window.toggleSidebar = function () {
+            if (window.innerWidth >= desktopBreakpoint) {
+                window.toggleDesktopSidebar();
+                return;
+            }
+
+            const { sidebar } = elements();
+            if (!sidebar) return;
+            setMobileState(!sidebar.classList.contains('translate-x-0'));
+        };
+
+        window.adminGoBack = function (fallbackUrl) {
+            try {
+                const referrer = document.referrer ? new URL(document.referrer) : null;
+                const cameFromAdmin = referrer
+                    && referrer.origin === window.location.origin
+                    && referrer.pathname.startsWith('/admin');
+
+                if (cameFromAdmin && window.history.length > 1) {
+                    window.history.back();
+                    return;
+                }
+            } catch (_) {
+                // Fall through to the safe admin fallback.
+            }
+
+            window.location.assign(fallbackUrl || '/admin');
         };
 
         window.toggleWorkspaceTheme = function () {
@@ -79,33 +154,81 @@
         };
 
         window.toggleDesktopSidebar = function () {
-            if (window.innerWidth < 1024) return;
+            if (window.innerWidth < desktopBreakpoint) {
+                window.toggleSidebar();
+                return;
+            }
+
             document.body.classList.toggle('sidebar-collapsed');
             localStorage.setItem(
-                `rcentz_sidebar_collapsed:${scope}`,
+                desktopStorageKey,
                 document.body.classList.contains('sidebar-collapsed') ? '1' : '0'
             );
+            syncDesktopState();
         };
 
         document.addEventListener('DOMContentLoaded', () => {
-            if (
-                window.innerWidth >= 1024 &&
-                localStorage.getItem(`rcentz_sidebar_collapsed:${scope}`) === '1'
-            ) {
+            if (window.innerWidth >= desktopBreakpoint && localStorage.getItem(desktopStorageKey) === '1') {
                 document.body.classList.add('sidebar-collapsed');
             }
+            syncDesktopState();
 
             document.querySelectorAll('[data-nav-group]').forEach((group) => {
                 const key = group.dataset.navGroup;
                 const storageKey = `rcentz_nav_group:${scope}:${key}`;
                 const routeOpened = group.hasAttribute('open');
                 const saved = localStorage.getItem(storageKey);
+                const summary = group.querySelector(':scope > summary');
 
-                if (!routeOpened && saved === '1') group.open = true;
+                if (!routeOpened && saved === '1' && !document.body.classList.contains('sidebar-collapsed')) {
+                    group.open = true;
+                }
+
+                if (summary) {
+                    summary.addEventListener('click', (event) => {
+                        if (window.innerWidth >= desktopBreakpoint && document.body.classList.contains('sidebar-collapsed')) {
+                            event.preventDefault();
+                            document.body.classList.remove('sidebar-collapsed');
+                            localStorage.setItem(desktopStorageKey, '0');
+                            syncDesktopState();
+                            window.setTimeout(() => {
+                                group.open = true;
+                                localStorage.setItem(storageKey, '1');
+                            }, 30);
+                        }
+                    });
+                }
 
                 group.addEventListener('toggle', () => {
-                    localStorage.setItem(storageKey, group.open ? '1' : '0');
+                    if (!document.body.classList.contains('sidebar-collapsed')) {
+                        localStorage.setItem(storageKey, group.open ? '1' : '0');
+                    }
                 });
+            });
+
+            document.querySelectorAll('#sidebar a').forEach((link) => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth < desktopBreakpoint) setMobileState(false);
+                });
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && window.innerWidth < desktopBreakpoint) {
+                    setMobileState(false);
+                }
+            });
+
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= desktopBreakpoint) {
+                    setMobileState(false);
+                    if (localStorage.getItem(desktopStorageKey) === '1') {
+                        document.body.classList.add('sidebar-collapsed');
+                    }
+                } else {
+                    document.body.classList.remove('sidebar-collapsed');
+                    setMobileState(false);
+                }
+                syncDesktopState();
             });
 
             if (window.lucide) lucide.createIcons();

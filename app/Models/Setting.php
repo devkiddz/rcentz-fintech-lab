@@ -152,6 +152,14 @@ class Setting extends Model
     }
 
     /**
+     * Check if the setting is a password/secret type
+     */
+    public function isPassword()
+    {
+        return $this->type === 'password';
+    }
+
+    /**
      * Check if the setting is a textarea type
      */
     public function isTextarea()

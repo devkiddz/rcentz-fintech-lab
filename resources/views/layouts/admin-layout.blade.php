@@ -25,33 +25,40 @@
 <div class="min-h-screen">
     <div id="sidebar-overlay"
          class="fixed inset-0 z-[60] hidden bg-black/60 backdrop-blur-[1px] lg:hidden"
-         onclick="toggleSidebar()"></div>
+         aria-hidden="true"
+         onclick="closeSidebar()"></div>
 
     <aside id="sidebar"
+           aria-label="Admin navigation"
            class="fixed inset-y-0 left-0 z-[70] flex w-72 -translate-x-full flex-col border-r border-border bg-card text-card-foreground shadow-sm transition-all duration-300 lg:translate-x-0">
-        <div class="flex h-16 shrink-0 items-center justify-between border-b border-border px-4">
-            <a href="{{ route('admin.dashboard') }}" class="flex min-w-0 items-center gap-3">
+        <div class="sidebar-header flex h-16 shrink-0 items-center justify-between border-b border-border px-4">
+            <a href="{{ route('admin.dashboard') }}" class="sidebar-brand flex min-w-0 items-center gap-3" title="{{ site_name() }} admin">
                 @if(site_logo_light() || site_logo_dark())
+                    <div class="sidebar-brand-compact hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-foreground text-xs font-bold text-background">R</div>
                     <img src="{{ site_logo_light() ?? site_logo_dark() }}"
                          alt="{{ site_name() }}"
-                         class="h-7 w-auto max-w-[150px] object-contain dark:hidden">
+                         class="sidebar-brand-full h-7 w-auto max-w-[150px] object-contain dark:hidden">
                     <img src="{{ site_logo_dark() ?? site_logo_light() }}"
                          alt="{{ site_name() }}"
-                         class="hidden h-7 w-auto max-w-[150px] object-contain dark:block">
+                         class="sidebar-brand-full hidden h-7 w-auto max-w-[150px] object-contain dark:block">
                 @else
-                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-xs font-bold text-background">R</div>
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-foreground text-xs font-bold text-background">R</div>
                     <span class="sidebar-label truncate text-sm font-semibold">{{ site_name() }}</span>
                 @endif
             </a>
 
             <button type="button"
-                    onclick="toggleSidebar()"
+                    onclick="closeSidebar()"
+                    data-sidebar-mobile-toggle
+                    aria-controls="sidebar"
+                    aria-expanded="false"
+                    aria-label="Close admin navigation"
                     class="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden">
                 <i data-lucide="x" class="h-4 w-4"></i>
             </button>
         </div>
 
-        <div class="flex items-center gap-3 border-b border-border px-4 py-3">
+        <div class="sidebar-profile flex items-center gap-3 border-b border-border px-4 py-3">
             <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-foreground text-xs font-semibold text-background">
                 {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
             </div>
@@ -63,11 +70,12 @@
 
         @include('partials.shell.admin-sidebar-nav')
 
-        <div class="border-t border-border p-3">
+        <div class="sidebar-footer border-t border-border p-3">
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit"
-                        class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[12px] font-medium text-red-600 hover:bg-red-500/10">
+                        title="Sign out"
+                        class="sidebar-utility flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[12px] font-medium text-red-600 hover:bg-red-500/10">
                     <i data-lucide="log-out" class="h-4 w-4 shrink-0"></i>
                     <span class="sidebar-label">Sign out</span>
                 </button>
@@ -109,7 +117,11 @@
                 <i data-lucide="wallet-cards" class="h-5 w-5"></i><span>Wallet</span>
             </a>
 
-            <button type="button" onclick="openSidebar()"
+            <button type="button"
+                    onclick="openSidebar()"
+                    data-sidebar-mobile-toggle
+                    aria-controls="sidebar"
+                    aria-expanded="false"
                     class="flex flex-col items-center gap-1 py-1 text-[10px] text-muted-foreground">
                 <i data-lucide="menu" class="h-5 w-5"></i><span>Menu</span>
             </button>

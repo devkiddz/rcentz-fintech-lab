@@ -91,7 +91,7 @@
                     ['Opened',$openedEt ? $openedEt->format('M d · H:i').' ET' : '—'],
                     [$isOpen ? 'Effective end' : 'Closed',$isOpen ? ($expiresEt ? $expiresEt->format('M d · H:i').' ET' : '—') : ($closedEt ? $closedEt->format('M d · H:i').' ET' : '—')],
                     ['Exit reason',$position->exit_reason ? ucfirst(str_replace('_',' ',$position->exit_reason)) : '—'],
-                    ['Marketplace',strtoupper($position->marketplace ?: 'live').' Market'],
+                    ['Contract','Position #'.$position->id],
                 ] as [$label,$value])
                     <div class="bg-background p-3.5">
                         <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">{{ $label }}</p>

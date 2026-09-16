@@ -4,9 +4,9 @@
 <div class="ui-page max-w-[1440px]">
     <section class="ui-page-header">
         <div>
-            <p class="ui-kicker text-[10px]">Trading · {{ strtoupper($activeMarketplace) }} Market</p>
+            <p class="ui-kicker text-[10px]">Trading · Portfolio</p>
             <h1 class="ui-heading !text-2xl">Stock Portfolio</h1>
-            <p class="ui-lead !text-[13px]">This portfolio shows only {{ strtoupper($activeMarketplace) }} holdings, contracts and executions.</p>
+            <p class="ui-lead !text-[13px]">Your current holdings, contracts and executions.</p>
         </div>
         <div class="flex gap-2"><a href="{{ route('trading.positions.index') }}" class="ui-btn ui-btn-secondary"><i data-lucide="route" class="h-4 w-4"></i> Positions</a><a href="{{ route('stocks.index') }}" class="ui-btn ui-btn-primary"><i data-lucide="plus" class="h-4 w-4"></i> Browse Stocks</a></div>
     </section>
@@ -132,7 +132,7 @@
             @foreach($recentTransactions as $transaction)
                 <div class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                     <div>
-                        <p class="text-xs font-semibold">{{ $transaction->stock->symbol }} · {{ ucfirst($transaction->type) }} · {{ strtoupper($transaction->marketplace ?: 'live') }}</p>
+                        <p class="text-xs font-semibold">{{ $transaction->stock->symbol }} · {{ ucfirst($transaction->type) }}</p>
                         <p class="mt-1 text-[9px] text-muted-foreground">{{ number_format((float)$transaction->quantity,6) }} shares · {{ optional($transaction->executed_at)->format('M d · H:i') }}</p>
                     </div>
                     <div class="text-right">

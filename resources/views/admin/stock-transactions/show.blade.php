@@ -83,18 +83,31 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-px border-t border-border/70 bg-border/70 lg:grid-cols-4">
-                    @foreach([
-                        ['Current price',currency_symbol().number_format($transaction->stock->current_price,2)],
-                        ['Previous close',currency_symbol().number_format($transaction->stock->previous_close,2)],
-                        ['Change',($transaction->stock->price_change >= 0 ? '+' : '').currency_symbol().number_format($transaction->stock->price_change,2)],
-                        ['Change %',($transaction->stock->price_change_percentage >= 0 ? '+' : '').number_format($transaction->stock->price_change_percentage,2).'%'],
-                    ] as [$label,$value])
-                        <div class="bg-background p-4">
-                            <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">{{ $label }}</p>
-                            <p class="mt-1.5 text-[11px] font-semibold tabular-nums">{{ $value }}</p>
-                        </div>
-                    @endforeach
+                <div class="grid grid-cols-2 gap-px border-t border-border/70 bg-border/70 lg:grid-cols-4" data-market-runtime>
+                    <div class="bg-background p-4">
+                        <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Current price</p>
+                        <p class="mt-1.5 text-[11px] font-semibold tabular-nums"
+                           data-market-price-symbol="{{ $transaction->stock->symbol }}"
+                           data-marketplace="{{ $marketContext['marketplace'] }}">{{ currency_symbol() }}{{ number_format($marketContext['current_price'],2) }}</p>
+                    </div>
+                    <div class="bg-background p-4">
+                        <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Previous price</p>
+                        <p class="mt-1.5 text-[11px] font-semibold tabular-nums"
+                           data-market-previous-symbol="{{ $transaction->stock->symbol }}"
+                           data-marketplace="{{ $marketContext['marketplace'] }}">{{ currency_symbol() }}{{ number_format($marketContext['previous_price'],2) }}</p>
+                    </div>
+                    <div class="bg-background p-4">
+                        <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Change</p>
+                        <p class="mt-1.5 text-[11px] font-semibold tabular-nums {{ $marketContext['change'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}"
+                           data-market-change-symbol="{{ $transaction->stock->symbol }}"
+                           data-marketplace="{{ $marketContext['marketplace'] }}">{{ $marketContext['change'] >= 0 ? '+' : '-' }}{{ currency_symbol() }}{{ number_format(abs($marketContext['change']),2) }}</p>
+                    </div>
+                    <div class="bg-background p-4">
+                        <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Change %</p>
+                        <p class="mt-1.5 text-[11px] font-semibold tabular-nums {{ $marketContext['change_percent'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}"
+                           data-market-change-percent-symbol="{{ $transaction->stock->symbol }}"
+                           data-marketplace="{{ $marketContext['marketplace'] }}">{{ $marketContext['change_percent'] >= 0 ? '+' : '' }}{{ number_format($marketContext['change_percent'],2) }}%</p>
+                    </div>
                 </div>
             </div>
 
@@ -123,6 +136,22 @@
                             <p class="mt-1.5 text-[10px] font-semibold">{{ $value }}</p>
                         </div>
                     @endforeach
+
+                    <div class="bg-background p-4" data-market-runtime>
+                        @if($tradeResult)
+                            <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground" data-market-position-label="{{ $tradeResult['position_id'] }}">{{ $tradeResult['label'] }}</p>
+                            <p class="mt-1.5 text-[11px] font-semibold tabular-nums {{ $tradeResult['pnl'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}"
+                               data-market-position-pnl="{{ $tradeResult['position_id'] }}">
+                                {{ $tradeResult['pnl'] >= 0 ? '+' : '-' }}{{ currency_symbol() }}{{ number_format(abs($tradeResult['pnl']),2) }}
+                            </p>
+                            <p class="mt-1 text-[9px] text-muted-foreground" data-market-position-return="{{ $tradeResult['position_id'] }}">
+                                {{ $tradeResult['return_percent'] >= 0 ? '+' : '' }}{{ number_format($tradeResult['return_percent'],2) }}%
+                            </p>
+                        @else
+                            <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Trade P/L</p>
+                            <p class="mt-1.5 text-[10px] font-semibold text-muted-foreground">No linked contract result yet</p>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>

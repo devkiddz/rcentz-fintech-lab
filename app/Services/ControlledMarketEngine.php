@@ -8,6 +8,7 @@ use App\Models\ControlledMarketTick;
 use App\Models\MarketEnvironment;
 use App\Models\Stock;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use RuntimeException;
 
 final class ControlledMarketEngine
@@ -103,6 +104,63 @@ final class ControlledMarketEngine
         }
 
         return $instrument->refresh();
+    }
+
+    public function tickIfDue(): array
+    {
+        $environment = MarketEnvironment::current();
+        $interval = max(5, min(300, (int) ($environment->controlled_tick_seconds ?: 60)));
+
+        if ($environment->active_marketplace !== 'controlled') {
+            return [
+                'ticked' => false,
+                'mode' => $environment->controlled_drive_mode ?: 'range',
+                'updated' => 0,
+                'failed' => 0,
+                'interval_seconds' => $interval,
+                'reason' => 'inactive_marketplace',
+            ];
+        }
+
+        $lock = Cache::lock('rcentz-controlled-market-auto-tick', max(10, $interval));
+
+        if (! $lock->get()) {
+            return [
+                'ticked' => false,
+                'mode' => $environment->controlled_drive_mode ?: 'range',
+                'updated' => 0,
+                'failed' => 0,
+                'interval_seconds' => $interval,
+                'reason' => 'tick_locked',
+            ];
+        }
+
+        try {
+            $latest = ControlledMarketInstrument::query()
+                ->where('is_active', true)
+                ->max('last_moved_at');
+
+            if ($latest && \Carbon\Carbon::parse($latest)->gt(now()->subSeconds($interval))) {
+                return [
+                    'ticked' => false,
+                    'mode' => $environment->controlled_drive_mode ?: 'range',
+                    'updated' => 0,
+                    'failed' => 0,
+                    'interval_seconds' => $interval,
+                    'reason' => 'not_due',
+                ];
+            }
+
+            $result = $this->tickAll();
+
+            return array_merge($result, [
+                'ticked' => true,
+                'interval_seconds' => $interval,
+                'reason' => 'due',
+            ]);
+        } finally {
+            $lock->release();
+        }
     }
 
     public function tickAll(?string $mode = null): array
