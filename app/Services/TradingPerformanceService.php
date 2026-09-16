@@ -295,27 +295,15 @@ class TradingPerformanceService
         ?string $label,
         ?string $note
     ): array {
-        $metrics['actual_profit_loss'] = $metrics['profit_loss'];
-        $metrics['actual_return_percent'] = $metrics['return_percent'];
-        $metrics['is_manual_performance'] = $enabled;
-        $metrics['performance_label'] = $enabled ? trim((string) $label) : null;
-        $metrics['performance_note'] = $enabled ? $note : null;
-
-        if (! $enabled) {
-            return $metrics;
-        }
-
-        if ($manualProfitLoss !== null) {
-            $metrics['profit_loss'] = (float) $manualProfitLoss;
-        }
-
-        if ($manualReturnPercent !== null) {
-            $metrics['return_percent'] = (float) $manualReturnPercent;
-        }
-
-        return $metrics;
+        return app(\App\Services\Simulation\ManualPerformanceEngine::class)->apply(
+            $metrics,
+            $enabled,
+            $manualProfitLoss,
+            $manualReturnPercent,
+            $label,
+            $note
+        );
     }
-
     private function summary(
         Collection $all,
         Collection $completed,

@@ -250,6 +250,7 @@ Route::middleware(['auth', 'admin'])
         Route::get('trading/manual', [\App\Http\Controllers\Admin\TradingOperationsController::class, 'manual'])->name('trading.manual');
         Route::get('trading/positions', [\App\Http\Controllers\Admin\TradingOperationsController::class, 'positions'])->name('trading.positions');
         Route::get('trading/history', [\App\Http\Controllers\Admin\TradingOperationsController::class, 'history'])->name('trading.history');
+        Route::get('trading/positions/{position}', [\App\Http\Controllers\Admin\TradingOperationsController::class, 'show'])->name('trading.positions.show');
         // Admin Car Management
         Route::resource('cars', AdminCarController::class);
         

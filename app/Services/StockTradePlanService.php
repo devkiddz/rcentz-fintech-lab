@@ -33,7 +33,7 @@ class StockTradePlanService
     }
 
     public function processDuePlans(
-        StockExecutionService $execution,
+        \App\Services\Legacy\LegacyStockExecutionEngine $execution,
         MarketSessionService $marketSession
     ): array {
         $stats = ['review_due'=>0,'automatic_completed'=>0,'queued_closed'=>0,'failed'=>0];

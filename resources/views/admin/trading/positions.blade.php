@@ -11,7 +11,7 @@
 
     <div class="ui-panel overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs">
+            <table class="w-full min-w-[1000px] text-left text-xs">
                 <thead class="border-b border-border bg-muted/30 text-[9px] uppercase tracking-[.12em] text-muted-foreground">
                     <tr>
                         <th class="px-4 py-3">Position</th>
@@ -22,6 +22,7 @@
                         <th class="px-4 py-3">Open Qty</th>
                         <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3">Opened</th>
+                        <th class="px-4 py-3 text-right">Record</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-border">
@@ -35,9 +36,12 @@
                             <td class="px-4 py-3">{{ number_format((float)$position->open_quantity,6) }}</td>
                             <td class="px-4 py-3">{{ ucfirst(str_replace('_',' ',$position->status)) }}</td>
                             <td class="px-4 py-3 text-muted-foreground">{{ optional($position->opened_at)->format('M d, Y H:i') }}</td>
+                            <td class="px-4 py-3 text-right">
+                                <a href="{{ route('admin.trading.positions.show',$position) }}" class="ui-btn ui-btn-secondary !h-8 !px-3">View</a>
+                            </td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="px-4 py-10 text-center text-muted-foreground">No positions found.</td></tr>
+                        <tr><td colspan="9" class="px-4 py-10 text-center text-muted-foreground">No positions found.</td></tr>
                     @endforelse
                 </tbody>
             </table>

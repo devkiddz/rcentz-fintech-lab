@@ -124,6 +124,33 @@
                             @endforeach
                         </div>
 
+
+                        {{-- V5.6.1 open-position action strip --}}
+                        @if($isOpen)
+                            <div class="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] p-3">
+                                <div class="mr-auto min-w-[180px]">
+                                    <p class="text-[9px] uppercase tracking-[.12em] text-emerald-600">Position controls</p>
+                                    <p class="mt-1 text-[10px] text-muted-foreground">Trail risk or terminate the remaining contract.</p>
+                                </div>
+
+                                <button type="button"
+                                        class="ui-btn ui-btn-secondary !h-9 !px-3"
+                                        onclick="document.getElementById('manage-{{ $position->id }}').showModal()">
+                                    <i data-lucide="route" class="h-3.5 w-3.5"></i>
+                                    Manage / Trail
+                                </button>
+
+                                <form method="POST"
+                                      action="{{ route('trading.positions.close',$position) }}"
+                                      onsubmit="return confirm('Kill this trade contract? This is irreversible. The full remaining position will settle at the current CMP and the realized profit or loss becomes final.');">
+                                    @csrf
+                                    <button class="ui-btn !h-9 !px-3 border border-red-500/30 bg-red-500/10 text-red-600 hover:bg-red-500/15">
+                                        <i data-lucide="octagon-x" class="h-3.5 w-3.5"></i>
+                                        Kill Position
+                                    </button>
+                                </form>
+                            </div>
+                        @endif
                         @if($isOpen && $closesEt)
                             <p class="mt-3 text-[9px] text-muted-foreground">
                                 Effective close:
@@ -140,14 +167,14 @@
                                   onsubmit="return confirm('Kill this trade contract? This is irreversible. The full remaining position will settle at the current CMP and the realized profit or loss becomes final.');">
                                 @csrf
                                 <button class="ui-btn !h-8 !px-3 border border-red-500/30 bg-red-500/10 text-red-600 hover:bg-red-500/15">
-                                    Kill Trade
+                                    Kill Position
                                 </button>
                             </form>
 
                             <button type="button"
                                     class="ui-btn ui-btn-secondary !h-8 !px-3"
                                     onclick="document.getElementById('manage-{{ $position->id }}').showModal()">
-                                Manage
+                                Manage / Trail
                             </button>
                         @else
                             <form method="POST" action="{{ route('trading.positions.reenter',$position) }}" class="flex gap-2">

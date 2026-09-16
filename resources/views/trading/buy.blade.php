@@ -36,6 +36,19 @@
         @include('trading.partials.analysis-chart',['stock'=>$stock,'analysis'=>$analysis,'chartHeight'=>'h-[300px] sm:h-[360px] lg:h-[420px]'])
     </div>
 
+{{-- V5.6 active-position workstation controls --}}
+    @if(session('success'))
+        <div class="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-700 dark:text-emerald-400">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if($errors->has('position'))
+        <div class="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs text-red-700 dark:text-red-400">
+            {{ $errors->first('position') }}
+        </div>
+    @endif
+
     <form action="{{ route('trading.execute-buy',$stock) }}" method="POST" id="buy-stock-form" class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_390px]">
         @csrf
 
@@ -194,6 +207,52 @@
                         </div>
                     @endforeach
                 </div>
+
+                {{-- V5.6.1 holding contract controls --}}
+                <div class="mt-4 border-t border-border pt-4">
+                    @if($currentPosition)
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-[9px] uppercase tracking-[.12em] text-emerald-600">Active managed contract</p>
+                                <p class="mt-1 text-[11px] font-semibold">
+                                    #{{ $currentPosition->id }} · {{ number_format((float)$currentPosition->open_quantity,6) }} open shares
+                                </p>
+                                <p class="mt-1 text-[9px] text-muted-foreground">
+                                    {{ str_replace('_',' ',ucfirst($currentPosition->context_type)) }} · Manage the contract, not the aggregate holding.
+                                </p>
+                            </div>
+
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button"
+                                        class="ui-btn ui-btn-secondary !h-9 !px-3"
+                                        onclick="document.getElementById('active-position-manage-dialog').showModal()">
+                                    <i data-lucide="route" class="h-3.5 w-3.5"></i>
+                                    Manage / Trail
+                                </button>
+
+                                <button type="button"
+                                        class="ui-btn !h-9 !px-3 border border-red-500/30 bg-red-500/10 text-red-600 hover:bg-red-500/15"
+                                        onclick="document.getElementById('active-position-kill-dialog').showModal()">
+                                    <i data-lucide="octagon-x" class="h-3.5 w-3.5"></i>
+                                    Kill Position
+                                </button>
+                            </div>
+                        </div>
+                    @else
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-[9px] uppercase tracking-[.12em] text-amber-600">Holding without an active managed contract</p>
+                                <p class="mt-1 text-[10px] leading-4 text-muted-foreground">
+                                    These shares are portfolio inventory, but there is no still-open TradePosition attached to this stock.
+                                    Kill / Trail controls only operate on a living position contract.
+                                </p>
+                            </div>
+                            <a href="{{ route('trading.positions.index') }}" class="ui-btn ui-btn-secondary !h-9 !px-3 shrink-0">
+                                Position Desk
+                            </a>
+                        </div>
+                    @endif
+                </div>
             </section>
             @endif
         </div>
@@ -253,7 +312,89 @@
                     </div>
 
 
-                    <div
+                    @if($currentPosition)
+@php
+    $currentEmp = (float) $currentPosition->entry_price;
+    $currentCmp = (float) $stock->current_price;
+    $currentPl = (float) $currentPosition->current_profit_loss;
+    $currentReturn = (float) $currentPosition->current_return_percent;
+    $currentEndEt = $currentPosition->expires_at
+        ? $currentPosition->expires_at->copy()->setTimezone(\App\Services\MarketSessionService::TIMEZONE)
+        : null;
+@endphp
+
+<div class="mt-4 rounded-xl border border-sky-500/20 bg-sky-500/5 p-3">
+    <div class="flex items-start justify-between gap-3">
+        <div>
+            <div class="flex flex-wrap items-center gap-2">
+                <p class="text-[9px] uppercase tracking-[.13em] text-sky-500">Active position</p>
+                <span class="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[8px] font-semibold text-emerald-600">Open</span>
+            </div>
+            <h3 class="mt-1 text-xs font-semibold">{{ $stock->symbol }} contract #{{ $currentPosition->id }}</h3>
+            <p class="mt-1 text-[9px] text-muted-foreground">
+                Manual position · {{ number_format((float)$currentPosition->open_quantity, 6) }} shares
+                @if($activePositionCount > 1)
+                    · {{ $activePositionCount }} open {{ $stock->symbol }} contracts
+                @endif
+            </p>
+        </div>
+        <a href="{{ route('trading.positions.index') }}" class="text-[9px] font-semibold text-sky-500 hover:underline">Position desk</a>
+    </div>
+
+    <div class="mt-3 grid grid-cols-2 gap-2">
+        <div class="rounded-lg border border-border bg-background/60 p-2.5">
+            <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">EMP → CMP</p>
+            <p class="mt-1 text-[10px] font-semibold tabular-nums">
+                {{ currency_symbol() }}{{ number_format($currentEmp,2) }} → {{ currency_symbol() }}{{ number_format($currentCmp,2) }}
+            </p>
+        </div>
+        <div class="rounded-lg border border-border bg-background/60 p-2.5">
+            <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">Current P/L</p>
+            <p class="mt-1 text-[10px] font-semibold tabular-nums {{ $currentPl >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                {{ $currentPl >= 0 ? '+' : '' }}{{ currency_symbol() }}{{ number_format($currentPl,2) }}
+                <span class="text-[9px]">({{ $currentReturn >= 0 ? '+' : '' }}{{ number_format($currentReturn,2) }}%)</span>
+            </p>
+        </div>
+        <div class="rounded-lg border border-border bg-background/60 p-2.5">
+            <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">Stop / target</p>
+            <p class="mt-1 text-[10px] font-semibold tabular-nums">
+                {{ $currentPosition->stop_loss_price ? currency_symbol().number_format((float)$currentPosition->stop_loss_price,2) : '—' }}
+                / {{ $currentPosition->take_profit_price ? currency_symbol().number_format((float)$currentPosition->take_profit_price,2) : '—' }}
+            </p>
+        </div>
+        <div class="rounded-lg border border-border bg-background/60 p-2.5">
+            <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">Effective end</p>
+            <p class="mt-1 text-[10px] font-semibold">{{ $currentEndEt ? $currentEndEt->format('H:i') . ' ET' : '—' }}</p>
+        </div>
+    </div>
+
+    <div class="mt-3 grid grid-cols-2 gap-2">
+        <button
+            type="button"
+            class="ui-btn ui-btn-secondary h-9 w-full"
+            onclick="document.getElementById('manage-current-position').showModal()"
+        >
+            <i data-lucide="sliders-horizontal" class="h-3.5 w-3.5"></i>
+            Manage / Trail
+        </button>
+
+        <button
+            type="button"
+            class="ui-btn h-9 w-full border border-red-500/30 bg-red-500/10 text-red-600 hover:bg-red-500/15"
+            onclick="if (confirm('Kill this position now? The full remaining quantity will settle at the current stored CMP and the realized profit or loss becomes final.')) document.getElementById('kill-current-position-form').requestSubmit();"
+        >
+            <i data-lucide="circle-stop" class="h-3.5 w-3.5"></i>
+            Kill Position
+        </button>
+    </div>
+
+    <p class="mt-2 text-[9px] leading-4 text-muted-foreground">
+        Manage / Trail manually moves the open contract's Stop Loss, Take Profit, or remaining horizon. Kill Position is the irreversible full exit.
+    </p>
+</div>
+@endif
+
+<div
     id="trade-risk-calculator"
     class="mt-4 rounded-xl border border-border bg-muted/10 p-3"
     data-entry-price="{{ number_format((float)$stock->current_price, 8, '.', '') }}"
@@ -287,7 +428,7 @@
                 <span id="sl-direction" class="text-[9px] text-muted-foreground">Below EMP</span>
             </div>
 
-            <div class="mt-2 grid grid-cols-2 gap-2">
+            <div class="mt-2 grid grid-cols-1 gap-2">
                 <div>
                     <label class="mb-1 block text-[8px] uppercase tracking-[.1em] text-muted-foreground">Percent</label>
                     <div class="relative">
@@ -334,7 +475,7 @@
                 <span id="tp-direction" class="text-[9px] text-muted-foreground">Above EMP</span>
             </div>
 
-            <div class="mt-2 grid grid-cols-2 gap-2">
+            <div class="mt-2 grid grid-cols-1 gap-2">
                 <div>
                     <label class="mb-1 block text-[8px] uppercase tracking-[.1em] text-muted-foreground">Percent</label>
                     <div class="relative">
@@ -578,6 +719,135 @@ document.addEventListener('DOMContentLoaded', () => {
             </section>
         </aside>
     </form>
+
+    @if($currentPosition)
+    <dialog
+        id="manage-current-position"
+        class="w-[min(94vw,560px)] rounded-2xl border border-border bg-background p-0 text-foreground shadow-2xl backdrop:bg-black/70"
+    >
+        <div class="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
+            <div>
+                <p class="text-[9px] font-semibold uppercase tracking-[.14em] text-sky-500">Manage / Trail</p>
+                <h3 class="mt-1 text-base font-semibold">{{ $stock->symbol }} contract #{{ $currentPosition->id }}</h3>
+                <p class="mt-1 text-[10px] leading-4 text-muted-foreground">
+                    Adjust the still-open contract. EMP remains fixed; these controls change the exit conditions.
+                </p>
+            </div>
+            <button
+                type="button"
+                class="rounded-lg border border-border p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                onclick="document.getElementById('manage-current-position').close()"
+            >
+                <i data-lucide="x" class="h-4 w-4"></i>
+            </button>
+        </div>
+
+        <form method="POST" action="{{ route('trading.positions.risk',$currentPosition) }}" class="p-5">
+            @csrf
+            @method('PATCH')
+
+            <div class="grid grid-cols-2 gap-2">
+                <div class="rounded-lg border border-border bg-muted/10 p-3">
+                    <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">Fixed EMP</p>
+                    <p class="mt-1 text-sm font-semibold">{{ currency_symbol() }}{{ number_format($currentEmp,2) }}</p>
+                </div>
+                <div class="rounded-lg border border-border bg-muted/10 p-3">
+                    <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">Current CMP</p>
+                    <p class="mt-1 text-sm font-semibold">{{ currency_symbol() }}{{ number_format($currentCmp,2) }}</p>
+                </div>
+            </div>
+
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                <div>
+                    <label class="ui-label !text-[10px]">Stop loss (%)</label>
+                    <input
+                        name="stop_loss_percent"
+                        type="number"
+                        min="0.01"
+                        max="100"
+                        step="0.01"
+                        value="{{ $currentPosition->stop_loss_percent }}"
+                        class="ui-input w-full"
+                        placeholder="Blank = remove stop"
+                    >
+                    <p class="mt-1 text-[9px] text-muted-foreground">Below fixed EMP.</p>
+                </div>
+
+                <div>
+                    <label class="ui-label !text-[10px]">Take profit (%)</label>
+                    <input
+                        name="take_profit_percent"
+                        type="number"
+                        min="0.01"
+                        max="100"
+                        step="0.01"
+                        value="{{ $currentPosition->take_profit_percent }}"
+                        class="ui-input w-full"
+                        placeholder="Blank = remove target"
+                    >
+                    <p class="mt-1 text-[9px] text-muted-foreground">Above fixed EMP.</p>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <div class="flex items-center justify-between gap-3">
+                    <label class="ui-label !text-[10px]">Remaining duration</label>
+                    <span class="text-[9px] text-muted-foreground">Blank = persist until market close</span>
+                </div>
+
+                <div class="mt-2 grid grid-cols-5 gap-2">
+                    @foreach([[15,'15m'],[30,'30m'],[60,'1h'],[240,'4h']] as [$minutes,$label])
+                        <button
+                            type="button"
+                            class="ui-btn ui-btn-secondary !h-8 !px-1 !text-[9px]"
+                            onclick="document.getElementById('manage-duration-minutes').value='{{ $minutes }}'"
+                        >{{ $label }}</button>
+                    @endforeach
+                    <button
+                        type="button"
+                        class="ui-btn ui-btn-secondary !h-8 !px-1 !text-[9px]"
+                        onclick="document.getElementById('manage-duration-minutes').value=''"
+                    >Close</button>
+                </div>
+
+                <input
+                    id="manage-duration-minutes"
+                    name="duration_minutes"
+                    type="number"
+                    min="1"
+                    max="43200"
+                    value="{{ $currentPosition->duration_minutes }}"
+                    class="ui-input mt-2 w-full"
+                    placeholder="Until regular market close"
+                >
+
+                <p class="mt-2 text-[9px] leading-4 text-muted-foreground">
+                    Duration is recalculated from the moment you save. The regular 16:00 ET market close still wins if it arrives first.
+                </p>
+            </div>
+
+            <div class="mt-5 flex gap-2 border-t border-border pt-4">
+                <button
+                    type="button"
+                    class="ui-btn ui-btn-secondary flex-1"
+                    onclick="document.getElementById('manage-current-position').close()"
+                >Cancel</button>
+                <button type="submit" class="ui-btn ui-btn-primary flex-1">
+                    Save Management
+                </button>
+            </div>
+        </form>
+    </dialog>
+
+    <form
+        id="kill-current-position-form"
+        method="POST"
+        action="{{ route('trading.positions.close',$currentPosition) }}"
+        class="hidden"
+    >
+        @csrf
+    </form>
+    @endif
 </div>
 
 <script>

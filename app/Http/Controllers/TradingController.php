@@ -42,11 +42,41 @@ class TradingController extends Controller
             ->where('stock_id', $stock->id)
             ->first();
 
+        // V5.6 active-position workstation controls.
+        // The workstation manages one concrete trade contract at a time.
+        // If the user has bought the same stock more than once, the latest
+        // still-open manual contract is treated as the current position here;
+        // the full Position Desk remains available for all contracts.
+        $currentPosition = TradePosition::with('stock')
+            ->where('user_id', $user->id)
+            ->where('stock_id', $stock->id)
+            ->whereNotIn('context_type', ['copy_relationship', 'trading_bot'])
+            ->whereIn('status', ['open', 'exit_queued'])
+            ->where('open_quantity', '>', 0)
+            ->latest('opened_at')
+            ->first();
+
+        $activePositionCount = TradePosition::query()
+            ->where('user_id', $user->id)
+            ->where('stock_id', $stock->id)
+            ->whereNotIn('context_type', ['copy_relationship', 'trading_bot'])
+            ->whereIn('status', ['open', 'exit_queued'])
+            ->where('open_quantity', '>', 0)
+            ->count();
+
         // Legacy chart payload retained while the new analysis engine owns the workstation chart.
         $chartData = $this->getStockChartData($stock->symbol);
         $analysis = app(StockAnalysisService::class)->forStock($stock);
 
-        return view('trading.buy', compact('stock', 'wallet', 'userHolding', 'chartData', 'analysis'));
+        return view('trading.buy', compact(
+            'stock',
+            'wallet',
+            'userHolding',
+            'chartData',
+            'analysis',
+            'currentPosition',
+            'activePositionCount'
+        ));
     }
 
     /**
@@ -76,47 +106,51 @@ class TradingController extends Controller
         $quantity = (float) $data['quantity'];
 
         try {
-            // Single source of truth for wallet mutation, holding mutation,
-            // stock transaction creation and financial activity.
-            $stockTransaction = $executor->buy(
+            // V5.6.1 atomic managed BUY:
+            // a successful manual purchase MUST also create its living TradePosition.
+            // If either side fails, the outer DB transaction rolls the whole operation back,
+            // preventing wallet/holding rows that have no manageable position contract.
+            [$stockTransaction, $openedPosition] = DB::transaction(function () use (
+                $executor,
+                $positions,
+                $request,
                 $user,
                 $stock,
-                $quantity,
-                'stock_trade'
-            );
+                $quantity
+            ) {
+                $trade = $executor->buy(
+                    $user,
+                    $stock,
+                    $quantity,
+                    'stock_trade'
+                );
+
+                $position = $positions->openLongFromTrade(
+                    $trade,
+                    [
+                        'stop_loss_percent' => $request->input('stop_loss_percent'),
+                        'take_profit_percent' => $request->input('take_profit_percent'),
+                        'duration_minutes' => $request->integer('plan_duration_minutes') ?: null,
+                    ],
+                    'manual_trade',
+                    null,
+                    null,
+                    'user',
+                    $user->id
+                );
+
+                return [$trade, $position];
+            });
         } catch (\Throwable $e) {
-            \Log::warning('Manual stock buy failed', [
+            \Log::warning('Managed manual stock buy failed', [
                 'user_id' => $user->id,
                 'stock_id' => $stock->id,
                 'error' => $e->getMessage(),
             ]);
 
             return back()->withErrors([
-                'error' => $e->getMessage() ?: 'Failed to process purchase. Please try again.',
+                'error' => $e->getMessage() ?: 'The managed trade could not be opened. No partial purchase was kept.',
             ])->withInput();
-        }
-
-        try {
-            // BUY creates the living position BEFORE mirroring so strategy/copy
-            // followers can inherit its risk and timing context.
-            $positions->openLongFromTrade(
-                $stockTransaction,
-                [
-                    'stop_loss_percent' => $request->input('stop_loss_percent'),
-                    'take_profit_percent' => $request->input('take_profit_percent'),
-                    'duration_minutes' => $request->integer('plan_duration_minutes') ?: null,
-                ],
-                'manual_trade',
-                null,
-                null,
-                'user',
-                $user->id
-            );
-        } catch (\Throwable $e) {
-            \Log::warning('Position creation failed after stock buy', [
-                'trade_id' => $stockTransaction->id,
-                'error' => $e->getMessage(),
-            ]);
         }
         // Everything below is post-execution side effect. A notification,
         // email, copy mirror or trade-plan failure must never roll back a

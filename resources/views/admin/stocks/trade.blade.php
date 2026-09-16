@@ -131,11 +131,10 @@
                         </div>
 
 
-                        <div class="grid grid-cols-3 gap-2">
-                            <input name="stop_loss_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input" placeholder="SL %">
-                            <input name="take_profit_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input" placeholder="TP %">
-                            <input name="duration_minutes" type="number" min="1" max="43200" class="ui-input" placeholder="Minutes">
-                        </div>
+                        {{-- V5.7 shared admin trade contract controls --}}
+                        @include('admin.stocks.partials.trade-contract-controls', [
+                            'entryPrice' => (float) $stock->current_price,
+                        ])
                         <button class="ui-btn ui-btn-primary w-full">
                             Execute strategy trade
                         </button>
@@ -185,11 +184,10 @@
                         </div>
 
 
-                        <div class="grid grid-cols-3 gap-2">
-                            <input name="stop_loss_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input" placeholder="SL %">
-                            <input name="take_profit_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input" placeholder="TP %">
-                            <input name="duration_minutes" type="number" min="1" max="43200" class="ui-input" placeholder="Minutes">
-                        </div>
+                        {{-- V5.7 shared admin trade contract controls --}}
+                        @include('admin.stocks.partials.trade-contract-controls', [
+                            'entryPrice' => (float) $stock->current_price,
+                        ])
                         <button class="ui-btn ui-btn-primary w-full">
                             Execute admin trade
                         </button>
@@ -247,11 +245,10 @@
                         ></textarea>
 
 
-                        <div class="grid grid-cols-3 gap-2">
-                            <input name="stop_loss_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input" placeholder="SL %">
-                            <input name="take_profit_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input" placeholder="TP %">
-                            <input name="duration_minutes" type="number" min="1" max="43200" class="ui-input" placeholder="Minutes">
-                        </div>
+                        {{-- V5.7 shared admin trade contract controls --}}
+                        @include('admin.stocks.partials.trade-contract-controls', [
+                            'entryPrice' => (float) $stock->current_price,
+                        ])
                         <button class="ui-btn ui-btn-primary w-full">
                             Execute for user
                         </button>
@@ -274,4 +271,173 @@
         </aside>
     </section>
 </div>
+
+
+{{-- V5.7 admin trade contract parity --}}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-admin-trade-contract]').forEach((root) => {
+        const form = root.closest('form');
+        if (!form) return;
+
+        const entry = Number(root.dataset.entryPrice || 0);
+        if (!Number.isFinite(entry) || entry <= 0) return;
+
+        const side = form.querySelector('select[name="side"]');
+        const buyFields = root.querySelector('[data-role="buy-fields"]');
+        const sellNotice = root.querySelector('[data-role="sell-notice"]');
+
+        const slPct = root.querySelector('[data-role="sl-percent"]');
+        const slPrice = root.querySelector('[data-role="sl-price"]');
+        const slSummary = root.querySelector('[data-role="sl-summary"]');
+        const tpPct = root.querySelector('[data-role="tp-percent"]');
+        const tpPrice = root.querySelector('[data-role="tp-price"]');
+        const tpSummary = root.querySelector('[data-role="tp-summary"]');
+
+        const duration = root.querySelector('[data-role="duration-minutes"]');
+        const customDuration = root.querySelector('[data-role="custom-duration"]');
+        const durationLabel = root.querySelector('[data-role="duration-label"]');
+        const durationButtons = Array.from(root.querySelectorAll('[data-duration-minutes]'));
+        const clearDuration = root.querySelector('[data-clear-duration]');
+
+        let syncing = false;
+        const money = (value) => Number.isFinite(value) ? value.toFixed(2) : '';
+        const pct = (value) => Number.isFinite(value) ? value.toFixed(2) : '';
+
+        const setSummary = (el, text, valid = true) => {
+            if (!el) return;
+            el.textContent = text;
+            el.classList.toggle('text-red-500', !valid);
+            el.classList.toggle('text-muted-foreground', valid);
+        };
+
+        const prettyDuration = (minutes) => {
+            minutes = Number(minutes) || 0;
+            if (!minutes) return 'Regular market close';
+            if (minutes % 10080 === 0 && minutes >= 10080) return (minutes / 10080) + ' week' + (minutes === 10080 ? '' : 's');
+            if (minutes % 1440 === 0 && minutes >= 1440) return (minutes / 1440) + ' day' + (minutes === 1440 ? '' : 's');
+            if (minutes % 60 === 0 && minutes >= 60) return (minutes / 60) + ' hour' + (minutes === 60 ? '' : 's');
+            return minutes + ' minutes';
+        };
+
+        const syncSlFromPercent = () => {
+            if (syncing) return;
+            syncing = true;
+            const value = Number(slPct?.value);
+            if (Number.isFinite(value) && value > 0 && value <= 100) {
+                const price = entry * (1 - value / 100);
+                slPrice.value = money(Math.max(0, price));
+                setSummary(slSummary, pct(value) + '% below EMP → ' + money(Math.max(0, price)));
+            } else {
+                if (slPrice) slPrice.value = '';
+                setSummary(slSummary, 'Enter % or market price');
+            }
+            syncing = false;
+        };
+
+        const syncSlFromPrice = () => {
+            if (syncing) return;
+            syncing = true;
+            const value = Number(slPrice?.value);
+            if (Number.isFinite(value) && value > 0 && value < entry) {
+                const percent = ((entry - value) / entry) * 100;
+                slPct.value = pct(percent);
+                setSummary(slSummary, money(value) + ' = ' + pct(percent) + '% below EMP');
+            } else if (slPrice?.value !== '') {
+                slPct.value = '';
+                setSummary(slSummary, 'Stop Loss must be below EMP (' + money(entry) + ')', false);
+            } else {
+                slPct.value = '';
+                setSummary(slSummary, 'Enter % or market price');
+            }
+            syncing = false;
+        };
+
+        const syncTpFromPercent = () => {
+            if (syncing) return;
+            syncing = true;
+            const value = Number(tpPct?.value);
+            if (Number.isFinite(value) && value > 0 && value <= 100) {
+                const price = entry * (1 + value / 100);
+                tpPrice.value = money(price);
+                setSummary(tpSummary, pct(value) + '% above EMP → ' + money(price));
+            } else {
+                if (tpPrice) tpPrice.value = '';
+                setSummary(tpSummary, 'Enter % or market price');
+            }
+            syncing = false;
+        };
+
+        const syncTpFromPrice = () => {
+            if (syncing) return;
+            syncing = true;
+            const value = Number(tpPrice?.value);
+            if (Number.isFinite(value) && value > entry) {
+                const percent = ((value - entry) / entry) * 100;
+                tpPct.value = pct(percent);
+                setSummary(tpSummary, money(value) + ' = ' + pct(percent) + '% above EMP');
+            } else if (tpPrice?.value !== '') {
+                tpPct.value = '';
+                setSummary(tpSummary, 'Take Profit must be above EMP (' + money(entry) + ')', false);
+            } else {
+                tpPct.value = '';
+                setSummary(tpSummary, 'Enter % or market price');
+            }
+            syncing = false;
+        };
+
+        const setDuration = (minutes, button = null) => {
+            const n = Math.max(1, Math.min(43200, Math.floor(Number(minutes) || 0)));
+            if (!n) return;
+            duration.value = n;
+            if (durationLabel) durationLabel.textContent = prettyDuration(n);
+            durationButtons.forEach((btn) => btn.classList.remove('!border-sky-500/40', '!bg-sky-500/10'));
+            if (button) button.classList.add('!border-sky-500/40', '!bg-sky-500/10');
+        };
+
+        const clearHorizon = () => {
+            duration.value = '';
+            if (customDuration) customDuration.value = '';
+            if (durationLabel) durationLabel.textContent = 'Regular market close';
+            durationButtons.forEach((btn) => btn.classList.remove('!border-sky-500/40', '!bg-sky-500/10'));
+        };
+
+        const applySideMode = () => {
+            const isBuy = !side || side.value === 'buy';
+            buyFields?.classList.toggle('hidden', !isBuy);
+            sellNotice?.classList.toggle('hidden', isBuy);
+
+            [slPct, slPrice, tpPct, tpPrice, duration, customDuration].forEach((field) => {
+                if (field) field.disabled = !isBuy;
+            });
+            durationButtons.forEach((button) => button.disabled = !isBuy);
+            if (clearDuration) clearDuration.disabled = !isBuy;
+        };
+
+        slPct?.addEventListener('input', syncSlFromPercent);
+        slPrice?.addEventListener('input', syncSlFromPrice);
+        tpPct?.addEventListener('input', syncTpFromPercent);
+        tpPrice?.addEventListener('input', syncTpFromPrice);
+
+        durationButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                if (customDuration) customDuration.value = '';
+                setDuration(button.dataset.durationMinutes, button);
+            });
+        });
+
+        customDuration?.addEventListener('input', () => {
+            if (customDuration.value) setDuration(customDuration.value, null);
+            else clearHorizon();
+        });
+
+        clearDuration?.addEventListener('click', clearHorizon);
+        side?.addEventListener('change', applySideMode);
+
+        clearHorizon();
+        applySideMode();
+    });
+});
+</script>
+
 </x-admin-layout>

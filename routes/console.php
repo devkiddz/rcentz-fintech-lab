@@ -1,7 +1,7 @@
 <?php
 
 use App\Services\StockTradePlanService;
-use App\Services\StockExecutionService;
+use App\Services\Legacy\LegacyStockExecutionEngine;
 use App\Services\MarketSessionService;
 use App\Jobs\CleanupOldDataJob;
 use App\Jobs\FetchStockHistoryJob;
@@ -60,7 +60,7 @@ Schedule::call(fn () => app(BotSubscriptionLifecycleService::class)->expireDue()
 
 Schedule::call(function () {
     app(StockTradePlanService::class)->processDuePlans(
-        app(StockExecutionService::class),
+        app(LegacyStockExecutionEngine::class),
         app(MarketSessionService::class)
     );
 })->name('stock-trade-plans:process-due')->everyMinute()->withoutOverlapping()->onOneServer();
