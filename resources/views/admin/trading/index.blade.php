@@ -1,5 +1,6 @@
 <x-admin-layout>
 <div class="ui-page max-w-[1500px]">
+    {{-- V5.9.1 trade terminology cleanup --}}
     <section class="ui-page-header">
         <div>
             <p class="ui-kicker">Admin · Trading Command</p>
@@ -72,7 +73,7 @@
                             <p class="ui-kicker">Latest trade focus</p>
                             <h2 class="mt-1 text-base font-semibold">{{ $focusPosition->stock->symbol }} · Position #{{ $focusPosition->id }}</h2>
                             <p class="mt-1 text-[10px] text-muted-foreground">
-                                {{ $focusPosition->user?->name ?? 'Unknown user' }} · {{ ucfirst(str_replace('_',' ',$focusPosition->context_type)) }}
+                                {{ $focusPosition->user?->name ?? 'Unknown user' }}
                             </p>
                         </div>
                         <span class="rounded-full border px-2 py-1 text-[9px] font-semibold
@@ -171,7 +172,6 @@
                         <tr class="hover:bg-muted/20">
                             <td class="px-4 py-3">
                                 <p class="font-semibold">{{ $position->stock?->symbol ?? '—' }} · #{{ $position->id }}</p>
-                                <p class="mt-1 text-[9px] text-muted-foreground">{{ ucfirst(str_replace('_',' ',$position->context_type)) }}</p>
                             </td>
                             <td class="px-4 py-3">{{ $position->user?->name ?? '—' }}</td>
                             <td class="px-4 py-3 font-medium tabular-nums">{{ currency_symbol() }}{{ number_format((float)$position->entry_price,2) }}</td>

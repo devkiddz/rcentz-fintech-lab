@@ -15,11 +15,11 @@ final class TradingEngineCatalog
                 'key' => 'market_contract',
                 'name' => 'Market Contract Engine',
                 'status' => 'ACTIVE',
-                'execution' => StockTradeExecutor::class,
+                'execution' => MarketTradeContractEngine::class,
                 'position' => TradePositionService::class,
                 'price_source' => 'stocks.current_price (API-fed persisted quote)',
                 'financial_mutation' => 'YES',
-                'purpose' => 'Canonical user/admin/bot/copy trading path.',
+                'purpose' => 'Canonical atomic user/admin/bot/copy trading path.',
             ],
             [
                 'key' => 'legacy_trade_plan',

@@ -7,9 +7,8 @@ use App\Models\CopyStrategy;
 use App\Models\Stock;
 use App\Models\User;
 use App\Services\CopyTradingService;
+use App\Services\MarketTradeContractEngine;
 use App\Services\StockAnalysisService;
-use App\Services\StockTradeExecutor;
-use App\Services\TradePositionService;
 use App\Models\TradePosition;
 use Illuminate\Http\Request;
 
@@ -99,10 +98,10 @@ class StockController extends Controller
     public function executeStrategyTrade(
         Request $request,
         Stock $stock,
-        StockTradeExecutor $executor,
-        CopyTradingService $copyTrading,
-        TradePositionService $positions
+        MarketTradeContractEngine $marketTrades,
+        CopyTradingService $copyTrading
     ) {
+        // V5.10 canonical market-contract wiring.
         $data=$request->validate([
             'strategy_id'=>'required|integer|exists:copy_strategies,id',
             'side'=>'required|in:buy,sell',
@@ -127,18 +126,29 @@ class StockController extends Controller
 
         try{
             if($data['side']==='buy'){
-                $trade=$executor->buy($provider,$stock,$quantity,'admin_strategy_trade',$strategy->id,$strategy->id,'admin',auth()->id());
-                $positions->openLongFromTrade($trade,[
-                    'stop_loss_percent'=>$data['stop_loss_percent']??null,
-                    'take_profit_percent'=>$data['take_profit_percent']??null,
-                    'duration_minutes'=>$data['duration_minutes']??null,
-                ],'copy_strategy',$strategy->id,null,'admin',auth()->id());
+                $trade=$marketTrades->openLong(
+                    $provider,
+                    $stock,
+                    $quantity,
+                    'admin_strategy_trade',
+                    'copy_strategy',
+                    [
+                        'stop_loss_percent'=>$data['stop_loss_percent']??null,
+                        'take_profit_percent'=>$data['take_profit_percent']??null,
+                        'duration_minutes'=>$data['duration_minutes']??null,
+                    ],
+                    $strategy->id,
+                    $strategy->id,
+                    $strategy->id,
+                    'admin',
+                    auth()->id()
+                );
             }else{
                 $position=TradePosition::where('user_id',$provider->id)->where('stock_id',$stock->id)
                     ->where('context_type','copy_strategy')->where('context_id',$strategy->id)
                     ->whereIn('status',['open','exit_queued'])->where('open_quantity','>',0)
                     ->oldest('opened_at')->firstOrFail();
-                $trade=$positions->close($position,'strategy_manual_exit',$quantity,'admin',auth()->id());
+                $trade=$marketTrades->closePosition($position,'strategy_manual_exit',$quantity,'admin',auth()->id());
             }
         }catch(\Throwable $e){
             return back()->withErrors(['trade'=>$e->getMessage()])->withInput();
@@ -154,9 +164,9 @@ class StockController extends Controller
     public function executeAdminTrade(
         Request $request,
         Stock $stock,
-        StockTradeExecutor $executor,
-        TradePositionService $positions
+        MarketTradeContractEngine $marketTrades
     ) {
+        // V5.10 canonical market-contract wiring.
         $data=$request->validate([
             'side'=>'required|in:buy,sell',
             'quantity'=>'required|numeric|min:0.000001|max:10000',
@@ -175,17 +185,28 @@ class StockController extends Controller
 
         try{
             if($data['side']==='buy'){
-                $trade=$executor->buy($admin,$stock,$quantity,'admin_direct_trade',null,null,'admin',$admin->id);
-                $positions->openLongFromTrade($trade,[
-                    'stop_loss_percent'=>$data['stop_loss_percent']??null,
-                    'take_profit_percent'=>$data['take_profit_percent']??null,
-                    'duration_minutes'=>$data['duration_minutes']??null,
-                ],'admin_direct',$admin->id,null,'admin',$admin->id);
+                $trade=$marketTrades->openLong(
+                    $admin,
+                    $stock,
+                    $quantity,
+                    'admin_direct_trade',
+                    'admin_direct',
+                    [
+                        'stop_loss_percent'=>$data['stop_loss_percent']??null,
+                        'take_profit_percent'=>$data['take_profit_percent']??null,
+                        'duration_minutes'=>$data['duration_minutes']??null,
+                    ],
+                    $admin->id,
+                    null,
+                    null,
+                    'admin',
+                    $admin->id
+                );
             }else{
                 $position=TradePosition::where('user_id',$admin->id)->where('stock_id',$stock->id)
                     ->where('context_type','admin_direct')->whereIn('status',['open','exit_queued'])
                     ->where('open_quantity','>',0)->oldest('opened_at')->firstOrFail();
-                $trade=$positions->close($position,'admin_manual_exit',$quantity,'admin',$admin->id);
+                $trade=$marketTrades->closePosition($position,'admin_manual_exit',$quantity,'admin',$admin->id);
             }
         }catch(\Throwable $e){
             return back()->withErrors(['admin_trade'=>$e->getMessage()])->withInput();
@@ -198,9 +219,9 @@ class StockController extends Controller
     public function executeUserTrade(
         Request $request,
         Stock $stock,
-        StockTradeExecutor $executor,
-        TradePositionService $positions
+        MarketTradeContractEngine $marketTrades
     ) {
+        // V5.10 canonical market-contract wiring.
         $data=$request->validate([
             'user_id'=>'required|integer|exists:users,id',
             'side'=>'required|in:buy,sell',
@@ -229,18 +250,29 @@ class StockController extends Controller
 
         try{
             if($data['side']==='buy'){
-                $trade=$executor->buy($user,$stock,$quantity,'admin_user_trade',$user->id,null,'admin',auth()->id());
-                $positions->openLongFromTrade($trade,[
-                    'stop_loss_percent'=>$data['stop_loss_percent']??null,
-                    'take_profit_percent'=>$data['take_profit_percent']??null,
-                    'duration_minutes'=>$data['duration_minutes']??null,
-                    'metadata'=>['admin_reason'=>$data['reason']],
-                ],'admin_user_trade',$user->id,null,'admin',auth()->id());
+                $trade=$marketTrades->openLong(
+                    $user,
+                    $stock,
+                    $quantity,
+                    'admin_user_trade',
+                    'admin_user_trade',
+                    [
+                        'stop_loss_percent'=>$data['stop_loss_percent']??null,
+                        'take_profit_percent'=>$data['take_profit_percent']??null,
+                        'duration_minutes'=>$data['duration_minutes']??null,
+                        'metadata'=>['admin_reason'=>$data['reason']],
+                    ],
+                    $user->id,
+                    $user->id,
+                    null,
+                    'admin',
+                    auth()->id()
+                );
             }else{
                 $position=TradePosition::where('user_id',$user->id)->where('stock_id',$stock->id)
                     ->whereIn('status',['open','exit_queued'])->where('open_quantity','>',0)
                     ->oldest('opened_at')->firstOrFail();
-                $trade=$positions->close($position,'admin_user_exit',$quantity,'admin',auth()->id());
+                $trade=$marketTrades->closePosition($position,'admin_user_exit',$quantity,'admin',auth()->id());
             }
         }catch(\Throwable $e){
             return back()->withErrors(['user_trade'=>$e->getMessage()])->withInput();
@@ -256,4 +288,5 @@ class StockController extends Controller
         return redirect()->route('admin.stocks.transactions.show',$trade)
             ->with('success','Trade for User executed.');
     }
+
 }

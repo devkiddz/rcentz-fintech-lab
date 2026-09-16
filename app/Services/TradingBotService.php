@@ -9,10 +9,10 @@ use Illuminate\Support\Facades\Log;
 class TradingBotService
 {
     public function __construct(
-        private StockTradeExecutor $executor,
-        private TradePositionService $positions
+        private MarketTradeContractEngine $marketTrades
     ){}
 
+    // V5.10 canonical market-contract wiring.
     public function run(TradingBot $bot,bool $manual=false):TradingBotExecution
     {
         $bot->loadMissing(['user.kyc','stock','subscription.product']);
@@ -39,13 +39,24 @@ class TradingBotService
 
         try{
             if($bot->action==='buy'){
-                $trade=$this->executor->buy($user,$stock,$qty,'trading_bot',$bot->id);
-                $position=$this->positions->openLongFromTrade($trade,[
-                    'stop_loss_percent'=>$bot->stop_loss_percent,
-                    'take_profit_percent'=>$bot->take_profit_percent,
-                    'duration_minutes'=>$bot->position_duration_minutes,
-                    'metadata'=>['bot_id'=>$bot->id],
-                ],'trading_bot',$bot->id,null,'system',null);
+                $trade=$this->marketTrades->openLong(
+                    $user,
+                    $stock,
+                    $qty,
+                    'trading_bot',
+                    'trading_bot',
+                    [
+                        'stop_loss_percent'=>$bot->stop_loss_percent,
+                        'take_profit_percent'=>$bot->take_profit_percent,
+                        'duration_minutes'=>$bot->position_duration_minutes,
+                        'metadata'=>['bot_id'=>$bot->id],
+                    ],
+                    $bot->id,
+                    $bot->id,
+                    null,
+                    'system',
+                    null
+                );
                 $bot->increment('spent_total',(float)$trade->total_amount);
             }else{
                 $position=TradePosition::where('user_id',$user->id)
@@ -62,7 +73,7 @@ class TradingBotService
                 }
 
                 $qty=min($qty,(float)$position->open_quantity);
-                $trade=$this->positions->close($position,'bot_exit',$qty,'system',null);
+                $trade=$this->marketTrades->closePosition($position,'bot_exit',$qty,'system',null);
             }
 
             $amount=(float)$trade->total_amount;

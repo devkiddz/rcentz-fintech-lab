@@ -1,5 +1,6 @@
 <x-admin-layout>
 <div class="ui-page max-w-[1500px]">
+    {{-- V5.9.1 trade terminology cleanup --}}
     <section class="ui-page-header">
         <div>
             <p class="ui-kicker">Trading Command · History</p>
@@ -34,7 +35,7 @@
 
     <div class="ui-panel mt-4 overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[1220px] text-left text-xs">
+            <table class="w-full min-w-[1120px] text-left text-xs">
                 <thead class="border-b border-border bg-muted/30 text-[9px] uppercase tracking-[.12em] text-muted-foreground">
                     <tr>
                         <th class="px-4 py-3">Trade</th>
@@ -45,7 +46,6 @@
                         <th class="px-4 py-3">Qty</th>
                         <th class="px-4 py-3">Profit / Loss</th>
                         <th class="px-4 py-3">Return</th>
-                        <th class="px-4 py-3">Source</th>
                         <th class="px-4 py-3">Status</th>
                         <th class="px-4 py-3">Opened</th>
                         <th class="px-4 py-3 text-right">Record</th>
@@ -76,7 +76,6 @@
                             <td class="px-4 py-3 font-medium tabular-nums {{ $ret >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
                                 {{ $ret >= 0 ? '+' : '' }}{{ number_format($ret,2) }}%
                             </td>
-                            <td class="px-4 py-3 text-muted-foreground">{{ ucfirst(str_replace('_',' ',$position->context_type)) }}</td>
                             <td class="px-4 py-3">
                                 <span class="rounded-full border px-2 py-1 text-[9px] font-semibold
                                     {{ $isOpen ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600' : 'border-border bg-muted text-muted-foreground' }}">
@@ -89,7 +88,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="12" class="px-4 py-10 text-center text-muted-foreground">No trade contracts found.</td></tr>
+                        <tr><td colspan="11" class="px-4 py-10 text-center text-muted-foreground">No trade contracts found.</td></tr>
                     @endforelse
                 </tbody>
             </table>

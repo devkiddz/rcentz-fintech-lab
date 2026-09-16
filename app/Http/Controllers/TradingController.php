@@ -13,15 +13,12 @@ use App\Models\StockPriceHistory;
 use App\Services\NotificationService;
 use App\Services\FinancialActivityService;
 use App\Services\CopyTradingService;
-use App\Services\StockTradePlanService;
+use App\Services\MarketTradeContractEngine;
 use App\Services\StockAnalysisService;
-use App\Services\StockTradeExecutor;
-use App\Services\TradePositionService;
 use App\Models\TradePosition;
 use App\Models\StockTradePlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 
@@ -85,11 +82,10 @@ class TradingController extends Controller
     public function executeBuy(
         Request $request,
         Stock $stock,
-        StockTradeExecutor $executor,
-        CopyTradingService $copyTrading,
-        StockTradePlanService $tradePlans,
-        TradePositionService $positions
+        MarketTradeContractEngine $marketTrades,
+        CopyTradingService $copyTrading
     ) {
+        // V5.10 canonical market-contract wiring.
         if (! $stock->is_active) {
             abort(404);
         }
@@ -106,43 +102,29 @@ class TradingController extends Controller
         $quantity = (float) $data['quantity'];
 
         try {
-            // V5.6.1 atomic managed BUY:
-            // a successful manual purchase MUST also create its living TradePosition.
-            // If either side fails, the outer DB transaction rolls the whole operation back,
-            // preventing wallet/holding rows that have no manageable position contract.
-            [$stockTransaction, $openedPosition] = DB::transaction(function () use (
-                $executor,
-                $positions,
-                $request,
+            // One orchestration boundary now owns BUY + living position creation.
+            // If the position cannot be created, the financial BUY is rolled back too.
+            $stockTransaction = $marketTrades->openLong(
                 $user,
                 $stock,
-                $quantity
-            ) {
-                $trade = $executor->buy(
-                    $user,
-                    $stock,
-                    $quantity,
-                    'stock_trade'
-                );
-
-                $position = $positions->openLongFromTrade(
-                    $trade,
-                    [
-                        'stop_loss_percent' => $request->input('stop_loss_percent'),
-                        'take_profit_percent' => $request->input('take_profit_percent'),
-                        'duration_minutes' => $request->integer('plan_duration_minutes') ?: null,
-                    ],
-                    'manual_trade',
-                    null,
-                    null,
-                    'user',
-                    $user->id
-                );
-
-                return [$trade, $position];
-            });
+                $quantity,
+                'stock_trade',
+                'manual_trade',
+                [
+                    'stop_loss_percent' => $data['stop_loss_percent'] ?? null,
+                    'take_profit_percent' => $data['take_profit_percent'] ?? null,
+                    'duration_minutes' => ! empty($data['plan_duration_minutes'])
+                        ? (int) $data['plan_duration_minutes']
+                        : null,
+                ],
+                null,
+                null,
+                null,
+                'user',
+                $user->id
+            );
         } catch (\Throwable $e) {
-            \Log::warning('Managed manual stock buy failed', [
+            \Log::warning('Canonical managed stock buy failed', [
                 'user_id' => $user->id,
                 'stock_id' => $stock->id,
                 'error' => $e->getMessage(),
@@ -152,9 +134,8 @@ class TradingController extends Controller
                 'error' => $e->getMessage() ?: 'The managed trade could not be opened. No partial purchase was kept.',
             ])->withInput();
         }
-        // Everything below is post-execution side effect. A notification,
-        // email, copy mirror or trade-plan failure must never roll back a
-        // completed financial execution.
+
+        // Notifications, email and copy mirroring remain post-commit side effects.
         try {
             NotificationService::createInvestmentSuccessNotification(
                 $user,
@@ -188,7 +169,6 @@ class TradingController extends Controller
                 'error' => $e->getMessage(),
             ]);
         }
-
 
         return redirect()->route('trading.portfolio')
             ->with(
@@ -226,11 +206,10 @@ class TradingController extends Controller
     public function executeSell(
         Request $request,
         Stock $stock,
-        StockTradeExecutor $executor,
-        CopyTradingService $copyTrading,
-        StockTradePlanService $tradePlans,
-        TradePositionService $positions
+        MarketTradeContractEngine $marketTrades,
+        CopyTradingService $copyTrading
     ) {
+        // V5.10 canonical market-contract wiring.
         if (! $stock->is_active) {
             abort(404);
         }
@@ -245,44 +224,34 @@ class TradingController extends Controller
         $quantity = (float) $data['quantity'];
 
         try {
-            // StockTradeExecutor locks the holding and wallet inside the same
-            // database transaction and validates the final available quantity.
-            $stockTransaction = $executor->sell(
+            // Financial SELL + TradePosition reconciliation are one transaction now.
+            // A reconciliation failure cannot leave a completed sell detached from
+            // the position lifecycle.
+            $stockTransaction = $marketTrades->sellExposure(
                 $user,
                 $stock,
                 $quantity,
-                'stock_trade'
+                'stock_trade',
+                'manual_close',
+                null,
+                null,
+                null,
+                null,
+                'user',
+                $user->id
             );
         } catch (\Throwable $e) {
-            \Log::warning('Manual stock sell failed', [
+            \Log::warning('Canonical managed stock sell failed', [
                 'user_id' => $user->id,
                 'stock_id' => $stock->id,
                 'error' => $e->getMessage(),
             ]);
 
             return back()->withErrors([
-                'error' => $e->getMessage() ?: 'Failed to process sale. Please try again.',
+                'error' => $e->getMessage() ?: 'The managed sale could not be completed. No partial sell was kept.',
             ])->withInput();
         }
 
-        try {
-            // Reconcile the SELL with open positions BEFORE copy mirroring.
-            // This gives provider exits a concrete source position.
-            $positions->consumeSellTransaction(
-                $stockTransaction,
-                'manual_close',
-                null,
-                null,
-                'user',
-                $user->id
-            );
-            $stockTransaction->refresh();
-        } catch (\Throwable $e) {
-            \Log::warning('Position reconciliation failed after manual sell', [
-                'trade_id' => $stockTransaction->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
         try {
             NotificationService::createInvestmentSuccessNotification(
                 $user,
@@ -316,7 +285,6 @@ class TradingController extends Controller
                 'error' => $e->getMessage(),
             ]);
         }
-
 
         return redirect()->route('trading.portfolio')
             ->with(

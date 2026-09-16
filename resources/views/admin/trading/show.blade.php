@@ -1,5 +1,6 @@
 <x-admin-layout>
 <div class="ui-page max-w-[1500px]">
+    {{-- V5.9.1 trade terminology cleanup --}}
     @php
         $exitLabel = $isOpen ? 'Current Market Price (CMP)' : 'Average Exit Price';
         $statusLabel = $isOpen ? 'Open' : ucfirst(str_replace('_',' ',$position->status));
@@ -16,9 +17,6 @@
                 <span class="rounded-full border px-2 py-1 text-[9px] font-semibold
                     {{ $isOpen ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600' : 'border-border bg-muted text-muted-foreground' }}">
                     {{ $statusLabel }}
-                </span>
-                <span class="rounded-full border border-border bg-muted/30 px-2 py-1 text-[9px] text-muted-foreground">
-                    {{ ucfirst(str_replace('_',' ',$position->context_type)) }}
                 </span>
             </div>
             <p class="ui-lead">
@@ -93,7 +91,7 @@
                     ['Opened',$openedEt ? $openedEt->format('M d · H:i').' ET' : '—'],
                     [$isOpen ? 'Effective end' : 'Closed',$isOpen ? ($expiresEt ? $expiresEt->format('M d · H:i').' ET' : '—') : ($closedEt ? $closedEt->format('M d · H:i').' ET' : '—')],
                     ['Exit reason',$position->exit_reason ? ucfirst(str_replace('_',' ',$position->exit_reason)) : '—'],
-                    ['Source',ucfirst(str_replace('_',' ',$position->context_type))],
+                    ['Contract','Position #'.$position->id],
                 ] as [$label,$value])
                     <div class="bg-background p-3.5">
                         <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">{{ $label }}</p>

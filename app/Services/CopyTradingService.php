@@ -12,10 +12,10 @@ use Illuminate\Support\Facades\Log;
 class CopyTradingService
 {
     public function __construct(
-        private StockTradeExecutor $executor,
-        private TradePositionService $positions
+        private MarketTradeContractEngine $marketTrades
     ) {}
 
+    // V5.10 canonical market-contract wiring.
     public function mirrorCompletedTrade(StockTransaction $providerTrade): void
     {
         if($providerTrade->status!=='completed') return;
@@ -66,14 +66,13 @@ class CopyTradingService
             $qty=$requested/$providerPrice;
 
             if($providerTrade->type==='buy'){
-                $trade=$this->executor->buy(
-                    $follower,$providerTrade->stock,$qty,'copy_trade',
-                    $relationship->id,$relationship->copy_strategy_id
-                );
-
                 $providerPosition=$providerTrade->position;
-                $position=$this->positions->openLongFromTrade(
-                    $trade,
+                $trade=$this->marketTrades->openLong(
+                    $follower,
+                    $providerTrade->stock,
+                    $qty,
+                    'copy_trade',
+                    'copy_relationship',
                     [
                         'stop_loss_percent'=>$providerPosition?->stop_loss_percent,
                         'take_profit_percent'=>$providerPosition?->take_profit_percent,
@@ -83,11 +82,12 @@ class CopyTradingService
                             'provider_trade_id'=>$providerTrade->id,
                         ],
                     ],
-                    'copy_relationship',
                     $relationship->id,
-                    $providerPosition?->id,
+                    $relationship->id,
+                    $relationship->copy_strategy_id,
                     'system',
-                    null
+                    null,
+                    $providerPosition?->id
                 );
             }else{
                 $providerPositionId=$providerTrade->trade_position_id;
@@ -113,7 +113,7 @@ class CopyTradingService
                     return;
                 }
 
-                $trade=$this->positions->close(
+                $trade=$this->marketTrades->closePosition(
                     $position,
                     'provider_exit',
                     $qty,
