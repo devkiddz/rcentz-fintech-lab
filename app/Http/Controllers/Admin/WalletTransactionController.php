@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\WalletTransaction;
+use App\Models\WithdrawalTokenRequest;
 use App\Models\User;
 use App\Services\NotificationService;
 use App\Services\FinancialActivityService;
@@ -47,7 +48,14 @@ class WalletTransactionController extends Controller
     {
         $transaction->load(['wallet.user', 'paymentMethod']);
 
-        return view('admin.wallet-transactions.show', compact('transaction'));
+        $withdrawalRequest = $transaction->type === 'withdrawal'
+            ? WithdrawalTokenRequest::query()
+                ->with(['generator', 'alert'])
+                ->where('wallet_transaction_id', $transaction->id)
+                ->first()
+            : null;
+
+        return view('admin.wallet-transactions.show', compact('transaction', 'withdrawalRequest'));
     }
 
     public function approve(WalletTransaction $transaction, FinancialActivityService $activity)
@@ -63,6 +71,10 @@ class WalletTransactionController extends Controller
     public function destroy(WalletTransaction $transaction)
     {
         try {
+            if ($transaction->type === 'withdrawal') {
+                return redirect()->back()->with('error', 'Withdrawal records cannot be deleted. Use Approve or Reject so reserved funds and the audit trail remain consistent.');
+            }
+
             if ($transaction->status === 'completed') {
                 return redirect()->back()->with('error', 'Cannot delete completed transactions.');
             }

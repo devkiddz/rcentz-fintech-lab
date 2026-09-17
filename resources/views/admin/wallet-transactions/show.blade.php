@@ -1,410 +1,223 @@
 <x-admin-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <div>
-                <h2 class="font-light text-lg text-foreground leading-tight mr-4">
-                    Transaction Details
-                </h2>
-            </div>
-            <div class="flex space-x-2">
-                <a href="{{ route('admin.wallet-transactions.index') }}" 
-                   class="px-3 py-2 bg-muted text-muted-foreground text-sm font-medium rounded-lg hover:bg-muted transition-colors">
-                    Back to Transactions
-                </a>
-            </div>
+        <div>
+            <p class="ui-kicker">Customers & Finance</p>
+            <h1 class="text-xl font-semibold">Transaction Details</h1>
+            <p class="mt-1 text-xs text-muted-foreground">Review the financial record, customer, payment method and security trail.</p>
         </div>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-6xl mx-auto sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                <!-- Main Content -->
-                <div class="xl:col-span-2 space-y-6">
-                    <!-- Transaction Overview -->
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">Transaction Overview</h3>
-                        </div>
-                        <div class="p-4">
-                            <div class="flex items-start space-x-4 mb-4">
-                                <div class="w-16 h-16 bg-gradient-to-br from-tesla-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                                    </svg>
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="text-lg font-medium text-foreground dark:text-white mb-2">{{ ucfirst($transaction->type) }} Transaction</h4>
-                                    <p class="text-sm text-muted-foreground mb-3">{{ $transaction->description ?? 'No description provided' }}</p>
-                                    <div class="flex flex-wrap gap-2">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->type === 'deposit' ? 'bg-green-100 text-green-800' : ($transaction->type === 'withdrawal' ? 'bg-red-100 text-red-800' : 'bg-tesla-100 text-tesla-800') }}">
-                                            {{ ucfirst($transaction->type) }}
-                                        </span>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->status === 'completed' ? 'bg-green-100 text-green-800' : ($transaction->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
-                                            {{ ucfirst($transaction->status) }}
-                                        </span>
-                                        @if($transaction->paymentMethod)
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-tesla-100 text-tesla-800">
-                                                {{ $transaction->paymentMethod->name }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    @php
+        $customer = $transaction->wallet->user;
+        $isWithdrawal = $transaction->type === 'withdrawal';
+        $statusClass = match ($transaction->status) {
+            'completed' => 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+            'pending' => 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+            'rejected' => 'bg-red-500/10 text-red-600 dark:text-red-400',
+            default => 'bg-muted text-muted-foreground',
+        };
+    @endphp
 
-                    <!-- Transaction Metrics -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="bg-card border border-border p-4 rounded-lg">
-                            <div class="text-center">
-                                <p class="text-xs font-medium text-muted-foreground mb-1">Amount</p>
-                                <p class="text-lg font-light text-foreground">{{ currency_symbol() }}{{ number_format($transaction->amount, 2) }}</p>
-                            </div>
-                        </div>
-
-                        <div class="bg-card border border-border p-4 rounded-lg">
-                            <div class="text-center">
-                                <p class="text-xs font-medium text-muted-foreground mb-1">Fee</p>
-                                <p class="text-lg font-light text-foreground">{{ currency_symbol() }}{{ number_format($transaction->fee, 2) }}</p>
-                            </div>
-                        </div>
-
-                        <div class="bg-card border border-border p-4 rounded-lg">
-                            <div class="text-center">
-                                <p class="text-xs font-medium text-muted-foreground mb-1">Total</p>
-                                <p class="text-lg font-light text-foreground">{{ currency_symbol() }}{{ number_format($transaction->amount + $transaction->fee, 2) }}</p>
-                            </div>
-                        </div>
-
-                        <div class="bg-card border border-border p-4 rounded-lg">
-                            <div class="text-center">
-                                <p class="text-xs font-medium text-muted-foreground mb-1">Transaction Date</p>
-                                <p class="text-lg font-light text-foreground">{{ $transaction->created_at->format('M d, Y') }}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Transaction Details -->
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">Transaction Details</h3>
-                        </div>
-                        <div class="p-4">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Transaction ID</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $transaction->id }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Reference ID</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $transaction->reference_id ?? 'N/A' }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Type</label>
-                                    <p class="text-sm font-medium text-foreground">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->type === 'deposit' ? 'bg-green-100 text-green-800' : ($transaction->type === 'withdrawal' ? 'bg-red-100 text-red-800' : 'bg-tesla-100 text-tesla-800') }}">
-                                            {{ ucfirst($transaction->type) }}
-                                        </span>
-                                    </p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Status</label>
-                                    <p class="text-sm font-medium text-foreground">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $transaction->status === 'completed' ? 'bg-green-100 text-green-800' : ($transaction->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800') }}">
-                                            {{ ucfirst($transaction->status) }}
-                                        </span>
-                                    </p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Created</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $transaction->created_at->format('M d, Y h:i A') }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Updated</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $transaction->updated_at->format('M d, Y h:i A') }}</p>
-                                </div>
-                                @if($transaction->type === 'withdrawal' && $transaction->user_crypto_details)
-                                    <div class="col-span-2">
-                                        <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Wallet Address</label>
-                                        <div class="flex items-center space-x-2">
-                                            <p class="text-sm font-medium text-foreground font-mono bg-muted px-2 py-1 rounded">
-                                                {{ $transaction->user_crypto_details['wallet_address'] ?? 'N/A' }}
-                                            </p>
-                                            <button onclick="copyToClipboard('{{ $transaction->user_crypto_details['wallet_address'] ?? '' }}')" 
-                                                    class="text-xs text-tesla-600 hover:text-tesla-800 font-medium">
-                                                Copy
-                                            </button>
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-
-                    @if($transaction->type === 'withdrawal')
-                    <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-700">
-                        Token gate completed before this withdrawal was created. This is now a real payout request awaiting final approval.
-                    </div>
-                    @endif
-
-                    <!-- Actions -->
-                    @if($transaction->status === 'pending')
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">Actions</h3>
-                        </div>
-                        <div class="p-4">
-                            <div class="flex flex-wrap gap-3">
-                                <form method="POST" action="{{ route('admin.wallet-transactions.approve', $transaction) }}" class="inline">
-                                    @csrf
-                                    <button type="submit" class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors">
-                                        <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                        </svg>
-                                        Approve Transaction
-                                    </button>
-                                </form>
-                                <button onclick="openRejectModal()" 
-                                        class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
-                                    <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                    Reject Transaction
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
-
-                    <!-- Withdrawal Details -->
-                    @if($transaction->type === 'withdrawal' && $transaction->user_crypto_details)
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">Withdrawal Details</h3>
-                        </div>
-                        <div class="p-4">
-                            <div class="space-y-3">
-                                @if(isset($transaction->user_crypto_details['wallet_address']))
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Destination Wallet</label>
-                                    <div class="flex items-center space-x-2">
-                                        <p class="text-sm font-medium text-foreground font-mono bg-muted px-2 py-1 rounded flex-1">
-                                            {{ $transaction->user_crypto_details['wallet_address'] }}
-                                        </p>
-                                        <button onclick="copyToClipboard('{{ $transaction->user_crypto_details['wallet_address'] }}')" 
-                                                class="text-xs text-tesla-600 hover:text-tesla-800 font-medium whitespace-nowrap">
-                                            Copy
-                                        </button>
-                                    </div>
-                                </div>
-                                @endif
-                                @if(isset($transaction->user_crypto_details['crypto_type']))
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Cryptocurrency</label>
-                                    <p class="text-sm font-medium text-foreground">{{ strtoupper($transaction->user_crypto_details['crypto_type']) }}</p>
-                                </div>
-                                @endif
-                                @if(isset($transaction->user_crypto_details['network']))
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Network</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $transaction->user_crypto_details['network'] }}</p>
-                                </div>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                    @endif
-                </div>
-
-                <!-- Sidebar -->
-                <div class="space-y-6">
-                    <!-- User Information -->
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">User Information</h3>
-                        </div>
-                        <div class="p-4">
-                            <div class="flex items-center space-x-3 mb-4">
-                                @if($transaction->wallet->user->profile_image)
-                                    <img src="{{ asset('storage/' . $transaction->wallet->user->profile_image) }}" 
-                                         alt="{{ $transaction->wallet->user->name }}" 
-                                         class="w-12 h-12 rounded-lg object-cover">
-                                @else
-                                    <div class="w-12 h-12 bg-gradient-to-br from-tesla-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                        <span class="text-white font-bold text-sm">{{ strtoupper(substr($transaction->wallet->user->name, 0, 2)) }}</span>
-                                    </div>
-                                @endif
-                                <div>
-                                    <h4 class="text-sm font-medium text-foreground">{{ $transaction->wallet->user->name }}</h4>
-                                    <p class="text-xs text-muted-foreground dark:text-gray-300">{{ $transaction->wallet->user->email }}</p>
-                                </div>
-                            </div>
-                            
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Member Since</label>
-                                    <p class="text-sm font-medium text-foreground">{{ $transaction->wallet->user->created_at->format('M d, Y') }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Email Status</label>
-                                    <p class="text-sm font-medium text-foreground">
-                                        @if($transaction->wallet->user->email_verified_at)
-                                            <span class="text-green-600">Verified</span>
-                                        @else
-                                            <span class="text-red-600">Unverified</span>
-                                        @endif
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div class="mt-4">
-                                <a href="{{ route('admin.users.show', $transaction->wallet->user) }}" 
-                                   class="w-full inline-flex items-center justify-center px-3 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-colors">
-                                   <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                   </svg>
-                                   View User Profile
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Wallet Information -->
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">Wallet Information</h3>
-                        </div>
-                        <div class="p-4">
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Current Balance</label>
-                                    <p class="text-sm font-medium text-foreground">{{ currency_symbol() }}{{ number_format($transaction->wallet->balance, 2) }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Currency</label>
-                                    <p class="text-sm font-medium text-foreground">{{ strtoupper($transaction->wallet->currency) }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Total Deposits</label>
-                                    <p class="text-sm font-medium text-foreground">{{ currency_symbol() }}{{ number_format($transaction->wallet->total_deposits, 2) }}</p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Total Withdrawals</label>
-                                    <p class="text-sm font-medium text-foreground">{{ currency_symbol() }}{{ number_format($transaction->wallet->total_withdrawals, 2) }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Payment Method Information -->
-                    @if($transaction->paymentMethod)
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-muted/40">
-                            <h3 class="text-base font-medium text-foreground">Payment Method</h3>
-                        </div>
-                        <div class="p-4">
-                            <div class="flex items-center space-x-3 mb-4">
-                                @if($transaction->paymentMethod->logo_url)
-                                    <img src="{{ asset($transaction->paymentMethod->logo_url) }}" 
-                                         alt="{{ $transaction->paymentMethod->name }}" 
-                                         class="w-12 h-12 rounded-lg object-cover">
-                                @else
-                                    <div class="w-12 h-12 bg-gradient-to-br from-tesla-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                        <span class="text-white font-bold text-sm">{{ strtoupper(substr($transaction->paymentMethod->name, 0, 2)) }}</span>
-                                    </div>
-                                @endif
-                                <div>
-                                    <h4 class="text-sm font-medium text-foreground">{{ $transaction->paymentMethod->name }}</h4>
-                                    <p class="text-xs text-muted-foreground dark:text-gray-300">{{ $transaction->paymentMethod->type }}</p>
-                                </div>
-                            </div>
-                            
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Status</label>
-                                    <p class="text-sm font-medium text-foreground">
-                                        @if($transaction->paymentMethod->is_active)
-                                            <span class="text-green-600">Active</span>
-                                        @else
-                                            <span class="text-red-600">Inactive</span>
-                                        @endif
-                                    </p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Allow Deposits</label>
-                                    <p class="text-sm font-medium text-foreground">
-                                        @if($transaction->paymentMethod->allow_deposit)
-                                            <span class="text-green-600">Yes</span>
-                                        @else
-                                            <span class="text-red-600">No</span>
-                                        @endif
-                                    </p>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-muted-foreground dark:text-gray-300 mb-1">Allow Withdrawals</label>
-                                    <p class="text-sm font-medium text-foreground">
-                                        @if($transaction->paymentMethod->allow_withdraw)
-                                            <span class="text-green-600">Yes</span>
-                                        @else
-                                            <span class="text-red-600">No</span>
-                                        @endif
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @endif
-
-                    <!-- Danger Zone -->
-                    @if($transaction->status !== 'completed')
-                    <div class="bg-card border border-border overflow-hidden rounded-lg">
-                        <div class="px-4 py-3 border-b border-border dark:border-gray-700 bg-red-50">
-                            <h3 class="text-base font-medium text-red-800">Danger Zone</h3>
-                        </div>
-                        <div class="p-4">
-                            <form method="POST" action="{{ route('admin.wallet-transactions.destroy', $transaction) }}">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" onclick="return confirm('Are you sure you want to delete this transaction? This action cannot be undone.')" 
-                                        class="w-full px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
-                                    <svg class="w-4 h-4 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                    </svg>
-                                    Delete Transaction
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                    @endif
-                </div>
+    <div class="ui-page max-w-7xl">
+        <section class="ui-page-header">
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('admin.wallet-transactions.index') }}" class="ui-btn ui-btn-secondary ui-btn-sm">
+                    <i data-lucide="arrow-left" class="h-3.5 w-3.5"></i>Transactions
+                </a>
+                @if($isWithdrawal)
+                    <a href="{{ route('admin.withdrawal-token-requests.index', ['user' => $customer->id]) }}" class="ui-btn ui-btn-secondary ui-btn-sm">
+                        <i data-lucide="shield-check" class="h-3.5 w-3.5"></i>Withdrawal Requests
+                    </a>
+                @endif
             </div>
+        </section>
+
+        <section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <article class="ui-metric-card">
+                <div><p class="ui-label">Amount</p><p class="mt-1 text-2xl font-semibold">{{ currency_symbol() }}{{ number_format($transaction->amount, 2) }}</p></div>
+            </article>
+            <article class="ui-metric-card">
+                <div><p class="ui-label">Fee</p><p class="mt-1 text-2xl font-semibold">{{ currency_symbol() }}{{ number_format($transaction->fee, 2) }}</p></div>
+            </article>
+            <article class="ui-metric-card">
+                <div><p class="ui-label">Status</p><span class="mt-2 inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[.08em] {{ $statusClass }}">{{ $transaction->status }}</span></div>
+            </article>
+            <article class="ui-metric-card">
+                <div><p class="ui-label">Reference</p><p class="mt-1 break-all text-sm font-semibold">{{ $transaction->reference_id ?: 'Not assigned' }}</p></div>
+            </article>
+        </section>
+
+        <div class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,.65fr)]">
+            <main class="space-y-4">
+                @if($isWithdrawal)
+                    <section class="ui-surface overflow-hidden">
+                        <div class="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p class="ui-kicker">Withdrawal security</p>
+                                <h2 class="mt-1 text-base font-semibold">Assessment & verification</h2>
+                                <p class="mt-1 text-xs text-muted-foreground">Security request and verification evidence attached to this payout.</p>
+                            </div>
+                            @if($withdrawalRequest)
+                                <span class="w-fit rounded-full bg-emerald-500/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[.08em] text-emerald-600 dark:text-emerald-400">
+                                    Gate verified
+                                </span>
+                            @else
+                                <span class="w-fit rounded-full bg-amber-500/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[.08em] text-amber-600 dark:text-amber-400">
+                                    Legacy / unlinked
+                                </span>
+                            @endif
+                        </div>
+
+                        @if($withdrawalRequest)
+                            <div class="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+                                <div><p class="ui-label">Request ID</p><p class="mt-1 text-sm font-semibold">#{{ $withdrawalRequest->id }}</p></div>
+                                <div><p class="ui-label">Request status</p><p class="mt-1 text-sm font-semibold capitalize">{{ str_replace('_',' ',$withdrawalRequest->status) }}</p></div>
+                                <div><p class="ui-label">Requested amount</p><p class="mt-1 text-sm font-semibold">{{ format_currency($withdrawalRequest->amount,'USD',$customer->currency,$customer) }}</p></div>
+                                <div><p class="ui-label">Requested</p><p class="mt-1 text-sm font-semibold">{{ $withdrawalRequest->created_at->format('M j, Y · h:i A') }}</p></div>
+                                <div><p class="ui-label">Code issued</p><p class="mt-1 text-sm font-semibold">{{ $withdrawalRequest->token_generated_at?->format('M j, Y · h:i A') ?? 'Not recorded' }}</p></div>
+                                <div><p class="ui-label">Verified</p><p class="mt-1 text-sm font-semibold">{{ $withdrawalRequest->token_verified_at?->format('M j, Y · h:i A') ?? 'Not recorded' }}</p></div>
+                                <div><p class="ui-label">Issued by</p><p class="mt-1 text-sm font-semibold">{{ $withdrawalRequest->generator?->name ?? 'Not recorded' }}</p></div>
+                                <div><p class="ui-label">Verification code</p><p class="mt-1 text-sm font-semibold">{{ $withdrawalRequest->token_last_four ? '••••'.$withdrawalRequest->token_last_four : 'Consumed / unavailable' }}</p></div>
+                                <div><p class="ui-label">Payout link</p><p class="mt-1 text-sm font-semibold">Transaction #{{ $transaction->id }}</p></div>
+                                @if($withdrawalRequest->note)
+                                    <div class="sm:col-span-2 lg:col-span-3"><p class="ui-label">Customer note</p><p class="mt-1 text-sm text-muted-foreground">{{ $withdrawalRequest->note }}</p></div>
+                                @endif
+                            </div>
+                        @else
+                            <div class="p-5">
+                                <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+                                    <p class="text-sm font-semibold text-amber-700 dark:text-amber-300">No security request is linked to this transaction.</p>
+                                    <p class="mt-1 text-xs text-muted-foreground">This may be a legacy withdrawal created before the verification-gate workflow. Do not treat it as proof of a completed token assessment.</p>
+                                </div>
+                            </div>
+                        @endif
+                    </section>
+                @endif
+
+                <section class="ui-surface overflow-hidden">
+                    <div class="border-b border-border px-5 py-4">
+                        <p class="ui-kicker">Financial record</p>
+                        <h2 class="mt-1 text-base font-semibold">Transaction information</h2>
+                    </div>
+                    <div class="grid gap-4 p-5 sm:grid-cols-2">
+                        <div><p class="ui-label">Transaction ID</p><p class="mt-1 text-sm font-semibold">#{{ $transaction->id }}</p></div>
+                        <div><p class="ui-label">Type</p><p class="mt-1 text-sm font-semibold capitalize">{{ $transaction->type }}</p></div>
+                        <div><p class="ui-label">Direction</p><p class="mt-1 text-sm font-semibold capitalize">{{ $transaction->direction ?? '—' }}</p></div>
+                        <div><p class="ui-label">Payment method</p><p class="mt-1 text-sm font-semibold">{{ $transaction->paymentMethod?->name ?? 'Internal / unspecified' }}</p></div>
+                        <div><p class="ui-label">Created</p><p class="mt-1 text-sm font-semibold">{{ $transaction->created_at->format('M j, Y · h:i A') }}</p></div>
+                        <div><p class="ui-label">Updated</p><p class="mt-1 text-sm font-semibold">{{ $transaction->updated_at->format('M j, Y · h:i A') }}</p></div>
+                        @if($transaction->description)
+                            <div class="sm:col-span-2"><p class="ui-label">Description</p><p class="mt-1 text-sm text-muted-foreground">{{ $transaction->description }}</p></div>
+                        @endif
+                    </div>
+                </section>
+
+                @if($isWithdrawal)
+                    <section class="ui-surface overflow-hidden">
+                        <div class="border-b border-border px-5 py-4">
+                            <p class="ui-kicker">Payout destination</p>
+                            <h2 class="mt-1 text-base font-semibold">Withdrawal details</h2>
+                        </div>
+                        <div class="grid gap-4 p-5 sm:grid-cols-2">
+                            @php $details = $transaction->user_crypto_details ?? []; @endphp
+                            <div class="sm:col-span-2">
+                                <p class="ui-label">Destination</p>
+                                <p class="mt-1 break-all rounded-xl bg-muted/30 p-3 font-mono text-sm">
+                                    {{ $details['wallet_address'] ?? $details['destination'] ?? 'No destination stored' }}
+                                </p>
+                            </div>
+                            @if(isset($details['crypto_symbol']))
+                                <div><p class="ui-label">Asset</p><p class="mt-1 text-sm font-semibold">{{ strtoupper($details['crypto_symbol']) }}</p></div>
+                            @endif
+                            @if(isset($details['payment_method']))
+                                <div><p class="ui-label">Method</p><p class="mt-1 text-sm font-semibold">{{ $details['payment_method'] }}</p></div>
+                            @endif
+                            @if($transaction->withdrawal_purpose)
+                                <div class="sm:col-span-2"><p class="ui-label">Purpose / note</p><p class="mt-1 text-sm text-muted-foreground">{{ $transaction->withdrawal_purpose }}</p></div>
+                            @endif
+                        </div>
+                    </section>
+                @endif
+
+                @if($transaction->status === 'pending')
+                    <section class="ui-panel p-5">
+                        <p class="ui-kicker">Decision</p>
+                        <h2 class="mt-1 text-base font-semibold">{{ $isWithdrawal ? 'Review payout' : 'Review transaction' }}</h2>
+                        @if($isWithdrawal && !$withdrawalRequest)
+                            <p class="mt-2 text-xs text-amber-600 dark:text-amber-400">This withdrawal has no linked verification assessment. Review carefully before approval.</p>
+                        @endif
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <form method="POST" action="{{ route('admin.wallet-transactions.approve',$transaction) }}">
+                                @csrf
+                                <button class="ui-btn ui-btn-primary"><i data-lucide="check" class="h-4 w-4"></i>Approve</button>
+                            </form>
+                            <button type="button" onclick="openRejectModal()" class="ui-btn border border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400">
+                                <i data-lucide="x" class="h-4 w-4"></i>Reject
+                            </button>
+                        </div>
+                    </section>
+                @endif
+            </main>
+
+            <aside class="space-y-4">
+                <section class="ui-panel p-5">
+                    <p class="ui-kicker">Customer</p>
+                    <div class="mt-3 flex items-center gap-3">
+                        <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-muted text-xs font-semibold">{{ strtoupper(substr($customer->name,0,2)) }}</div>
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-semibold">{{ $customer->name }}</p>
+                            <p class="truncate text-xs text-muted-foreground">{{ $customer->email }}</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 grid gap-3 text-sm">
+                        <div><p class="ui-label">Wallet balance</p><p class="mt-1 font-semibold">{{ currency_symbol() }}{{ number_format($transaction->wallet->balance,2) }}</p></div>
+                        <div><p class="ui-label">Reserved</p><p class="mt-1 font-semibold">{{ currency_symbol() }}{{ number_format($transaction->wallet->reserved_balance,2) }}</p></div>
+                    </div>
+                    <a href="{{ route('admin.users.show',$customer) }}" class="ui-btn ui-btn-secondary mt-4 w-full justify-center">View customer</a>
+                </section>
+
+                <section class="ui-panel p-5">
+                    <p class="ui-kicker">Payment method</p>
+                    <p class="mt-2 text-sm font-semibold">{{ $transaction->paymentMethod?->name ?? 'Internal / unspecified' }}</p>
+                    @if($transaction->paymentMethod)
+                        <p class="mt-1 text-xs text-muted-foreground">{{ $transaction->paymentMethod->type }}</p>
+                    @endif
+                </section>
+
+                @if($isWithdrawal)
+                    <section class="ui-panel p-5">
+                        <p class="ui-kicker">Withdrawal controls</p>
+                        <p class="mt-2 text-sm font-semibold">Protected financial record</p>
+                        <p class="mt-1 text-xs leading-5 text-muted-foreground">Withdrawal records cannot be deleted. Pending payouts must be approved or rejected so reserved funds remain consistent and the audit trail is preserved.</p>
+                    </section>
+                @elseif($transaction->status !== 'completed')
+                    <section class="ui-panel p-5">
+                        <p class="ui-kicker">Record management</p>
+                        <form method="POST" action="{{ route('admin.wallet-transactions.destroy',$transaction) }}" class="mt-3">
+                            @csrf
+                            @method('DELETE')
+                            <button class="ui-btn w-full justify-center border border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400" onclick="return confirm('Delete this transaction?')">Delete transaction</button>
+                        </form>
+                    </section>
+                @endif
+            </aside>
         </div>
     </div>
 
-    <!-- Reject Modal -->
-    <div id="rejectModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-        <div class="relative top-20 mx-auto p-5 border border-border w-96 max-w-[calc(100vw-2rem)] shadow-lg rounded-xl bg-card text-card-foreground">
-            <div class="mt-3">
-                <h3 class="text-lg font-medium text-foreground dark:text-white mb-4">Reject Transaction</h3>
-                <form method="POST" action="{{ route('admin.wallet-transactions.reject', $transaction) }}">
-                    @csrf
-                    <div class="mb-4">
-                        <label for="rejection_reason" class="block text-xs font-medium text-muted-foreground mb-2">Rejection Reason</label>
-                        <textarea id="rejection_reason" name="rejection_reason" rows="3" 
-                                  class="w-full px-3 py-2 border border-border rounded-lg focus:ring-ring focus:border-black text-sm" 
-                                  placeholder="Enter reason for rejection..." required></textarea>
-                    </div>
-                    <div class="flex space-x-3">
-                        <button type="submit" class="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
-                            Reject
-                        </button>
-                        <button type="button" onclick="closeRejectModal()" 
-                                class="flex-1 px-4 py-2 bg-gray-300 text-muted-foreground text-sm font-medium rounded-lg hover:bg-gray-400 transition-colors">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
+    <div id="rejectModal" class="fixed inset-0 z-[100] hidden bg-black/60 p-4 backdrop-blur-sm">
+        <div class="mx-auto mt-24 w-full max-w-md rounded-2xl border border-border bg-card p-5 shadow-2xl">
+            <div class="flex items-start justify-between gap-4">
+                <div><p class="ui-kicker">Payout decision</p><h3 class="mt-1 text-lg font-semibold">Reject {{ $isWithdrawal ? 'withdrawal' : 'transaction' }}</h3></div>
+                <button type="button" onclick="closeRejectModal()" class="rounded-lg p-2 hover:bg-muted"><i data-lucide="x" class="h-4 w-4"></i></button>
             </div>
+            <form method="POST" action="{{ route('admin.wallet-transactions.reject',$transaction) }}" class="mt-5 space-y-4">
+                @csrf
+                <textarea id="rejection_reason" name="rejection_reason" rows="4" class="ui-input w-full" placeholder="Reason for rejection..." required></textarea>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeRejectModal()" class="ui-btn ui-btn-secondary flex-1 justify-center">Cancel</button>
+                    <button class="ui-btn flex-1 justify-center border border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400">Reject</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -412,29 +225,9 @@
         function openRejectModal() {
             document.getElementById('rejectModal').classList.remove('hidden');
         }
-
         function closeRejectModal() {
             document.getElementById('rejectModal').classList.add('hidden');
             document.getElementById('rejection_reason').value = '';
-        }
-
-        function copyToClipboard(text) {
-            if (text) {
-                navigator.clipboard.writeText(text).then(function() {
-                    // Show a brief success message
-                    const button = event.target;
-                    const originalText = button.textContent;
-                    button.textContent = 'Copied!';
-                    button.classList.add('text-green-600');
-                    
-                    setTimeout(function() {
-                        button.textContent = originalText;
-                        button.classList.remove('text-green-600');
-                    }, 2000);
-                }).catch(function(err) {
-                    console.error('Could not copy text: ', err);
-                });
-            }
         }
     </script>
 </x-admin-layout>

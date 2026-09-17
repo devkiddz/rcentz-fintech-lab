@@ -121,6 +121,25 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.act
     // Financial history / audit trail
     Route::get('/account/history', [FinancialHistoryController::class, 'index'])->name('account.history');
 
+    // V5.29.A2.5 canonical Money workspace.
+    Route::get('/money', [WalletController::class, 'index'])->name('money.index');
+    Route::get('/money/add', [WalletController::class, 'deposit'])->name('money.add');
+    Route::post('/money/add', [WalletController::class, 'processDeposit'])->name('money.add.submit');
+    Route::get('/money/add/crypto/{transaction}', [WalletController::class, 'cryptoPayment'])->name('money.add.crypto');
+    Route::post('/money/add/crypto/{transaction}/confirm', [WalletController::class, 'confirmCryptoPayment'])->name('money.add.crypto.confirm');
+    Route::get('/money/withdraw', [WalletController::class, 'withdraw'])->name('money.withdraw');
+    Route::post('/money/withdraw/request', [WalletController::class, 'requestWithdrawalToken'])->name('money.withdraw.request');
+    Route::get('/money/withdraw/{tokenRequest}/verify', [WalletController::class, 'showWithdrawalVerification'])->name('money.withdraw.verify');
+    Route::post('/money/withdraw/{tokenRequest}/verify', [WalletController::class, 'verifyWithdrawalToken'])->name('money.withdraw.verify.submit');
+    Route::get('/money/send', [WalletController::class, 'transfer'])->name('money.send');
+    Route::post('/money/send', [WalletController::class, 'processTransfer'])->name('money.send.submit');
+    Route::get('/money/activity', [WalletController::class, 'transactions'])->name('money.activity');
+    Route::get('/money/connections', [WalletController::class, 'connections'])->name('money.connections');
+    Route::post('/money/connections', [WalletController::class, 'storeConnection'])->name('money.connections.store');
+    Route::patch('/money/connections/{linkedWallet}/primary', [WalletController::class, 'setPrimaryConnection'])->name('money.connections.primary');
+    Route::delete('/money/connections/{linkedWallet}', [WalletController::class, 'destroyConnection'])->name('money.connections.destroy');
+
+    // Legacy /wallet endpoints remain available for compatibility.
     // Wallet Routes
     Route::get('/wallet', [WalletController::class, 'index'])->name('wallet.index');
     Route::get('/wallet/deposit', [WalletController::class, 'deposit'])->name('wallet.deposit');

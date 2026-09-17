@@ -122,24 +122,24 @@
     </details>
 
     <details class="sidebar-group group rounded-xl"
-             data-nav-group="wallet"
-             {{ request()->routeIs('wallet.*','account.history') ? 'open' : '' }}>
-        <summary title="Wallet & Money"
-                 class="{{ $parentBase }} justify-between {{ request()->routeIs('wallet.*','account.history') ? $parentActive : $parentIdle }}">
+             data-nav-group="money"
+             {{ request()->routeIs('money.*','wallet.*','account.history') ? 'open' : '' }}>
+        <summary title="Money"
+                 class="{{ $parentBase }} justify-between {{ request()->routeIs('money.*','wallet.*','account.history') ? $parentActive : $parentIdle }}">
             <span class="flex min-w-0 items-center gap-3">
                 <i data-lucide="wallet-cards" class="h-4 w-4 shrink-0"></i>
-                <span class="sidebar-label truncate">Wallet & Money</span>
+                <span class="sidebar-label truncate">Money</span>
             </span>
             <i data-lucide="chevron-down" class="sidebar-chevron h-4 w-4 transition-transform group-open:rotate-180"></i>
         </summary>
         <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
-            <a href="{{ route('wallet.index') }}" class="{{ $childBase }} {{ request()->routeIs('wallet.index') ? $childActive : $childIdle }}"><i data-lucide="wallet" class="h-4 w-4"></i><span>Wallet Overview</span></a>
-            <a href="{{ route('wallet.deposit') }}" class="{{ $childBase }} {{ request()->routeIs('wallet.deposit','wallet.process-deposit','wallet.crypto-payment*') ? $childActive : $childIdle }}"><i data-lucide="circle-plus" class="h-4 w-4"></i><span>Deposit Funds</span></a>
-            <a href="{{ route('wallet.withdraw') }}" class="{{ $childBase }} {{ request()->routeIs('wallet.withdraw','wallet.process-withdrawal') ? $childActive : $childIdle }}"><i data-lucide="circle-minus" class="h-4 w-4"></i><span>Withdraw Funds</span></a>
-            <a href="{{ route('wallet.transfer') }}" class="{{ $childBase }} {{ request()->routeIs('wallet.transfer','wallet.process-transfer') ? $childActive : $childIdle }}"><i data-lucide="send" class="h-4 w-4"></i><span>Send Money</span></a>
-            <a href="{{ route('wallet.transactions') }}" class="{{ $childBase }} {{ request()->routeIs('wallet.transactions') ? $childActive : $childIdle }}"><i data-lucide="list" class="h-4 w-4"></i><span>Wallet Transactions</span></a>
-            <a href="{{ route('wallet.connections') }}" class="{{ $childBase }} {{ request()->routeIs('wallet.connections*') ? $childActive : $childIdle }}"><i data-lucide="link" class="h-4 w-4"></i><span>Connected Wallets</span></a>
-            <a href="{{ route('account.history') }}" class="{{ $childBase }} {{ request()->routeIs('account.history') ? $childActive : $childIdle }}"><i data-lucide="history" class="h-4 w-4"></i><span>Financial History</span></a>
+            <a href="{{ route('money.index') }}" class="{{ $childBase }} {{ request()->routeIs('money.index') ? $childActive : $childIdle }}"><i data-lucide="wallet" class="h-4 w-4"></i><span>Overview</span></a>
+            <a href="{{ route('money.add') }}" class="{{ $childBase }} {{ request()->routeIs('money.add','money.add.*') ? $childActive : $childIdle }}"><i data-lucide="circle-plus" class="h-4 w-4"></i><span>Add Money</span></a>
+            <a href="{{ route('money.withdraw') }}" class="{{ $childBase }} {{ request()->routeIs('money.withdraw*') ? $childActive : $childIdle }}"><i data-lucide="circle-minus" class="h-4 w-4"></i><span>Withdraw</span></a>
+            <a href="{{ route('money.send') }}" class="{{ $childBase }} {{ request()->routeIs('money.send*') ? $childActive : $childIdle }}"><i data-lucide="send" class="h-4 w-4"></i><span>Send Money</span></a>
+            <a href="{{ route('money.activity') }}" class="{{ $childBase }} {{ request()->routeIs('money.activity') ? $childActive : $childIdle }}"><i data-lucide="list" class="h-4 w-4"></i><span>Activity</span></a>
+            <a href="{{ route('money.connections') }}" class="{{ $childBase }} {{ request()->routeIs('money.connections*') ? $childActive : $childIdle }}"><i data-lucide="link" class="h-4 w-4"></i><span>Connections</span></a>
+            <a href="{{ route('account.history') }}" class="{{ $childBase }} {{ request()->routeIs('account.history') ? $childActive : $childIdle }}"><i data-lucide="shield-check" class="h-4 w-4"></i><span>Audit History</span></a>
         </div>
     </details>
 

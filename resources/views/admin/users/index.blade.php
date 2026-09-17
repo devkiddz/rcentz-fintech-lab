@@ -186,6 +186,7 @@
 
                                 @if(!$user->is_admin)
                                     <a href="{{ route('admin.users.alerts.index',$user) }}" class="ui-btn ui-btn-secondary ui-btn-sm"><i data-lucide="megaphone" class="h-3.5 w-3.5"></i>Alert</a>
+                                    <a href="{{ route('admin.withdrawal-token-requests.index',['user'=>$user->id]) }}" class="ui-btn ui-btn-secondary ui-btn-sm"><i data-lucide="landmark" class="h-3.5 w-3.5"></i>Withdrawals</a>
 
                                     @if(!$user->email_verified_at)
                                         <form method="POST" action="{{ route('admin.users.verify-email',$user) }}">@csrf<button class="ui-btn ui-btn-secondary ui-btn-sm"><i data-lucide="badge-check" class="h-3.5 w-3.5"></i>Verify email</button></form>

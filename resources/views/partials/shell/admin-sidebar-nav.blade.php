@@ -136,10 +136,36 @@
 
     <div class="sidebar-section-label px-3 pt-4 pb-1 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Customers & Finance</div>
 
-    <a href="{{ route('admin.wallet-transactions.index') }}" title="Wallet Transactions"
-       class="{{ $standaloneBase }} {{ request()->routeIs('admin.wallet-transactions.*') ? $standaloneActive : $standaloneIdle }}">
-        <i data-lucide="wallet-cards" class="h-4 w-4 shrink-0"></i><span class="sidebar-label">Wallet Transactions</span>
-    </a>
+    <details class="sidebar-group group rounded-xl"
+             data-nav-group="admin-transactions"
+             {{ request()->routeIs('admin.wallet-transactions.*','admin.withdrawal-token-requests.*') ? 'open' : '' }}>
+        <summary title="Transactions"
+                 class="{{ $parentBase }} justify-between {{ request()->routeIs('admin.wallet-transactions.*','admin.withdrawal-token-requests.*') ? $parentActive : $parentIdle }}">
+            <span class="flex min-w-0 items-center gap-3">
+                <i data-lucide="wallet-cards" class="h-4 w-4 shrink-0"></i>
+                <span class="sidebar-label truncate">Transactions</span>
+            </span>
+            <i data-lucide="chevron-down" class="sidebar-chevron h-4 w-4 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
+            <a href="{{ route('admin.wallet-transactions.index') }}"
+               class="{{ $childBase }} {{ request()->routeIs('admin.wallet-transactions.*') && !request()->filled('type') ? $childActive : $childIdle }}">
+                <i data-lucide="list" class="h-4 w-4"></i><span>All Transactions</span>
+            </a>
+            <a href="{{ route('admin.wallet-transactions.index', ['type' => 'deposit']) }}"
+               class="{{ $childBase }} {{ request()->routeIs('admin.wallet-transactions.index') && request()->query('type') === 'deposit' ? $childActive : $childIdle }}">
+                <i data-lucide="arrow-down-to-line" class="h-4 w-4"></i><span>Deposits</span>
+            </a>
+            <a href="{{ route('admin.wallet-transactions.index', ['type' => 'withdrawal']) }}"
+               class="{{ $childBase }} {{ request()->routeIs('admin.wallet-transactions.index') && request()->query('type') === 'withdrawal' ? $childActive : $childIdle }}">
+                <i data-lucide="arrow-up-from-line" class="h-4 w-4"></i><span>Withdrawals</span>
+            </a>
+            <a href="{{ route('admin.withdrawal-token-requests.index') }}"
+               class="{{ $childBase }} {{ request()->routeIs('admin.withdrawal-token-requests.*') ? $childActive : $childIdle }}">
+                <i data-lucide="shield-check" class="h-4 w-4"></i><span>Withdrawal Requests</span>
+            </a>
+        </div>
+    </details>
     <a href="{{ route('admin.users.index') }}" title="Customers"
        class="{{ $standaloneBase }} {{ request()->routeIs('admin.users.*') ? $standaloneActive : $standaloneIdle }}">
         <i data-lucide="users" class="h-4 w-4 shrink-0"></i><span class="sidebar-label">Customers</span>

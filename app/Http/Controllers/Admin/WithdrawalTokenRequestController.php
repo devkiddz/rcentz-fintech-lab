@@ -10,12 +10,21 @@ use Illuminate\Support\Facades\Hash;
 
 class WithdrawalTokenRequestController extends Controller
 {
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
         $requests = WithdrawalTokenRequest::query()
-            ->with(['user.wallet', 'generator'])
+            ->with(['user.wallet', 'generator', 'walletTransaction'])
+            ->when($request->filled('user'), fn ($query) => $query->where('user_id', $request->integer('user')))
+            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')->toString()))
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $term = trim($request->string('q')->toString());
+                $query->whereHas('user', fn ($userQuery) => $userQuery
+                    ->where('name', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%"));
+            })
             ->latest()
-            ->paginate(30);
+            ->paginate(30)
+            ->withQueryString();
 
         return view('admin.withdrawal-token-requests.index', compact('requests'));
     }
@@ -25,41 +34,34 @@ class WithdrawalTokenRequestController extends Controller
         abort_unless(in_array($tokenRequest->status, ['pending','token_issued'], true), 422);
 
         $token = (string) random_int(100000, 999999);
+        $expiresAt = now()->addMinutes(30);
 
-        DB::transaction(function () use ($tokenRequest, $token) {
-            if ($tokenRequest->alert) {
-                $tokenRequest->alert->update(['dismissed_at' => now()]);
-            }
-
-            $alert = AccountAlert::query()->create([
-                'user_id' => $tokenRequest->user_id,
-                'created_by_user_id' => auth()->id(),
-                'type' => 'withdrawal_token',
-                'priority' => 'urgent',
-                'title' => 'Withdrawal verification token',
-                'message' => 'Your withdrawal verification code is '.$token.'. It expires in 30 minutes.',
-                'action_url' => route('wallet.withdrawal.token.form', $tokenRequest),
-                'action_label' => 'Continue withdrawal',
-                'expires_at' => now()->addMinutes(30),
-                'metadata' => [
-                    'withdrawal_token_request_id' => $tokenRequest->id,
-                    'amount' => (string) $tokenRequest->amount,
-                ],
-            ]);
+        DB::transaction(function () use ($tokenRequest, $token, $expiresAt) {
+            $tokenRequest->alert?->update(['dismissed_at' => now()]);
 
             $tokenRequest->update([
                 'status' => 'token_issued',
                 'token_hash' => Hash::make($token),
                 'token_last_four' => substr($token, -4),
                 'token_generated_at' => now(),
-                'token_expires_at' => now()->addMinutes(30),
+                'token_expires_at' => $expiresAt,
                 'token_verified_at' => null,
                 'generated_by_user_id' => auth()->id(),
-                'account_alert_id' => $alert->id,
+                'account_alert_id' => null,
             ]);
         });
 
-        return back()->with('success', '30-minute withdrawal token generated and pushed to the customer dashboard alert window.');
+        return back()
+            ->with('success', 'Verification code generated. Copy it and send it manually through the customer dashboard notice.')
+            ->with('generated_withdrawal_token', [
+                'request_id' => $tokenRequest->id,
+                'user_id' => $tokenRequest->user_id,
+                'customer_name' => $tokenRequest->user->name,
+                'customer_email' => $tokenRequest->user->email,
+                'amount' => format_currency($tokenRequest->amount, 'USD', $tokenRequest->user->currency, $tokenRequest->user),
+                'token' => $token,
+                'expires_at' => $expiresAt->format('M j, Y · h:i A'),
+            ]);
     }
 
     public function destroyToken(WithdrawalTokenRequest $tokenRequest)

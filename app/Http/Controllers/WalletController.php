@@ -107,13 +107,36 @@ class WalletController extends Controller
         $paymentMethods = PaymentMethod::allowWithdraw()->active()->get();
         $wallet = Auth::user()->wallet;
         
+        $expiredRequests = \App\Models\WithdrawalTokenRequest::query()
+            ->where('user_id', Auth::id())
+            ->where('status', 'token_issued')
+            ->whereNotNull('token_expires_at')
+            ->where('token_expires_at', '<', now())
+            ->get();
+
+        foreach ($expiredRequests as $expiredRequest) {
+            $expiredRequest->alert?->update(['dismissed_at' => now()]);
+            $expiredRequest->update([
+                'status' => 'expired',
+                'token_hash' => null,
+            ]);
+        }
+
         $activeTokenRequest = \App\Models\WithdrawalTokenRequest::query()
+            ->with('walletTransaction')
             ->where('user_id', Auth::id())
             ->whereIn('status', ['pending','token_issued'])
             ->latest()
             ->first();
 
-        return view('wallet.withdraw', compact('paymentMethods', 'wallet', 'activeTokenRequest'));
+        $withdrawalRequests = \App\Models\WithdrawalTokenRequest::query()
+            ->with('walletTransaction')
+            ->where('user_id', Auth::id())
+            ->latest()
+            ->limit(12)
+            ->get();
+
+        return view('wallet.withdraw', compact('paymentMethods', 'wallet', 'activeTokenRequest', 'withdrawalRequests'));
     }
 
     /**
@@ -134,6 +157,17 @@ class WalletController extends Controller
             'amount' => ['required','numeric','min:1','max:'.$wallet->available_balance],
             'note' => ['nullable','string','max:1000'],
         ]);
+
+        \App\Models\WithdrawalTokenRequest::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'token_issued')
+            ->whereNotNull('token_expires_at')
+            ->where('token_expires_at', '<', now())
+            ->get()
+            ->each(function ($expiredRequest) {
+                $expiredRequest->alert?->update(['dismissed_at' => now()]);
+                $expiredRequest->update(['status' => 'expired', 'token_hash' => null]);
+            });
 
         $active = \App\Models\WithdrawalTokenRequest::query()
             ->where('user_id', $user->id)
@@ -162,7 +196,10 @@ class WalletController extends Controller
         abort_unless($tokenRequest->user_id === $user->id && $tokenRequest->status === 'token_issued', 403);
 
         if (! $tokenRequest->token_expires_at || now()->gt($tokenRequest->token_expires_at)) {
-            return redirect()->route('wallet.withdraw')->withErrors(['token' => 'This token expired. Request a new withdrawal token.']);
+            $tokenRequest->alert?->update(['dismissed_at' => now()]);
+            $tokenRequest->update(['status' => 'expired', 'token_hash' => null]);
+
+            return redirect()->route('money.withdraw')->withErrors(['token' => 'This verification code expired. You can submit a new withdrawal request.']);
         }
 
         $paymentMethods = PaymentMethod::allowWithdraw()->active()->get();
@@ -254,7 +291,7 @@ class WalletController extends Controller
                 return $tx;
             });
 
-            return redirect()->route('wallet.index')->with('success', 'Withdrawal verified and submitted. Funds are now reserved pending final Admin approval.');
+            return redirect()->route('money.withdraw')->with('success', 'Withdrawal verified and submitted. Funds are reserved while the payout awaits approval.');
         } catch (\Throwable $e) {
             return back()->withInput()->withErrors(['token' => $e->getMessage()]);
         }
