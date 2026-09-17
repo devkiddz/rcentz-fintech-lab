@@ -67,6 +67,47 @@ The price history becomes the source of truth, and all holdings react to that sa
 
 ---
 
+## 1.0 Current Verified Checkpoint
+
+**Current Investment checkpoint:** `f246a4b` — `feat(investments): complete metadata CRUD forms and labels`
+
+### Completed through V5.28.3
+
+- [x] Private investment domain/schema foundation
+- [x] System-authoritative investment pricing
+- [x] Investment price history and chart renderer
+- [x] Underlying asset records and admin management
+- [x] Valuation/event authority
+- [x] Customer discovery and instrument detail surfaces
+- [x] Customer account routes, portfolio, transactions and watchlist
+- [x] Subscription and redemption engine
+- [x] Wallet integration for subscription/redemption
+- [x] Holdings, cost basis, current value and P/L
+- [x] Admin control plane
+- [x] Explicit admin customer-targeted mutation authority
+- [x] Duration/lifespan metadata
+- [x] Flexible return-cycle metadata
+- [x] Projected minimum/maximum return metadata
+- [x] Subscription, management and redemption fee metadata
+- [x] Projection/return-story service and customer presentation
+- [x] Create/Edit investment CRUD forms expose the new metadata
+- [x] Investment/admin forms use explicit labels and helper text
+- [x] Browser acceptance for V5.28.3
+- [x] Git checkpoint at `f246a4b`
+
+### Remaining before Private Investment is considered fully hardened
+
+- [ ] Realistic customer activity/history
+- [ ] Distribution/deduction lifecycle events
+- [ ] Rich admin audit trail
+- [ ] Historical portfolio/performance timeline hardening
+- [ ] Wallet/units/fees/holding reconciliation hardening
+- [ ] Final realism presentation and acceptance pass
+
+> These remaining items are the V5.29 Investment Realism & Audit Hardening phase. Business data introduced by V5.29 must remain admin-manageable rather than seed-only.
+
+---
+
 ## 1.1 Customer Investment Navigation
 
 From the supplied reference UI:
@@ -544,25 +585,27 @@ These are not all new modules, but they are part of the supplied navigation refe
 
 ## Phase B — Private Investment Market
 
-- [ ] Domain models/schema
-- [ ] Investment Instrument admin CRUD
-- [ ] Underlying Asset management
-- [ ] Investment Event ledger
-- [ ] Investment Valuation Engine
-- [ ] Investment Price Authority
-- [ ] Investment Price History
-- [ ] Investment chart
-- [ ] Holdings
-- [ ] Transactions
-- [ ] Portfolio
-- [ ] Performance History
-- [ ] Stock Market category
-- [ ] Cryptocurrency category
-- [ ] Real Estate category
-- [ ] Distributions/deductions
-- [ ] Admin pause/resume
-- [ ] Browser acceptance
-- [ ] Git checkpoint
+- [x] Domain models/schema
+- [x] Investment Instrument admin CRUD
+- [x] Underlying Asset management
+- [x] Investment Event ledger
+- [x] Investment Valuation Engine
+- [x] Investment Price Authority
+- [x] Investment Price History
+- [x] Investment chart
+- [x] Holdings
+- [x] Transactions
+- [x] Portfolio
+- [~] Performance History — customer surface exists; richer historical realism remains for V5.29
+- [x] Stock Market category
+- [x] Cryptocurrency category
+- [x] Real Estate category
+- [ ] Distributions/deductions — scheduled for V5.29 realism hardening
+- [x] Admin pause/resume
+- [x] Browser acceptance through V5.28.3
+- [x] Git checkpoint through `f246a4b`
+
+> Phase B core product implementation is complete through V5.28.3. V5.29 is the final realism/audit hardening pass before the project moves to VIP Membership.
 
 ## Phase C — VIP Membership
 
