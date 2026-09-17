@@ -19,12 +19,25 @@ class WalletTransaction extends Model
         'status',
         'reference_id',
         'description',
+        'withdrawal_purpose',
+        'withdrawal_review_note',
+        'withdrawal_token_hash',
+        'withdrawal_token_last_four',
+        'withdrawal_token_generated_at',
+        'withdrawal_token_expires_at',
+        'withdrawal_token_verified_at',
+        'withdrawal_reviewed_by_user_id',
+        'withdrawal_reviewed_at',
         'user_crypto_details',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
         'fee' => 'decimal:2',
+        'withdrawal_token_generated_at' => 'datetime',
+        'withdrawal_token_expires_at' => 'datetime',
+        'withdrawal_token_verified_at' => 'datetime',
+        'withdrawal_reviewed_at' => 'datetime',
         'user_crypto_details' => 'array',
     ];
 

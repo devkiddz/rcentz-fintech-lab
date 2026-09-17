@@ -86,7 +86,7 @@
     <section class="ui-panel mt-4 overflow-hidden">
         <div class="border-b border-border px-4 py-3"><p class="ui-kicker">Instrument registry</p><p class="mt-1 text-xs text-muted-foreground">{{ $instruments->total() }} private investment instruments</p></div>
         <div class="overflow-x-auto"><table class="w-full min-w-[1000px] text-left">
-            <thead class="border-b border-border bg-muted/20"><tr class="text-[9px] uppercase tracking-[.1em] text-muted-foreground"><th class="px-4 py-3">Instrument</th><th>Class</th><th>Price</th><th>Duration</th><th>Return Cycle</th><th>Assets</th><th>Status</th><th></th></tr></thead>
+            <thead class="border-b border-border bg-muted/20"><tr class="text-[9px] uppercase tracking-[.1em] text-muted-foreground"><th class="px-4 py-3">Instrument</th><th>Class</th><th>Price</th><th>Duration</th><th>Return Cycle</th><th>Investors</th><th>Assets</th><th>Status</th><th></th></tr></thead>
             <tbody class="divide-y divide-border">
             @foreach($instruments as $instrument)<tr>
                 <td class="px-4 py-3"><p class="text-xs font-semibold">{{ $instrument->name }}</p><p class="text-[9px] text-muted-foreground">{{ $instrument->symbol }}</p></td>
@@ -94,6 +94,17 @@
                 <td class="text-xs font-semibold">{{ currency_symbol() }}{{ number_format((float)$instrument->current_price,2) }}</td>
                 <td class="text-xs">{{ $instrument->duration_days }} days</td>
                 <td class="text-xs"><span class="font-semibold">{{ number_format((float)$instrument->projected_return_min_percent,2) }}%–{{ number_format((float)$instrument->projected_return_max_percent,2) }}%</span><p class="mt-0.5 text-[9px] text-muted-foreground">every {{ $instrument->return_interval_days }} days</p></td>
+                <td class="text-xs">
+                    @if($instrument->active_holdings_count > 0)
+                        <span class="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[9px] font-semibold text-emerald-600">
+                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                            {{ $instrument->active_holdings_count }} {{ Str::plural('Investor', $instrument->active_holdings_count) }}
+                        </span>
+                        <p class="mt-1 text-[9px] text-muted-foreground">{{ $instrument->holdings_count }} total holding {{ Str::plural('record', $instrument->holdings_count) }}</p>
+                    @else
+                        <span class="inline-flex items-center rounded-full border border-border bg-muted/30 px-2 py-1 text-[9px] font-medium text-muted-foreground">No investors</span>
+                    @endif
+                </td>
                 <td class="text-xs">{{ $instrument->assets_count }}</td><td class="text-xs">{{ ucfirst($instrument->status) }}</td>
                 <td class="px-4 py-3 text-right"><a class="ui-btn ui-btn-secondary !h-8" href="{{ route('admin.investments.control.show',$instrument) }}">Manage</a></td>
             </tr>@endforeach

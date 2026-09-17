@@ -107,7 +107,13 @@ class WalletController extends Controller
         $paymentMethods = PaymentMethod::allowWithdraw()->active()->get();
         $wallet = Auth::user()->wallet;
         
-        return view('wallet.withdraw', compact('paymentMethods', 'wallet'));
+        $activeTokenRequest = \App\Models\WithdrawalTokenRequest::query()
+            ->where('user_id', Auth::id())
+            ->whereIn('status', ['pending','token_issued'])
+            ->latest()
+            ->first();
+
+        return view('wallet.withdraw', compact('paymentMethods', 'wallet', 'activeTokenRequest'));
     }
 
     /**
@@ -115,8 +121,143 @@ class WalletController extends Controller
      */
     public function processWithdrawal(Request $request, FinancialActivityService $activity)
     {
-        $user=Auth::user();$wallet=$user->wallet;$request->validate(['amount'=>['required','numeric','min:1','max:'.$wallet->available_balance],'payment_method_id'=>'required|exists:payment_methods,id','description'=>'nullable|string|max:500','wallet_address'=>['nullable','string','max:255']]);$paymentMethod=PaymentMethod::findOrFail($request->payment_method_id);if(!$paymentMethod->canWithdraw())return back()->withErrors(['payment_method_id'=>'This payment method does not support withdrawals.']);
-        try{$tx=DB::transaction(function() use($user,$request,$paymentMethod,$activity){$wallet=$user->wallet()->lockForUpdate()->firstOrFail();if(!$wallet->canWithdraw($request->amount))throw new \RuntimeException('Insufficient available balance.');$before=$activity->snapshot($wallet);$ref=$activity->reference('WDR');$wallet->reserveFunds($request->amount);$tx=$wallet->transactions()->create(['payment_method_id'=>$paymentMethod->id,'type'=>'withdrawal','direction'=>'debit','amount'=>$request->amount,'fee'=>0,'status'=>'pending','reference_id'=>$ref,'description'=>$request->description??"Withdrawal via {$paymentMethod->name}",'user_crypto_details'=>$paymentMethod->isCryptocurrency()?['wallet_address'=>$request->wallet_address,'crypto_symbol'=>$paymentMethod->crypto_symbol,'payment_method'=>$paymentMethod->name]:null]);$activity->record($user,'withdrawal.reserved','Withdrawal requested','Funds were reserved while the withdrawal awaits review.',$ref,'pending','debit',(float)$request->amount,$wallet,$tx,null,$before,['payment_method'=>$paymentMethod->name],'user',$user->id);return $tx;});NotificationService::createSystemNotification($user,'Withdrawal requested','Your withdrawal request of $'.number_format($request->amount,2).' is pending review. The funds are reserved.',['type'=>'withdrawal_pending','transaction_id'=>$tx->id,'reference'=>$tx->reference_id]);return redirect()->route('wallet.index')->with('success','Withdrawal request submitted. The funds are now reserved pending review.');}catch(\Throwable $e){return back()->withInput()->withErrors(['amount'=>$e->getMessage()==='Insufficient available balance.'?$e->getMessage():'Failed to submit withdrawal. Please try again.']);}
+        // Compatibility endpoint: the first withdrawal step now creates only a token request.
+        return $this->requestWithdrawalToken($request);
+    }
+
+    public function requestWithdrawalToken(Request $request)
+    {
+        $user = Auth::user();
+        $wallet = $user->wallet;
+
+        $data = $request->validate([
+            'amount' => ['required','numeric','min:1','max:'.$wallet->available_balance],
+            'note' => ['nullable','string','max:1000'],
+        ]);
+
+        $active = \App\Models\WithdrawalTokenRequest::query()
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['pending','token_issued'])
+            ->latest()
+            ->first();
+
+        if ($active) {
+            return back()->withErrors(['amount' => 'You already have an active withdrawal token request. Complete or cancel it before starting another.']);
+        }
+
+        \App\Models\WithdrawalTokenRequest::query()->create([
+            'user_id' => $user->id,
+            'amount' => $data['amount'],
+            'note' => $data['note'] ?? null,
+            'status' => 'pending',
+        ]);
+
+        return back()->with('success', 'Withdrawal token requested. No funds have been reserved yet.');
+    }
+
+    public function showWithdrawalVerification(\App\Models\WithdrawalTokenRequest $tokenRequest)
+    {
+        $user = Auth::user();
+
+        abort_unless($tokenRequest->user_id === $user->id && $tokenRequest->status === 'token_issued', 403);
+
+        if (! $tokenRequest->token_expires_at || now()->gt($tokenRequest->token_expires_at)) {
+            return redirect()->route('wallet.withdraw')->withErrors(['token' => 'This token expired. Request a new withdrawal token.']);
+        }
+
+        $paymentMethods = PaymentMethod::allowWithdraw()->active()->get();
+
+        return view('wallet.verify-withdrawal', compact('tokenRequest', 'paymentMethods'));
+    }
+
+    public function verifyWithdrawalToken(Request $request, \App\Models\WithdrawalTokenRequest $tokenRequest, FinancialActivityService $activity)
+    {
+        $user = Auth::user();
+
+        abort_unless($tokenRequest->user_id === $user->id && $tokenRequest->status === 'token_issued', 403);
+
+        $data = $request->validate([
+            'token' => ['required','digits:6'],
+            'payment_method_id' => ['required','exists:payment_methods,id'],
+            'wallet_address' => ['nullable','string','max:255'],
+        ]);
+
+        if (! $tokenRequest->token_hash) return back()->withErrors(['token' => 'This withdrawal token is no longer active.']);
+        if (! $tokenRequest->token_expires_at || now()->gt($tokenRequest->token_expires_at)) return back()->withErrors(['token' => 'This withdrawal token has expired.']);
+        if (! \Illuminate\Support\Facades\Hash::check($data['token'], $tokenRequest->token_hash)) return back()->withErrors(['token' => 'The withdrawal verification token is invalid.']);
+
+        $paymentMethod = PaymentMethod::findOrFail($data['payment_method_id']);
+        if (! $paymentMethod->canWithdraw()) return back()->withErrors(['payment_method_id' => 'This payment method does not support withdrawals.']);
+        if ($paymentMethod->isCryptocurrency() && blank($data['wallet_address'] ?? null)) return back()->withErrors(['wallet_address' => 'Destination wallet address is required for cryptocurrency withdrawals.']);
+
+        try {
+            $tx = DB::transaction(function () use ($user, $tokenRequest, $paymentMethod, $data, $activity) {
+                $lockedRequest = \App\Models\WithdrawalTokenRequest::query()->whereKey($tokenRequest->id)->lockForUpdate()->firstOrFail();
+
+                if ($lockedRequest->status !== 'token_issued') throw new \RuntimeException('This token has already been used or revoked.');
+                if (! $lockedRequest->token_expires_at || now()->gt($lockedRequest->token_expires_at)) throw new \RuntimeException('This withdrawal token has expired.');
+
+                $wallet = $user->wallet()->lockForUpdate()->firstOrFail();
+                $amount = (float) $lockedRequest->amount;
+
+                if (! $wallet->canWithdraw($amount)) throw new \RuntimeException('Insufficient available balance.');
+
+                $before = $activity->snapshot($wallet);
+                $reference = $activity->reference('WDR');
+
+                $wallet->reserveFunds($amount);
+
+                $tx = $wallet->transactions()->create([
+                    'payment_method_id' => $paymentMethod->id,
+                    'type' => 'withdrawal',
+                    'direction' => 'debit',
+                    'amount' => $amount,
+                    'fee' => 0,
+                    'status' => 'pending',
+                    'reference_id' => $reference,
+                    'description' => "Withdrawal via {$paymentMethod->name}",
+                    'withdrawal_purpose' => $lockedRequest->note,
+                    'withdrawal_token_verified_at' => now(),
+                    'user_crypto_details' => $paymentMethod->isCryptocurrency()
+                        ? ['wallet_address'=>$data['wallet_address'],'crypto_symbol'=>$paymentMethod->crypto_symbol,'payment_method'=>$paymentMethod->name]
+                        : ($data['wallet_address'] ? ['destination'=>$data['wallet_address'],'payment_method'=>$paymentMethod->name] : ['payment_method'=>$paymentMethod->name]),
+                ]);
+
+                $lockedRequest->alert?->update(['read_at' => now(), 'dismissed_at' => now()]);
+
+                $lockedRequest->update([
+                    'status' => 'used',
+                    'token_verified_at' => now(),
+                    'used_at' => now(),
+                    'wallet_transaction_id' => $tx->id,
+                    'token_hash' => null,
+                ]);
+
+                $activity->record(
+                    $user,
+                    'withdrawal.reserved',
+                    'Withdrawal requested',
+                    'Token verified and funds reserved while the withdrawal awaits final Admin approval.',
+                    $reference,
+                    'pending',
+                    'debit',
+                    $amount,
+                    $wallet,
+                    $tx,
+                    null,
+                    $before,
+                    ['payment_method'=>$paymentMethod->name,'token_request_id'=>$lockedRequest->id],
+                    'user',
+                    $user->id
+                );
+
+                return $tx;
+            });
+
+            return redirect()->route('wallet.index')->with('success', 'Withdrawal verified and submitted. Funds are now reserved pending final Admin approval.');
+        } catch (\Throwable $e) {
+            return back()->withInput()->withErrors(['token' => $e->getMessage()]);
+        }
     }
 
     /**

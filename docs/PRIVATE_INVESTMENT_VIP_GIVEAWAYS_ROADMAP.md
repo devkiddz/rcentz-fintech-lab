@@ -69,7 +69,7 @@ The price history becomes the source of truth, and all holdings react to that sa
 
 ## 1.0 Current Verified Checkpoint
 
-**Current Investment checkpoint:** `f246a4b` — `feat(investments): complete metadata CRUD forms and labels`
+**Current Investment checkpoint:** `b1971ba` — `feat(investments): add audit and reconciliation foundation`
 
 ### Completed through V5.28.3
 
@@ -97,11 +97,11 @@ The price history becomes the source of truth, and all holdings react to that sa
 
 ### Remaining before Private Investment is considered fully hardened
 
-- [ ] Realistic customer activity/history
-- [ ] Distribution/deduction lifecycle events
-- [ ] Rich admin audit trail
+- [~] Realistic customer activity/history — V5.29.2.2 demo holdings seeder populates active customer accounts for lifecycle testing
+- [~] Distribution/deduction lifecycle events — V5.29.2 implemented; browser acceptance pending
+- [~] Rich admin audit trail — append-only audit foundation active; presentation hardening remains
 - [ ] Historical portfolio/performance timeline hardening
-- [ ] Wallet/units/fees/holding reconciliation hardening
+- [x] Wallet/units/fees/holding reconciliation hardening — `investment:reconcile` passing at V5.29.1
 - [ ] Final realism presentation and acceptance pass
 
 > These remaining items are the V5.29 Investment Realism & Audit Hardening phase. Business data introduced by V5.29 must remain admin-manageable rather than seed-only.
@@ -675,3 +675,20 @@ A checkbox should only become `[x]` when:
 6. technical verification passes,
 7. browser acceptance passes,
 8. the milestone is checkpointed to Git.
+
+---
+
+## V5.29.2 Runtime Acceptance Checkpoint
+
+V5.29.2 lifecycle execution is now runtime-accepted.
+
+Confirmed:
+- demo Private Investment holders exist
+- investor counts render in Admin
+- lifecycle distribution persists to the database
+- per-instrument latest-5 history preview works
+- full lifecycle history works
+- reconciliation passes after lifecycle execution
+- internal wallet transactions may legitimately omit an external payment method
+
+Next investment milestone: **V5.29.3 Portfolio Intelligence / accumulated performance history**.

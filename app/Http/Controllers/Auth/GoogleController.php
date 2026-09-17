@@ -34,6 +34,9 @@ class GoogleController extends Controller
             $existingUser = User::where('email', $googleUser->getEmail())->first();
             
             if ($existingUser) {
+                if (! $existingUser->is_admin && ! $existingUser->isAccountActive()) {
+                    return redirect()->route('login')->with('error', 'This account is not currently permitted to sign in.');
+                }
                 // User exists, log them in
                 Auth::login($existingUser);
                 
@@ -44,6 +47,9 @@ class GoogleController extends Controller
                 
                 return redirect()->intended(route('dashboard'));
             } else {
+                // New accounts must pass the normal 18+ registration gate first.
+                return redirect()->route('register')->with('error', 'Complete the standard 18+ registration first. Google sign-in can be used after the account exists.');
+
                 // Create new user
                 DB::beginTransaction();
                 

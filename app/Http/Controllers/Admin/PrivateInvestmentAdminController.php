@@ -11,6 +11,7 @@ use App\Models\PrivateInvestmentPrice;
 use App\Models\PrivateInvestmentTransaction;
 use App\Models\Setting;
 use App\Services\PrivateInvestmentValuationService;
+use App\Services\PrivateInvestmentLifecycleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -19,7 +20,15 @@ class PrivateInvestmentAdminController extends Controller
     public function index()
     {
         $instruments = PrivateInvestmentInstrument::query()
-            ->withCount(['assets','events','holdings','transactions'])
+            ->withCount([
+                'assets',
+                'events',
+                'holdings',
+                'transactions',
+                'holdings as active_holdings_count' => fn ($query) => $query
+                    ->where('status', 'active')
+                    ->where('units', '>', 0),
+            ])
             ->orderByDesc('is_featured')
             ->orderBy('name')
             ->paginate(20);
@@ -101,6 +110,7 @@ class PrivateInvestmentAdminController extends Controller
             'assets'=>fn($q)=>$q->latest('created_at'),
             'events'=>fn($q)=>$q->latest('effective_at')->limit(25),
             'prices'=>fn($q)=>$q->latest('recorded_at')->limit(30),
+            'lifecycleEvents'=>fn($q)=>$q->latest('effective_at')->limit(5),
         ]);
 
         $customers = \App\Models\User::query()
@@ -207,6 +217,37 @@ class PrivateInvestmentAdminController extends Controller
         $valuation->resetAdminTestHistory($instrument);
 
         return back()->with('success', 'Admin test valuation events cleared and the instrument returned to its last non-admin baseline price.');
+    }
+
+
+public function lifecycleHistory(PrivateInvestmentInstrument $instrument)
+{
+    $events = $instrument->lifecycleEvents()
+        ->latest('effective_at')
+        ->latest('id')
+        ->paginate(25);
+
+    return view('admin.private-investments.lifecycle-history', compact('instrument', 'events'));
+}
+
+public function applyLifecycleEvent(
+        Request $request,
+        PrivateInvestmentInstrument $instrument,
+        PrivateInvestmentLifecycleService $lifecycle
+    ) {
+        $data = $request->validate([
+            'type' => 'required|in:distribution,deduction',
+            'calculation_mode' => 'required|in:fixed_per_unit,percent_current_value',
+            'value' => 'required|numeric|min:0.000001',
+            'reason' => 'required|string|max:2000',
+        ]);
+
+        $event = $lifecycle->apply($instrument, $data, auth()->id());
+
+        return back()->with(
+            'success',
+            ucfirst($event->type).' applied to '.$event->affected_holdings.' active holding(s). Total '.currency_symbol().number_format((float) $event->total_amount, 2).'.'
+        );
     }
 
     public function updatePresentation(Request $request)

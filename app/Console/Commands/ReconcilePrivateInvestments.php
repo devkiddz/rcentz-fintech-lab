@@ -106,6 +106,14 @@ class ReconcilePrivateInvestments extends Command
                         $errors[] = "Redemption {$transaction->id} wallet direction must be credit.";
                     }
                 }
+
+                if ($transaction->type === 'distribution' && $walletTransaction->direction !== 'credit') {
+                    $errors[] = "Distribution {$transaction->id} wallet direction must be credit.";
+                }
+
+                if ($transaction->type === 'deduction' && $walletTransaction->direction !== 'debit') {
+                    $errors[] = "Deduction {$transaction->id} wallet direction must be debit.";
+                }
             });
 
         $this->line('Private Investment Reconciliation');

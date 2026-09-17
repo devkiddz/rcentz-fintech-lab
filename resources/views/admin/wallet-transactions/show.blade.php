@@ -141,6 +141,12 @@
                         </div>
                     </div>
 
+                    @if($transaction->type === 'withdrawal')
+                    <div class="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-700">
+                        Token gate completed before this withdrawal was created. This is now a real payout request awaiting final approval.
+                    </div>
+                    @endif
+
                     <!-- Actions -->
                     @if($transaction->status === 'pending')
                     <div class="bg-card border border-border overflow-hidden rounded-lg">

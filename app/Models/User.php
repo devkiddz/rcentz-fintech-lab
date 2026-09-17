@@ -27,6 +27,14 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_admin',
         'country',
         'currency',
+        'date_of_birth',
+        'employment_class',
+        'education_level',
+        'account_status',
+        'status_reason',
+        'status_until',
+        'status_changed_at',
+        'status_changed_by_user_id',
     ];
 
     /**
@@ -50,6 +58,9 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'date_of_birth' => 'date',
+            'status_until' => 'datetime',
+            'status_changed_at' => 'datetime',
         ];
     }
 
@@ -108,6 +119,16 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Notification::class);
     }
 
+    public function accountAlerts()
+    {
+        return $this->hasMany(AccountAlert::class);
+    }
+
+    public function withdrawalTokenRequests()
+    {
+        return $this->hasMany(WithdrawalTokenRequest::class);
+    }
+
     public function sentTransfers()
     {
         return $this->hasMany(InternalTransfer::class, 'sender_id');
@@ -162,6 +183,18 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isAdmin()
     {
         return $this->is_admin;
+    }
+
+    public function isAccountActive(): bool
+    {
+        if ($this->is_admin) return true;
+        if ($this->account_status === 'suspended' && $this->status_until && now()->gte($this->status_until)) return true;
+        return ($this->account_status ?? 'active') === 'active';
+    }
+
+    public function getAgeAttribute(): ?int
+    {
+        return $this->date_of_birth?->age;
     }
 
     /**

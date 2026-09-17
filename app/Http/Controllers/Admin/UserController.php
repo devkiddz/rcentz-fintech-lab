@@ -54,6 +54,11 @@ class UserController extends Controller
             'user_type' => 'required|in:user,admin',
             'email_verified' => 'boolean',
             'is_admin' => 'boolean',
+            'country' => 'nullable|string|max:80',
+            'currency' => 'nullable|in:USD,EUR,GBP,NGN,JPY,AUD,CAD,CHF,CNY,INR,ZAR,SGD',
+            'date_of_birth' => 'nullable|date|after_or_equal:1900-01-01|before_or_equal:'.now()->subYears(18)->toDateString(),
+            'employment_class' => 'nullable|in:student,employed,self_employed,business_owner,professional,freelancer,unemployed,retired,other',
+            'education_level' => 'nullable|in:secondary,diploma,undergraduate,bachelor,postgraduate,masters,doctorate,professional,other',
         ]);
 
         $userData = [
@@ -61,28 +66,30 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'is_admin' => $request->user_type === 'admin' || $request->has('is_admin'),
+            'country' => $request->country,
+            'currency' => $request->currency ?? 'USD',
+            'date_of_birth' => $request->date_of_birth,
+            'employment_class' => $request->employment_class,
+            'education_level' => $request->education_level,
+            'account_status' => 'active',
         ];
 
-        // Handle email verification based on settings and admin choice
         if ($request->has('email_verified') || !is_email_verification_enabled()) {
             $userData['email_verified_at'] = now();
         }
 
         $user = User::create($userData);
 
-        // Create wallet for the new user
         $user->wallet()->create([
             'balance' => 0,
-            'currency' => 'USD',
+            'currency' => $request->currency ?? 'USD',
         ]);
 
-        // Send email verification only if enabled and not manually verified
         if (is_email_verification_enabled() && !$request->has('email_verified')) {
             $user->sendEmailVerificationNotification();
         }
 
-        return redirect()->route('admin.users.index')
-            ->with('success', 'User created successfully.');
+        return redirect()->route('admin.users.index')->with('success', 'User created successfully.');
     }
 
     /**
@@ -126,22 +133,28 @@ class UserController extends Controller
             'password' => ['nullable', 'confirmed', Rules\Password::defaults()],
             'user_type' => 'required|in:user,admin',
             'is_admin' => 'boolean',
+            'country' => 'nullable|string|max:80',
+            'currency' => 'nullable|in:USD,EUR,GBP,NGN,JPY,AUD,CAD,CHF,CNY,INR,ZAR,SGD',
+            'date_of_birth' => 'nullable|date|after_or_equal:1900-01-01|before_or_equal:'.now()->subYears(18)->toDateString(),
+            'employment_class' => 'nullable|in:student,employed,self_employed,business_owner,professional,freelancer,unemployed,retired,other',
+            'education_level' => 'nullable|in:secondary,diploma,undergraduate,bachelor,postgraduate,masters,doctorate,professional,other',
         ]);
 
         $updateData = [
             'name' => $request->name,
             'email' => $request->email,
             'is_admin' => $request->user_type === 'admin' || $request->has('is_admin'),
+            'country' => $request->country,
+            'currency' => $request->currency ?? 'USD',
+            'date_of_birth' => $request->date_of_birth,
+            'employment_class' => $request->employment_class,
+            'education_level' => $request->education_level,
         ];
 
-        if ($request->filled('password')) {
-            $updateData['password'] = Hash::make($request->password);
-        }
-
+        if ($request->filled('password')) $updateData['password'] = Hash::make($request->password);
         $user->update($updateData);
 
-        return redirect()->route('admin.users.index')
-            ->with('success', 'User updated successfully.');
+        return redirect()->route('admin.users.index')->with('success', 'User updated successfully.');
     }
 
     /**

@@ -30,6 +30,7 @@ class PrivateInvestmentInstrument extends Model
     public function prices(): HasMany { return $this->hasMany(PrivateInvestmentPrice::class, 'instrument_id'); }
     public function holdings(): HasMany { return $this->hasMany(PrivateInvestmentHolding::class, 'instrument_id'); }
     public function transactions(): HasMany { return $this->hasMany(PrivateInvestmentTransaction::class, 'instrument_id'); }
+    public function lifecycleEvents(): HasMany { return $this->hasMany(PrivateInvestmentLifecycleEvent::class, 'instrument_id'); }
 
     public function getChangeAmountAttribute(): float
     {

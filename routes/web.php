@@ -41,6 +41,11 @@ use App\Http\Controllers\Admin\StockController as AdminStockController;
 use App\Http\Controllers\Admin\StockHoldingController as AdminStockHoldingController;
 use App\Http\Controllers\Admin\StockTransactionController as AdminStockTransactionController;
 use App\Http\Controllers\Admin\WalletTransactionController as AdminWalletTransactionController;
+use App\Http\Controllers\CustomerPreferenceController;
+use App\Http\Controllers\Admin\AccountAccessController;
+use App\Http\Controllers\AccountAlertController;
+use App\Http\Controllers\Admin\AccountAlertAdminController;
+use App\Http\Controllers\Admin\WithdrawalTokenRequestController;
 use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\KYCController as AdminKYCController;
 use Illuminate\Support\Facades\Route;
@@ -76,7 +81,7 @@ Route::get('/terms', [FrontendController::class, 'terms'])->name('terms');
 Route::get('/privacy', [FrontendController::class, 'privacy'])->name('privacy');
 
 // Authenticated User Routes
-Route::middleware(['auth', 'verified', 'wallet', 'customer.access'])->group(function () {
+Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.active'])->group(function () {
     // Checkout Routes
     Route::get('/checkout/{car_id}', [CheckoutController::class, 'checkoutForm'])->name('checkout.form');
     Route::post('/checkout/{car_id}', [CheckoutController::class, 'processCheckout'])->name('checkout.process');
@@ -125,6 +130,12 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access'])->group(func
     Route::post('/wallet/deposit/crypto/{transaction}/confirm', [WalletController::class, 'confirmCryptoPayment'])->name('wallet.crypto-payment.confirm');
     Route::get('/wallet/withdraw', [WalletController::class, 'withdraw'])->name('wallet.withdraw');
     Route::post('/wallet/withdraw', [WalletController::class, 'processWithdrawal'])->name('wallet.process-withdrawal');
+    Route::post('/wallet/withdrawal-token', [WalletController::class, 'requestWithdrawalToken'])->name('wallet.withdrawal.token.request');
+    Route::get('/wallet/withdrawal-token/{tokenRequest}', [WalletController::class, 'showWithdrawalVerification'])->name('wallet.withdrawal.token.form');
+    Route::post('/wallet/withdrawal-token/{tokenRequest}', [WalletController::class, 'verifyWithdrawalToken'])->name('wallet.withdrawal.token.submit');
+    Route::patch('/account/preferences/currency', [CustomerPreferenceController::class, 'updateCurrency'])->name('account.preferences.currency');
+    Route::post('/account-alerts/{alert}/read', [AccountAlertController::class, 'read'])->name('account-alerts.read');
+    Route::post('/account-alerts/{alert}/dismiss', [AccountAlertController::class, 'dismiss'])->name('account-alerts.dismiss');
     Route::get('/wallet/transfer', [WalletController::class, 'transfer'])->name('wallet.transfer');
     Route::post('/wallet/transfer', [WalletController::class, 'processTransfer'])->name('wallet.process-transfer');
     Route::get('/wallet/connections', [WalletController::class, 'connections'])->name('wallet.connections');
@@ -331,6 +342,10 @@ Route::middleware(['auth', 'admin'])
         // Admin User Management
         Route::resource('users', AdminUserController::class);
         Route::post('users/{user}/fund-wallet', [AdminUserController::class, 'fundWallet'])->name('users.fund-wallet');
+        Route::patch('users/{user}/access', [AccountAccessController::class, 'update'])->name('users.access.update');
+        Route::post('users/{user}/verify-email', [AccountAccessController::class, 'verifyEmail'])->name('users.verify-email');
+        Route::get('users/{user}/alerts', [AccountAlertAdminController::class, 'index'])->name('users.alerts.index');
+        Route::post('users/{user}/alerts', [AccountAlertAdminController::class, 'store'])->name('users.alerts.store');
 
         // Admin About Page
         Route::get('about', function() {
@@ -369,6 +384,8 @@ Route::middleware(['auth', 'admin'])
             Route::post('/instruments/{instrument}/assets', [PrivateInvestmentAdminController::class, 'storeAsset'])->name('control.assets.store');
             Route::delete('/instruments/{instrument}/assets/{asset}', [PrivateInvestmentAdminController::class, 'destroyAsset'])->name('control.assets.destroy');
             Route::post('/instruments/{instrument}/valuation-events', [PrivateInvestmentAdminController::class, 'applyValuation'])->name('control.valuation.apply');
+            Route::post('/instruments/{instrument}/lifecycle-events', [PrivateInvestmentAdminController::class, 'applyLifecycleEvent'])->name('control.lifecycle.apply');
+            Route::get('/instruments/{instrument}/lifecycle-events/history', [PrivateInvestmentAdminController::class, 'lifecycleHistory'])->name('control.lifecycle.history');
             Route::delete('/instruments/{instrument}/valuation-events/test-history', [PrivateInvestmentAdminController::class, 'resetTestValuations'])->name('control.valuation.reset-test');
             Route::patch('/presentation', [PrivateInvestmentAdminController::class, 'updatePresentation'])->name('control.presentation.update');
             Route::post('/instruments/{instrument}/account-operations/subscribe', [PrivateInvestmentAccountOperationController::class, 'subscribe'])->name('account-operations.subscribe');
@@ -436,6 +453,12 @@ Route::middleware(['auth', 'admin'])
     });
 
     // Admin Wallet Transaction Management
+    Route::prefix('withdrawal-token-requests')->name('withdrawal-token-requests.')->group(function () {
+        Route::get('/', [WithdrawalTokenRequestController::class, 'index'])->name('index');
+        Route::post('/{tokenRequest}/generate', [WithdrawalTokenRequestController::class, 'generate'])->name('generate');
+        Route::delete('/{tokenRequest}/token', [WithdrawalTokenRequestController::class, 'destroyToken'])->name('destroy-token');
+    });
+
     Route::prefix('wallet-transactions')->name('wallet-transactions.')->group(function () {
         Route::get('/', [AdminWalletTransactionController::class, 'index'])->name('index');
         Route::get('/{transaction}', [AdminWalletTransactionController::class, 'show'])->name('show');

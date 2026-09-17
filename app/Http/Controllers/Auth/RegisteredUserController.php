@@ -35,8 +35,12 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'country' => ['nullable', 'string', 'max:2'],
-            'currency' => ['nullable', 'string', 'max:3'],
+            'age_confirmed' => ['accepted'],
+            'country' => ['nullable', 'string', 'max:80'],
+            'currency' => ['nullable', 'string', 'in:USD,EUR,GBP,NGN,JPY,AUD,CAD,CHF,CNY,INR,ZAR,SGD'],
+            'date_of_birth' => ['nullable', 'date', 'after_or_equal:1900-01-01', 'before_or_equal:'.now()->subYears(18)->toDateString()],
+            'employment_class' => ['nullable', 'string', 'in:student,employed,self_employed,business_owner,professional,freelancer,unemployed,retired,other'],
+            'education_level' => ['nullable', 'string', 'in:secondary,diploma,undergraduate,bachelor,postgraduate,masters,doctorate,professional,other'],
         ]);
 
         $userData = [
@@ -45,6 +49,10 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
             'country' => $request->country,
             'currency' => $request->currency ?? 'USD',
+            'date_of_birth' => $request->date_of_birth,
+            'employment_class' => $request->employment_class,
+            'education_level' => $request->education_level,
+            'account_status' => 'active',
         ];
 
         // If email verification is disabled, mark email as verified

@@ -26,6 +26,22 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        $user = auth()->user();
+
+        if (! $user->is_admin && $user->account_status === 'suspended' && $user->status_until && now()->gte($user->status_until)) {
+            $user->update(['account_status' => 'active', 'status_reason' => null, 'status_until' => null]);
+        }
+
+        if (! $user->is_admin && ! $user->isAccountActive()) {
+            $message = match ($user->account_status) {
+                'banned' => 'This account has been banned from platform access.',
+                'suspended' => 'This account is currently suspended.',
+                default => 'This account is currently blocked.',
+            };
+            Auth::guard('web')->logout();
+            throw \Illuminate\Validation\ValidationException::withMessages(['email' => $message]);
+        }
+
         $request->session()->regenerate();
 
         // Redirect admin users to admin dashboard, regular users to user dashboard

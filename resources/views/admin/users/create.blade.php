@@ -94,6 +94,14 @@
                                    required>
                         </div>
 
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div><label class="block text-xs font-medium text-muted-foreground mb-2">Date of Birth <span class="font-normal">(optional)</span></label><input class="ui-input w-full" type="date" name="date_of_birth" max="{{ now()->subYears(18)->toDateString() }}" value="{{ old('date_of_birth') }}"></div>
+                            <div><label class="block text-xs font-medium text-muted-foreground mb-2">Country <span class="font-normal">(optional)</span></label><input class="ui-input w-full" name="country" value="{{ old('country') }}"></div>
+                            <div><label class="block text-xs font-medium text-muted-foreground mb-2">Working Class <span class="font-normal">(optional)</span></label><select class="ui-input w-full" name="employment_class"><option value="">Not supplied</option>@foreach(['student'=>'Student','employed'=>'Employed','self_employed'=>'Self-employed','business_owner'=>'Business owner','professional'=>'Professional','freelancer'=>'Freelancer','unemployed'=>'Unemployed','retired'=>'Retired','other'=>'Other'] as $v=>$l)<option value="{{ $v }}" @selected(old('employment_class')===$v)>{{ $l }}</option>@endforeach</select></div>
+                            <div><label class="block text-xs font-medium text-muted-foreground mb-2">Education <span class="font-normal">(optional)</span></label><select class="ui-input w-full" name="education_level"><option value="">Not supplied</option>@foreach(['secondary'=>'Secondary / High school','diploma'=>'Diploma / Technical','undergraduate'=>'Undergraduate','bachelor'=>'Bachelor degree','postgraduate'=>'Postgraduate','masters'=>'Masters','doctorate'=>'Doctorate / PhD','professional'=>'Professional qualification','other'=>'Other'] as $v=>$l)<option value="{{ $v }}" @selected(old('education_level')===$v)>{{ $l }}</option>@endforeach</select></div>
+                            <div class="md:col-span-2"><label class="block text-xs font-medium text-muted-foreground mb-2">Display Currency</label><select class="ui-input w-full" name="currency">@foreach(['USD','NGN','EUR','GBP','CAD','AUD','CHF','JPY','CNY','INR','ZAR','SGD'] as $code)<option value="{{ $code }}" @selected(old('currency','USD')===$code)>{{ $code }}</option>@endforeach</select></div>
+                        </div>
+
                         <!-- User Type -->
                         <div>
                             <label class="block text-xs font-medium text-muted-foreground mb-3">

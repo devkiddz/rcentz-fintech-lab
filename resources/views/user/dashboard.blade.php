@@ -10,6 +10,12 @@
             </div>
 
             <div class="ui-header-actions">
+                <form method="POST" action="{{ route('account.preferences.currency') }}" class="flex items-center gap-2">
+                    @csrf @method('PATCH')
+                    <select name="currency" class="ui-input !h-9 !w-auto min-w-[110px] text-xs" onchange="this.form.submit()">
+                        @foreach(['USD','NGN','EUR','GBP','CAD','AUD','CHF','JPY','CNY','INR','ZAR','SGD'] as $code)<option value="{{ $code }}" @selected(auth()->user()->currency===$code)>{{ $code }}</option>@endforeach
+                    </select>
+                </form>
                 <a href="{{ route('account.history') }}" class="ui-btn ui-btn-secondary"><i data-lucide="history" class="h-4 w-4"></i>History</a>
                 <a href="{{ route('profile.edit') }}" class="ui-btn ui-btn-secondary">
                     <i data-lucide="circle-user-round" class="h-4 w-4"></i>
@@ -25,6 +31,36 @@
                 </a>
             </div>
         </section>
+
+        @php
+            $accountAlerts = auth()->user()->accountAlerts()->active()->latest()->limit(5)->get();
+        @endphp
+        @if($accountAlerts->isNotEmpty())
+        <section class="mb-4 ui-panel overflow-hidden">
+            <div class="flex items-center justify-between border-b border-border px-5 py-4">
+                <div><p class="ui-kicker">Private account alerts</p><h2 class="text-lg font-semibold">For your attention</h2></div>
+                <span class="rounded-full bg-foreground px-2.5 py-1 text-[10px] font-semibold text-background">{{ $accountAlerts->count() }}</span>
+            </div>
+            <div class="divide-y divide-border">
+                @foreach($accountAlerts as $alert)
+                    <article class="px-5 py-4 {{ $alert->priority === 'urgent' ? 'bg-red-500/[.04]' : ($alert->priority === 'important' ? 'bg-amber-500/[.04]' : '') }}">
+                        <div class="flex items-start gap-3">
+                            <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-card"><i data-lucide="{{ $alert->type === 'withdrawal_token' ? 'key-round' : 'megaphone' }}" class="h-4 w-4"></i></div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-wrap items-center gap-2"><p class="font-semibold">{{ $alert->title }}</p><span class="rounded-full bg-muted px-2 py-0.5 text-[9px] font-semibold uppercase">{{ $alert->priority }}</span></div>
+                                <p class="mt-1 text-sm text-muted-foreground">{{ $alert->message }}</p>
+                                <div class="mt-3 flex flex-wrap gap-2">
+                                    @if($alert->action_url)<a href="{{ $alert->action_url }}" class="ui-btn ui-btn-primary ui-btn-sm">{{ $alert->action_label ?: 'Open' }}</a>@endif
+                                    @if(!$alert->read_at)<form method="POST" action="{{ route('account-alerts.read',$alert) }}">@csrf<button class="ui-btn ui-btn-secondary ui-btn-sm">Mark Read</button></form>@endif
+                                    <form method="POST" action="{{ route('account-alerts.dismiss',$alert) }}">@csrf<button class="ui-btn ui-btn-ghost ui-btn-sm">Dismiss</button></form>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                @endforeach
+            </div>
+        </section>
+        @endif
 
         <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <a href="{{ route('wallet.index') }}" class="ui-metric-card group cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring/30">

@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'kyc' => \App\Http\Middleware\KYCMiddleware::class,
             'customer.access' => \App\Http\Middleware\CustomerSurfaceAccess::class,
             'account.owner' => \App\Http\Middleware\AccountOwnershipBoundary::class,
+            'account.active' => \App\Http\Middleware\EnsureAccountIsActive::class,
             'can.impersonate' => \App\Http\Middleware\EnsureUserCanImpersonate::class,
         ]);
 

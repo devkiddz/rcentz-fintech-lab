@@ -43,6 +43,76 @@
 </section>
 
 <section class="ui-panel mt-4 p-5">
+<div class="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+    <div>
+        <p class="ui-kicker">Investment lifecycle</p>
+        <h2 class="mt-1 text-lg font-semibold">Distribution or Deduction</h2>
+        <p class="mt-1 text-[10px] text-muted-foreground">Apply one auditable cash-flow rule to every active holding in this instrument. This does not change the authoritative unit price.</p>
+    </div>
+
+    <a href="{{ route('admin.investments.control.lifecycle.history',$instrument) }}" class="ui-btn ui-btn-secondary">
+        <i data-lucide="history" class="h-4 w-4"></i>
+        View lifecycle history
+    </a>
+</div>
+
+<form method="POST" action="{{ route('admin.investments.control.lifecycle.apply',$instrument) }}" class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+    @csrf
+    <div>
+        <label class="ui-label">Lifecycle Type</label>
+        <select class="ui-input mt-1 w-full" name="type" required>
+            <option value="distribution">Distribution — credit customers</option>
+            <option value="deduction">Deduction — debit customers</option>
+        </select>
+    </div>
+    <div>
+        <label class="ui-label">Calculation Method</label>
+        <select class="ui-input mt-1 w-full" name="calculation_mode" required>
+            <option value="fixed_per_unit">Fixed amount per unit</option>
+            <option value="percent_current_value">Percentage of current holding value</option>
+        </select>
+    </div>
+    <div>
+        <label class="ui-label">Value</label>
+        <input class="ui-input mt-1 w-full" type="number" step="0.000001" min="0.000001" name="value" placeholder="e.g. 0.50 or 2.5" required>
+    </div>
+    <div class="md:col-span-2 xl:col-span-1">
+        <label class="ui-label">Reason / Audit Explanation</label>
+        <input class="ui-input mt-1 w-full" name="reason" maxlength="2000" placeholder="Why is this lifecycle event being applied?" required>
+    </div>
+    <button class="ui-btn ui-btn-primary md:col-span-2 xl:col-span-4">Apply Lifecycle Event</button>
+</form>
+
+<div class="mt-5">
+    <div class="mb-2 flex items-center justify-between gap-3">
+        <p class="text-[10px] font-medium text-muted-foreground">Latest 5 lifecycle events</p>
+        <a href="{{ route('admin.investments.control.lifecycle.history',$instrument) }}" class="text-[10px] font-semibold underline underline-offset-4">View more</a>
+    </div>
+
+    <div class="overflow-x-auto">
+    <table class="w-full min-w-[760px] text-left text-[10px]">
+        <thead class="text-muted-foreground"><tr><th class="pb-2">When</th><th class="pb-2">Type</th><th class="pb-2">Method</th><th class="pb-2">Configured Value</th><th class="pb-2">Customers</th><th class="pb-2">Total</th><th class="pb-2">Reason</th></tr></thead>
+        <tbody class="divide-y divide-border">
+        @forelse($instrument->lifecycleEvents as $event)
+            <tr>
+                <td class="py-2">{{ $event->effective_at?->format('M j, Y H:i') }}</td>
+                <td class="py-2 font-semibold">{{ ucfirst($event->type) }}</td>
+                <td class="py-2">{{ $event->calculation_mode === 'fixed_per_unit' ? 'Per unit' : '% of value' }}</td>
+                <td class="py-2">{{ $event->calculation_mode === 'percent_current_value' ? number_format((float)$event->value,4).'%' : currency_symbol().number_format((float)$event->value,4) }}</td>
+                <td class="py-2">{{ $event->affected_holdings }}</td>
+                <td class="py-2 font-semibold">{{ currency_symbol() }}{{ number_format((float)$event->total_amount,2) }}</td>
+                <td class="py-2 text-muted-foreground">{{ $event->reason }}</td>
+            </tr>
+        @empty
+            <tr><td colspan="7" class="py-4 text-muted-foreground">No lifecycle distributions or deductions have been applied yet.</td></tr>
+        @endforelse
+        </tbody>
+    </table>
+</div>
+</div>
+</section>
+
+<section class="ui-panel mt-4 p-5">
 <div class="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
     <div><p class="ui-kicker">Customer Account Operation</p><h2 class="mt-1 text-lg font-semibold">Subscribe or Redeem for Customer</h2><p class="mt-1 text-[10px] text-muted-foreground">Admin mutation authority is explicit: select the customer, instrument action and amount/units.</p></div>
     <p class="text-[10px] text-muted-foreground">Current price: {{ currency_symbol() }}{{ number_format((float)$instrument->current_price,2) }}</p>

@@ -1,242 +1,257 @@
 <x-admin-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <div class="flex items-center space-x-6">
-                <h2 class="font-light text-lg text-foreground leading-tight mr-4">
-                    {{ __('Users') }}
-                </h2>
-                <a href="{{ route('admin.about') }}" class="inline-flex items-center px-3 py-1 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-muted transition-all duration-200">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M12 20h.01"></path>
-                    </svg>
-                    About Hyipcoders
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div>
+                <div class="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.18em] text-muted-foreground">
+                    <span>Admin</span><span>•</span><span>Customers</span>
+                </div>
+                <h1 class="mt-1 text-2xl font-semibold tracking-tight text-foreground">Customer Directory</h1>
+                <p class="mt-1 text-sm text-muted-foreground">Identity, balances, portfolio activity and account access in one clean control surface.</p>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                <a href="{{ route('admin.users.create') }}" class="ui-btn ui-btn-primary">
+                    <i data-lucide="user-plus" class="h-4 w-4"></i>
+                    Add customer
                 </a>
             </div>
-            <a href="{{ route('admin.users.create') }}" 
-               class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                Add New
-            </a>
         </div>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            @if($users->count() > 0)
-            <!-- Stats Overview -->
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-tesla-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-tesla-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-xs font-medium text-muted-foreground dark:text-gray-300">Total Users</p>
-                            <p class="text-lg font-light text-foreground">{{ $users->total() }}</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-xs font-medium text-muted-foreground dark:text-gray-300">Admins</p>
-                            <p class="text-lg font-light text-foreground">{{ $users->where('is_admin', true)->count() }}</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-xs font-medium text-muted-foreground dark:text-gray-300">Total Revenue</p>
-                            <p class="text-lg font-light text-foreground">${{ number_format($totalRevenue, 0) }}</p>
-                        </div>
-                    </div>
+    <div class="ui-page max-w-[1500px]">
+        @if(session('success'))
+            <div class="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-700 dark:text-emerald-300">{{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-600 dark:text-red-300">{{ session('error') }}</div>
+        @endif
+        @if($errors->any())
+            <div class="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-600 dark:text-red-300">{{ $errors->first() }}</div>
+        @endif
+
+        <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <article class="ui-metric-card">
+                <div class="ui-metric-icon"><i data-lucide="users" class="h-5 w-5"></i></div>
+                <div><p class="ui-label">Total users</p><p class="mt-1 text-2xl font-semibold">{{ $users->total() }}</p></div>
+            </article>
+            <article class="ui-metric-card">
+                <div class="ui-metric-icon"><i data-lucide="shield-check" class="h-5 w-5"></i></div>
+                <div><p class="ui-label">Admins</p><p class="mt-1 text-2xl font-semibold">{{ $users->where('is_admin', true)->count() }}</p></div>
+            </article>
+            <article class="ui-metric-card">
+                <div class="ui-metric-icon"><i data-lucide="receipt-text" class="h-5 w-5"></i></div>
+                <div><p class="ui-label">Revenue</p><p class="mt-1 text-2xl font-semibold">{{ format_currency($totalRevenue) }}</p></div>
+            </article>
+            <article class="ui-metric-card">
+                <div class="ui-metric-icon"><i data-lucide="wallet" class="h-5 w-5"></i></div>
+                <div><p class="ui-label">Wallet balance</p><p class="mt-1 text-2xl font-semibold">{{ format_currency($totalWalletBalance) }}</p></div>
+            </article>
+            <article class="ui-metric-card">
+                <div class="ui-metric-icon"><i data-lucide="chart-no-axes-combined" class="h-5 w-5"></i></div>
+                <div><p class="ui-label">Investments</p><p class="mt-1 text-2xl font-semibold">{{ format_currency($totalInvestmentValue) }}</p></div>
+            </article>
+        </section>
+
+        <section class="mt-4 ui-surface overflow-hidden">
+            <div class="flex flex-col gap-3 border-b border-border px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <p class="ui-kicker">Directory</p>
+                    <h2 class="mt-1 text-lg font-semibold">Customers & access</h2>
                 </div>
 
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-tesla-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-tesla-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-xs font-medium text-muted-foreground dark:text-gray-300">Wallet Balance</p>
-                            <p class="text-lg font-light text-foreground">${{ number_format($totalWalletBalance, 0) }}</p>
-                        </div>
+                <div class="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+                    <div class="relative min-w-[280px] flex-1 lg:flex-none">
+                        <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"></i>
+                        <input id="customer-search" class="ui-input w-full pl-9" placeholder="Search customer or email...">
                     </div>
-                </div>
-
-                <div class="bg-card border border-border p-4 rounded-lg">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-xs font-medium text-muted-foreground dark:text-gray-300">Investments</p>
-                            <p class="text-lg font-light text-foreground">${{ number_format($totalInvestmentValue, 0) }}</p>
-                        </div>
-                    </div>
+                    <select id="customer-filter" class="ui-input min-w-[160px]">
+                        <option value="all">All accounts</option>
+                        <option value="active">Active</option>
+                        <option value="restricted">Restricted</option>
+                        <option value="unverified">Email unverified</option>
+                        <option value="investors">Has investments</option>
+                    </select>
                 </div>
             </div>
 
-            <!-- Users Grid -->
-            <div class="bg-card border border-border overflow-hidden rounded-lg">
-                <div class="px-4 py-3 border-b border-border dark:border-gray-700">
-                    <div class="flex items-center justify-between">
-                        <h3 class="text-base font-medium text-foreground">Customer Directory</h3>
-                        <div class="flex items-center space-x-2">
-                            <span class="text-xs text-muted-foreground dark:text-gray-300">{{ $users->count() }} of {{ $users->total() }} users</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="p-4">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                        @foreach($users as $user)
-                        <div class="group bg-muted/40 rounded-lg p-4 hover:bg-card hover:shadow-lg transition-all duration-200 border border-transparent hover:border-border dark:border-gray-700">
-                            <!-- User Avatar and Info -->
-                            <div class="flex items-start space-x-3 mb-3">
-                                @if($user->profile_image)
-                                    <img src="{{ asset('storage/' . $user->profile_image) }}" 
-                                         alt="{{ $user->name }}" 
-                                         class="w-12 h-12 rounded-lg object-cover flex-shrink-0">
-                                @else
-                                    <div class="w-12 h-12 bg-gradient-to-br from-tesla-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <span class="text-white font-bold text-sm">{{ strtoupper(substr($user->name, 0, 2)) }}</span>
+            @if($users->count() > 0)
+                <div class="grid gap-4 p-4 md:grid-cols-2 xl:grid-cols-3" id="customer-grid">
+                    @foreach($users as $user)
+                        @php
+                            $status = $user->account_status ?? 'active';
+                            $isRestricted = in_array($status, ['blocked','banned','suspended'], true);
+                            $investmentValue = (float) $user->investmentHoldings->sum('current_value');
+                            $stockValue = (float) $user->stockHoldings->sum('current_value');
+                            $walletValue = (float) optional($user->wallet)->balance;
+                            $initials = collect(explode(' ', trim($user->name)))->filter()->take(2)->map(fn($part) => strtoupper(substr($part,0,1)))->implode('');
+                        @endphp
+
+                        <article
+                            class="customer-card group rounded-2xl border border-border bg-card p-4 transition hover:-translate-y-0.5 hover:shadow-md"
+                            data-search="{{ strtolower($user->name.' '.$user->email) }}"
+                            data-status="{{ $status }}"
+                            data-verified="{{ $user->email_verified_at ? 'yes' : 'no' }}"
+                            data-investor="{{ $investmentValue > 0 ? 'yes' : 'no' }}"
+                        >
+                            <div class="flex items-start gap-3">
+                                <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted text-sm font-semibold">
+                                    @if($user->profile_image)
+                                        <img src="{{ asset('storage/' . $user->profile_image) }}" alt="{{ $user->name }}" class="h-full w-full object-cover">
+                                    @else
+                                        {{ $initials ?: 'U' }}
+                                    @endif
+                                </div>
+
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <h3 class="truncate text-sm font-semibold text-foreground">{{ $user->name }}</h3>
+                                                @if($user->is_admin)
+                                                    <span class="rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-0.5 text-[9px] font-semibold text-violet-600">ADMIN</span>
+                                                @endif
+                                            </div>
+                                            <p class="mt-0.5 truncate text-xs text-muted-foreground">{{ $user->email }}</p>
+                                        </div>
+
+                                        <span class="shrink-0 rounded-full px-2 py-1 text-[9px] font-semibold uppercase {{ $status === 'active' ? 'bg-emerald-500/10 text-emerald-600' : ($status === 'banned' ? 'bg-red-500/10 text-red-600' : 'bg-amber-500/10 text-amber-600') }}">
+                                            {{ $status }}
+                                        </span>
                                     </div>
-                                @endif
-                                <div class="flex-1 min-w-0">
-                                    <div class="flex items-center justify-between mb-1">
-                                        <h4 class="text-sm font-medium text-foreground truncate">{{ $user->name }}</h4>
-                                        @if($user->is_admin)
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-800">
-                                                Admin
-                                            </span>
+
+                                    <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-muted-foreground">
+                                        <span>{{ $user->email_verified_at ? 'Email verified' : 'Email unverified' }}</span>
+                                        <span>•</span>
+                                        <span>Joined {{ $user->created_at->format('M j, Y') }}</span>
+                                        @if($user->date_of_birth)
+                                            <span>•</span><span>{{ $user->age }} yrs</span>
                                         @endif
                                     </div>
-                                    <p class="text-xs text-muted-foreground truncate">{{ $user->email }}</p>
-                                    <p class="text-xs text-gray-400 mt-1">Member since {{ $user->created_at->format('M d, Y') }}</p>
                                 </div>
                             </div>
 
-                            <!-- User Stats -->
-                            <div class="grid grid-cols-2 gap-3 mb-3">
-                                <div class="text-center">
-                                    <p class="text-xs text-muted-foreground dark:text-gray-300">Car Purchases</p>
-                                    <p class="text-sm font-medium text-foreground">{{ $user->purchases->count() }}</p>
+                            <div class="mt-4 grid grid-cols-3 gap-2">
+                                <div class="rounded-xl border border-border bg-muted/20 p-3">
+                                    <p class="text-[9px] uppercase tracking-[.08em] text-muted-foreground">Wallet</p>
+                                    <p class="mt-1 truncate text-sm font-semibold">{{ format_currency($walletValue) }}</p>
                                 </div>
-                                <div class="text-center">
-                                    <p class="text-xs text-muted-foreground dark:text-gray-300">Total Spent</p>
-                                    <p class="text-sm font-medium text-green-600">${{ number_format($user->purchases->where('status', 'completed')->sum('amount'), 0) }}</p>
+                                <div class="rounded-xl border border-border bg-muted/20 p-3">
+                                    <p class="text-[9px] uppercase tracking-[.08em] text-muted-foreground">Investments</p>
+                                    <p class="mt-1 truncate text-sm font-semibold">{{ format_currency($investmentValue) }}</p>
                                 </div>
-                                <div class="text-center">
-                                    <p class="text-xs text-muted-foreground dark:text-gray-300">Wallet Balance</p>
-                                    <p class="text-sm font-medium text-tesla-600">${{ number_format($user->wallet ? $user->wallet->balance : 0, 0) }}</p>
-                                </div>
-                                <div class="text-center">
-                                    <p class="text-xs text-muted-foreground dark:text-gray-300">Investments</p>
-                                    <p class="text-sm font-medium text-orange-600">${{ number_format($user->investmentHoldings->sum('current_value'), 0) }}</p>
+                                <div class="rounded-xl border border-border bg-muted/20 p-3">
+                                    <p class="text-[9px] uppercase tracking-[.08em] text-muted-foreground">Stocks</p>
+                                    <p class="mt-1 truncate text-sm font-semibold">{{ format_currency($stockValue) }}</p>
                                 </div>
                             </div>
 
-                            <!-- Recent Activity -->
-                            <div class="mb-3">
-                                <p class="text-xs text-muted-foreground dark:text-gray-300 mb-2">Recent Activity</p>
-                                <div class="space-y-1">
-                                    @if($user->purchases->count() > 0)
-                                        <div class="flex items-center space-x-2">
-                                            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                                            <span class="text-xs text-muted-foreground dark:text-gray-300">Latest car purchase: {{ $user->purchases->first()->purchased_at->format('M d') }}</span>
-                                        </div>
-                                    @endif
-                                    @if($user->investmentHoldings->count() > 0)
-                                        <div class="flex items-center space-x-2">
-                                            <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
-                                            <span class="text-xs text-muted-foreground dark:text-gray-300">{{ $user->investmentHoldings->count() }} investment holdings</span>
-                                        </div>
-                                    @endif
-                                    @if($user->stockHoldings->count() > 0)
-                                        <div class="flex items-center space-x-2">
-                                            <div class="w-2 h-2 bg-purple-500 rounded-full"></div>
-                                            <span class="text-xs text-muted-foreground dark:text-gray-300">{{ $user->stockHoldings->count() }} stock holdings</span>
-                                        </div>
-                                    @endif
-                                </div>
+                            <div class="mt-3 flex flex-wrap gap-1.5 text-[10px] text-muted-foreground">
+                                @if($user->employment_class)
+                                    <span class="rounded-full border border-border bg-muted/20 px-2 py-1">{{ ucwords(str_replace('_',' ',$user->employment_class)) }}</span>
+                                @endif
+                                @if($user->education_level)
+                                    <span class="rounded-full border border-border bg-muted/20 px-2 py-1">{{ ucwords(str_replace('_',' ',$user->education_level)) }}</span>
+                                @endif
+                                @if($user->currency)
+                                    <span class="rounded-full border border-border bg-muted/20 px-2 py-1">{{ $user->currency }}</span>
+                                @endif
+                                @if(!$user->employment_class && !$user->education_level)
+                                    <span class="rounded-full border border-border bg-muted/20 px-2 py-1">Optional profile not supplied</span>
+                                @endif
                             </div>
 
-                            <!-- Action Buttons -->
-                            <div class="flex space-x-2">
-                                <a href="{{ route('admin.users.show', $user) }}" class="flex-1 text-center px-3 py-2 bg-muted text-muted-foreground text-xs font-medium rounded hover:bg-muted transition-colors">
-                                    View
-                                </a>
-                                <a href="{{ route('admin.users.edit', $user) }}" class="flex-1 text-center px-3 py-2 bg-tesla-100 text-tesla-700 text-xs font-medium rounded hover:bg-tesla-200 transition-colors">
-                                    Edit
-                                </a>
+                            @if(!$user->is_admin)
+                                <details class="mt-4 rounded-xl border border-border bg-muted/10">
+                                    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-xs font-medium text-foreground">
+                                        <span class="flex items-center gap-2"><i data-lucide="shield" class="h-3.5 w-3.5"></i>Account access</span>
+                                        <i data-lucide="chevron-down" class="h-3.5 w-3.5 text-muted-foreground"></i>
+                                    </summary>
+                                    <form method="POST" action="{{ route('admin.users.access.update',$user) }}" class="grid gap-2 border-t border-border p-3 sm:grid-cols-2">
+                                        @csrf @method('PATCH')
+                                        <select name="account_status" class="ui-input text-xs">
+                                            @foreach(['active'=>'Active','blocked'=>'Block','suspended'=>'Suspend','banned'=>'Ban'] as $value=>$label)
+                                                <option value="{{ $value }}" @selected($status===$value)>{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                        <input name="status_until" type="datetime-local" class="ui-input text-xs" value="{{ optional($user->status_until)->format('Y-m-d\TH:i') }}" title="Required for suspension">
+                                        <input name="status_reason" class="ui-input text-xs sm:col-span-2" value="{{ $user->status_reason }}" placeholder="Reason required for restricted states">
+                                        <button class="ui-btn ui-btn-secondary ui-btn-sm justify-center sm:col-span-2">Save access state</button>
+                                    </form>
+                                </details>
+                            @endif
+
+                            <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
+                                <a href="{{ route('admin.users.show',$user) }}" class="ui-btn ui-btn-secondary ui-btn-sm"><i data-lucide="eye" class="h-3.5 w-3.5"></i>View</a>
+                                <a href="{{ route('admin.users.edit',$user) }}" class="ui-btn ui-btn-secondary ui-btn-sm"><i data-lucide="pencil" class="h-3.5 w-3.5"></i>Edit</a>
+
                                 @if(!$user->is_admin)
-                                    <a href="{{ route('impersonate', $user->id) }}" class="flex-1 text-center px-3 py-2 bg-green-100 text-green-700 text-xs font-medium rounded hover:bg-green-200 transition-colors">
-                                        Login as User
-                                    </a>
+                                    <a href="{{ route('admin.users.alerts.index',$user) }}" class="ui-btn ui-btn-secondary ui-btn-sm"><i data-lucide="megaphone" class="h-3.5 w-3.5"></i>Alert</a>
+
+                                    @if(!$user->email_verified_at)
+                                        <form method="POST" action="{{ route('admin.users.verify-email',$user) }}">@csrf<button class="ui-btn ui-btn-secondary ui-btn-sm"><i data-lucide="badge-check" class="h-3.5 w-3.5"></i>Verify email</button></form>
+                                    @endif
+
+                                    <a href="{{ route('impersonate',$user->id) }}" class="ui-btn ui-btn-secondary ui-btn-sm"><i data-lucide="log-in" class="h-3.5 w-3.5"></i>Login as</a>
+
                                     @if($user->purchases->count() === 0)
-                                        <form method="POST" action="{{ route('admin.users.destroy', $user) }}" class="flex-1">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" onclick="return confirm('Are you sure you want to delete this user? This action cannot be undone.')" class="w-full text-center px-3 py-2 bg-red-100 text-red-700 text-xs font-medium rounded hover:bg-red-200 transition-colors">
-                                                Delete
-                                            </button>
+                                        <form method="POST" action="{{ route('admin.users.destroy',$user) }}" class="ml-auto">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" onclick="return confirm('Delete this user permanently?')" class="ui-btn ui-btn-ghost ui-btn-sm text-red-600 hover:bg-red-500/10"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i></button>
                                         </form>
                                     @endif
                                 @endif
                             </div>
-                        </div>
-                        @endforeach
-                    </div>
+                        </article>
+                    @endforeach
                 </div>
-                
-                <!-- Pagination -->
+
+                <div id="customer-empty-filter" class="hidden px-5 py-12 text-center text-sm text-muted-foreground">No customers match the current search/filter.</div>
+
                 @if($users->hasPages())
-                <div class="px-4 py-3 border-t border-border dark:border-gray-700">
-                    {{ $users->links() }}
-                </div>
+                    <div class="border-t border-border px-5 py-4">{{ $users->links() }}</div>
                 @endif
-            </div>
             @else
-            <!-- Empty State -->
-            <div class="bg-card border border-border p-8 rounded-lg text-center">
-                <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-gray-400 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                    </svg>
+                <div class="px-5 py-16 text-center">
+                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-muted"><i data-lucide="users" class="h-5 w-5"></i></div>
+                    <h3 class="mt-4 font-semibold">No customers yet</h3>
+                    <p class="mt-1 text-sm text-muted-foreground">Create the first customer account to populate this directory.</p>
+                    <a href="{{ route('admin.users.create') }}" class="ui-btn ui-btn-primary mt-4">Add customer</a>
                 </div>
-                <h3 class="text-lg font-medium text-foreground dark:text-white mb-2">No users found</h3>
-                <p class="text-xs text-muted-foreground dark:text-gray-300 mb-6">No users have been registered yet.</p>
-                <a href="{{ route('admin.users.create') }}" 
-                   class="inline-flex items-center px-4 py-2 bg-black dark:bg-card text-white dark:text-foreground text-sm font-medium rounded-lg hover:opacity-90 transition-all duration-200">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                    </svg>
-                    Add First User
-                </a>
-            </div>
             @endif
-        </div>
+        </section>
     </div>
-</x-admin-layout> 
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const search = document.getElementById('customer-search');
+            const filter = document.getElementById('customer-filter');
+            const cards = [...document.querySelectorAll('.customer-card')];
+            const empty = document.getElementById('customer-empty-filter');
+
+            function applyFilters() {
+                const term = (search?.value || '').trim().toLowerCase();
+                const mode = filter?.value || 'all';
+                let visible = 0;
+
+                cards.forEach(card => {
+                    const matchesSearch = !term || card.dataset.search.includes(term);
+                    let matchesFilter = true;
+
+                    if (mode === 'active') matchesFilter = card.dataset.status === 'active';
+                    if (mode === 'restricted') matchesFilter = ['blocked','banned','suspended'].includes(card.dataset.status);
+                    if (mode === 'unverified') matchesFilter = card.dataset.verified === 'no';
+                    if (mode === 'investors') matchesFilter = card.dataset.investor === 'yes';
+
+                    const show = matchesSearch && matchesFilter;
+                    card.classList.toggle('hidden', !show);
+                    if (show) visible++;
+                });
+
+                empty?.classList.toggle('hidden', visible !== 0);
+            }
+
+            search?.addEventListener('input', applyFilters);
+            filter?.addEventListener('change', applyFilters);
+        });
+    </script>
+</x-admin-layout>
