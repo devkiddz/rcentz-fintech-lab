@@ -4,6 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\PrivateInvestmentInstrument;
 use App\Services\PrivateInvestmentChartService;
+use App\Services\PrivateInvestmentPortfolioService;
+use App\Services\ManualTradingPortfolioService;
+use App\Services\CopyTradingPortfolioService;
+use App\Services\BotTradingPortfolioService;
 use Illuminate\Http\Request;
 
 class PrivateInvestmentMarketController extends Controller
@@ -144,18 +148,109 @@ class PrivateInvestmentMarketController extends Controller
         return view('private-investments.account', compact('holdings', 'transactions', 'summary', 'isAdmin'));
     }
 
-    public function portfolio()
+    public function portfolio(
+        PrivateInvestmentPortfolioService $portfolio,
+        ManualTradingPortfolioService $manualTrading,
+        CopyTradingPortfolioService $copyTrading,
+        BotTradingPortfolioService $botTrading
+    )
     {
-        $holdings = auth()->user()->isAdmin()
-            ? collect()
-            : \App\Models\PrivateInvestmentHolding::query()
-                ->with('instrument')
-                ->where('user_id', auth()->id())
-                ->where('status', 'active')
-                ->orderByDesc('updated_at')
-                ->get();
+        $user = auth()->user();
+        $isAdmin = $user->isAdmin();
 
-        return view('private-investments.portfolio', compact('holdings'));
+        $portfolioData = $isAdmin
+            ? [
+                'positions' => collect(),
+                'summary' => [
+                    'active_holdings' => 0,
+                    'capital_at_work' => 0,
+                    'current_value' => 0,
+                    'unrealized_profit_loss' => 0,
+                    'realized_profit_loss' => 0,
+                    'distributions' => 0,
+                    'deductions' => 0,
+                    'net_performance' => 0,
+                    'total_subscribed' => 0,
+                    'return_percent' => 0,
+                    'available_wallet' => 0,
+                ],
+                'activity' => collect(),
+            ]
+            : $portfolio->buildForUser($user);
+
+        $manualTradingData = $isAdmin
+            ? [
+                'positions' => collect(),
+                'summary' => [
+                    'positions' => 0,
+                    'open_positions' => 0,
+                    'closed_positions' => 0,
+                    'capital_traded' => 0,
+                    'open_capital' => 0,
+                    'realized_profit_loss' => 0,
+                    'unrealized_profit_loss' => 0,
+                    'net_profit_loss' => 0,
+                    'return_percent' => 0,
+                    'wins' => 0,
+                    'losses' => 0,
+                ],
+                'activity' => collect(),
+            ]
+            : $manualTrading->buildForUser($user);
+
+        $copyTradingData = $isAdmin
+            ? [
+                'positions' => collect(),
+                'summary' => [
+                    'positions' => 0,
+                    'open_positions' => 0,
+                    'closed_positions' => 0,
+                    'strategies' => 0,
+                    'capital_traded' => 0,
+                    'open_capital' => 0,
+                    'allocation_limit' => 0,
+                    'used_allocation' => 0,
+                    'remaining_allocation' => 0,
+                    'realized_profit_loss' => 0,
+                    'unrealized_profit_loss' => 0,
+                    'net_profit_loss' => 0,
+                    'return_percent' => 0,
+                    'wins' => 0,
+                    'losses' => 0,
+                ],
+            ]
+            : $copyTrading->buildForUser($user);
+
+        $botTradingData = $isAdmin
+            ? [
+                'bots' => collect(),
+                'summary' => [
+                    'bots' => 0,
+                    'active_bots' => 0,
+                    'positions' => 0,
+                    'open_positions' => 0,
+                    'closed_positions' => 0,
+                    'executions' => 0,
+                    'capital_traded' => 0,
+                    'open_capital' => 0,
+                    'realized_profit_loss' => 0,
+                    'unrealized_profit_loss' => 0,
+                    'net_profit_loss' => 0,
+                    'return_percent' => 0,
+                    'wins' => 0,
+                    'losses' => 0,
+                ],
+                'activity' => collect(),
+            ]
+            : $botTrading->buildForUser($user);
+
+        return view('private-investments.portfolio', [
+            ...$portfolioData,
+            'manualTrading' => $manualTradingData,
+            'copyTrading' => $copyTradingData,
+            'botTrading' => $botTradingData,
+            'isAdmin' => $isAdmin,
+        ]);
     }
 
     public function transactions()
