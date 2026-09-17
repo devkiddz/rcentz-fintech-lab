@@ -166,6 +166,22 @@
             </a>
         </div>
     </details>
+    <details class="sidebar-group group rounded-xl"
+             data-nav-group="admin-vip"
+             {{ request()->routeIs('admin.vip.*') ? 'open' : '' }}>
+        <summary title="VIP Membership"
+                 class="{{ $parentBase }} justify-between {{ request()->routeIs('admin.vip.*') ? $parentActive : $parentIdle }}">
+            <span class="flex min-w-0 items-center gap-3">
+                <i data-lucide="crown" class="h-4 w-4 shrink-0"></i>
+                <span class="sidebar-label truncate">VIP Membership</span>
+            </span>
+            <i data-lucide="chevron-down" class="sidebar-chevron h-4 w-4 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
+            <a href="{{ route('admin.vip.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.vip.index','admin.vip.plans.*','admin.vip.entitlements.*') ? $childActive : $childIdle }}"><i data-lucide="layers-3" class="h-4 w-4"></i><span>Plans & Entitlements</span></a>
+            <a href="{{ route('admin.vip.memberships') }}" class="{{ $childBase }} {{ request()->routeIs('admin.vip.memberships*') ? $childActive : $childIdle }}"><i data-lucide="badge-check" class="h-4 w-4"></i><span>Memberships</span></a>
+        </div>
+    </details>
     <a href="{{ route('admin.users.index') }}" title="Customers"
        class="{{ $standaloneBase }} {{ request()->routeIs('admin.users.*') ? $standaloneActive : $standaloneIdle }}">
         <i data-lucide="users" class="h-4 w-4 shrink-0"></i><span class="sidebar-label">Customers</span>

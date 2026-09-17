@@ -517,6 +517,23 @@ Route::middleware(['auth', 'admin'])
         Route::delete('/{botProduct}', [AdminTradingBotController::class, 'destroy'])->name('destroy');
     });
 
+    // VIP Membership Engine Admin Control
+    Route::prefix('vip')->name('vip.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\VipAdminController::class, 'index'])->name('index');
+        Route::post('/plans', [\App\Http\Controllers\Admin\VipAdminController::class, 'storePlan'])->name('plans.store');
+        Route::patch('/plans/{plan}', [\App\Http\Controllers\Admin\VipAdminController::class, 'updatePlan'])->name('plans.update');
+        Route::patch('/plans/{plan}/toggle', [\App\Http\Controllers\Admin\VipAdminController::class, 'togglePlan'])->name('plans.toggle');
+        Route::delete('/plans/{plan}', [\App\Http\Controllers\Admin\VipAdminController::class, 'destroyPlan'])->name('plans.destroy');
+        Route::post('/plans/{plan}/entitlements', [\App\Http\Controllers\Admin\VipAdminController::class, 'storeEntitlement'])->name('entitlements.store');
+        Route::patch('/plans/{plan}/entitlements/{entitlement}', [\App\Http\Controllers\Admin\VipAdminController::class, 'updateEntitlement'])->name('entitlements.update');
+        Route::delete('/plans/{plan}/entitlements/{entitlement}', [\App\Http\Controllers\Admin\VipAdminController::class, 'destroyEntitlement'])->name('entitlements.destroy');
+        Route::get('/memberships', [\App\Http\Controllers\Admin\VipAdminController::class, 'memberships'])->name('memberships');
+        Route::post('/memberships', [\App\Http\Controllers\Admin\VipAdminController::class, 'storeMembership'])->name('memberships.store');
+        Route::patch('/memberships/{membership}/activate', [\App\Http\Controllers\Admin\VipAdminController::class, 'activateMembership'])->name('memberships.activate');
+        Route::patch('/memberships/{membership}/cancel', [\App\Http\Controllers\Admin\VipAdminController::class, 'cancelMembership'])->name('memberships.cancel');
+        Route::patch('/memberships/{membership}/expire', [\App\Http\Controllers\Admin\VipAdminController::class, 'expireMembership'])->name('memberships.expire');
+    });
+
     // Admin Settings Control Plane
     Route::prefix('settings')->name('settings.')->group(function () {
         Route::get('/', [AdminSettingController::class, 'index'])->name('index');

@@ -179,6 +179,12 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(BotSubscription::class);
     }
 
+    // V5.30.A1 VIP membership authority relationship.
+    public function vipMemberships()
+    {
+        return $this->hasMany(VipMembership::class);
+    }
+
 
     public function isAdmin()
     {
