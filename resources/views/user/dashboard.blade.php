@@ -33,6 +33,43 @@
         </section>
 
         @php
+            $vipDisplayStatus = null;
+            if ($vipMembership) {
+                $vipDisplayStatus = $vipMembership->status === 'active' && ! $vipMembership->is_active
+                    ? 'expired'
+                    : $vipMembership->status;
+            }
+        @endphp
+        <section class="mb-4 ui-panel overflow-hidden">
+            <div class="flex flex-col gap-4 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex min-w-0 items-start gap-4">
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400"><i data-lucide="crown" class="h-5 w-5"></i></div>
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <p class="ui-kicker">VIP Membership</p>
+                            @if($vipMembership)
+                                <span class="rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase {{ $vipDisplayStatus === 'active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : ($vipDisplayStatus === 'pending' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-muted text-muted-foreground') }}">{{ $vipDisplayStatus }}</span>
+                            @endif
+                        </div>
+                        @if($vipMembership)
+                            <h2 class="mt-1 text-lg font-semibold text-foreground">{{ $vipMembership->plan?->name ?? 'VIP Membership' }}</h2>
+                            <p class="mt-1 text-sm text-muted-foreground">{{ $vipMembership->is_active ? ($vipMembership->ends_at ? 'Active until '.$vipMembership->ends_at->format('M j, Y') : 'Active with no fixed expiry') : 'Membership record available in your VIP workspace.' }}</p>
+                        @else
+                            <h2 class="mt-1 text-lg font-semibold text-foreground">Unlock premium platform access</h2>
+                            <p class="mt-1 text-sm text-muted-foreground">You do not currently have a VIP membership.</p>
+                        @endif
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    @if($vipMembership?->is_active)
+                        <span class="ui-btn ui-btn-ghost ui-btn-sm pointer-events-none"><i data-lucide="badge-check" class="h-4 w-4"></i>{{ $vipEntitlements->count() }} entitlements</span>
+                    @endif
+                    <a href="{{ route('memberships.vip.index') }}" class="ui-btn ui-btn-secondary"><i data-lucide="arrow-right" class="h-4 w-4"></i>Manage VIP</a>
+                </div>
+            </div>
+        </section>
+
+        @php
             $accountAlerts = auth()->user()->accountAlerts()->active()->latest()->limit(5)->get();
         @endphp
         @if($accountAlerts->isNotEmpty())

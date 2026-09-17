@@ -167,19 +167,25 @@
         </div>
     </details>
     <details class="sidebar-group group rounded-xl"
-             data-nav-group="admin-vip"
-             {{ request()->routeIs('admin.vip.*') ? 'open' : '' }}>
-        <summary title="VIP Membership"
-                 class="{{ $parentBase }} justify-between {{ request()->routeIs('admin.vip.*') ? $parentActive : $parentIdle }}">
-            <span class="flex min-w-0 items-center gap-3">
-                <i data-lucide="crown" class="h-4 w-4 shrink-0"></i>
-                <span class="sidebar-label truncate">VIP Membership</span>
-            </span>
+             data-nav-group="admin-memberships"
+             {{ request()->routeIs('admin.memberships.*') ? 'open' : '' }}>
+        <summary title="Memberships"
+                 class="{{ $parentBase }} justify-between {{ request()->routeIs('admin.memberships.*') ? $parentActive : $parentIdle }}">
+            <span class="flex min-w-0 items-center gap-3"><i data-lucide="badge" class="h-4 w-4 shrink-0"></i><span class="sidebar-label truncate">Memberships</span></span>
             <i data-lucide="chevron-down" class="sidebar-chevron h-4 w-4 transition-transform group-open:rotate-180"></i>
         </summary>
         <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
-            <a href="{{ route('admin.vip.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.vip.index','admin.vip.plans.*','admin.vip.entitlements.*') ? $childActive : $childIdle }}"><i data-lucide="layers-3" class="h-4 w-4"></i><span>Plans & Entitlements</span></a>
-            <a href="{{ route('admin.vip.memberships') }}" class="{{ $childBase }} {{ request()->routeIs('admin.vip.memberships*') ? $childActive : $childIdle }}"><i data-lucide="badge-check" class="h-4 w-4"></i><span>Memberships</span></a>
+            <a href="{{ route('admin.memberships.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.memberships.index') ? $childActive : $childIdle }}"><i data-lucide="layout-grid" class="h-4 w-4"></i><span>Overview</span></a>
+            <details class="group rounded-lg" data-nav-group="admin-memberships-vip" {{ request()->routeIs('admin.memberships.vip.*') ? 'open' : '' }}>
+                <summary class="{{ $childBase }} justify-between {{ request()->routeIs('admin.memberships.vip.*') ? $childActive : $childIdle }}">
+                    <span class="flex items-center gap-3"><i data-lucide="crown" class="h-4 w-4"></i><span>VIP Membership</span></span>
+                    <i data-lucide="chevron-down" class="h-3.5 w-3.5 transition-transform group-open:rotate-180"></i>
+                </summary>
+                <div class="ml-4 mt-1 space-y-1 border-l border-border/60 pl-3">
+                    <a href="{{ route('admin.memberships.vip.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.memberships.vip.index','admin.memberships.vip.plans.*','admin.memberships.vip.entitlements.*') ? $childActive : $childIdle }}"><i data-lucide="layers-3" class="h-4 w-4"></i><span>Plans & Entitlements</span></a>
+                    <a href="{{ route('admin.memberships.vip.memberships') }}" class="{{ $childBase }} {{ request()->routeIs('admin.memberships.vip.memberships*') ? $childActive : $childIdle }}"><i data-lucide="badge-check" class="h-4 w-4"></i><span>Memberships</span></a>
+                </div>
+            </details>
         </div>
     </details>
     <a href="{{ route('admin.users.index') }}" title="Customers"

@@ -9,10 +9,11 @@ use App\Models\Stock;
 use App\Models\StockPriceHistory;
 use Carbon\Carbon;
 use App\Services\FinancialOverviewService;
+use App\Services\VipAccessService;
 
 class UserDashboardController extends Controller
 {
-    public function index(FinancialOverviewService $financialOverview)
+    public function index(FinancialOverviewService $financialOverview, VipAccessService $vipAccess)
     {
         $user = Auth::user();
 
@@ -37,6 +38,8 @@ class UserDashboardController extends Controller
         // Existing market discovery data can still support the lower dashboard.
         $chartData = $this->getStockChartData();
         $marketOverview = $this->getMarketOverview();
+        $vipMembership = $vipAccess->statusMembership($user);
+        $vipEntitlements = $vipAccess->entitlements($user);
 
         return view('user.dashboard', array_merge($finance, [
             'recentPurchases' => $recentPurchases,
@@ -44,6 +47,8 @@ class UserDashboardController extends Controller
             'totalPurchases' => $totalPurchases,
             'chartData' => $chartData,
             'marketOverview' => $marketOverview,
+            'vipMembership' => $vipMembership,
+            'vipEntitlements' => $vipEntitlements,
         ]));
     }
 

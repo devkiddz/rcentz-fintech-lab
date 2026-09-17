@@ -7,7 +7,7 @@
             <p class="ui-lead max-w-3xl">Create membership plans, define plan entitlements and control which VIP products are available to customers.</p>
         </div>
         <div class="ui-header-actions">
-            <a href="{{ route('admin.vip.memberships') }}" class="ui-btn ui-btn-primary">
+            <a href="{{ route('admin.memberships.vip.memberships') }}" class="ui-btn ui-btn-primary">
                 <i data-lucide="crown" class="h-4 w-4"></i>
                 Memberships
             </a>
@@ -43,7 +43,7 @@
             <h2 class="mt-1 text-lg font-semibold">Create VIP plan</h2>
             <p class="mt-1 text-xs text-muted-foreground">The plan defines commercial terms. Entitlements define what access the membership grants.</p>
 
-            <form method="POST" action="{{ route('admin.vip.plans.store') }}" class="mt-5 space-y-4">
+            <form method="POST" action="{{ route('admin.memberships.vip.plans.store') }}" class="mt-5 space-y-4">
                 @csrf
                 <div class="grid gap-3 sm:grid-cols-2">
                     <div><label class="ui-label">Plan name</label><input class="ui-input w-full" name="name" value="{{ old('name') }}" placeholder="e.g. Rcentz Elite" required></div>
@@ -79,9 +79,9 @@
                             <p class="mt-1 text-[10px] text-muted-foreground">{{ $plan->slug }} · {{ strtoupper($plan->currency) }} {{ number_format((float)$plan->price, 2) }} / {{ $plan->billing_interval }} · {{ $plan->memberships_count }} membership records</p>
                         </div>
                         <div class="flex gap-2">
-                            <form method="POST" action="{{ route('admin.vip.plans.toggle', $plan) }}">@csrf @method('PATCH')<button class="ui-btn ui-btn-secondary !h-8">{{ $plan->is_active ? 'Deactivate' : 'Activate' }}</button></form>
+                            <form method="POST" action="{{ route('admin.memberships.vip.plans.toggle', $plan) }}">@csrf @method('PATCH')<button class="ui-btn ui-btn-secondary !h-8">{{ $plan->is_active ? 'Deactivate' : 'Activate' }}</button></form>
                             @if($plan->memberships_count === 0)
-                                <form method="POST" action="{{ route('admin.vip.plans.destroy', $plan) }}" onsubmit="return confirm('Delete this unused VIP plan?');">@csrf @method('DELETE')<button class="ui-btn !h-8 border border-red-500/25 bg-red-500/10 text-red-600">Delete</button></form>
+                                <form method="POST" action="{{ route('admin.memberships.vip.plans.destroy', $plan) }}" onsubmit="return confirm('Delete this unused VIP plan?');">@csrf @method('DELETE')<button class="ui-btn !h-8 border border-red-500/25 bg-red-500/10 text-red-600">Delete</button></form>
                             @endif
                         </div>
                     </div>
@@ -92,7 +92,7 @@
                             <span class="flex items-center gap-2 text-[10px] text-muted-foreground">{{ $plan->entitlements->count() }} entitlements <i data-lucide="chevron-down" class="h-4 w-4 transition-transform group-open:rotate-180"></i></span>
                         </summary>
                         <div class="grid gap-5 border-t border-border p-5 2xl:grid-cols-[.9fr_1.1fr]">
-                            <form method="POST" action="{{ route('admin.vip.plans.update', $plan) }}" class="space-y-3">
+                            <form method="POST" action="{{ route('admin.memberships.vip.plans.update', $plan) }}" class="space-y-3">
                                 @csrf @method('PATCH')
                                 <p class="ui-kicker">Commercial terms</p>
                                 <div class="grid gap-3 sm:grid-cols-2">
@@ -122,20 +122,20 @@
                                                     <span class="text-[9px] {{ $entitlement->enabled ? 'text-emerald-600' : 'text-muted-foreground' }}">{{ $entitlement->enabled ? 'Enabled' : 'Disabled' }}</span>
                                                 </div>
                                             </summary>
-                                            <form method="POST" action="{{ route('admin.vip.entitlements.update', [$plan, $entitlement]) }}" class="mt-4 space-y-3">@csrf @method('PATCH')
+                                            <form method="POST" action="{{ route('admin.memberships.vip.entitlements.update', [$plan, $entitlement]) }}" class="mt-4 space-y-3">@csrf @method('PATCH')
                                                 <div class="grid gap-3 sm:grid-cols-2"><div><label class="ui-label">Key</label><input class="ui-input w-full" name="key" value="{{ $entitlement->key }}" required></div><div><label class="ui-label">Label</label><input class="ui-input w-full" name="label" value="{{ $entitlement->label }}" required></div></div>
                                                 <div><label class="ui-label">Description</label><textarea class="ui-input w-full" name="description" rows="2">{{ $entitlement->description }}</textarea></div>
                                                 <div><label class="ui-label">Value JSON (optional)</label><textarea class="ui-input w-full font-mono text-xs" name="value_json" rows="2">{{ $entitlement->value === null ? '' : json_encode($entitlement->value, JSON_UNESCAPED_SLASHES) }}</textarea></div>
                                                 <div class="flex flex-wrap items-center justify-between gap-2"><label class="flex items-center gap-2 text-xs"><input type="checkbox" name="enabled" value="1" @checked($entitlement->enabled)><span>Enabled</span></label><button class="ui-btn ui-btn-secondary !h-8">Save entitlement</button></div>
                                             </form>
-                                            <form method="POST" action="{{ route('admin.vip.entitlements.destroy', [$plan, $entitlement]) }}" class="mt-2 flex justify-end" onsubmit="return confirm('Remove this entitlement?');">@csrf @method('DELETE')<button class="ui-btn !h-8 border border-red-500/25 bg-red-500/10 text-red-600">Remove</button></form>
+                                            <form method="POST" action="{{ route('admin.memberships.vip.entitlements.destroy', [$plan, $entitlement]) }}" class="mt-2 flex justify-end" onsubmit="return confirm('Remove this entitlement?');">@csrf @method('DELETE')<button class="ui-btn !h-8 border border-red-500/25 bg-red-500/10 text-red-600">Remove</button></form>
                                         </details>
                                     @empty
                                         <div class="rounded-xl border border-dashed border-border p-4 text-xs text-muted-foreground">No entitlements yet. The plan currently grants no VIP-specific capabilities.</div>
                                     @endforelse
                                 </div>
 
-                                <form method="POST" action="{{ route('admin.vip.entitlements.store', $plan) }}" class="mt-4 rounded-xl border border-border p-4">@csrf
+                                <form method="POST" action="{{ route('admin.memberships.vip.entitlements.store', $plan) }}" class="mt-4 rounded-xl border border-border p-4">@csrf
                                     <p class="text-xs font-semibold">Add entitlement</p>
                                     <div class="mt-3 grid gap-3 sm:grid-cols-2"><div><label class="ui-label">Feature key</label><input class="ui-input w-full" name="key" placeholder="signals.premium" required></div><div><label class="ui-label">Label</label><input class="ui-input w-full" name="label" placeholder="Premium signals" required></div></div>
                                     <div class="mt-3"><label class="ui-label">Description</label><input class="ui-input w-full" name="description" placeholder="What this entitlement unlocks"></div>

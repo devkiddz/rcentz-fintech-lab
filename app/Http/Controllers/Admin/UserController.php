@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\VipAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
@@ -13,9 +14,9 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(VipAccessService $vipAccess)
     {
-        $users = User::with(['purchases', 'wallet', 'investmentHoldings.investmentPlan', 'stockHoldings.stock', 'wallet.transactions'])
+        $users = User::with(['purchases', 'wallet', 'investmentHoldings.investmentPlan', 'stockHoldings.stock', 'wallet.transactions', 'vipMemberships.plan.entitlements'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
         
@@ -30,8 +31,11 @@ class UserController extends Controller
         
         // Calculate total stock value
         $totalStockValue = \App\Models\StockHolding::sum('current_value');
+        $vipMemberships = $users->getCollection()->mapWithKeys(
+            fn (User $customer) => [$customer->id => $vipAccess->statusMembership($customer)]
+        );
         
-        return view('admin.users.index', compact('users', 'totalRevenue', 'totalWalletBalance', 'totalInvestmentValue', 'totalStockValue'));
+        return view('admin.users.index', compact('users', 'totalRevenue', 'totalWalletBalance', 'totalInvestmentValue', 'totalStockValue', 'vipMemberships'));
     }
 
     /**
@@ -95,7 +99,7 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(User $user)
+    public function show(User $user, VipAccessService $vipAccess)
     {
         $user->load([
             'purchases.car', 
@@ -103,15 +107,18 @@ class UserController extends Controller
             'investmentHoldings.investmentPlan',
             'stockHoldings.stock',
             'investmentTransactions.investmentPlan',
-            'stockTransactions.stock'
+            'stockTransactions.stock',
+            'vipMemberships.plan.entitlements'
         ]);
         
         $totalSpent = $user->purchases()->where('status', 'completed')->sum('amount');
         $totalInvestmentValue = $user->investmentHoldings->sum('current_value');
         $totalStockValue = $user->stockHoldings->sum('current_value');
         $walletBalance = $user->wallet ? $user->wallet->balance : 0;
+        $vipMembership = $vipAccess->statusMembership($user);
+        $vipEntitlements = $vipAccess->entitlements($user);
         
-        return view('admin.users.show', compact('user', 'totalSpent', 'totalInvestmentValue', 'totalStockValue', 'walletBalance'));
+        return view('admin.users.show', compact('user', 'totalSpent', 'totalInvestmentValue', 'totalStockValue', 'walletBalance', 'vipMembership', 'vipEntitlements'));
     }
 
     /**

@@ -11,6 +11,20 @@ class VipAccessService
 {
     public function activeMembership(User $user, $at = null): ?VipMembership
     {
+        if ($at === null && $user->relationLoaded('vipMemberships')) {
+            return $user->vipMemberships
+                ->filter(fn (VipMembership $membership) =>
+                    $membership->plan?->is_active && $membership->is_active
+                )
+                ->sort(function (VipMembership $a, VipMembership $b) {
+                    $aStart = $a->starts_at?->timestamp ?? 0;
+                    $bStart = $b->starts_at?->timestamp ?? 0;
+
+                    return ($bStart <=> $aStart) ?: ($b->id <=> $a->id);
+                })
+                ->first();
+        }
+
         return VipMembership::query()
             ->with(['plan.entitlements'])
             ->where('user_id', $user->id)
@@ -19,6 +33,24 @@ class VipAccessService
             ->latest('starts_at')
             ->latest('id')
             ->first();
+    }
+
+    public function latestMembership(User $user): ?VipMembership
+    {
+        if ($user->relationLoaded('vipMemberships')) {
+            return $user->vipMemberships->sortByDesc('id')->first();
+        }
+
+        return VipMembership::query()
+            ->with(['plan.entitlements'])
+            ->where('user_id', $user->id)
+            ->latest('id')
+            ->first();
+    }
+
+    public function statusMembership(User $user): ?VipMembership
+    {
+        return $this->activeMembership($user) ?? $this->latestMembership($user);
     }
 
     public function isVip(User $user, $at = null): bool

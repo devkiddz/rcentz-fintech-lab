@@ -6,7 +6,7 @@
             <h1 class="ui-heading">Customer VIP Lifecycle</h1>
             <p class="ui-lead max-w-3xl">Assign plans, activate memberships and close membership access without changing the customer record itself.</p>
         </div>
-        <div class="ui-header-actions"><a href="{{ route('admin.vip.index') }}" class="ui-btn ui-btn-secondary">VIP plans</a></div>
+        <div class="ui-header-actions"><a href="{{ route('admin.memberships.vip.index') }}" class="ui-btn ui-btn-secondary">VIP plans</a></div>
     </section>
 
     @if(session('success'))<div class="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-600">{{ session('success') }}</div>@endif
@@ -27,7 +27,7 @@
             @if($plans->isEmpty())
                 <div class="mt-4 rounded-xl border border-dashed border-border p-4 text-xs text-muted-foreground">Create a VIP plan before assigning customer memberships.</div>
             @else
-                <form method="POST" action="{{ route('admin.vip.memberships.store') }}" class="mt-5 space-y-4">@csrf
+                <form method="POST" action="{{ route('admin.memberships.vip.memberships.store') }}" class="mt-5 space-y-4">@csrf
                     <div><label class="ui-label">Customer</label><select class="ui-input w-full" name="user_id" required><option value="">Select customer</option>@foreach($users as $user)<option value="{{ $user->id }}" @selected((string)old('user_id') === (string)$user->id)>{{ $user->name }} · {{ $user->email }}</option>@endforeach</select></div>
                     <div><label class="ui-label">VIP plan</label><select class="ui-input w-full" name="vip_plan_id" required><option value="">Select plan</option>@foreach($plans as $plan)<option value="{{ $plan->id }}" @selected((string)old('vip_plan_id') === (string)$plan->id)>{{ $plan->name }}{{ $plan->is_active ? '' : ' · inactive' }}</option>@endforeach</select></div>
                     <div class="grid gap-3 sm:grid-cols-2"><div><label class="ui-label">Price paid</label><input class="ui-input w-full" name="price_paid" type="number" min="0" step="0.01" value="{{ old('price_paid') }}" placeholder="Defaults to plan price"></div><div><label class="ui-label">Currency</label><input class="ui-input w-full" name="currency" maxlength="3" value="{{ old('currency') }}" placeholder="Defaults to plan currency"></div></div>
@@ -43,7 +43,7 @@
                 <input class="ui-input w-full" name="search" value="{{ request('search') }}" placeholder="Customer, email or reference">
                 <select class="ui-input w-full" name="status"><option value="">All statuses</option>@foreach(['pending','active','paused','cancelled','expired'] as $status)<option value="{{ $status }}" @selected(request('status') === $status)>{{ ucfirst($status) }}</option>@endforeach</select>
                 <select class="ui-input w-full" name="plan"><option value="">All plans</option>@foreach($plans as $plan)<option value="{{ $plan->id }}" @selected((string)request('plan') === (string)$plan->id)>{{ $plan->name }}</option>@endforeach</select>
-                <div class="flex gap-2"><button class="ui-btn ui-btn-primary">Filter</button><a class="ui-btn ui-btn-secondary" href="{{ route('admin.vip.memberships') }}">Clear</a></div>
+                <div class="flex gap-2"><button class="ui-btn ui-btn-primary">Filter</button><a class="ui-btn ui-btn-secondary" href="{{ route('admin.memberships.vip.memberships') }}">Clear</a></div>
             </form>
 
             <section class="ui-panel overflow-hidden">
@@ -65,11 +65,11 @@
                                     <td class="font-mono text-[9px] text-muted-foreground">{{ $membership->reference ?? '—' }}</td>
                                     <td class="px-4 py-3"><div class="flex justify-end gap-2">
                                         @if($membership->status === 'pending' || $membership->status === 'paused')
-                                            <form method="POST" action="{{ route('admin.vip.memberships.activate', $membership) }}">@csrf @method('PATCH')<button class="ui-btn ui-btn-primary !h-8">Activate</button></form>
+                                            <form method="POST" action="{{ route('admin.memberships.vip.memberships.activate', $membership) }}">@csrf @method('PATCH')<button class="ui-btn ui-btn-primary !h-8">Activate</button></form>
                                         @endif
                                         @if(!in_array($membership->status, ['cancelled','expired'], true))
-                                            <form method="POST" action="{{ route('admin.vip.memberships.expire', $membership) }}" onsubmit="return confirm('Expire this VIP membership now?');">@csrf @method('PATCH')<button class="ui-btn ui-btn-secondary !h-8">Expire</button></form>
-                                            <form method="POST" action="{{ route('admin.vip.memberships.cancel', $membership) }}" onsubmit="return confirm('Cancel this VIP membership?');">@csrf @method('PATCH')<button class="ui-btn !h-8 border border-red-500/25 bg-red-500/10 text-red-600">Cancel</button></form>
+                                            <form method="POST" action="{{ route('admin.memberships.vip.memberships.expire', $membership) }}" onsubmit="return confirm('Expire this VIP membership now?');">@csrf @method('PATCH')<button class="ui-btn ui-btn-secondary !h-8">Expire</button></form>
+                                            <form method="POST" action="{{ route('admin.memberships.vip.memberships.cancel', $membership) }}" onsubmit="return confirm('Cancel this VIP membership?');">@csrf @method('PATCH')<button class="ui-btn !h-8 border border-red-500/25 bg-red-500/10 text-red-600">Cancel</button></form>
                                         @endif
                                     </div></td>
                                 </tr>

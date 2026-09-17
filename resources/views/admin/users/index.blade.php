@@ -84,6 +84,10 @@
                             $stockValue = (float) $user->stockHoldings->sum('current_value');
                             $walletValue = (float) optional($user->wallet)->balance;
                             $initials = collect(explode(' ', trim($user->name)))->filter()->take(2)->map(fn($part) => strtoupper(substr($part,0,1)))->implode('');
+                            $vipMembership = $vipMemberships->get($user->id);
+                            $vipDisplayStatus = $vipMembership
+                                ? ($vipMembership->status === 'active' && ! $vipMembership->is_active ? 'expired' : $vipMembership->status)
+                                : null;
                         @endphp
 
                         <article
@@ -109,6 +113,11 @@
                                                 <h3 class="truncate text-sm font-semibold text-foreground">{{ $user->name }}</h3>
                                                 @if($user->is_admin)
                                                     <span class="rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-0.5 text-[9px] font-semibold text-violet-600">ADMIN</span>
+                                                @endif
+                                                @if($vipMembership)
+                                                    <span class="rounded-full border px-2 py-0.5 text-[9px] font-semibold {{ $vipDisplayStatus === 'active' ? 'border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'border-border bg-muted text-muted-foreground' }}">
+                                                        {{ $vipMembership->plan?->name ?? 'VIP' }} · {{ strtoupper($vipDisplayStatus) }}
+                                                    </span>
                                                 @endif
                                             </div>
                                             <p class="mt-0.5 truncate text-xs text-muted-foreground">{{ $user->email }}</p>
@@ -187,6 +196,7 @@
                                 @if(!$user->is_admin)
                                     <a href="{{ route('admin.users.alerts.index',$user) }}" class="ui-btn ui-btn-secondary ui-btn-sm"><i data-lucide="megaphone" class="h-3.5 w-3.5"></i>Alert</a>
                                     <a href="{{ route('admin.withdrawal-token-requests.index',['user'=>$user->id]) }}" class="ui-btn ui-btn-secondary ui-btn-sm"><i data-lucide="landmark" class="h-3.5 w-3.5"></i>Withdrawals</a>
+                                    <a href="{{ route('admin.memberships.vip.memberships',['search'=>$user->email]) }}" class="ui-btn ui-btn-secondary ui-btn-sm"><i data-lucide="crown" class="h-3.5 w-3.5"></i>Manage VIP</a>
 
                                     @if(!$user->email_verified_at)
                                         <form method="POST" action="{{ route('admin.users.verify-email',$user) }}">@csrf<button class="ui-btn ui-btn-secondary ui-btn-sm"><i data-lucide="badge-check" class="h-3.5 w-3.5"></i>Verify email</button></form>

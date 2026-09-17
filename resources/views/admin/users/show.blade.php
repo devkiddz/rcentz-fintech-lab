@@ -16,6 +16,13 @@
                         Login as User
                     </a>
                 @endif
+                @if(!$user->is_admin)
+                    <a href="{{ route('admin.memberships.vip.memberships', ['search' => $user->email]) }}"
+                       class="inline-flex items-center px-4 py-2 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-sm font-medium rounded-lg hover:bg-amber-500/15 transition-all duration-200">
+                        <i data-lucide="crown" class="w-4 h-4 mr-2"></i>
+                        Manage VIP
+                    </a>
+                @endif
                 <a href="{{ route('admin.users.account-operations', $user) }}"
                    class="inline-flex items-center px-4 py-2 bg-muted text-foreground text-sm font-medium rounded-lg hover:bg-muted/80 transition-all duration-200">
                     Account Operations
@@ -104,6 +111,36 @@
                                 <div class="text-sm text-foreground">{{ $user->updated_at->format('M d, Y') }}</div>
                                 <div class="text-xs text-muted-foreground dark:text-gray-300">{{ $user->updated_at->diffForHumans() }}</div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- VIP Membership -->
+                    @php
+                        $vipDisplayStatus = $vipMembership
+                            ? ($vipMembership->status === 'active' && ! $vipMembership->is_active ? 'expired' : $vipMembership->status)
+                            : null;
+                    @endphp
+                    <div class="bg-card border border-border overflow-hidden rounded-lg">
+                        <div class="px-4 py-3 border-b border-border bg-muted/40 flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2"><i data-lucide="crown" class="h-4 w-4 text-amber-500"></i><h3 class="text-base font-medium text-foreground">VIP Membership</h3></div>
+                            @if(!$user->is_admin)<a href="{{ route('admin.memberships.vip.memberships', ['search' => $user->email]) }}" class="text-xs font-medium text-amber-600 dark:text-amber-400">Manage</a>@endif
+                        </div>
+                        <div class="p-4">
+                            @if($vipMembership)
+                                <div class="flex items-start justify-between gap-3">
+                                    <div><p class="text-sm font-semibold text-foreground">{{ $vipMembership->plan?->name ?? 'VIP Membership' }}</p><p class="mt-0.5 text-xs text-muted-foreground">{{ $vipMembership->reference ?: 'No reference' }}</p></div>
+                                    <span class="rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase {{ $vipDisplayStatus === 'active' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground' }}">{{ $vipDisplayStatus }}</span>
+                                </div>
+                                <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
+                                    <div class="rounded-lg border border-border bg-muted/20 p-3"><p class="text-muted-foreground">Starts</p><p class="mt-1 font-medium text-foreground">{{ $vipMembership->starts_at?->format('M j, Y') ?? 'Not started' }}</p></div>
+                                    <div class="rounded-lg border border-border bg-muted/20 p-3"><p class="text-muted-foreground">Ends</p><p class="mt-1 font-medium text-foreground">{{ $vipMembership->ends_at?->format('M j, Y') ?? 'No expiry' }}</p></div>
+                                </div>
+                                @if($vipMembership->is_active)
+                                    <div class="mt-4"><p class="text-xs font-medium text-muted-foreground">Active entitlements</p><div class="mt-2 flex flex-wrap gap-1.5">@forelse($vipEntitlements as $entitlement)<span class="rounded-full border border-border bg-muted/20 px-2 py-1 text-[10px] text-foreground">{{ $entitlement->label }}</span>@empty<span class="text-xs text-muted-foreground">No enabled entitlements.</span>@endforelse</div></div>
+                                @endif
+                            @else
+                                <p class="text-sm text-muted-foreground">This customer has no VIP membership history.</p>
+                            @endif
                         </div>
                     </div>
 
