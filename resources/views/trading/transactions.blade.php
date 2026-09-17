@@ -3,55 +3,47 @@
         Stock Transactions
     </x-slot>
 
-    <div class="max-w-7xl mx-auto">
-        <!-- Enhanced Header -->
-        <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
-            <!-- Background Pattern -->
-            <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-48 h-48 bg-card rounded-full -translate-y-24 translate-x-24"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 bg-card rounded-full translate-y-12 -translate-x-12"></div>
+    <div class="ui-page max-w-7xl">
+        <section class="ui-page-header">
+            <div>
+                <p class="ui-kicker">Trading · Activity</p>
+                <h1 class="ui-heading">Trade activity</h1>
+                <p class="ui-lead">Review your stock trades, filter the ledger, and move back into the market when you need to.</p>
             </div>
-            
-            <div class="relative z-10">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                    <div class="mb-4 lg:mb-0 lg:flex-1">
-                        <h1 class="text-xl font-light mb-1">Stock Transactions</h1>
-                        <p class="text-tesla-100 dark:text-gray-300 text-sm">Track your stock trading activity</p>
-                    </div>
-                    
-                    <!-- Enhanced Stats Card -->
-                    <div class="bg-card bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-80">
-                        <div class="flex items-center justify-between mb-3">
-                            <div>
-                                <p class="text-xs text-tesla-100 dark:text-gray-300 mb-1">Total Transactions</p>
-                                <p class="text-lg font-light">{{ $transactions->total() }}</p>
-                            </div>
-                            <div class="w-10 h-10 flex items-center justify-center">
-                                <i data-lucide="activity" class="w-5 h-5 text-white"></i>
-                            </div>
-                        </div>
-                        <div class="flex space-x-4 text-xs">
-                            <div class="flex-1 text-center">
-                                <p class="text-tesla-100 dark:text-gray-300">Buys</p>
-                                <p class="text-white font-medium">{{ $transactions->where('type', 'buy')->count() }}</p>
-                            </div>
-                            <div class="flex-1 text-center">
-                                <p class="text-tesla-100 dark:text-gray-300">Sells</p>
-                                <p class="text-white font-medium">{{ $transactions->where('type', 'sell')->count() }}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="ui-header-actions">
+                <a href="{{ route('trading.positions.index') }}" class="ui-btn ui-btn-secondary">
+                    <i data-lucide="briefcase-business" class="h-4 w-4"></i>
+                    Positions
+                </a>
+                <a href="{{ route('stocks.index') }}" class="ui-btn ui-btn-primary">
+                    <i data-lucide="chart-no-axes-combined" class="h-4 w-4"></i>
+                    Trade stocks
+                </a>
             </div>
-        </div>
+        </section>
+
+        <section class="ui-metric-grid mb-5 sm:grid-cols-3">
+            <article class="ui-metric-card">
+                <p class="ui-label">Total records</p>
+                <p class="mt-2 text-xl font-semibold text-foreground">{{ number_format($transactions->total()) }}</p>
+            </article>
+            <article class="ui-metric-card">
+                <p class="ui-label">Buys on this page</p>
+                <p class="mt-2 text-xl font-semibold text-foreground">{{ $transactions->where('type', 'buy')->count() }}</p>
+            </article>
+            <article class="ui-metric-card">
+                <p class="ui-label">Sells on this page</p>
+                <p class="mt-2 text-xl font-semibold text-foreground">{{ $transactions->where('type', 'sell')->count() }}</p>
+            </article>
+        </section>
 
         <!-- Filters -->
-        <div class="bg-card rounded-xl p-4 shadow-sm border border-gray-100 mb-6">
+        <div class="ui-filter-panel mb-5">
             <form method="GET" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <!-- Type Filter -->
                 <div>
                     <label for="type" class="block text-xs font-medium text-foreground mb-1">Type</label>
-                    <select id="type" name="type" class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
+                    <select id="type" name="type" class="ui-input">
                         <option value="">All Types</option>
                         <option value="buy" {{ request('type') == 'buy' ? 'selected' : '' }}>Buy</option>
                         <option value="sell" {{ request('type') == 'sell' ? 'selected' : '' }}>Sell</option>
@@ -61,7 +53,7 @@
                 <!-- Status Filter -->
                 <div>
                     <label for="status" class="block text-xs font-medium text-foreground mb-1">Status</label>
-                    <select id="status" name="status" class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
+                    <select id="status" name="status" class="ui-input">
                         <option value="">All Status</option>
                         <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
                         <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
@@ -72,16 +64,16 @@
                 <!-- Date Range -->
                 <div>
                     <label for="date_from" class="block text-xs font-medium text-foreground mb-1">From Date</label>
-                    <input type="date" id="date_from" name="date_from" value="{{ request('date_from') }}" class="w-full px-3 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
+                    <input type="date" id="date_from" name="date_from" value="{{ request('date_from') }}" class="ui-input">
                 </div>
 
                 <!-- Actions -->
                 <div class="flex items-end space-x-2">
-                    <button type="submit" class="px-4 py-2 bg-foreground text-background text-xs font-medium rounded-lg hover:opacity-90 transition-colors duration-200">
+                    <button type="submit" class="ui-btn ui-btn-primary">
                         <i data-lucide="filter" class="w-3 h-3 mr-1"></i>
                         Filter
                     </button>
-                    <a href="{{ route('trading.transactions') }}" class="px-4 py-2 border border-border text-foreground text-xs font-medium rounded-lg hover:bg-muted/30 transition-colors duration-200">
+                    <a href="{{ route('trading.transactions') }}" class="ui-btn ui-btn-secondary">
                         <i data-lucide="refresh-cw" class="w-3 h-3 mr-1"></i>
                         Clear
                     </a>
@@ -90,12 +82,12 @@
         </div>
 
         <!-- Transactions Table -->
-        <div class="bg-card rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="ui-table-shell overflow-hidden">
             <div class="px-6 py-4 border-b border-border">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-lg font-light text-foreground mb-1">Stock Transactions</h3>
-                        <p class="text-xs text-muted-foreground dark:text-gray-300">Detailed history of your stock trading activity</p>
+                        <h3 class="text-lg font-semibold text-foreground mb-1">Transactions</h3>
+                        <p class="text-xs text-muted-foreground ">Detailed history of your stock trading activity</p>
                     </div>
                 </div>
             </div>
@@ -114,12 +106,12 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
                             </tr>
                         </thead>
-                        <tbody class="bg-card divide-y divide-gray-100 dark:divide-tesla-600">
+                        <tbody class="divide-y divide-border">
                             @foreach($transactions as $transaction)
                             <tr class="hover:bg-muted/30 transition-colors duration-200">
                                 <td class="px-6 py-4">
                                     <div class="text-sm text-foreground">{{ $transaction->created_at->format('M j, Y') }}</div>
-                                    <div class="text-xs text-muted-foreground dark:text-gray-300">{{ $transaction->created_at->format('g:i A') }}</div>
+                                    <div class="text-xs text-muted-foreground ">{{ $transaction->created_at->format('g:i A') }}</div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
@@ -134,7 +126,7 @@
                                         </div>
                                         <div class="ml-3">
                                             <div class="text-sm font-medium text-foreground">{{ $transaction->stock->symbol }}</div>
-                                            <div class="text-xs text-muted-foreground dark:text-gray-300">{{ $transaction->stock->company_name }}</div>
+                                            <div class="text-xs text-muted-foreground ">{{ $transaction->stock->company_name }}</div>
                                         </div>
                                     </div>
                                 </td>
@@ -152,7 +144,7 @@
                                 <td class="px-6 py-4">
                                     <div class="text-sm text-foreground">{{ currency_symbol() }}{{ number_format($transaction->total_amount, 2) }}</div>
                                     @if($transaction->fee > 0)
-                                    <div class="text-xs text-muted-foreground dark:text-gray-300">Fee: {{ currency_symbol() }}{{ number_format($transaction->fee, 2) }}</div>
+                                    <div class="text-xs text-muted-foreground ">Fee: {{ currency_symbol() }}{{ number_format($transaction->fee, 2) }}</div>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4">
@@ -173,9 +165,9 @@
             @else
                 <div class="text-center py-12">
                     <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="activity" class="w-8 h-8 text-gray-400 dark:text-gray-300"></i>
+                        <i data-lucide="activity" class="w-8 h-8 text-muted-foreground "></i>
                     </div>
-                    <h3 class="text-lg font-light text-foreground mb-2">No stock transactions yet</h3>
+                    <h3 class="text-lg font-semibold text-foreground mb-2">No stock transactions yet</h3>
                     <p class="text-muted-foreground text-sm mb-4">Start trading stocks to see your transaction history</p>
                     <a href="{{ route('stocks.index') }}" class="inline-flex items-center px-4 py-2 bg-foreground text-background text-sm font-medium rounded-lg hover:opacity-90 transition-colors duration-200">
                         <i data-lucide="bar-chart-3" class="w-4 h-4 mr-2"></i>
@@ -189,11 +181,11 @@
         @if($transactions->count() > 0)
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
             <!-- Total Buys -->
-            <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
+            <div class="ui-panel p-4">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Total Buys</p>
-                        <p class="text-lg font-light text-foreground">{{ $transactions->where('type', 'buy')->count() }}</p>
+                        <p class="text-xs text-muted-foreground  mb-1">Total Buys</p>
+                        <p class="text-lg font-semibold text-foreground">{{ $transactions->where('type', 'buy')->count() }}</p>
                     </div>
                     <div class="w-8 h-8 flex items-center justify-center">
                         <i data-lucide="plus" class="w-4 h-4 text-green-600"></i>
@@ -202,11 +194,11 @@
             </div>
 
             <!-- Total Sells -->
-            <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
+            <div class="ui-panel p-4">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Total Sells</p>
-                        <p class="text-lg font-light text-foreground">{{ $transactions->where('type', 'sell')->count() }}</p>
+                        <p class="text-xs text-muted-foreground  mb-1">Total Sells</p>
+                        <p class="text-lg font-semibold text-foreground">{{ $transactions->where('type', 'sell')->count() }}</p>
                     </div>
                     <div class="w-8 h-8 flex items-center justify-center">
                         <i data-lucide="minus" class="w-4 h-4 text-red-600"></i>
@@ -215,24 +207,24 @@
             </div>
 
             <!-- Total Amount -->
-            <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
+            <div class="ui-panel p-4">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Total Amount</p>
-                        <p class="text-lg font-light text-foreground">{{ currency_symbol() }}{{ number_format($transactions->sum('total_amount'), 2) }}</p>
+                        <p class="text-xs text-muted-foreground  mb-1">Total Amount</p>
+                        <p class="text-lg font-semibold text-foreground">{{ currency_symbol() }}{{ number_format($transactions->sum('total_amount'), 2) }}</p>
                     </div>
                     <div class="w-8 h-8 flex items-center justify-center">
-                        <i data-lucide="dollar-sign" class="w-4 h-4 text-tesla-600"></i>
+                        <i data-lucide="dollar-sign" class="w-4 h-4 text-foreground"></i>
                     </div>
                 </div>
             </div>
 
             <!-- Total Fees -->
-            <div class="bg-card rounded-xl p-4 shadow-sm border border-border">
+            <div class="ui-panel p-4">
                 <div class="flex items-center justify-between mb-3">
                     <div>
-                        <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Total Fees</p>
-                        <p class="text-lg font-light text-foreground">{{ currency_symbol() }}{{ number_format($transactions->sum('fee'), 2) }}</p>
+                        <p class="text-xs text-muted-foreground  mb-1">Total Fees</p>
+                        <p class="text-lg font-semibold text-foreground">{{ currency_symbol() }}{{ number_format($transactions->sum('fee'), 2) }}</p>
                     </div>
                     <div class="w-8 h-8 flex items-center justify-center">
                         <i data-lucide="credit-card" class="w-4 h-4 text-muted-foreground"></i>

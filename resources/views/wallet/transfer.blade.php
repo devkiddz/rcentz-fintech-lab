@@ -1,5 +1,5 @@
 <x-user-layout>
-    <x-slot name="header">Transfer</x-slot>
+    <x-slot name="header">Send Money</x-slot>
 
     <div class="money-page space-y-5 sm:space-y-6">
         <section class="wallet-shell-card">
@@ -12,13 +12,13 @@
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-2 self-start sm:self-auto">
-                    <a href="{{ route('account.history') }}" class="ui-button-secondary">
+                    <a href="{{ route('money.activity') }}" class="ui-button-secondary">
                         <i data-lucide="history" class="h-4 w-4"></i>
                         History
                     </a>
-                    <a href="{{ route('wallet.index') }}" class="ui-button-secondary">
+                    <a href="{{ route('money.index') }}" class="ui-button-secondary">
                     <i data-lucide="arrow-left" class="h-4 w-4"></i>
-                        Wallet overview
+                        Money overview
                     </a>
                 </div>
             </div>
@@ -43,7 +43,7 @@
                         </div>
                     @endif
 
-                    <form method="POST" action="{{ route('wallet.process-transfer') }}" class="space-y-5">
+                    <form method="POST" action="{{ route('money.send.submit') }}" class="space-y-5">
                         @csrf
                         <div>
                             <label class="ui-label" for="recipient">Recipient email</label>
@@ -67,7 +67,7 @@
 
                         <div class="flex items-start gap-2.5 rounded-lg border border-border bg-muted/30 p-3 text-xs leading-5 text-muted-foreground">
                             <i data-lucide="shield-check" class="mt-0.5 h-4 w-4 shrink-0 text-foreground"></i>
-                            <p>Transfers settle atomically against available balance and are recorded in both the ledger and account history.</p>
+                            <p>Transfers use your available balance and appear in account activity immediately after completion.</p>
                         </div>
 
                         <div class="flex justify-end border-t border-border pt-5">
@@ -86,7 +86,7 @@
                         <h2 class="text-base font-semibold tracking-tight text-foreground">Recent transfers</h2>
                         <p class="mt-0.5 text-xs text-muted-foreground">Incoming and outgoing transfers.</p>
                     </div>
-                    <a href="{{ route('wallet.transactions') }}" class="ui-button-secondary !h-8 !px-2.5 !py-0 text-xs">View all</a>
+                    <a href="{{ route('money.activity') }}" class="ui-button-secondary !h-8 !px-2.5 !py-0 text-xs">View all</a>
                 </div>
 
                 <div>

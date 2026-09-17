@@ -3,7 +3,7 @@
         KYC Verification
     </x-slot>
 
-    <div class="max-w-7xl mx-auto">
+    <div class="ui-page max-w-6xl">
         <!-- Enhanced Header -->
         <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
             <!-- Background Pattern -->
@@ -85,7 +85,7 @@
 
         @if(!$kyc || ($kyc && $kyc->isRejected()))
         <!-- KYC Form -->
-        <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
+        <div class="ui-panel p-5 sm:p-6">
             <div class="mb-6">
                 <h2 class="text-lg font-light text-foreground mb-1">Identity Verification</h2>
                 <p class="text-sm text-muted-foreground dark:text-gray-300">Please provide your identification documents for verification</p>

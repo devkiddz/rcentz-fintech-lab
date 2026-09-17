@@ -1,16 +1,16 @@
 <x-user-layout>
-    <x-slot name="header">Transactions</x-slot>
+    <x-slot name="header">Activity</x-slot>
 
     <div class="ui-page max-w-[1440px]">
         <section class="ui-page-header">
             <div>
-                <p class="ui-kicker">Account ledger</p>
-                <h1 class="ui-heading">Transaction history</h1>
-                <p class="ui-lead">Credits, debits, investments, transfers and wallet activity from one ledger.</p>
+                <p class="ui-kicker">Money</p>
+                <h1 class="ui-heading">Money activity</h1>
+                <p class="ui-lead">Track deposits, withdrawals, transfers and other account movement in one place.</p>
             </div>
             <div class="ui-header-actions">
                 <a href="{{ route('account.history') }}" class="ui-btn ui-btn-secondary"><i data-lucide="history" class="h-4 w-4"></i>History</a>
-                <a href="{{ route('wallet.index') }}" class="ui-btn ui-btn-secondary">
+                <a href="{{ route('money.index') }}" class="ui-btn ui-btn-secondary">
                     <i data-lucide="wallet" class="h-4 w-4"></i>
                     Wallet
                 </a>
@@ -18,7 +18,7 @@
         </section>
 
         <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <a href="{{ route('wallet.index') }}" class="ui-metric-card group cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring/30">
+            <a href="{{ route('money.index') }}" class="ui-metric-card group cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring/30">
                 <div class="min-w-0 flex-1">
                     <p class="ui-label">Available balance</p>
                     <p class="mt-2 text-2xl font-semibold tracking-tight text-foreground">{{ format_currency($availableBalance) }}</p>
@@ -32,14 +32,14 @@
                     <p class="mt-1 text-xs text-muted-foreground">Cash + current holdings.</p>
                 </div>
             </a>
-            <a href="{{ route('wallet.transactions', ['direction' => 'credit']) }}" class="ui-metric-card group cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring/30">
+            <a href="{{ route('money.activity', ['direction' => 'credit']) }}" class="ui-metric-card group cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring/30">
                 <div class="min-w-0 flex-1">
                     <p class="ui-label">Completed credits</p>
                     <p class="mt-2 text-2xl font-semibold tracking-tight text-emerald-600 dark:text-emerald-400">+{{ format_currency($totalCredits) }}</p>
                     <p class="mt-1 text-xs text-muted-foreground">Incoming completed movement.</p>
                 </div>
             </a>
-            <a href="{{ route('wallet.transactions', ['direction' => 'debit']) }}" class="ui-metric-card group cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring/30">
+            <a href="{{ route('money.activity', ['direction' => 'debit']) }}" class="ui-metric-card group cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring/30">
                 <div class="min-w-0 flex-1">
                     <p class="ui-label">Completed debits</p>
                     <p class="mt-2 text-2xl font-semibold tracking-tight text-red-600 dark:text-red-400">-{{ format_currency($totalDebits) }}</p>
@@ -49,7 +49,7 @@
         </section>
 
         <section class="ui-filter-panel mt-4">
-            <form method="GET" action="{{ route('wallet.transactions') }}" class="ui-filter-form">
+            <form method="GET" action="{{ route('money.activity') }}" class="ui-filter-form">
                 <div class="ui-field">
                     <label for="direction" class="ui-label">Direction</label>
                     <select id="direction" name="direction" class="ui-input">
@@ -93,7 +93,7 @@
 
                 <div class="ui-filter-actions">
                     <button type="submit" class="ui-btn ui-btn-primary">Filter</button>
-                    <a href="{{ route('wallet.transactions') }}" class="ui-btn ui-btn-secondary">Reset</a>
+                    <a href="{{ route('money.activity') }}" class="ui-btn ui-btn-secondary">Reset</a>
                 </div>
             </form>
         </section>
@@ -111,7 +111,7 @@
                 <div class="ui-empty-state">
                     <div class="ui-empty-icon"><i data-lucide="receipt-text" class="h-5 w-5"></i></div>
                     <h3 class="font-medium text-foreground">No matching transactions</h3>
-                    <p class="mt-1 text-sm text-muted-foreground">Change the filters or begin using your wallet.</p>
+                    <p class="mt-1 text-sm text-muted-foreground">Change the filters or begin using your Money account.</p>
                 </div>
             @else
                 <div class="overflow-x-auto">

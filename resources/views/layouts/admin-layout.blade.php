@@ -114,7 +114,7 @@
 
             <a href="{{ route('admin.wallet-transactions.index') }}"
                class="flex flex-col items-center gap-1 py-1 text-[10px] {{ request()->routeIs('admin.wallet-transactions.*') ? 'text-foreground' : 'text-muted-foreground' }}">
-                <i data-lucide="wallet-cards" class="h-5 w-5"></i><span>Wallet</span>
+                <i data-lucide="wallet-cards" class="h-5 w-5"></i><span>Transactions</span>
             </a>
 
             <button type="button"

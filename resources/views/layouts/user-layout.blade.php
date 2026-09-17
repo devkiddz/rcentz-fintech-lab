@@ -113,9 +113,9 @@
                 <i data-lucide="target" class="h-5 w-5"></i><span>Positions</span>
             </a>
 
-            <a href="{{ route('wallet.index') }}"
-               class="flex flex-col items-center gap-1 py-1 text-[10px] {{ request()->routeIs('wallet.*') ? 'text-foreground' : 'text-muted-foreground' }}">
-                <i data-lucide="wallet" class="h-5 w-5"></i><span>Wallet</span>
+            <a href="{{ route('money.index') }}"
+               class="flex flex-col items-center gap-1 py-1 text-[10px] {{ request()->routeIs('money.*','wallet.*') ? 'text-foreground' : 'text-muted-foreground' }}">
+                <i data-lucide="wallet" class="h-5 w-5"></i><span>Money</span>
             </a>
 
             <button type="button" onclick="openSidebar()"

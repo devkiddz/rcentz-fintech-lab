@@ -949,3 +949,86 @@
         @apply transition-colors hover:bg-muted/30;
     }
 }
+
+/* RCENTZ PLATFORM UI SWEEP V5.29.UI.1
+   Compatibility layer for active Blade screens that pre-date the current
+   customer/admin workspace primitives. Kept deliberately scoped so public,
+   guest, email, PDF and installer surfaces retain their own visual language. */
+@layer components {
+    .customer-workspace main [class~="bg-tesla-50"],
+    .customer-workspace main [class~="dark:bg-tesla-800"],
+    .admin-workspace main [class~="bg-tesla-50"],
+    .admin-workspace main [class~="dark:bg-tesla-800"],
+    .customer-workspace main [class~="bg-gray-50"],
+    .admin-workspace main [class~="bg-gray-50"] {
+        background-color: hsl(var(--card)) !important;
+        color: hsl(var(--card-foreground)) !important;
+    }
+
+    .customer-workspace main [class~="bg-gradient-to-br"][class*="from-tesla-"],
+    .admin-workspace main [class~="bg-gradient-to-br"][class*="from-tesla-"] {
+        background-image: none !important;
+        background-color: hsl(var(--card)) !important;
+        color: hsl(var(--foreground)) !important;
+        border: 1px solid hsl(var(--border)) !important;
+        box-shadow: none !important;
+    }
+
+    .customer-workspace main [class~="bg-gradient-to-br"][class*="from-tesla-"] [class~="text-white"],
+    .admin-workspace main [class~="bg-gradient-to-br"][class*="from-tesla-"] [class~="text-white"] {
+        color: hsl(var(--foreground)) !important;
+    }
+
+    .customer-workspace main [class~="bg-gradient-to-br"][class*="from-tesla-"] [class~="text-tesla-100"],
+    .admin-workspace main [class~="bg-gradient-to-br"][class*="from-tesla-"] [class~="text-tesla-100"] {
+        color: hsl(var(--muted-foreground)) !important;
+    }
+
+    .customer-workspace main [class~="rounded-2xl"][class~="shadow-sm"],
+    .customer-workspace main [class~="rounded-xl"][class~="shadow-sm"],
+    .admin-workspace main [class~="rounded-2xl"][class~="shadow-sm"],
+    .admin-workspace main [class~="rounded-xl"][class~="shadow-sm"] {
+        border-radius: 0.75rem !important;
+        box-shadow: none !important;
+    }
+
+    .customer-workspace main [class~="shadow-xl"][class*="border"],
+    .admin-workspace main [class~="shadow-xl"][class*="border"] {
+        box-shadow: none !important;
+    }
+
+    .customer-workspace main [class~="font-light"],
+    .admin-workspace main [class~="font-light"] {
+        font-weight: 600 !important;
+    }
+
+    .customer-workspace main [class~="text-gray-900"],
+    .customer-workspace main [class~="dark:text-white"],
+    .admin-workspace main [class~="text-gray-900"],
+    .admin-workspace main [class~="dark:text-white"] {
+        color: hsl(var(--foreground)) !important;
+    }
+
+    .customer-workspace main [class~="text-gray-500"],
+    .customer-workspace main [class~="text-gray-600"],
+    .customer-workspace main [class~="dark:text-gray-300"],
+    .admin-workspace main [class~="text-gray-500"],
+    .admin-workspace main [class~="text-gray-600"],
+    .admin-workspace main [class~="dark:text-gray-300"] {
+        color: hsl(var(--muted-foreground)) !important;
+    }
+
+    .customer-workspace main [class~="border-gray-200"],
+    .customer-workspace main [class~="dark:border-gray-700"],
+    .admin-workspace main [class~="border-gray-200"],
+    .admin-workspace main [class~="dark:border-gray-700"] {
+        border-color: hsl(var(--border)) !important;
+    }
+
+    .customer-workspace main table thead[class*="bg-gray-"],
+    .admin-workspace main table thead[class*="bg-gray-"],
+    .customer-workspace main [class~="bg-gray-100"],
+    .admin-workspace main [class~="bg-gray-100"] {
+        background-color: hsl(var(--muted) / 0.45) !important;
+    }
+}

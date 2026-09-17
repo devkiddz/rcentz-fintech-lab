@@ -4,13 +4,13 @@
     <div class="app-page max-w-7xl mx-auto space-y-5 sm:space-y-6">
         <section class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-                <p class="app-eyebrow">Wallet & Finance</p>
+                <p class="app-eyebrow">Money</p>
                 <h1 class="app-title">Connected wallets</h1>
                 <p class="app-subtitle">Manage the external wallet addresses associated with your account.</p>
             </div>
-            <a href="{{ route('wallet.index') }}" class="ui-button-secondary self-start sm:self-auto">
+            <a href="{{ route('money.index') }}" class="ui-button-secondary self-start sm:self-auto">
                 <i data-lucide="arrow-left" class="h-4 w-4"></i>
-                Wallet overview
+                Money overview
             </a>
         </section>
 
@@ -33,7 +33,7 @@
                         </div>
                     @endif
 
-                    <form method="POST" action="{{ route('wallet.connections.store') }}" class="space-y-5">
+                    <form method="POST" action="{{ route('money.connections.store') }}" class="space-y-5">
                         @csrf
 
                         <div class="grid gap-4 sm:grid-cols-2">
@@ -112,7 +112,7 @@
 
                                 <div class="mt-4 flex items-center gap-2 border-t border-border pt-3">
                                     @unless($linked->is_primary)
-                                        <form method="POST" action="{{ route('wallet.connections.primary', $linked) }}">
+                                        <form method="POST" action="{{ route('money.connections.primary', $linked) }}">
                                             @csrf
                                             @method('PATCH')
                                             <button class="inline-flex items-center gap-1.5 text-xs font-medium text-foreground hover:text-primary" type="submit">
@@ -122,7 +122,7 @@
                                         </form>
                                     @endunless
 
-                                    <form method="POST" action="{{ route('wallet.connections.destroy', $linked) }}" class="ml-auto">
+                                    <form method="POST" action="{{ route('money.connections.destroy', $linked) }}" class="ml-auto">
                                         @csrf
                                         @method('DELETE')
                                         <button class="inline-flex items-center gap-1.5 text-xs font-medium text-red-600 hover:text-red-500" type="submit">

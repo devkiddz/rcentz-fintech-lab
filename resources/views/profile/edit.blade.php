@@ -3,7 +3,7 @@
         Profile Settings
     </x-slot>
 
-    <div class="max-w-7xl mx-auto">
+    <div class="ui-page max-w-6xl">
         <!-- Enhanced Header -->
         <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
             <!-- Background Pattern -->
@@ -42,7 +42,7 @@
         </div>
 
         <!-- Profile Form -->
-        <div class="bg-card rounded-xl p-6 shadow-sm border border-border">
+        <div class="ui-panel p-5 sm:p-6">
             <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
                 @csrf
                 @method('patch')

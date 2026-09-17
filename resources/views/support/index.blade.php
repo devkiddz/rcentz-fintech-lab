@@ -1,104 +1,112 @@
 <x-user-layout>
-    <x-slot name="header">
-        Support
-    </x-slot>
+    <x-slot name="header">Support</x-slot>
 
-    <div class="max-w-7xl mx-auto">
-        <!-- Hero / Intro -->
-        <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
-            <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-48 h-48 bg-card rounded-full -translate-y-24 translate-x-24"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 bg-card rounded-full translate-y-12 -translate-x-12"></div>
+    <div class="ui-page max-w-6xl">
+        <section class="ui-page-header">
+            <div>
+                <p class="ui-kicker">Help & support</p>
+                <h1 class="ui-heading">How can we help?</h1>
+                <p class="ui-lead">Send a support request for your account, Money, investments, trading, or another product question.</p>
             </div>
-            <div class="relative z-10">
-                <h1 class="text-xl font-light mb-1">How can we help?</h1>
-                <p class="text-tesla-100 dark:text-gray-300 text-sm">Get in touch with our team for assistance with your account, wallet, investments, or technical issues.</p>
+            <div class="ui-header-actions">
+                <a href="{{ route('dashboard') }}" class="ui-btn ui-btn-secondary">
+                    <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
+                    Overview
+                </a>
+                <a href="{{ route('account.history') }}" class="ui-btn ui-btn-secondary">
+                    <i data-lucide="history" class="h-4 w-4"></i>
+                    Audit history
+                </a>
             </div>
-        </div>
+        </section>
 
-        <!-- Support Form -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2 bg-tesla-50 dark:bg-tesla-800 rounded-2xl p-6 border border-border shadow-sm">
-                <form action="{{ route('support.store') }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+        <section class="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(280px,.65fr)]">
+            <article class="ui-panel overflow-hidden">
+                <div class="border-b border-border px-5 py-4 sm:px-6">
+                    <p class="ui-kicker">New request</p>
+                    <h2 class="text-lg font-semibold text-foreground">Contact support</h2>
+                    <p class="mt-1 text-xs text-muted-foreground">Give us enough detail to understand what you need help with.</p>
+                </div>
+
+                <form action="{{ route('support.store') }}" method="POST" enctype="multipart/form-data" class="space-y-5 p-5 sm:p-6">
                     @csrf
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid gap-4 sm:grid-cols-2">
                         <div>
-                            <label class="block text-xs font-medium text-muted-foreground mb-1">Your Name</label>
-                            <input type="text" value="{{ auth()->user()->name }}" disabled class="w-full rounded-lg border-border text-sm" />
+                            <label class="ui-label">Name</label>
+                            <input type="text" value="{{ auth()->user()->name }}" disabled class="ui-input opacity-70" />
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-muted-foreground mb-1">Email</label>
-                            <input type="email" value="{{ auth()->user()->email }}" disabled class="w-full rounded-lg border-border text-sm" />
+                            <label class="ui-label">Email</label>
+                            <input type="email" value="{{ auth()->user()->email }}" disabled class="ui-input opacity-70" />
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid gap-4 sm:grid-cols-2">
                         <div>
-                            <label class="block text-xs font-medium text-muted-foreground mb-1">Category</label>
-                            <select name="category" class="w-full rounded-lg border-border text-sm" required>
-                                <option value="" disabled selected>Select a category</option>
+                            <label class="ui-label" for="category">Category</label>
+                            <select id="category" name="category" class="ui-input" required>
+                                <option value="" disabled {{ old('category') ? '' : 'selected' }}>Select a category</option>
                                 @foreach($categories as $category)
                                     <option value="{{ $category }}" @selected(old('category') === $category)>{{ $category }}</option>
                                 @endforeach
                             </select>
-                            @error('category')
-                                <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
-                            @enderror
+                            @error('category')<p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>@enderror
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-muted-foreground mb-1">Subject</label>
-                            <input type="text" name="subject" value="{{ old('subject') }}" class="w-full rounded-lg border-border text-sm" placeholder="Brief summary" required />
-                            @error('subject')
-                                <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
-                            @enderror
+                            <label class="ui-label" for="subject">Subject</label>
+                            <input id="subject" type="text" name="subject" value="{{ old('subject') }}" class="ui-input" placeholder="Brief summary" required />
+                            @error('subject')<p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>@enderror
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium text-muted-foreground mb-1">Message</label>
-                        <textarea name="message" rows="6" class="w-full rounded-lg border-border text-sm" placeholder="Describe the issue or question" required>{{ old('message') }}</textarea>
-                        @error('message')
-                            <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
+                        <label class="ui-label" for="message">Message</label>
+                        <textarea id="message" name="message" rows="7" class="ui-input min-h-40 resize-y" placeholder="Describe the issue or question" required>{{ old('message') }}</textarea>
+                        @error('message')<p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>@enderror
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium text-muted-foreground mb-1">Attachment (optional)</label>
-                        <input type="file" name="attachment" accept=".jpg,.jpeg,.png,.pdf" class="w-full text-sm" />
-                        <p class="text-xs text-muted-foreground mt-1">Accepted: JPG, PNG, PDF. Max 5 MB.</p>
-                        @error('attachment')
-                            <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
+                        <label class="ui-label" for="attachment">Attachment <span class="font-normal text-muted-foreground">(optional)</span></label>
+                        <input id="attachment" type="file" name="attachment" accept=".jpg,.jpeg,.png,.pdf" class="block w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-foreground" />
+                        <p class="mt-1.5 text-xs text-muted-foreground">JPG, PNG or PDF up to 5 MB.</p>
+                        @error('attachment')<p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>@enderror
                     </div>
 
-                    <div class="flex items-center justify-end">
-                        <button type="submit" class="inline-flex items-center px-4 py-2 bg-foreground text-background text-xs font-medium rounded-lg hover:opacity-90 transition-colors duration-200">
-                            <i data-lucide="send" class="w-3 h-3 mr-2"></i>
-                            Send Message
+                    <div class="flex justify-end border-t border-border pt-5">
+                        <button type="submit" class="ui-btn ui-btn-primary w-full sm:w-auto">
+                            <i data-lucide="send" class="h-4 w-4"></i>
+                            Send request
                         </button>
                     </div>
                 </form>
-            </div>
+            </article>
 
-            <div class="lg:col-span-1 space-y-4">
-                <div class="bg-tesla-50 dark:bg-tesla-800 rounded-2xl p-6 border border-border shadow-sm">
-                    <h3 class="text-sm font-medium text-foreground mb-2">Quick Help</h3>
-                    <ul class="text-sm text-muted-foreground space-y-2">
-                        <li class="flex items-center"><i data-lucide="shield-check" class="w-4 h-4 mr-2 text-gray-400 dark:text-gray-300"></i> KYC verification status</li>
-                        <li class="flex items-center"><i data-lucide="wallet" class="w-4 h-4 mr-2 text-gray-400 dark:text-gray-300"></i> Wallet deposits & withdrawals</li>
-                        <li class="flex items-center"><i data-lucide="trending-up" class="w-4 h-4 mr-2 text-gray-400 dark:text-gray-300"></i> Investments & stocks</li>
-                        <li class="flex items-center"><i data-lucide="settings" class="w-4 h-4 mr-2 text-gray-400 dark:text-gray-300"></i> Technical troubleshooting</li>
-                    </ul>
-                </div>
+            <aside class="space-y-4">
+                <article class="ui-panel p-5">
+                    <div class="ui-metric-icon"><i data-lucide="life-buoy" class="h-4 w-4"></i></div>
+                    <h2 class="mt-4 text-base font-semibold text-foreground">Common topics</h2>
+                    <div class="mt-4 divide-y divide-border rounded-xl border border-border">
+                        @foreach([
+                            ['shield-check', 'Identity verification'],
+                            ['wallet-cards', 'Money and withdrawals'],
+                            ['chart-no-axes-combined', 'Investments and trading'],
+                            ['settings', 'Account and technical help'],
+                        ] as [$icon, $label])
+                            <div class="flex items-center gap-3 px-4 py-3 text-sm text-foreground">
+                                <i data-lucide="{{ $icon }}" class="h-4 w-4 text-muted-foreground"></i>
+                                <span>{{ $label }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </article>
 
-                <div class="bg-tesla-50 dark:bg-tesla-800 rounded-2xl p-6 border border-border shadow-sm">
-                    <h3 class="text-sm font-medium text-foreground mb-2">Response Times</h3>
-                    <p class="text-xs text-muted-foreground">We typically respond within 24 hours on weekdays.</p>
-                </div>
-            </div>
-        </div>
+                <article class="ui-panel p-5">
+                    <p class="ui-kicker">Response time</p>
+                    <h2 class="text-base font-semibold text-foreground">Usually within 24 hours</h2>
+                    <p class="mt-2 text-xs leading-5 text-muted-foreground">Requests are reviewed on weekdays. Keep any reference number or transaction details in your message when they are relevant.</p>
+                </article>
+            </aside>
+        </section>
     </div>
 </x-user-layout>
-
-

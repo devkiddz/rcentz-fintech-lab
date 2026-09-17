@@ -21,13 +21,13 @@
                     <i data-lucide="circle-user-round" class="h-4 w-4"></i>
                     Account
                 </a>
-                <a href="{{ route('wallet.transactions') }}" class="ui-btn ui-btn-secondary">
+                <a href="{{ route('money.activity') }}" class="ui-btn ui-btn-secondary">
                     <i data-lucide="receipt-text" class="h-4 w-4"></i>
                     Transactions
                 </a>
-                <a href="{{ route('wallet.deposit') }}" class="ui-btn ui-btn-primary">
+                <a href="{{ route('money.add') }}" class="ui-btn ui-btn-primary">
                     <i data-lucide="plus" class="h-4 w-4"></i>
-                    Deposit funds
+                    Add money
                 </a>
             </div>
         </section>
@@ -63,7 +63,7 @@
         @endif
 
         <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <a href="{{ route('wallet.index') }}" class="ui-metric-card group cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring/30">
+            <a href="{{ route('money.index') }}" class="ui-metric-card group cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring/30">
                 <div class="ui-metric-icon"><i data-lucide="wallet" class="h-5 w-5"></i></div>
                 <div class="min-w-0 flex-1">
                     <p class="ui-label">Available balance</p>
@@ -72,7 +72,7 @@
                 </div>
             </a>
 
-            <a href="{{ route('wallet.transactions') }}" class="ui-metric-card group cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring/30">
+            <a href="{{ route('money.activity') }}" class="ui-metric-card group cursor-pointer transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring/30">
                 <div class="ui-metric-icon"><i data-lucide="landmark" class="h-5 w-5"></i></div>
                 <div class="min-w-0 flex-1">
                     <p class="ui-label">Total assets</p>
@@ -111,7 +111,7 @@
                         <p class="ui-kicker">Account movement</p>
                         <h2 class="text-lg font-semibold text-foreground">Credits & debits</h2>
                     </div>
-                    <a href="{{ route('wallet.transactions') }}" class="ui-btn ui-btn-ghost ui-btn-sm">
+                    <a href="{{ route('money.activity') }}" class="ui-btn ui-btn-ghost ui-btn-sm">
                         View ledger
                         <i data-lucide="arrow-right" class="h-4 w-4"></i>
                     </a>
@@ -147,13 +147,13 @@
                 </div>
 
                 <div class="mt-5 flex flex-wrap gap-2">
-                    <a href="{{ route('wallet.deposit') }}" class="ui-btn ui-btn-secondary ui-btn-sm">
+                    <a href="{{ route('money.add') }}" class="ui-btn ui-btn-secondary ui-btn-sm">
                         <i data-lucide="circle-plus" class="h-4 w-4"></i> Deposit
                     </a>
-                    <a href="{{ route('wallet.withdraw') }}" class="ui-btn ui-btn-secondary ui-btn-sm">
+                    <a href="{{ route('money.withdraw') }}" class="ui-btn ui-btn-secondary ui-btn-sm">
                         <i data-lucide="circle-minus" class="h-4 w-4"></i> Withdraw
                     </a>
-                    <a href="{{ route('wallet.transfer') }}" class="ui-btn ui-btn-secondary ui-btn-sm">
+                    <a href="{{ route('money.send') }}" class="ui-btn ui-btn-secondary ui-btn-sm">
                         <i data-lucide="arrow-right-left" class="h-4 w-4"></i> Transfer
                     </a>
                 </div>
@@ -197,7 +197,7 @@
                     <p class="ui-kicker">Recent activity</p>
                     <h2 class="text-lg font-semibold text-foreground">Latest transactions</h2>
                 </div>
-                <a href="{{ route('wallet.transactions') }}" class="ui-btn ui-btn-ghost ui-btn-sm">View all</a>
+                <a href="{{ route('money.activity') }}" class="ui-btn ui-btn-ghost ui-btn-sm">View all</a>
             </div>
 
             @if($recentTransactions->isEmpty())

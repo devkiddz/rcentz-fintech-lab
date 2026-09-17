@@ -3,47 +3,39 @@
         Purchase History
     </x-slot>
 
-    <div class="max-w-7xl mx-auto">
-        <!-- Enhanced Header -->
-        <div class="bg-gradient-to-br from-tesla-700 via-tesla-800 to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
-            <!-- Background Pattern -->
-            <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-48 h-48 bg-card rounded-full -translate-y-24 translate-x-24"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 bg-card rounded-full translate-y-12 -translate-x-12"></div>
+    <div class="ui-page max-w-7xl">
+        <section class="ui-page-header">
+            <div>
+                <p class="ui-kicker">Account · Purchases</p>
+                <h1 class="ui-heading">Purchase history</h1>
+                <p class="ui-lead">Review vehicle orders, payment status and invoices from your account.</p>
             </div>
-            
-            <div class="relative z-10">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                    <div class="mb-4 lg:mb-0 lg:flex-1">
-                        <h1 class="text-xl font-light mb-1">Purchase History</h1>
-                        <p class="text-tesla-100 dark:text-gray-300 text-sm">Track all your vehicle purchases and transactions</p>
-                    </div>
-                    
-                    <!-- Stats Card -->
-                    <div class="bg-card bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-64">
-                        <div class="flex items-center justify-between mb-3">
-                            <div>
-                                <p class="text-xs text-muted-foreground dark:text-gray-300 mb-1">Total Purchases</p>
-                                <p class="text-lg font-light">{{ $purchases->total() }}</p>
-                            </div>
-                            <div class="w-10 h-10 flex items-center justify-center">
-                                <i data-lucide="receipt" class="w-5 h-5 text-white"></i>
-                            </div>
-                        </div>
-                        <div class="flex space-x-4 text-xs">
-                            <div class="flex-1 text-center">
-                                <p class="text-tesla-100 dark:text-gray-300">Completed</p>
-                                <p class="text-white font-medium">{{ $purchases->where('status', 'completed')->count() }}</p>
-                            </div>
-                            <div class="flex-1 text-center">
-                                <p class="text-tesla-100 dark:text-gray-300">Pending</p>
-                                <p class="text-white font-medium">{{ $purchases->where('status', 'pending')->count() }}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="ui-header-actions">
+                <a href="{{ route('dashboard') }}" class="ui-btn ui-btn-secondary">
+                    <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
+                    Overview
+                </a>
+                <a href="{{ route('cars.browse') }}" class="ui-btn ui-btn-primary">
+                    <i data-lucide="car-front" class="h-4 w-4"></i>
+                    Browse vehicles
+                </a>
             </div>
-        </div>
+        </section>
+
+        <section class="ui-metric-grid mb-5 sm:grid-cols-3">
+            <article class="ui-metric-card">
+                <p class="ui-label">Total purchases</p>
+                <p class="mt-2 text-xl font-semibold text-foreground">{{ number_format($purchases->total()) }}</p>
+            </article>
+            <article class="ui-metric-card">
+                <p class="ui-label">Completed on this page</p>
+                <p class="mt-2 text-xl font-semibold text-foreground">{{ $purchases->where('status', 'completed')->count() }}</p>
+            </article>
+            <article class="ui-metric-card">
+                <p class="ui-label">Pending on this page</p>
+                <p class="mt-2 text-xl font-semibold text-foreground">{{ $purchases->where('status', 'pending')->count() }}</p>
+            </article>
+        </section>
 
         <!-- Purchase History Table -->
         <div class="ui-table-shell">
@@ -70,8 +62,8 @@
                                 <tr class="hover:bg-muted/20">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
-                                            <div class="w-10 h-10 bg-gradient-to-br from-tesla-300 to-tesla-200 rounded-lg flex items-center justify-center mr-3">
-                                                <i data-lucide="car" class="w-5 h-5 text-tesla-900"></i>
+                                            <div class="w-10 h-10 bg-muted rounded-lg flex items-center justify-center mr-3">
+                                                <i data-lucide="car" class="w-5 h-5 text-muted-foreground"></i>
                                             </div>
                                             <div>
                                                 <div class="text-sm font-medium text-foreground">#{{ $purchase->id }}</div>
@@ -84,8 +76,8 @@
                                             @if($purchase->car->image_url)
                                                 <img src="{{ $purchase->car->image_url }}" alt="{{ $purchase->car->name }}" class="w-10 h-10 rounded-lg mr-3">
                                             @else
-                                                <div class="w-10 h-10 bg-tesla-400 rounded-lg flex items-center justify-center mr-3">
-                                                    <i data-lucide="car" class="w-4 h-4 text-white"></i>
+                                                <div class="w-10 h-10 bg-muted rounded-lg flex items-center justify-center mr-3">
+                                                    <i data-lucide="car" class="w-4 h-4 text-muted-foreground"></i>
                                                 </div>
                                             @endif
                                             <div>
@@ -113,13 +105,13 @@
                                         <div class="flex space-x-2">
                                             @if($purchase->status === 'completed')
                                                 <a href="{{ route('dashboard.invoice', $purchase) }}" 
-                                                   class="w-8 h-8 flex items-center justify-center text-white hover:text-tesla-100 hover:bg-tesla-400 rounded-lg transition-colors duration-200"
+                                                   class="ui-icon-btn"
                                                    title="Download Invoice">
                                                     <i data-lucide="download" class="w-4 h-4"></i>
                                                 </a>
                                             @endif
                                              <button onclick="viewPurchaseDetails({{ $purchase->toJson() }})" 
-                                                    class="w-8 h-8 flex items-center justify-center text-white hover:text-tesla-100 hover:bg-tesla-400 rounded-lg transition-colors duration-200"
+                                                    class="ui-icon-btn"
                                                     title="View Details">
                                                 <i data-lucide="eye" class="w-4 h-4"></i>
                                             </button>
@@ -139,13 +131,13 @@
                 @endif
             @else
                 <div class="p-8 text-center">
-                    <div class="w-16 h-16 bg-tesla-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <div class="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                         <i data-lucide="receipt" class="w-8 h-8 text-white"></i>
                     </div>
-                    <h3 class="text-lg font-medium text-white mb-2">No Purchase History</h3>
-                    <p class="text-tesla-100 mb-6">You haven't made any purchases yet.</p>
+                    <h3 class="text-lg font-semibold text-foreground mb-2">No purchase history</h3>
+                    <p class="text-muted-foreground mb-6">You haven't made any vehicle purchases yet.</p>
                     <a href="{{ route('cars.browse') }}" 
-                       class="inline-flex items-center px-4 py-2 bg-card text-tesla-500 rounded-lg hover:bg-tesla-50 transition-colors duration-200">
+                       class="ui-btn ui-btn-primary">
                         <i data-lucide="car" class="w-4 h-4 mr-2"></i>
                         Browse Vehicles
                     </a>
@@ -179,11 +171,11 @@
             modal.innerHTML = `
                 <div class="relative mx-auto my-10 w-full max-w-2xl">
                     <div class="rounded-2xl bg-card shadow-2xl border border-border overflow-hidden">
-                        <div class="bg-gradient-to-br from-black via-gray-900 to-black text-white px-6 py-5">
+                        <div class="border-b border-border bg-muted/30 px-6 py-5">
                             <div class="flex items-start justify-between">
                                 <div>
-                                    <div class="text-xs uppercase tracking-wider text-white/70">Purchase</div>
-                                    <div class="text-xl font-light">#${purchase.id}</div>
+                                    <div class="text-xs uppercase tracking-wider text-muted-foreground">Purchase</div>
+                                    <div class="text-xl font-semibold text-foreground">#${purchase.id}</div>
                                 </div>
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusBadge(purchase.status)}">${(purchase.status || '').toString().charAt(0).toUpperCase() + (purchase.status || '').toString().slice(1)}</span>
                             </div>

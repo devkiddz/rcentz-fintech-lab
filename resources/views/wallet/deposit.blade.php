@@ -1,20 +1,20 @@
 <x-user-layout>
-    <x-slot name="header">Deposit Funds</x-slot>
+    <x-slot name="header">Add Money</x-slot>
 
     @php($accountWallet = auth()->user()->wallet)
 
     <div class="money-page">
         <section class="money-page-header">
             <div>
-                <p class="ui-kicker">Wallet & Finance</p>
-                <h1 class="money-page-title">Deposit funds</h1>
+                <p class="ui-kicker">Money</p>
+                <h1 class="money-page-title">Add money</h1>
                 <p class="money-page-copy">Add funds to your account. Deposits remain pending until verification and only then become available to spend.</p>
             </div>
             <div class="ui-header-actions">
-                <a href="{{ route('account.history') }}" class="ui-btn ui-btn-secondary">
+                <a href="{{ route('money.activity') }}" class="ui-btn ui-btn-secondary">
                     <i data-lucide="history" class="h-4 w-4"></i> History
                 </a>
-                <a href="{{ route('wallet.index') }}" class="ui-btn ui-btn-secondary">
+                <a href="{{ route('money.index') }}" class="ui-btn ui-btn-secondary">
                     <i data-lucide="wallet" class="h-4 w-4"></i> Wallet
                 </a>
             </div>
@@ -52,7 +52,7 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('wallet.process-deposit') }}" method="POST" class="space-y-6">
+                    <form action="{{ route('money.add.submit') }}" method="POST" class="space-y-6">
                         @csrf
 
                         <div>

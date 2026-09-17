@@ -1,7 +1,7 @@
 <x-user-layout>
-    <x-slot name="header">Wallet</x-slot>
+    <x-slot name="header">Money</x-slot>
 
-    <div class="app-page max-w-7xl mx-auto space-y-5 sm:space-y-6">
+    <div class="ui-page max-w-7xl space-y-5 sm:space-y-6">
         <section class="wallet-shell-card">
             <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div class="min-w-0">
@@ -12,26 +12,26 @@
                     </div>
                     <div class="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
                         <span class="inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-                        Wallet active
+                        Money account ready
                     </div>
                     <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                        <span>Wallet balance <strong class="font-medium text-foreground">{{ format_currency($wallet->balance) }}</strong></span>
+                        <span>Balance <strong class="font-medium text-foreground">{{ format_currency($wallet->balance) }}</strong></span>
                         <span>Reserved <strong class="font-medium text-foreground">{{ format_currency($wallet->reserved_balance) }}</strong></span>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-3 gap-2 sm:flex sm:items-center">
-                    <a href="{{ route('wallet.deposit') }}" class="wallet-action-button">
+                    <a href="{{ route('money.add') }}" class="wallet-action-button">
                         <i data-lucide="plus" class="h-4 w-4"></i>
-                        <span>Deposit</span>
+                        <span>Add money</span>
                     </a>
-                    <a href="{{ route('wallet.withdraw') }}" class="wallet-action-button">
+                    <a href="{{ route('money.withdraw') }}" class="wallet-action-button">
                         <i data-lucide="arrow-up-right" class="h-4 w-4"></i>
                         <span>Withdraw</span>
                     </a>
-                    <a href="{{ route('wallet.transfer') }}" class="wallet-action-button">
+                    <a href="{{ route('money.send') }}" class="wallet-action-button">
                         <i data-lucide="arrow-right-left" class="h-4 w-4"></i>
-                        <span>Transfer</span>
+                        <span>Send</span>
                     </a>
                     <a href="{{ route('account.history') }}" class="wallet-action-button">
                         <i data-lucide="history" class="h-4 w-4"></i>
@@ -72,9 +72,9 @@
             <div class="flex items-center justify-between gap-4 px-4 py-4 sm:px-5">
                 <div>
                     <h2 class="text-base font-semibold tracking-tight text-foreground">Recent activity</h2>
-                    <p class="mt-0.5 text-xs text-muted-foreground">Your latest wallet transactions.</p>
+                    <p class="mt-0.5 text-xs text-muted-foreground">Your latest money activity.</p>
                 </div>
-                <a href="{{ route('wallet.transactions') }}" class="ui-button-secondary !h-9 !px-3 !py-0 text-xs">
+                <a href="{{ route('money.activity') }}" class="ui-button-secondary !h-9 !px-3 !py-0 text-xs">
                     View all
                     <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
                 </a>
@@ -99,7 +99,7 @@
                 @empty
                     <div class="m-4 app-empty-state">
                         <i data-lucide="wallet-cards" class="h-6 w-6"></i>
-                        <p>No wallet activity yet.</p>
+                        <p>No money activity yet.</p>
                     </div>
                 @endforelse
             </div>
