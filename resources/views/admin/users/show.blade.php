@@ -17,10 +17,10 @@
                     </a>
                 @endif
                 @if(!$user->is_admin)
-                    <a href="{{ route('admin.memberships.vip.memberships', ['search' => $user->email]) }}"
-                       class="inline-flex items-center px-4 py-2 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-sm font-medium rounded-lg hover:bg-amber-500/15 transition-all duration-200">
-                        <i data-lucide="crown" class="w-4 h-4 mr-2"></i>
-                        Manage VIP
+                    <a href="{{ route('admin.memberships.index') }}"
+                       class="inline-flex items-center px-4 py-2 bg-muted text-foreground text-sm font-medium rounded-lg hover:bg-muted/80 transition-all duration-200">
+                        <i data-lucide="badge-check" class="w-4 h-4 mr-2"></i>
+                        Memberships
                     </a>
                 @endif
                 <a href="{{ route('admin.users.account-operations', $user) }}"
@@ -114,33 +114,28 @@
                         </div>
                     </div>
 
-                    <!-- VIP Membership -->
-                    @php
-                        $vipDisplayStatus = $vipMembership
-                            ? ($vipMembership->status === 'active' && ! $vipMembership->is_active ? 'expired' : $vipMembership->status)
-                            : null;
-                    @endphp
+                    <!-- Memberships -->
                     <div class="bg-card border border-border overflow-hidden rounded-lg">
                         <div class="px-4 py-3 border-b border-border bg-muted/40 flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-2"><i data-lucide="crown" class="h-4 w-4 text-amber-500"></i><h3 class="text-base font-medium text-foreground">VIP Membership</h3></div>
-                            @if(!$user->is_admin)<a href="{{ route('admin.memberships.vip.memberships', ['search' => $user->email]) }}" class="text-xs font-medium text-amber-600 dark:text-amber-400">Manage</a>@endif
+                            <div class="flex items-center gap-2"><i data-lucide="badge-check" class="h-4 w-4"></i><h3 class="text-base font-medium text-foreground">Memberships</h3></div>
+                            @if(!$user->is_admin)<a href="{{ route('admin.memberships.index') }}" class="text-xs font-medium text-primary">Manage</a>@endif
                         </div>
-                        <div class="p-4">
-                            @if($vipMembership)
-                                <div class="flex items-start justify-between gap-3">
-                                    <div><p class="text-sm font-semibold text-foreground">{{ $vipMembership->plan?->name ?? 'VIP Membership' }}</p><p class="mt-0.5 text-xs text-muted-foreground">{{ $vipMembership->reference ?: 'No reference' }}</p></div>
-                                    <span class="rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase {{ $vipDisplayStatus === 'active' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground' }}">{{ $vipDisplayStatus }}</span>
+                        <div class="space-y-3 p-4">
+                            @forelse($membershipStatuses as $membership)
+                                @php
+                                    $membershipType = $membership->plan?->type;
+                                    $membershipDisplayStatus = $membership->status === 'active' && ! $membership->is_active ? 'expired' : $membership->status;
+                                    $enabledEntitlements = $membership->is_active ? ($membership->plan?->entitlements?->where('enabled', true) ?? collect()) : collect();
+                                @endphp
+                                <div class="rounded-xl border border-border bg-muted/15 p-4">
+                                    <div class="flex flex-wrap items-start justify-between gap-3"><div><p class="text-xs font-medium text-muted-foreground">{{ $membershipType?->name ?? 'Membership' }}</p><p class="mt-0.5 text-sm font-semibold text-foreground">{{ $membership->plan?->name ?? 'Plan unavailable' }}</p><p class="mt-0.5 text-xs text-muted-foreground">{{ $membership->reference ?: 'No reference' }}</p></div><span class="rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase {{ $membershipDisplayStatus === 'active' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground' }}">{{ $membershipDisplayStatus }}</span></div>
+                                    <div class="mt-3 grid grid-cols-2 gap-2 text-xs"><div class="rounded-lg border border-border bg-card p-3"><p class="text-muted-foreground">Starts</p><p class="mt-1 font-medium text-foreground">{{ $membership->starts_at?->format('M j, Y') ?? 'Not started' }}</p></div><div class="rounded-lg border border-border bg-card p-3"><p class="text-muted-foreground">Ends</p><p class="mt-1 font-medium text-foreground">{{ $membership->ends_at?->format('M j, Y') ?? 'No expiry' }}</p></div></div>
+                                    @if($enabledEntitlements->isNotEmpty())<div class="mt-3 flex flex-wrap gap-1.5">@foreach($enabledEntitlements as $entitlement)<span class="rounded-full border border-border bg-card px-2 py-1 text-[10px] text-foreground">{{ $entitlement->label }}</span>@endforeach</div>@endif
+                                    @if($membershipType)<div class="mt-3"><a href="{{ route('admin.memberships.registry', ['type' => $membershipType, 'search' => $user->email]) }}" class="text-xs font-medium text-primary">Open registry</a></div>@endif
                                 </div>
-                                <div class="mt-4 grid grid-cols-2 gap-2 text-xs">
-                                    <div class="rounded-lg border border-border bg-muted/20 p-3"><p class="text-muted-foreground">Starts</p><p class="mt-1 font-medium text-foreground">{{ $vipMembership->starts_at?->format('M j, Y') ?? 'Not started' }}</p></div>
-                                    <div class="rounded-lg border border-border bg-muted/20 p-3"><p class="text-muted-foreground">Ends</p><p class="mt-1 font-medium text-foreground">{{ $vipMembership->ends_at?->format('M j, Y') ?? 'No expiry' }}</p></div>
-                                </div>
-                                @if($vipMembership->is_active)
-                                    <div class="mt-4"><p class="text-xs font-medium text-muted-foreground">Active entitlements</p><div class="mt-2 flex flex-wrap gap-1.5">@forelse($vipEntitlements as $entitlement)<span class="rounded-full border border-border bg-muted/20 px-2 py-1 text-[10px] text-foreground">{{ $entitlement->label }}</span>@empty<span class="text-xs text-muted-foreground">No enabled entitlements.</span>@endforelse</div></div>
-                                @endif
-                            @else
-                                <p class="text-sm text-muted-foreground">This customer has no VIP membership history.</p>
-                            @endif
+                            @empty
+                                <p class="text-sm text-muted-foreground">This customer has no membership history.</p>
+                            @endforelse
                         </div>
                     </div>
 

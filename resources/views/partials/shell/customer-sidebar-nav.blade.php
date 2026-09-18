@@ -163,14 +163,13 @@
     <details class="sidebar-group group rounded-xl"
              data-nav-group="memberships"
              {{ request()->routeIs('memberships.*') ? 'open' : '' }}>
-        <summary title="Memberships"
+        <summary title="Membership"
                  class="{{ $parentBase }} justify-between {{ request()->routeIs('memberships.*') ? $parentActive : $parentIdle }}">
-            <span class="flex min-w-0 items-center gap-3"><i data-lucide="badge" class="h-4 w-4 shrink-0"></i><span class="sidebar-label truncate">Memberships</span></span>
+            <span class="flex min-w-0 items-center gap-3"><i data-lucide="badge" class="h-4 w-4 shrink-0"></i><span class="sidebar-label truncate">Membership</span></span>
             <i data-lucide="chevron-down" class="sidebar-chevron h-4 w-4 transition-transform group-open:rotate-180"></i>
         </summary>
         <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
             <a href="{{ route('memberships.index') }}" class="{{ $childBase }} {{ request()->routeIs('memberships.index') ? $childActive : $childIdle }}"><i data-lucide="layout-grid" class="h-4 w-4"></i><span>Overview</span></a>
-            <a href="{{ route('memberships.vip.index') }}" class="{{ $childBase }} {{ request()->routeIs('memberships.vip.*') ? $childActive : $childIdle }}"><i data-lucide="crown" class="h-4 w-4"></i><span>VIP Membership</span></a>
         </div>
     </details>
 

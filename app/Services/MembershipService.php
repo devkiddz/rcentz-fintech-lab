@@ -2,26 +2,28 @@
 
 namespace App\Services;
 
+use App\Models\Membership;
+use App\Models\MembershipPlan;
 use App\Models\User;
-use App\Models\VipMembership;
-use App\Models\VipPlan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
 
-class VipMembershipService
+class MembershipService
 {
-    public function create(User $user, VipPlan $plan, array $data, User $actor): VipMembership
+    public function create(User $user, MembershipPlan $plan, array $data, User $actor): Membership
     {
         return DB::transaction(function () use ($user, $plan, $data, $actor) {
-            $membership = VipMembership::query()->create([
+            $plan->loadMissing('type');
+
+            $membership = Membership::query()->create([
                 'user_id' => $user->id,
-                'vip_plan_id' => $plan->id,
+                'membership_plan_id' => $plan->id,
                 'status' => 'pending',
                 'price_paid' => $data['price_paid'] ?? $plan->price,
                 'currency' => strtoupper($data['currency'] ?? $plan->currency ?? 'USD'),
                 'source' => $data['source'] ?? 'admin',
-                'reference' => $data['reference'] ?? $this->reference(),
+                'reference' => $data['reference'] ?? $this->reference($plan),
                 'starts_at' => $data['starts_at'] ?? null,
                 'ends_at' => $data['ends_at'] ?? null,
                 'metadata' => $data['metadata'] ?? null,
@@ -31,20 +33,20 @@ class VipMembershipService
                 return $this->activate($membership, $actor);
             }
 
-            return $membership->fresh(['user', 'plan.entitlements']);
+            return $membership->fresh(['user', 'plan.type', 'plan.entitlements']);
         });
     }
 
-    public function activate(VipMembership $membership, User $actor): VipMembership
+    public function activate(Membership $membership, User $actor): Membership
     {
         return DB::transaction(function () use ($membership, $actor) {
-            $membership = VipMembership::query()
-                ->with('plan')
+            $membership = Membership::query()
+                ->with('plan.type')
                 ->lockForUpdate()
                 ->findOrFail($membership->id);
 
-            if (! $membership->plan?->is_active) {
-                throw new RuntimeException('This VIP plan is inactive and cannot activate memberships.');
+            if (! $membership->plan?->is_active || ! $membership->plan?->type?->is_active) {
+                throw new RuntimeException('This membership plan or membership type is inactive and cannot be activated.');
             }
 
             if (in_array($membership->status, ['cancelled', 'expired'], true)) {
@@ -59,12 +61,15 @@ class VipMembershipService
             }
 
             if ($endsAt && ! $endsAt->gt($startsAt)) {
-                throw new RuntimeException('VIP membership end must be after its start time.');
+                throw new RuntimeException('Membership end must be after its start time.');
             }
 
-            $overlap = VipMembership::query()
+            $typeId = $membership->plan->membership_type_id;
+
+            $overlap = Membership::query()
                 ->where('user_id', $membership->user_id)
                 ->where('id', '!=', $membership->id)
+                ->whereHas('plan', fn ($query) => $query->where('membership_type_id', $typeId))
                 ->where('status', 'active')
                 ->whereNull('cancelled_at')
                 ->whereNull('expired_at')
@@ -79,7 +84,7 @@ class VipMembershipService
                 ->exists();
 
             if ($overlap) {
-                throw new RuntimeException('This customer already has an overlapping active VIP membership.');
+                throw new RuntimeException('This customer already has an overlapping active '.$membership->plan->type->name.' membership.');
             }
 
             $membership->update([
@@ -92,14 +97,14 @@ class VipMembershipService
                 'expired_at' => null,
             ]);
 
-            return $membership->fresh(['user', 'plan.entitlements', 'activatedBy']);
+            return $membership->fresh(['user', 'plan.type', 'plan.entitlements', 'activatedBy']);
         });
     }
 
-    public function cancel(VipMembership $membership, User $actor): VipMembership
+    public function cancel(Membership $membership, User $actor): Membership
     {
         return DB::transaction(function () use ($membership, $actor) {
-            $membership = VipMembership::query()->lockForUpdate()->findOrFail($membership->id);
+            $membership = Membership::query()->lockForUpdate()->findOrFail($membership->id);
 
             if (in_array($membership->status, ['cancelled', 'expired'], true)) {
                 throw new RuntimeException('This membership is already closed.');
@@ -111,17 +116,17 @@ class VipMembershipService
                 'activated_by_user_id' => $membership->activated_by_user_id ?? $actor->id,
             ]);
 
-            return $membership->fresh(['user', 'plan']);
+            return $membership->fresh(['user', 'plan.type']);
         });
     }
 
-    public function expire(VipMembership $membership, User $actor): VipMembership
+    public function expire(Membership $membership, User $actor): Membership
     {
         return DB::transaction(function () use ($membership, $actor) {
-            $membership = VipMembership::query()->lockForUpdate()->findOrFail($membership->id);
+            $membership = Membership::query()->lockForUpdate()->findOrFail($membership->id);
 
             if ($membership->status === 'expired') {
-                return $membership->fresh(['user', 'plan']);
+                return $membership->fresh(['user', 'plan.type']);
             }
 
             if ($membership->status === 'cancelled') {
@@ -139,15 +144,19 @@ class VipMembershipService
                 'activated_by_user_id' => $membership->activated_by_user_id ?? $actor->id,
             ]);
 
-            return $membership->fresh(['user', 'plan']);
+            return $membership->fresh(['user', 'plan.type']);
         });
     }
 
-    private function reference(): string
+    private function reference(MembershipPlan $plan): string
     {
+        $plan->loadMissing('type');
+        $prefix = strtoupper(preg_replace('/[^A-Z0-9]/', '', $plan->type?->slug ?? 'MEM')) ?: 'MEM';
+        $prefix = substr($prefix, 0, 10);
+
         do {
-            $reference = 'VIP-' . strtoupper(Str::random(12));
-        } while (VipMembership::query()->where('reference', $reference)->exists());
+            $reference = $prefix . '-' . strtoupper(Str::random(12));
+        } while (Membership::query()->where('reference', $reference)->exists());
 
         return $reference;
     }

@@ -5,12 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class VipEntitlement extends Model
+class MembershipEntitlement extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'vip_plan_id',
+        'membership_plan_id',
         'key',
         'label',
         'description',
@@ -25,6 +25,6 @@ class VipEntitlement extends Model
 
     public function plan()
     {
-        return $this->belongsTo(VipPlan::class, 'vip_plan_id');
+        return $this->belongsTo(MembershipPlan::class, 'membership_plan_id');
     }
 }

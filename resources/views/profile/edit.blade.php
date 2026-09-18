@@ -228,38 +228,28 @@
                     </div>
                 </div>
 
-                <!-- VIP Membership -->
-                @php
-                    $vipDisplayStatus = $vipMembership
-                        ? ($vipMembership->status === 'active' && ! $vipMembership->is_active ? 'expired' : $vipMembership->status)
-                        : null;
-                @endphp
+                <!-- Memberships -->
                 <div class="space-y-4">
                     <div class="flex items-center justify-between gap-4">
-                        <div>
-                            <h3 class="text-lg font-light text-foreground mb-1">VIP Membership</h3>
-                            <p class="text-xs text-muted-foreground">Membership status and premium access attached to this account.</p>
-                        </div>
-                        <div class="w-8 h-8 flex items-center justify-center"><i data-lucide="crown" class="w-4 h-4 text-amber-500"></i></div>
+                        <div><h3 class="text-lg font-light text-foreground mb-1">Memberships</h3><p class="text-xs text-muted-foreground">Membership status and account access attached to this profile.</p></div>
+                        <div class="w-8 h-8 flex items-center justify-center"><i data-lucide="badge-check" class="w-4 h-4"></i></div>
                     </div>
-                    <div class="rounded-xl border border-border bg-muted/20 p-4">
-                        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <h4 class="font-semibold text-foreground">{{ $vipMembership?->plan?->name ?? 'No VIP membership' }}</h4>
-                                    @if($vipMembership)<span class="rounded-full bg-muted px-2 py-0.5 text-[9px] font-semibold uppercase text-muted-foreground">{{ $vipDisplayStatus }}</span>@endif
+                    <div class="space-y-2 rounded-xl border border-border bg-muted/20 p-4">
+                        @forelse($membershipStatuses as $membership)
+                            @php
+                                $membershipType = $membership->plan?->type;
+                                $membershipDisplayStatus = $membership->status === 'active' && ! $membership->is_active ? 'expired' : $membership->status;
+                            @endphp
+                            <div class="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <div class="flex flex-wrap items-center gap-2"><h4 class="font-semibold text-foreground">{{ $membershipType?->name ?? 'Membership' }}</h4><span class="rounded-full bg-muted px-2 py-0.5 text-[9px] font-semibold uppercase text-muted-foreground">{{ $membershipDisplayStatus }}</span></div>
+                                    <p class="mt-1 text-sm text-muted-foreground">{{ $membership->plan?->name ?? 'Plan unavailable' }}{{ $membership->is_active && $membership->ends_at ? ' · active until '.$membership->ends_at->format('M j, Y') : '' }}</p>
                                 </div>
-                                @if($vipMembership)
-                                    <p class="mt-1 text-sm text-muted-foreground">{{ $vipMembership->is_active ? ($vipMembership->ends_at ? 'Active until '.$vipMembership->ends_at->format('M j, Y') : 'Active with no fixed expiry') : 'Your latest membership record is '.$vipDisplayStatus.'.' }}</p>
-                                @else
-                                    <p class="mt-1 text-sm text-muted-foreground">VIP plan status and premium access will appear here when a membership is assigned or purchased.</p>
-                                @endif
+                                @if($membershipType)<a href="{{ route('memberships.show', $membershipType) }}" class="ui-btn ui-btn-secondary ui-btn-sm"><i data-lucide="settings" class="h-4 w-4"></i>Manage</a>@endif
                             </div>
-                            <div class="flex flex-wrap items-center gap-2">
-                                @if($vipMembership?->is_active)<span class="ui-btn ui-btn-ghost ui-btn-sm pointer-events-none"><i data-lucide="badge-check" class="h-4 w-4"></i>{{ $vipEntitlements->count() }} entitlements</span>@endif
-                                <a href="{{ route('memberships.vip.index') }}" class="ui-btn ui-btn-secondary"><i data-lucide="settings" class="h-4 w-4"></i>Manage VIP</a>
-                            </div>
-                        </div>
+                        @empty
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p class="text-sm text-muted-foreground">No membership history is attached to this account yet.</p><a href="{{ route('memberships.index') }}" class="ui-btn ui-btn-secondary"><i data-lucide="arrow-right" class="h-4 w-4"></i>View memberships</a></div>
+                        @endforelse
                     </div>
                 </div>
 

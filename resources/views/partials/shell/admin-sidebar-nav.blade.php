@@ -176,16 +176,19 @@
         </summary>
         <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
             <a href="{{ route('admin.memberships.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.memberships.index') ? $childActive : $childIdle }}"><i data-lucide="layout-grid" class="h-4 w-4"></i><span>Overview</span></a>
-            <details class="group rounded-lg" data-nav-group="admin-memberships-vip" {{ request()->routeIs('admin.memberships.vip.*') ? 'open' : '' }}>
-                <summary class="{{ $childBase }} justify-between {{ request()->routeIs('admin.memberships.vip.*') ? $childActive : $childIdle }}">
-                    <span class="flex items-center gap-3"><i data-lucide="crown" class="h-4 w-4"></i><span>VIP Membership</span></span>
-                    <i data-lucide="chevron-down" class="h-3.5 w-3.5 transition-transform group-open:rotate-180"></i>
-                </summary>
-                <div class="ml-4 mt-1 space-y-1 border-l border-border/60 pl-3">
-                    <a href="{{ route('admin.memberships.vip.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.memberships.vip.index','admin.memberships.vip.plans.*','admin.memberships.vip.entitlements.*') ? $childActive : $childIdle }}"><i data-lucide="layers-3" class="h-4 w-4"></i><span>Plans & Entitlements</span></a>
-                    <a href="{{ route('admin.memberships.vip.memberships') }}" class="{{ $childBase }} {{ request()->routeIs('admin.memberships.vip.memberships*') ? $childActive : $childIdle }}"><i data-lucide="badge-check" class="h-4 w-4"></i><span>Memberships</span></a>
-                </div>
-            </details>
+            @foreach($membershipNavTypes ?? collect() as $membershipType)
+                @php $membershipTypeActive = request()->route('type')?->is($membershipType) ?? false; @endphp
+                <details class="group rounded-lg" data-nav-group="admin-memberships-{{ $membershipType->slug }}" {{ $membershipTypeActive ? 'open' : '' }}>
+                    <summary class="{{ $childBase }} justify-between {{ $membershipTypeActive ? $childActive : $childIdle }}">
+                        <span class="flex items-center gap-3"><i data-lucide="{{ $membershipType->icon ?: 'badge-check' }}" class="h-4 w-4"></i><span>{{ $membershipType->name }}</span></span>
+                        <i data-lucide="chevron-down" class="h-3.5 w-3.5 transition-transform group-open:rotate-180"></i>
+                    </summary>
+                    <div class="ml-4 mt-1 space-y-1 border-l border-border/60 pl-3">
+                        <a href="{{ route('admin.memberships.show', $membershipType) }}" class="{{ $childBase }} {{ $membershipTypeActive && !request()->routeIs('admin.memberships.registry*') ? $childActive : $childIdle }}"><i data-lucide="layers-3" class="h-4 w-4"></i><span>Plans & Entitlements</span></a>
+                        <a href="{{ route('admin.memberships.registry', $membershipType) }}" class="{{ $childBase }} {{ $membershipTypeActive && request()->routeIs('admin.memberships.registry*') ? $childActive : $childIdle }}"><i data-lucide="badge-check" class="h-4 w-4"></i><span>Memberships</span></a>
+                    </div>
+                </details>
+            @endforeach
         </div>
     </details>
     <a href="{{ route('admin.users.index') }}" title="Customers"

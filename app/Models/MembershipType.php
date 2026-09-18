@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class VipPlan extends Model
+class MembershipType extends Model
 {
     use HasFactory;
 
@@ -13,31 +13,38 @@ class VipPlan extends Model
         'name',
         'slug',
         'description',
-        'price',
-        'currency',
-        'billing_interval',
-        'duration_days',
+        'icon',
         'is_active',
         'sort_order',
         'metadata',
     ];
 
     protected $casts = [
-        'price' => 'decimal:2',
-        'duration_days' => 'integer',
         'is_active' => 'boolean',
         'sort_order' => 'integer',
         'metadata' => 'array',
     ];
 
-    public function memberships()
+    public function getRouteKeyName(): string
     {
-        return $this->hasMany(VipMembership::class);
+        return 'slug';
     }
 
-    public function entitlements()
+    public function plans()
     {
-        return $this->hasMany(VipEntitlement::class);
+        return $this->hasMany(MembershipPlan::class);
+    }
+
+    public function memberships()
+    {
+        return $this->hasManyThrough(
+            Membership::class,
+            MembershipPlan::class,
+            'membership_type_id',
+            'membership_plan_id',
+            'id',
+            'id'
+        );
     }
 
     public function scopeActive($query)

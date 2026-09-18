@@ -95,13 +95,9 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.act
     Route::get('/dashboard/history', [UserDashboardController::class, 'history'])->name('dashboard.history');
     Route::get('/dashboard/invoice/{purchase}', [UserDashboardController::class, 'downloadInvoice'])->name('dashboard.invoice');
     
-    // Membership workspace. Membership types live beneath this parent domain.
+    // Membership workspace. Customer surface is the account's current membership overview.
     Route::prefix('memberships')->name('memberships.')->group(function () {
         Route::get('/', [\App\Http\Controllers\MembershipController::class, 'index'])->name('index');
-
-        Route::prefix('vip')->name('vip.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\VipController::class, 'index'])->name('index');
-        });
     });
 
     // Profile Routes
@@ -526,26 +522,28 @@ Route::middleware(['auth', 'admin'])
         Route::delete('/{botProduct}', [AdminTradingBotController::class, 'destroy'])->name('destroy');
     });
 
-    // VIP Membership Engine Admin Control
-        Route::prefix('memberships')->name('memberships.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\MembershipController::class, 'index'])->name('index');
+    // Membership Engine Admin Control
+    Route::prefix('memberships')->name('memberships.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\MembershipController::class, 'index'])->name('index');
+        Route::post('/types', [\App\Http\Controllers\Admin\MembershipController::class, 'storeType'])->name('types.store');
+        Route::patch('/types/{type:slug}', [\App\Http\Controllers\Admin\MembershipController::class, 'updateType'])->name('types.update');
+        Route::patch('/types/{type:slug}/toggle', [\App\Http\Controllers\Admin\MembershipController::class, 'toggleType'])->name('types.toggle');
+        Route::delete('/types/{type:slug}', [\App\Http\Controllers\Admin\MembershipController::class, 'destroyType'])->name('types.destroy');
 
-        Route::prefix('vip')->name('vip.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\VipAdminController::class, 'index'])->name('index');
-            Route::post('/plans', [\App\Http\Controllers\Admin\VipAdminController::class, 'storePlan'])->name('plans.store');
-            Route::patch('/plans/{plan}', [\App\Http\Controllers\Admin\VipAdminController::class, 'updatePlan'])->name('plans.update');
-            Route::patch('/plans/{plan}/toggle', [\App\Http\Controllers\Admin\VipAdminController::class, 'togglePlan'])->name('plans.toggle');
-            Route::delete('/plans/{plan}', [\App\Http\Controllers\Admin\VipAdminController::class, 'destroyPlan'])->name('plans.destroy');
-            Route::post('/plans/{plan}/entitlements', [\App\Http\Controllers\Admin\VipAdminController::class, 'storeEntitlement'])->name('entitlements.store');
-            Route::patch('/plans/{plan}/entitlements/{entitlement}', [\App\Http\Controllers\Admin\VipAdminController::class, 'updateEntitlement'])->name('entitlements.update');
-            Route::delete('/plans/{plan}/entitlements/{entitlement}', [\App\Http\Controllers\Admin\VipAdminController::class, 'destroyEntitlement'])->name('entitlements.destroy');
-            Route::get('/memberships', [\App\Http\Controllers\Admin\VipAdminController::class, 'memberships'])->name('memberships');
-            Route::post('/memberships', [\App\Http\Controllers\Admin\VipAdminController::class, 'storeMembership'])->name('memberships.store');
-            Route::patch('/memberships/{membership}/activate', [\App\Http\Controllers\Admin\VipAdminController::class, 'activateMembership'])->name('memberships.activate');
-            Route::patch('/memberships/{membership}/cancel', [\App\Http\Controllers\Admin\VipAdminController::class, 'cancelMembership'])->name('memberships.cancel');
-            Route::patch('/memberships/{membership}/expire', [\App\Http\Controllers\Admin\VipAdminController::class, 'expireMembership'])->name('memberships.expire');
-        });
-        });
+        Route::get('/{type:slug}', [\App\Http\Controllers\Admin\MembershipController::class, 'show'])->name('show');
+        Route::post('/{type:slug}/plans', [\App\Http\Controllers\Admin\MembershipController::class, 'storePlan'])->name('plans.store');
+        Route::patch('/{type:slug}/plans/{plan}', [\App\Http\Controllers\Admin\MembershipController::class, 'updatePlan'])->name('plans.update');
+        Route::patch('/{type:slug}/plans/{plan}/toggle', [\App\Http\Controllers\Admin\MembershipController::class, 'togglePlan'])->name('plans.toggle');
+        Route::delete('/{type:slug}/plans/{plan}', [\App\Http\Controllers\Admin\MembershipController::class, 'destroyPlan'])->name('plans.destroy');
+        Route::post('/{type:slug}/plans/{plan}/entitlements', [\App\Http\Controllers\Admin\MembershipController::class, 'storeEntitlement'])->name('entitlements.store');
+        Route::patch('/{type:slug}/plans/{plan}/entitlements/{entitlement}', [\App\Http\Controllers\Admin\MembershipController::class, 'updateEntitlement'])->name('entitlements.update');
+        Route::delete('/{type:slug}/plans/{plan}/entitlements/{entitlement}', [\App\Http\Controllers\Admin\MembershipController::class, 'destroyEntitlement'])->name('entitlements.destroy');
+        Route::get('/{type:slug}/memberships', [\App\Http\Controllers\Admin\MembershipController::class, 'registry'])->name('registry');
+        Route::post('/{type:slug}/memberships', [\App\Http\Controllers\Admin\MembershipController::class, 'storeMembership'])->name('registry.store');
+        Route::patch('/{type:slug}/memberships/{membership}/activate', [\App\Http\Controllers\Admin\MembershipController::class, 'activateMembership'])->name('registry.activate');
+        Route::patch('/{type:slug}/memberships/{membership}/cancel', [\App\Http\Controllers\Admin\MembershipController::class, 'cancelMembership'])->name('registry.cancel');
+        Route::patch('/{type:slug}/memberships/{membership}/expire', [\App\Http\Controllers\Admin\MembershipController::class, 'expireMembership'])->name('registry.expire');
+    });
 
     // Admin Settings Control Plane
     Route::prefix('settings')->name('settings.')->group(function () {
