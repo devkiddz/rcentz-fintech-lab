@@ -54,6 +54,50 @@
             </div>
         </section>
 
+        <section class="mb-4 ui-panel overflow-hidden" data-dashboard-signals>
+            <div class="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <div>
+                    <p class="ui-kicker">Signal intelligence</p>
+                    <div class="mt-1 flex flex-wrap items-center gap-2">
+                        <h2 class="text-lg font-semibold text-foreground">Your Signals</h2>
+                        @if(($signalSummary['current'] ?? 0) > 0)
+                            <span class="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[.1em] text-primary">{{ $signalSummary['current'] }} current</span>
+                        @endif
+                    </div>
+                    <p class="mt-1 text-sm text-muted-foreground">Signals delivered specifically to your account.</p>
+                </div>
+                <a href="{{ route('signals.index') }}" class="ui-btn ui-btn-secondary ui-btn-sm self-start sm:self-auto">View Signals<i data-lucide="arrow-right" class="h-3.5 w-3.5"></i></a>
+            </div>
+
+            @if($dashboardSignals->isEmpty())
+                <div class="px-5 py-6 sm:px-6">
+                    <div class="flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-4">
+                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background"><i data-lucide="radio-tower" class="h-4 w-4 text-muted-foreground"></i></div>
+                        <div><p class="text-sm font-medium text-foreground">No current Signals</p><p class="mt-0.5 text-xs text-muted-foreground">New deliveries will appear here automatically.</p></div>
+                    </div>
+                </div>
+            @else
+                <div class="grid gap-px bg-border/70 md:grid-cols-2 xl:grid-cols-3">
+                    @foreach($dashboardSignals as $delivery)
+                        @php $signal=$delivery->signal; $stock=$signal?->stock; $firstTarget=$signal?->targets?->sortBy('sequence')->first(); @endphp
+                        <a href="{{ route('signals.show',$signal) }}" class="group bg-background px-5 py-4 transition hover:bg-muted/20 sm:px-6">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0"><div class="flex flex-wrap items-center gap-2"><span class="text-base font-semibold">{{ $stock?->symbol ?? '—' }}</span><span class="text-[10px] font-bold {{ strtoupper((string)$signal->direction)==='BUY' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400' }}">{{ strtoupper((string)$signal->direction) }}</span><span class="rounded-full border border-border px-2 py-0.5 text-[8px] font-semibold uppercase">{{ strtoupper((string)$signal->status) }}</span></div><p class="mt-1 truncate text-[11px] text-muted-foreground">{{ strtoupper((string)$signal->marketplace) }} · {{ strtoupper((string)$signal->timeframe) }}</p></div>
+                                @if(!$delivery->read_at)<span class="h-2 w-2 shrink-0 rounded-full bg-primary" title="New Signal"></span>@endif
+                            </div>
+                            <div class="mt-4 grid grid-cols-2 gap-3 text-xs">
+                                <div><p class="ui-label">Entry</p><p class="mt-1 font-semibold tabular-nums">{{ number_format((float)$signal->entry_min,2) }} – {{ number_format((float)$signal->entry_max,2) }}</p></div>
+                                <div><p class="ui-label">Stop</p><p class="mt-1 font-semibold tabular-nums">{{ number_format((float)$signal->stop_loss,2) }}</p></div>
+                                <div><p class="ui-label">Strength</p><p class="mt-1 font-semibold">{{ str_replace('_',' ',strtoupper((string)$signal->strength)) }}</p></div>
+                                <div><p class="ui-label">TP1</p><p class="mt-1 font-semibold tabular-nums">{{ $firstTarget ? number_format((float)$firstTarget->price,2) : '—' }}</p></div>
+                            </div>
+                            <div class="mt-4 flex items-center justify-between text-[10px] font-medium text-muted-foreground"><span>{{ optional($delivery->delivered_at)->diffForHumans() }}</span><span class="inline-flex items-center gap-1 group-hover:text-foreground">Open<i data-lucide="arrow-up-right" class="h-3 w-3"></i></span></div>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+        </section>
+
         @php
             $accountAlerts = auth()->user()->accountAlerts()->active()->latest()->limit(5)->get();
         @endphp

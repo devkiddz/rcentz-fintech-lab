@@ -8,6 +8,29 @@
 
 The Signals feature will be implemented in six consolidated phases.
 
+## Implementation checkpoint — 2026-09-18
+
+Current accepted implementation status:
+
+- **S1 — Foundation & Market Wiring:** complete.
+- **S2 — Intelligence & Signal Construction:** complete.
+- **S3 — Automation & Lifecycle:** complete and sealed at `24ddc4809526458394fcde3220b9b4a785bf1b36`.
+- **S4 — Admin, Distribution & Notifications:** implemented and browser/runtime accepted; includes Signal Desk, publication, audited distribution, Recipients management and separate admin/customer notification authority.
+- **S5 — Customer Experience & Performance:** implemented through customer notification repair, ownership-bound Current/History/detail surfaces, autonomous runtime, lifecycle-derived performance, customer lifecycle notifications/revision timeline and live timing intelligence.
+- **Forex FX1 — Market Foundation:** implemented, migrated and seeded with 10 first-class Forex pairs plus a generic `MarketInstrument` registry. EUR/USD has 100 persisted real daily OHLC rows and reports `READY`.
+- **Forex FX2 — Signal Engine Wiring:** next implementation step. FX2 must route `MarketInstrument` through Stock/Forex context providers without pretending Forex pairs are stocks. The first FX2 installer performed no writes because its accepted-state check for the admin Signal Room view was stale; the current accepted SHA256 is `8853EA9F8968B6EF9CB16677445B9849DB5E572D5898FB8121DFC13F4F52803B`.
+
+Current authority rules remain:
+
+```text
+SignalDelivery = customer ownership/access authority
+Notification = alert only
+SignalEvent / SignalRevision = lifecycle/audit authority
+MarketInstrument = generic market identity authority
+```
+
+Pending operational acceptance before the scheduler is restarted: run the idempotent S5 lifecycle-notification recovery for the existing AAPL adjustment and confirm the customer timeline/timing UI. Only one `artisan schedule:work` process should be active after maintenance.
+
 Each phase must leave the application in a stable, testable state before proceeding to the next phase.
 
 ---

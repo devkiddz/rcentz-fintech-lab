@@ -280,17 +280,25 @@
         <i data-lucide="info" class="h-4 w-4 shrink-0"></i><span class="sidebar-label">About Platform</span>
     </a>
 
-    <div class="sidebar-section-label px-3 pt-4 pb-1 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Intelligence Roadmap</div>
+    <div class="sidebar-section-label px-3 pt-4 pb-1 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Intelligence</div>
 
-    @if(Route::has('admin.signals.index'))
-        <a href="{{ route('admin.signals.index') }}" class="{{ $standaloneBase }} {{ request()->routeIs('admin.signals.*') ? $standaloneActive : $standaloneIdle }}">
-            <i data-lucide="radio-tower" class="h-4 w-4 shrink-0"></i><span class="sidebar-label">Signal Engine</span>
-        </a>
-    @else
-        <div class="{{ $standaloneBase }} cursor-not-allowed opacity-45">
-            <i data-lucide="radio-tower" class="h-4 w-4 shrink-0"></i><span class="sidebar-label">Signal Engine · Planned</span>
+    <details class="sidebar-group group rounded-xl"
+             data-nav-group="admin-signals"
+             {{ request()->routeIs('admin.signals.*') ? 'open' : '' }}>
+        <summary title="Signal Engine"
+                 class="{{ $parentBase }} justify-between {{ request()->routeIs('admin.signals.*') ? $parentActive : $parentIdle }}">
+            <span class="flex min-w-0 items-center gap-3"><i data-lucide="radio-tower" class="h-4 w-4 shrink-0"></i><span class="sidebar-label truncate">Signal Engine</span></span>
+            <i data-lucide="chevron-down" class="sidebar-chevron h-4 w-4 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
+            <a href="{{ route('admin.signals.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.signals.index','admin.signals.show') ? $childActive : $childIdle }}"><i data-lucide="layout-dashboard" class="h-4 w-4"></i><span>Overview</span></a>
+            <a href="{{ route('admin.signals.candidates') }}" class="{{ $childBase }} {{ request()->routeIs('admin.signals.candidates') ? $childActive : $childIdle }}"><i data-lucide="sparkles" class="h-4 w-4"></i><span>Generated Candidates</span></a>
+            <a href="{{ route('admin.signals.live') }}" class="{{ $childBase }} {{ request()->routeIs('admin.signals.live') ? $childActive : $childIdle }}"><i data-lucide="radio-tower" class="h-4 w-4"></i><span>Live Signals</span></a>
+            <a href="{{ route('admin.signals.recipients') }}" class="{{ $childBase }} {{ request()->routeIs('admin.signals.recipients') ? $childActive : $childIdle }}"><i data-lucide="users-round" class="h-4 w-4"></i><span>Recipients</span></a>
+            <a href="{{ route('admin.signals.history') }}" class="{{ $childBase }} {{ request()->routeIs('admin.signals.history') ? $childActive : $childIdle }}"><i data-lucide="history" class="h-4 w-4"></i><span>History</span></a>
+            <a href="{{ route('admin.signals.activity') }}" class="{{ $childBase }} {{ request()->routeIs('admin.signals.activity') ? $childActive : $childIdle }}"><i data-lucide="activity" class="h-4 w-4"></i><span>Engine Activity</span></a>
         </div>
-    @endif
+    </details>
 </nav>
 
 <div class="border-t border-border p-3 space-y-1">

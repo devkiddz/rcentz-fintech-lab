@@ -62,6 +62,8 @@ class Notification extends Model
             'kyc_status' => 'shield-check',
             'automatic_investment' => 'repeat',
             'price_alert' => 'bell',
+            'signal' => 'radio-tower',
+            'signal_admin' => 'circle-check-big',
             'system' => 'info',
         ];
 
@@ -78,6 +80,8 @@ class Notification extends Model
             'kyc_status' => 'yellow',
             'automatic_investment' => 'green',
             'price_alert' => 'orange',
+            'signal' => 'red',
+            'signal_admin' => 'green',
             'system' => 'gray',
         ];
 

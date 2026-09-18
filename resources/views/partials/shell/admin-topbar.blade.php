@@ -59,6 +59,8 @@
                 View site
             </a>
 
+            @include('partials.shell.admin-notification-bell')
+
             <a href="{{ route('admin.settings.index') }}"
                class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground"
                title="Platform settings">

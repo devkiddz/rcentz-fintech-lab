@@ -195,18 +195,24 @@
         </div>
     </details>
 
-    <div class="sidebar-section-label px-3 pt-4 pb-1 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Intelligence Roadmap</div>
+    <div class="sidebar-section-label px-3 pt-4 pb-1 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Intelligence</div>
 
-    @if(Route::has('signals.index'))
-        <a href="{{ route('signals.index') }}"
-           class="{{ $standaloneBase }} {{ request()->routeIs('signals.*') ? $standaloneActive : $standaloneIdle }}">
-            <i data-lucide="radio-tower" class="h-4 w-4 shrink-0"></i><span class="sidebar-label">Signal Center</span>
-        </a>
-    @else
-        <div class="{{ $standaloneBase }} cursor-not-allowed opacity-45">
-            <i data-lucide="radio-tower" class="h-4 w-4 shrink-0"></i><span class="sidebar-label">Signal Center · Planned</span>
+    <details class="sidebar-group group rounded-xl"
+             data-nav-group="signals"
+             {{ request()->routeIs('signals.*') ? 'open' : '' }}>
+        <summary title="Signals"
+                 class="{{ $parentBase }} justify-between {{ request()->routeIs('signals.*') ? $parentActive : $parentIdle }}">
+            <span class="flex min-w-0 items-center gap-3">
+                <i data-lucide="radio-tower" class="h-4 w-4 shrink-0"></i>
+                <span class="sidebar-label truncate">Signals</span>
+            </span>
+            <i data-lucide="chevron-down" class="sidebar-chevron h-4 w-4 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
+            <a href="{{ route('signals.index') }}" class="{{ $childBase }} {{ request()->routeIs('signals.index','signals.show') ? $childActive : $childIdle }}"><i data-lucide="radio-tower" class="h-4 w-4"></i><span>Current Signals</span></a>
+            <a href="{{ route('signals.history') }}" class="{{ $childBase }} {{ request()->routeIs('signals.history') ? $childActive : $childIdle }}"><i data-lucide="history" class="h-4 w-4"></i><span>History</span></a>
         </div>
-    @endif
+    </details>
 </nav>
 
 <div class="border-t border-border p-3 space-y-1">

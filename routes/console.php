@@ -99,3 +99,22 @@ Schedule::call(fn () => app(CopyRelationshipLifecycleService::class)->expireDue(
 
 // Position Engine: stop-loss, take-profit, time expiry and queued exits.
 Schedule::command('trade-positions:process')->everyMinute()->withoutOverlapping();
+
+
+/*
+|--------------------------------------------------------------------------
+| Signals S5 autonomous runtime
+|--------------------------------------------------------------------------
+| Lifecycle monitoring runs independently every minute. The autonomy runner
+| performs only due re-analysis and due scanning; generated Signals remain
+| READY until an administrator explicitly publishes them.
+*/
+Schedule::command('signals:process-lifecycle')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->onOneServer();
+
+Schedule::command('signals:run-autonomy --limit=25')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->onOneServer();

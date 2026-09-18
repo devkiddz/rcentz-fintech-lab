@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\Notification;
+use App\Models\Signal;
+use App\Models\SignalDistribution;
 use App\Models\User;
 
 class NotificationService
@@ -195,4 +197,75 @@ class NotificationService
             'data' => $data,
         ]);
     }
+
+    /**
+     * Create a Signal delivery notification.
+     */
+    public static function createSignalNotification(User $user, Signal $signal, string $reason = 'membership', array $metadata = [])
+    {
+        $signal->loadMissing(['stock', 'marketInstrument.stock', 'marketInstrument.forexPair', 'targets']);
+        $symbol = strtoupper((string) ($signal->instrument_symbol ?? 'Market'));
+        $direction = strtoupper((string) $signal->direction);
+
+        return $user->notifications()->create([
+            'type' => 'signal',
+            'title' => "New {$symbol} {$direction} Signal",
+            'message' => "A {$symbol} {$direction} Signal is available. Entry "
+                . number_format((float) $signal->entry_min, 2)
+                . ' - '
+                . number_format((float) $signal->entry_max, 2)
+                . ' | SL '
+                . number_format((float) $signal->stop_loss, 2),
+            'data' => array_merge([
+                'signal_id' => $signal->id,
+                'action_url' => \Illuminate\Support\Facades\Route::has('signals.show')
+                    ? route('signals.show', $signal->id, false)
+                    : null,
+                'symbol' => $symbol,
+                'direction' => $signal->direction,
+                'timeframe' => $signal->timeframe,
+                'entry_min' => (float) $signal->entry_min,
+                'entry_max' => (float) $signal->entry_max,
+                'stop_loss' => (float) $signal->stop_loss,
+                'targets' => $signal->targets->sortBy('sequence')->map(fn ($target) => [
+                    'sequence' => (int) $target->sequence,
+                    'price' => (float) $target->price,
+                ])->values()->all(),
+                'delivery_reason' => $reason,
+            ], $metadata),
+        ]);
+    }
+
+    /**
+     * Create an operational receipt for an administrator after a Signal distribution batch.
+     */
+    public static function createSignalAdminDistributionReceipt(
+        User $admin,
+        Signal $signal,
+        SignalDistribution $distribution,
+        string $audienceScope
+    ) {
+        $signal->loadMissing(['stock', 'marketInstrument.stock', 'marketInstrument.forexPair']);
+        $symbol = strtoupper((string) ($signal->instrument_symbol ?? 'Signal'));
+        $mode = ucfirst((string) $distribution->mode);
+        $scope = ucfirst($audienceScope);
+
+        return $admin->notifications()->create([
+            'type' => 'signal_admin',
+            'title' => "{$symbol} Signal distribution complete",
+            'message' => "{$mode} · {$scope} — {$distribution->delivered_count} delivered, {$distribution->skipped_count} skipped, {$distribution->failed_count} failed.",
+            'data' => [
+                'signal_id' => $signal->id,
+                'distribution_id' => $distribution->id,
+                'symbol' => $symbol,
+                'direction' => $signal->direction,
+                'mode' => $distribution->mode,
+                'audience_scope' => $audienceScope,
+                'delivered_count' => (int) $distribution->delivered_count,
+                'skipped_count' => (int) $distribution->skipped_count,
+                'failed_count' => (int) $distribution->failed_count,
+            ],
+        ]);
+    }
+
 }

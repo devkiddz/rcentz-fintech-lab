@@ -10,10 +10,11 @@ use App\Models\StockPriceHistory;
 use Carbon\Carbon;
 use App\Services\FinancialOverviewService;
 use App\Services\MembershipAccessService;
+use App\Services\CustomerSignalService;
 
 class UserDashboardController extends Controller
 {
-    public function index(FinancialOverviewService $financialOverview, MembershipAccessService $membershipAccess)
+    public function index(FinancialOverviewService $financialOverview, MembershipAccessService $membershipAccess, CustomerSignalService $customerSignals)
     {
         $user = Auth::user();
 
@@ -40,6 +41,8 @@ class UserDashboardController extends Controller
         $marketOverview = $this->getMarketOverview();
         $membershipStatuses = $membershipAccess->statusMemberships($user);
         $activeMemberships = $membershipAccess->activeMemberships($user);
+        $dashboardSignals = $customerSignals->dashboard($user, 3);
+        $signalSummary = $customerSignals->summary($user);
 
         return view('user.dashboard', array_merge($finance, [
             'recentPurchases' => $recentPurchases,
@@ -49,6 +52,8 @@ class UserDashboardController extends Controller
             'marketOverview' => $marketOverview,
             'membershipStatuses' => $membershipStatuses,
             'activeMemberships' => $activeMemberships,
+            'dashboardSignals' => $dashboardSignals,
+            'signalSummary' => $signalSummary,
         ]));
     }
 

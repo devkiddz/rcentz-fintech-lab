@@ -3,21 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Models\Notification;
-use Illuminate\Http\Request;
+use App\Models\SignalDelivery;
+use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
 class NotificationController extends Controller
 {
     /**
-     * Get user notifications
+     * Get user notifications.
      */
     public function index()
     {
         $user = Auth::user();
-        
+
         $notifications = $user->notifications()
             ->orderBy('created_at', 'desc')
             ->paginate(20);
+
+        $notifications->setCollection(
+            $this->decorateActionUrls($notifications->getCollection(), $user)
+        );
 
         $unreadCount = $user->notifications()->unread()->count();
 
@@ -25,17 +32,18 @@ class NotificationController extends Controller
     }
 
     /**
-     * Get notifications for dropdown (API endpoint)
+     * Get notifications for dropdown (API endpoint).
      */
     public function getNotifications()
     {
         $user = Auth::user();
-        
+
         $notifications = $user->notifications()
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
 
+        $notifications = $this->decorateActionUrls($notifications, $user);
         $unreadCount = $user->notifications()->unread()->count();
 
         return response()->json([
@@ -45,11 +53,10 @@ class NotificationController extends Controller
     }
 
     /**
-     * Mark notification as read
+     * Mark notification as read.
      */
     public function markAsRead(Notification $notification)
     {
-        // Ensure user owns this notification
         if ($notification->user_id !== Auth::id()) {
             abort(403);
         }
@@ -60,12 +67,12 @@ class NotificationController extends Controller
     }
 
     /**
-     * Mark all notifications as read
+     * Mark all notifications as read.
      */
     public function markAllAsRead()
     {
         $user = Auth::user();
-        
+
         $user->notifications()
             ->unread()
             ->update([
@@ -77,22 +84,20 @@ class NotificationController extends Controller
     }
 
     /**
-     * Get unread count
+     * Get unread count.
      */
     public function unreadCount()
     {
-        $user = Auth::user();
-        $count = $user->notifications()->unread()->count();
+        $count = Auth::user()->notifications()->unread()->count();
 
         return response()->json(['count' => $count]);
     }
 
     /**
-     * Delete notification
+     * Delete notification.
      */
     public function destroy(Notification $notification)
     {
-        // Ensure user owns this notification
         if ($notification->user_id !== Auth::id()) {
             abort(403);
         }
@@ -100,5 +105,55 @@ class NotificationController extends Controller
         $notification->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    /**
+     * Add safe action URLs at read time so existing Signal notifications created
+     * before the customer Signal workspace existed become immediately clickable.
+     */
+    private function decorateActionUrls(Collection $notifications, User $user): Collection
+    {
+        $signalIds = $notifications
+            ->where('type', 'signal')
+            ->map(fn (Notification $notification) => (int) data_get($notification->data, 'signal_id', 0))
+            ->filter()
+            ->unique()
+            ->values();
+
+        $deliveredSignalIds = $signalIds->isEmpty()
+            ? collect()
+            : SignalDelivery::query()
+                ->where('user_id', $user->id)
+                ->whereIn('signal_id', $signalIds)
+                ->pluck('signal_id')
+                ->map(fn ($id) => (int) $id)
+                ->flip();
+
+        return $notifications->map(function (Notification $notification) use ($user, $deliveredSignalIds) {
+            $data = (array) ($notification->data ?? []);
+            $signalId = (int) ($data['signal_id'] ?? 0);
+
+            if (
+                $notification->type === 'signal' &&
+                $signalId > 0 &&
+                $deliveredSignalIds->has($signalId) &&
+                Route::has('signals.show')
+            ) {
+                $data['action_url'] = route('signals.show', $signalId, false);
+                $notification->setAttribute('data', $data);
+            }
+
+            if (
+                $notification->type === 'signal_admin' &&
+                $user->isAdmin() &&
+                $signalId > 0 &&
+                Route::has('admin.signals.show')
+            ) {
+                $data['action_url'] = route('admin.signals.show', $signalId, false);
+                $notification->setAttribute('data', $data);
+            }
+
+            return $notification;
+        });
     }
 }

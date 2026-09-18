@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Models\MembershipType;
+use App\Models\SignalEvent;
 use App\Models\StockQuote;
 use App\Models\User;
+use App\Observers\SignalEventObserver;
 use App\Observers\StockQuoteObserver;
 use App\Observers\UserObserver;
 use App\Services\MailConfigurationService;
@@ -26,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
     {
         User::observe(UserObserver::class);
         StockQuote::observe(StockQuoteObserver::class);
+        SignalEvent::observe(SignalEventObserver::class);
 
         // Database-backed mail configuration is an operational override. The
         // service fails safely so unavailable databases/settings never block boot.

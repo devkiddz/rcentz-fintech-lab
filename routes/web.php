@@ -111,6 +111,13 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.act
     Route::patch('/profile/kyc/{kyc}', [KYCController::class, 'update'])->name('profile.kyc.update');
     Route::get('/profile/kyc/status', [KYCController::class, 'show'])->name('profile.kyc.status');
 
+    // Customer Signal workspace. SignalDelivery is the access authority.
+    Route::prefix('signals')->name('signals.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\SignalController::class, 'index'])->name('index');
+        Route::get('/history', [\App\Http\Controllers\SignalController::class, 'history'])->name('history');
+        Route::get('/{signal}', [\App\Http\Controllers\SignalController::class, 'show'])->name('show');
+    });
+
     // Notification routes
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/api', [NotificationController::class, 'getNotifications'])->name('notifications.api');
@@ -520,6 +527,25 @@ Route::middleware(['auth', 'admin'])
         Route::patch('/{botProduct}', [AdminTradingBotController::class, 'update'])->name('update');
         Route::patch('/{botProduct}/toggle', [AdminTradingBotController::class, 'toggle'])->name('toggle');
         Route::delete('/{botProduct}', [AdminTradingBotController::class, 'destroy'])->name('destroy');
+    });
+
+    // Signal Engine Admin Control
+    Route::prefix('signals')->name('signals.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\SignalController::class, 'index'])->name('index');
+        Route::get('/candidates', [\App\Http\Controllers\Admin\SignalController::class, 'candidates'])->name('candidates');
+        Route::get('/live', [\App\Http\Controllers\Admin\SignalController::class, 'live'])->name('live');
+        Route::get('/recipients', [\App\Http\Controllers\Admin\SignalController::class, 'recipients'])->name('recipients');
+        Route::get('/history', [\App\Http\Controllers\Admin\SignalController::class, 'history'])->name('history');
+        Route::get('/activity', [\App\Http\Controllers\Admin\SignalController::class, 'activity'])->name('activity');
+        Route::post('/', [\App\Http\Controllers\Admin\SignalController::class, 'store'])->name('store');
+        Route::get('/{signal}', [\App\Http\Controllers\Admin\SignalController::class, 'show'])->name('show');
+        Route::patch('/{signal}', [\App\Http\Controllers\Admin\SignalController::class, 'update'])->name('update');
+        Route::post('/{signal}/reanalyze', [\App\Http\Controllers\Admin\SignalController::class, 'reanalyze'])->name('reanalyze');
+        Route::post('/{signal}/publish', [\App\Http\Controllers\Admin\SignalController::class, 'publish'])->name('publish');
+        Route::post('/{signal}/distribute', [\App\Http\Controllers\Admin\SignalController::class, 'distribute'])->name('distribute');
+        Route::post('/{signal}/distribute/complimentary', [\App\Http\Controllers\Admin\SignalController::class, 'complimentary'])->name('complimentary');
+        Route::post('/{signal}/cancel', [\App\Http\Controllers\Admin\SignalController::class, 'cancel'])->name('cancel');
+        Route::post('/{signal}/close', [\App\Http\Controllers\Admin\SignalController::class, 'close'])->name('close');
     });
 
     // Membership Engine Admin Control

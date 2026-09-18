@@ -30,6 +30,7 @@
                     <span>Return to Admin</span>
                 </a>
             @endif
+
             @include('partials.shell.theme-toggle')
 
             @if(app('impersonate')->isImpersonating())
@@ -44,39 +45,43 @@
                 </a>
             @endif
 
-            <div class="relative">
+            <div class="relative" data-customer-notifications>
                 <button
                     type="button"
-                    onclick="toggleNotifications()"
                     class="shell-icon-button relative"
+                    data-notification-toggle
                     aria-label="Open notifications"
+                    aria-expanded="false"
+                    aria-controls="customer-notifications-dropdown"
                 >
                     <i data-lucide="bell" class="h-4 w-4"></i>
                     <span
-                        id="notification-badge"
                         class="absolute -right-1 -top-1 hidden min-w-4 rounded-full bg-red-500 px-1 text-center text-[10px] font-semibold leading-4 text-white"
+                        data-notification-badge
                     >0</span>
                 </button>
 
                 <div
-                    id="notifications-dropdown"
-                    class="absolute right-0 z-50 mt-2 hidden w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-card shadow-xl"
+                    id="customer-notifications-dropdown"
+                    class="absolute right-0 z-50 mt-2 hidden w-[min(23rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border bg-card shadow-xl"
+                    data-notification-dropdown
                 >
                     <div class="flex items-center justify-between gap-4 border-b border-border px-4 py-3">
                         <div>
                             <h3 class="text-sm font-medium text-foreground">Notifications</h3>
-                            <p class="mt-0.5 text-[11px] text-muted-foreground">Recent account activity</p>
+                            <p class="mt-0.5 text-[11px] text-muted-foreground" data-notification-summary>Recent account activity</p>
                         </div>
                         <button
                             type="button"
-                            onclick="markAllNotificationsAsRead()"
-                            class="text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                            class="text-xs font-medium text-muted-foreground transition hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                            data-notification-mark-all
+                            disabled
                         >
                             Mark all read
                         </button>
                     </div>
 
-                    <div id="notifications-list" class="max-h-72 overflow-y-auto">
+                    <div class="max-h-80 overflow-y-auto" data-notification-list>
                         <div class="p-5 text-center">
                             <div class="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-muted/50">
                                 <i data-lucide="loader-2" class="h-4 w-4 animate-spin text-muted-foreground"></i>
@@ -85,12 +90,13 @@
                         </div>
                     </div>
 
-                    <div class="border-t border-border px-4 py-3">
+                    <div class="flex items-center justify-between gap-3 border-t border-border px-4 py-3">
+                        <span class="text-[10px] text-muted-foreground">Account alerts and activity</span>
                         <a
                             href="{{ route('notifications.index') }}"
                             class="text-xs font-medium text-foreground transition hover:text-primary"
                         >
-                            View all notifications
+                            View all
                         </a>
                     </div>
                 </div>

@@ -1,6 +1,7 @@
 import './bootstrap';
 import './rcentz-lightweight-charts';
 import './market-runtime';
+import './customer-notifications';
 import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
