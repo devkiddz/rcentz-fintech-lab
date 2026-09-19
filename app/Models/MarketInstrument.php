@@ -72,6 +72,31 @@ class MarketInstrument extends Model
         return $this->hasOne(ControlledMarketInstrument::class, 'market_instrument_id');
     }
 
+    public function stockHoldings()
+    {
+        return $this->hasMany(StockHolding::class, 'market_instrument_id');
+    }
+
+    public function stockTransactions()
+    {
+        return $this->hasMany(StockTransaction::class, 'market_instrument_id');
+    }
+
+    public function tradePositions()
+    {
+        return $this->hasMany(TradePosition::class, 'market_instrument_id');
+    }
+
+    public function executionTransactions()
+    {
+        return $this->hasMany(MarketExecutionTransaction::class, 'market_instrument_id');
+    }
+
+    public function marketHoldings()
+    {
+        return $this->hasMany(MarketHolding::class, 'market_instrument_id');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);

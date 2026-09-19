@@ -12,7 +12,8 @@ class TradePositionService
     public function __construct(
         private StockTradeExecutor $executor,
         private MarketSessionService $marketSession,
-        private MarketPriceRouter $prices
+        private MarketPriceRouter $prices,
+        private MarketExecutionLedgerService $executionLedger
     ) {}
 
     public function openLongFromTrade(
@@ -31,6 +32,12 @@ class TradePositionService
         if ($entry->trade_position_id) {
             return TradePosition::findOrFail($entry->trade_position_id);
         }
+
+        $entry->loadMissing('stock.marketInstrument');
+        if (! $entry->stock) {
+            throw new RuntimeException('Stock execution entry is missing its Stock child.');
+        }
+        $instrument = $this->prices->instrument($entry->stock);
 
         $entryPrice = (float) $entry->price_per_share;
         $slPct = $this->nullablePercent($risk['stop_loss_percent'] ?? null);
@@ -56,11 +63,12 @@ class TradePositionService
         );
 
         return DB::transaction(function () use (
-            $entry,$contextType,$contextId,$sourcePositionId,$actorType,$actorId,
+            $entry,$instrument,$contextType,$contextId,$sourcePositionId,$actorType,$actorId,
             $entryPrice,$slPct,$tpPct,$duration,$stop,$take,$openedAt,$end,$metadata,$marketplace
         ) {
             $position = TradePosition::create([
                 'user_id'=>$entry->user_id,
+                'market_instrument_id'=>$instrument->id,
                 'stock_id'=>$entry->stock_id,
                 'entry_transaction_id'=>$entry->id,
                 'source_position_id'=>$sourcePositionId,
@@ -86,6 +94,9 @@ class TradePositionService
             ]);
 
             $entry->update(['trade_position_id'=>$position->id]);
+            $execution = $this->executionLedger->forStockTransaction($entry);
+            $execution->update(['trade_position_id'=>$position->id]);
+            $position->update(['entry_market_execution_transaction_id'=>$execution->id]);
 
             $this->event(
                 $position,
@@ -262,8 +273,12 @@ class TradePositionService
                 'closed_at'=>$remaining <= 0 ? ($trade->executed_at ?? now()) : null,
             ]);
 
+            $execution = $this->executionLedger->forStockTransaction($trade);
+            $position->update(['last_exit_market_execution_transaction_id'=>$execution->id]);
+
             if ($linkTransaction && $trade->exists && ! $trade->trade_position_id) {
                 $trade->update(['trade_position_id'=>$position->id]);
+                $execution->update(['trade_position_id'=>$position->id]);
             }
 
             $this->event(
@@ -615,8 +630,14 @@ class TradePositionService
         ?int $actorId,
         array $metadata=[]
     ): void {
+        $marketExecutionTransactionId = null;
+        if ($tx?->getKey()) {
+            $marketExecutionTransactionId = $this->executionLedger->forStockTransaction($tx)->id;
+        }
+
         $position->events()->create([
             'stock_transaction_id'=>$tx?->id,
+            'market_execution_transaction_id'=>$marketExecutionTransactionId,
             'actor_id'=>$actorId,
             'actor_type'=>$actorType,
             'event_type'=>$type,

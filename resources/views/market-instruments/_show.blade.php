@@ -37,7 +37,7 @@
     };
 @endphp
 
-<div class="ui-page max-w-[1600px]" data-market-runtime>
+<div class="ui-page" data-market-runtime>
     <section class="ui-page-header">
         <div>
             <p class="ui-kicker text-[10px]">Market Instrument · {{ strtoupper($instrument->asset_class) }}</p>

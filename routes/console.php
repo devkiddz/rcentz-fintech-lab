@@ -100,6 +100,18 @@ Schedule::call(fn () => app(CopyRelationshipLifecycleService::class)->expireDue(
 // Position Engine: stop-loss, take-profit, time expiry and queued exits.
 Schedule::command('trade-positions:process')->everyMinute()->withoutOverlapping();
 
+// Execution-grade cross-currency settlement rates for Live Forex fills.
+Schedule::command('currency:update-rates')
+    ->hourly()
+    ->withoutOverlapping()
+    ->onOneServer();
+
+// Non-Stock position lifecycle. E3 starts with Forex; future adapters plug in here.
+Schedule::command('market-positions:process')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->onOneServer();
+
 
 /*
 |--------------------------------------------------------------------------

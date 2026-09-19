@@ -15,7 +15,8 @@ class StockTradeExecutor
     public function __construct(
         private FinancialActivityService $activity,
         private MarketSessionService $marketSession,
-        private MarketPriceRouter $prices
+        private MarketPriceRouter $prices,
+        private MarketExecutionLedgerService $executionLedger
     ) {}
 
     public function buy(
@@ -44,8 +45,10 @@ class StockTradeExecutor
             throw new RuntimeException('Trade amount is invalid.');
         }
 
+        $instrument = $this->prices->instrument($stock);
+
         return DB::transaction(function () use (
-            $user,$stock,$quantity,$price,$amount,$source,$sourceId,$copyStrategyId,$actorType,$actorId,$positionId,$marketplace
+            $user,$stock,$instrument,$quantity,$price,$amount,$source,$sourceId,$copyStrategyId,$actorType,$actorId,$positionId,$marketplace
         ) {
             $wallet = $user->wallet()->lockForUpdate()->firstOrFail();
 
@@ -70,6 +73,7 @@ class StockTradeExecutor
 
             $trade = StockTransaction::create([
                 'user_id'=>$user->id,
+                'market_instrument_id'=>$instrument->id,
                 'stock_id'=>$stock->id,
                 'copy_strategy_id'=>$copyStrategyId,
                 'execution_source'=>$source,
@@ -86,6 +90,8 @@ class StockTradeExecutor
                 'executed_at'=>now(),
             ]);
 
+            $this->executionLedger->mirrorStockTransaction($trade);
+
             $holding = StockHolding::where('user_id',$user->id)
                 ->where('stock_id',$stock->id)
                 ->where('marketplace',$marketplace)
@@ -97,6 +103,7 @@ class StockTradeExecutor
                 $newInvested=(float)$holding->total_invested+$amount;
                 $current=$newQty*$price;
                 $holding->update([
+                    'market_instrument_id'=>$instrument->id,
                     'quantity'=>$newQty,
                     'average_buy_price'=>$newInvested/$newQty,
                     'total_invested'=>$newInvested,
@@ -107,6 +114,7 @@ class StockTradeExecutor
             } else {
                 StockHolding::create([
                     'user_id'=>$user->id,
+                    'market_instrument_id'=>$instrument->id,
                     'stock_id'=>$stock->id,
                     'marketplace'=>$marketplace,
                     'quantity'=>$quantity,
@@ -137,6 +145,7 @@ class StockTradeExecutor
                     'source'=>$source,
                     'source_id'=>$sourceId,
                     'copy_strategy_id'=>$copyStrategyId,
+                    'market_instrument_id'=>$instrument->id,
                     'stock_id'=>$stock->id,
                     'quantity'=>$quantity,
                     'marketplace'=>$marketplace,
@@ -182,8 +191,10 @@ class StockTradeExecutor
             throw new RuntimeException('Execution market price is invalid.');
         }
 
+        $instrument = $this->prices->instrument($stock);
+
         return DB::transaction(function () use (
-            $user,$stock,$quantity,$price,$source,$sourceId,$copyStrategyId,$actorType,$actorId,$positionId,
+            $user,$stock,$instrument,$quantity,$price,$source,$sourceId,$copyStrategyId,$actorType,$actorId,$positionId,
             $allowClosedSessionSettlement,$marketplace
         ) {
             $wallet=$user->wallet()->lockForUpdate()->firstOrFail();
@@ -215,6 +226,7 @@ class StockTradeExecutor
 
             $trade=StockTransaction::create([
                 'user_id'=>$user->id,
+                'market_instrument_id'=>$instrument->id,
                 'stock_id'=>$stock->id,
                 'copy_strategy_id'=>$copyStrategyId,
                 'execution_source'=>$source,
@@ -231,6 +243,8 @@ class StockTradeExecutor
                 'executed_at'=>now(),
             ]);
 
+            $this->executionLedger->mirrorStockTransaction($trade);
+
             $oldQty=(float)$holding->quantity;
             $remaining=$oldQty-$quantity;
             $proportion=$quantity/$oldQty;
@@ -239,6 +253,7 @@ class StockTradeExecutor
             if($remaining>0){
                 $current=$remaining*$price;
                 $holding->update([
+                    'market_instrument_id'=>$instrument->id,
                     'quantity'=>$remaining,
                     'total_invested'=>$remainingInvested,
                     'current_value'=>$current,
@@ -268,6 +283,7 @@ class StockTradeExecutor
                     'source'=>$source,
                     'source_id'=>$sourceId,
                     'copy_strategy_id'=>$copyStrategyId,
+                    'market_instrument_id'=>$instrument->id,
                     'stock_id'=>$stock->id,
                     'quantity'=>$quantity,
                     'marketplace'=>$marketplace,

@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Contracts\CryptoExecutionQuoteProvider;
+use App\Contracts\ForexExecutionQuoteProvider;
 use App\Models\MembershipType;
 use App\Models\SignalEvent;
 use App\Models\StockQuote;
@@ -9,6 +11,8 @@ use App\Models\User;
 use App\Observers\SignalEventObserver;
 use App\Observers\StockQuoteObserver;
 use App\Observers\UserObserver;
+use App\Services\Execution\AlphaVantageCryptoExecutionQuoteProvider;
+use App\Services\Execution\AlphaVantageForexExecutionQuoteProvider;
 use App\Services\MailConfigurationService;
 use App\Services\MarketPriceRouter;
 use Illuminate\Support\Facades\Schema;
@@ -21,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // One request/process should resolve one marketplace decision consistently.
         $this->app->singleton(MarketPriceRouter::class);
+        $this->app->singleton(ForexExecutionQuoteProvider::class, AlphaVantageForexExecutionQuoteProvider::class);
+        $this->app->singleton(CryptoExecutionQuoteProvider::class, AlphaVantageCryptoExecutionQuoteProvider::class);
         $this->app->singleton(MailConfigurationService::class);
     }
 

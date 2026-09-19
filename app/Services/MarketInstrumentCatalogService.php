@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\DB;
 class MarketInstrumentCatalogService
 {
     public function __construct(
-        private MarketPriceRouter $prices
+        private MarketPriceRouter $prices,
+        private MarketExecutionRouter $execution
     ) {}
 
     public function build(?string $assetClass = null, bool $activeOnly = true): array
@@ -48,6 +49,17 @@ class MarketInstrumentCatalogService
                 }
 
                 $instrument->setAttribute('runtime_previous', $this->previousPrice($instrument, $marketplace));
+
+                try {
+                    $capabilities = $this->execution->capabilities($instrument);
+                    $instrument->setAttribute('runtime_execution_capabilities', $capabilities);
+                    $instrument->setAttribute('runtime_executable', $this->execution->canExecute($instrument));
+                    $instrument->setAttribute('runtime_execution_reason', $capabilities['reason'] ?? null);
+                } catch (\Throwable $e) {
+                    $instrument->setAttribute('runtime_execution_capabilities', []);
+                    $instrument->setAttribute('runtime_executable', false);
+                    $instrument->setAttribute('runtime_execution_reason', $e->getMessage());
+                }
             });
 
         $rawCounts = $countQuery

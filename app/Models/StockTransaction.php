@@ -10,7 +10,7 @@ class StockTransaction extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id','stock_id','copy_strategy_id','execution_source','marketplace','initiated_by_user_id',
+        'user_id','market_instrument_id','stock_id','copy_strategy_id','execution_source','marketplace','initiated_by_user_id',
         'trade_position_id','wallet_transaction_id','type','quantity','price_per_share',
         'total_amount','fee','status','executed_at',
     ];
@@ -21,6 +21,7 @@ class StockTransaction extends Model
     ];
 
     public function user(){ return $this->belongsTo(User::class); }
+    public function marketInstrument(){ return $this->belongsTo(MarketInstrument::class); }
     public function stock(){ return $this->belongsTo(Stock::class); }
     public function strategy(){ return $this->belongsTo(CopyStrategy::class,'copy_strategy_id'); }
     public function initiatedBy(){ return $this->belongsTo(User::class,'initiated_by_user_id'); }

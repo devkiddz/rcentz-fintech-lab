@@ -11,6 +11,7 @@ class StockHolding extends Model
 
     protected $fillable = [
         'user_id',
+        'market_instrument_id',
         'stock_id',
         'marketplace',
         'quantity',
@@ -35,6 +36,11 @@ class StockHolding extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function marketInstrument()
+    {
+        return $this->belongsTo(MarketInstrument::class);
     }
 
     public function stock()

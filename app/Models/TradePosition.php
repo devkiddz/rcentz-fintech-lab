@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class TradePosition extends Model
 {
     protected $fillable = [
-        'user_id','stock_id','entry_transaction_id','last_exit_transaction_id',
+        'user_id','market_instrument_id','stock_id','entry_transaction_id','entry_market_execution_transaction_id',
+        'last_exit_transaction_id','last_exit_market_execution_transaction_id',
         'source_position_id','context_type','context_id','marketplace','direction',
         'initial_quantity','open_quantity','entry_price','average_exit_price',
         'stop_loss_price','take_profit_price','stop_loss_percent','take_profit_percent',
@@ -34,9 +35,12 @@ class TradePosition extends Model
     ];
 
     public function user(){ return $this->belongsTo(User::class); }
+    public function marketInstrument(){ return $this->belongsTo(MarketInstrument::class); }
     public function stock(){ return $this->belongsTo(Stock::class); }
     public function entryTransaction(){ return $this->belongsTo(StockTransaction::class,'entry_transaction_id'); }
+    public function entryMarketExecutionTransaction(){ return $this->belongsTo(MarketExecutionTransaction::class,'entry_market_execution_transaction_id'); }
     public function lastExitTransaction(){ return $this->belongsTo(StockTransaction::class,'last_exit_transaction_id'); }
+    public function lastExitMarketExecutionTransaction(){ return $this->belongsTo(MarketExecutionTransaction::class,'last_exit_market_execution_transaction_id'); }
     public function sourcePosition(){ return $this->belongsTo(self::class,'source_position_id'); }
     public function events(){ return $this->hasMany(TradePositionEvent::class); }
 
@@ -47,14 +51,16 @@ class TradePosition extends Model
 
     public function getCurrentProfitLossAttribute(): float
     {
-        if (! $this->stock) return (float)$this->realized_profit_loss;
+        $asset = $this->marketInstrument ?? $this->stock?->marketInstrument ?? $this->stock;
+        if (! $asset) return (float)$this->realized_profit_loss;
 
         try {
             $cmp = app(MarketPriceRouter::class)->price(
-                $this->stock,
+                $asset,
                 $this->marketplace ?: 'live'
             );
         } catch (\Throwable) {
+            if (! $this->stock) return (float)$this->realized_profit_loss;
             $cmp = (float)$this->stock->current_price;
         }
 

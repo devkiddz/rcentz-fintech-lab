@@ -123,6 +123,26 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.act
         Route::get('/{instrument}', [\App\Http\Controllers\MarketInstrumentController::class, 'show'])->name('show');
     });
 
+    // Unified liquid-market brokerage surface. All customer financial execution
+    // enters through BrokerOrder before asset-specific execution is allowed.
+    Route::middleware(['kyc'])->prefix('broker')->name('broker.')->group(function () {
+        Route::get('/portfolio', [\App\Http\Controllers\BrokerController::class, 'portfolio'])->name('portfolio');
+        Route::get('/orders', [\App\Http\Controllers\BrokerController::class, 'orders'])->name('orders');
+        Route::get('/orders/{publicId}', [\App\Http\Controllers\BrokerController::class, 'showOrder'])->name('orders.show');
+        Route::get('/activity', [\App\Http\Controllers\BrokerController::class, 'activity'])->name('activity');
+        Route::get('/positions', [\App\Http\Controllers\BrokerController::class, 'positions'])->name('positions');
+        Route::patch('/positions/{position}/risk', [\App\Http\Controllers\BrokerController::class, 'updatePositionRisk'])->name('positions.risk');
+        Route::post('/positions/{position}/close', [\App\Http\Controllers\BrokerController::class, 'closePosition'])->name('positions.close');
+        Route::get('/{assetClass}/{symbol}', [\App\Http\Controllers\BrokerController::class, 'workstation'])
+            ->where('assetClass', 'stock|forex|crypto')
+            ->where('symbol', '[A-Za-z0-9.\\-]+')
+            ->name('workstation');
+        Route::post('/{assetClass}/{symbol}/orders', [\App\Http\Controllers\BrokerController::class, 'submitOrder'])
+            ->where('assetClass', 'stock|forex|crypto')
+            ->where('symbol', '[A-Za-z0-9.\\-]+')
+            ->name('orders.submit');
+    });
+
     // Customer Signal workspace. SignalDelivery is the access authority.
     Route::prefix('signals')->name('signals.')->group(function () {
         Route::get('/', [\App\Http\Controllers\SignalController::class, 'index'])->name('index');
@@ -286,14 +306,14 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.act
         Route::post('/trading/{stock}/sell', [TradingController::class, 'executeSell'])->name('trading.execute-sell');
         
         // Stock Portfolio Routes
-        Route::get('/trading/portfolio', [TradingController::class, 'portfolio'])->name('trading.portfolio');
-        Route::get('/trading/transactions', [TradingController::class, 'transactions'])->name('trading.transactions');
+        Route::get('/trading/portfolio', fn () => redirect()->route('broker.portfolio'))->name('trading.portfolio');
+        Route::get('/trading/transactions', fn () => redirect()->route('broker.activity'))->name('trading.transactions');
         Route::get('/trading/watchlist', [TradingController::class, 'watchlist'])->name('trading.watchlist');
         Route::post('/trading/watchlist/{stock}', [TradingController::class, 'addToWatchlist'])->name('trading.watchlist.add');
         Route::patch('/trading/watchlist/update/{stock}', [TradingController::class, 'updateWatchlist'])->name('trading.watchlist.update');
         Route::delete('/trading/watchlist/{stock}', [TradingController::class, 'removeFromWatchlist'])->name('trading.watchlist.remove');
         Route::delete('/trading/plans/{plan}', [StockTradePlanController::class, 'cancel'])->name('trading.plans.cancel');
-        Route::get('/trading/positions', [\App\Http\Controllers\TradePositionController::class, 'index'])->name('trading.positions.index');
+        Route::get('/trading/positions', fn () => redirect()->route('broker.positions'))->name('trading.positions.index');
         Route::patch('/trading/positions/{position}/risk', [\App\Http\Controllers\TradePositionController::class, 'updateRisk'])->name('trading.positions.risk');
         Route::post('/trading/positions/{position}/close', [\App\Http\Controllers\TradePositionController::class, 'close'])->name('trading.positions.close');
         Route::post('/trading/positions/{position}/partial-close', [\App\Http\Controllers\TradePositionController::class, 'partialClose'])->name('trading.positions.partial-close');
