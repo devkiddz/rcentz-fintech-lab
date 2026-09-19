@@ -11,6 +11,7 @@ class Stock extends Model
     use HasFactory;
 
     protected $fillable = [
+        'market_instrument_id',
         'symbol',
         'company_name',
         'sector',
@@ -53,6 +54,11 @@ class Stock extends Model
         'last_updated' => 'datetime',
         'volume_updated_at' => 'datetime',
     ];
+
+    public function marketInstrument()
+    {
+        return $this->belongsTo(MarketInstrument::class);
+    }
 
     public function holdings()
     {

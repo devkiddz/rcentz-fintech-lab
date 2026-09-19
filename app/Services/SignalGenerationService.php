@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\MarketInstrument;
 use App\Models\Signal;
 use App\Models\SignalAnalysisRun;
 use App\Models\SignalEvent;
@@ -18,35 +19,40 @@ class SignalGenerationService
         private readonly MarketPriceRouter $marketPriceRouter
     ) {}
 
-    public function generateForStock(
-        Stock $stock,
+    public function generateForInstrument(
+        MarketInstrument $instrument,
         ?string $marketplace = null,
         bool $force = false,
         string $trigger = 'scheduled'
     ): array {
-        if (! $stock->is_active) {
-            return $this->outcome('skipped', $stock, null, 'Instrument is inactive.');
+        if (! $instrument->is_active) {
+            return $this->outcome('skipped', $instrument, null, 'Instrument is inactive.');
         }
 
-        $marketplace = $this->marketPriceRouter->normalizeMarketplace(
-            $marketplace ?: $this->marketPriceRouter->activeMarketplace()
-        );
+        if ($instrument->isCrypto() && data_get($instrument->metadata, 'signal_runtime_state') !== 'ready_only') {
+            return $this->outcome('skipped', $instrument, null, 'Crypto Signal runtime is not enabled for this instrument.');
+        }
 
-        $lock = Cache::lock("signals:generation:{$stock->id}:{$marketplace}", 30);
+        $marketplace = ($instrument->isForex() || $instrument->isCrypto())
+            ? 'live'
+            : $this->marketPriceRouter->normalizeMarketplace($marketplace ?: $this->marketPriceRouter->activeMarketplace());
+
+        $lock = Cache::lock("signals:generation:instrument:{$instrument->id}:{$marketplace}", 30);
 
         if (! $lock->get()) {
-            return $this->outcome('locked', $stock, null, 'Generation lock is already held for this instrument.');
+            return $this->outcome('locked', $instrument, null, 'Generation lock is already held for this instrument.');
         }
 
         try {
-            $result = $this->intelligence->analyzeStock($stock, $marketplace);
+            $result = $this->intelligence->analyzeInstrument($instrument, $marketplace);
             $analysis = $result['analysis'];
             $qualification = $result['qualification'];
             $setup = $result['setup'];
 
             $analysisRun = SignalAnalysisRun::create([
                 'signal_id' => null,
-                'stock_id' => $stock->id,
+                'stock_id' => $instrument->stock_id,
+                'market_instrument_id' => $instrument->id,
                 'marketplace' => $marketplace,
                 'trigger' => $trigger,
                 'source' => 'signal_intelligence',
@@ -63,7 +69,7 @@ class SignalGenerationService
             if (! $setup || ! ($qualification['eligible_for_auto_generation'] ?? false)) {
                 return $this->outcome(
                     'rejected',
-                    $stock,
+                    $instrument,
                     null,
                     $qualification['reason'] ?? 'Analysis did not qualify for automatic generation.',
                     $analysisRun,
@@ -72,7 +78,7 @@ class SignalGenerationService
             }
 
             return DB::transaction(function () use (
-                $stock,
+                $instrument,
                 $marketplace,
                 $force,
                 $analysisRun,
@@ -83,7 +89,7 @@ class SignalGenerationService
                 $trigger
             ) {
                 $openSignal = Signal::query()
-                    ->where('stock_id', $stock->id)
+                    ->where('market_instrument_id', $instrument->id)
                     ->where('marketplace', $marketplace)
                     ->whereIn('status', Signal::OPEN_STATUSES)
                     ->lockForUpdate()
@@ -98,7 +104,7 @@ class SignalGenerationService
 
                     return $this->outcome(
                         'duplicate_open',
-                        $stock,
+                        $instrument,
                         $openSignal,
                         'An open Signal already exists for this instrument and marketplace.',
                         $analysisRun,
@@ -108,7 +114,7 @@ class SignalGenerationService
 
                 if (! $force) {
                     $latest = Signal::query()
-                        ->where('stock_id', $stock->id)
+                        ->where('market_instrument_id', $instrument->id)
                         ->where('marketplace', $marketplace)
                         ->whereNotNull('generated_at')
                         ->latest('generated_at')
@@ -125,7 +131,7 @@ class SignalGenerationService
 
                         return $this->outcome(
                             'cooldown',
-                            $stock,
+                            $instrument,
                             $latest,
                             "Generation cooldown is still active for {$cooldownMinutes} minutes.",
                             $analysisRun,
@@ -135,7 +141,8 @@ class SignalGenerationService
                 }
 
                 $signal = Signal::create([
-                    'stock_id' => $stock->id,
+                    'stock_id' => $instrument->stock_id,
+                    'market_instrument_id' => $instrument->id,
                     'marketplace' => $marketplace,
                     'source' => 'auto_analysis',
                     'direction' => $setup['direction'],
@@ -176,6 +183,7 @@ class SignalGenerationService
                     'type' => 'generated',
                     'payload' => [
                         'trigger' => $trigger,
+                        'asset_class' => $instrument->asset_class,
                         'strength' => $signal->strength,
                         'confluence_score' => (float) $signal->confluence_score,
                         'timeframe' => $signal->timeframe,
@@ -185,18 +193,32 @@ class SignalGenerationService
 
                 return $this->outcome(
                     'generated',
-                    $stock,
-                    $signal->fresh(['targets']),
+                    $instrument,
+                    $signal->fresh(['targets', 'marketInstrument']),
                     'Qualified Signal generated and placed in ready state.',
                     $analysisRun->fresh(),
                     $result
                 );
             }, 3);
         } catch (\Throwable $e) {
-            throw new RuntimeException("Signal generation failed for {$stock->symbol}: {$e->getMessage()}", 0, $e);
+            throw new RuntimeException("Signal generation failed for {$instrument->display_symbol}: {$e->getMessage()}", 0, $e);
         } finally {
             $lock->release();
         }
+    }
+
+    public function generateForStock(
+        Stock $stock,
+        ?string $marketplace = null,
+        bool $force = false,
+        string $trigger = 'scheduled'
+    ): array {
+        $instrument = MarketInstrument::query()->where('stock_id', $stock->id)->first();
+        if (! $instrument) {
+            throw new RuntimeException("MarketInstrument registry is missing stock {$stock->symbol}.");
+        }
+
+        return $this->generateForInstrument($instrument, $marketplace, $force, $trigger);
     }
 
     private function cooldownMinutes(string $timeframe): int
@@ -214,7 +236,7 @@ class SignalGenerationService
 
     private function outcome(
         string $status,
-        Stock $stock,
+        MarketInstrument $instrument,
         ?Signal $signal,
         string $reason,
         ?SignalAnalysisRun $analysisRun = null,
@@ -222,8 +244,10 @@ class SignalGenerationService
     ): array {
         return [
             'status' => $status,
-            'stock_id' => $stock->id,
-            'symbol' => strtoupper($stock->symbol),
+            'market_instrument_id' => $instrument->id,
+            'stock_id' => $instrument->stock_id,
+            'asset_class' => $instrument->asset_class,
+            'symbol' => $instrument->display_symbol,
             'signal_id' => $signal?->id,
             'signal_status' => $signal?->status,
             'reason' => $reason,
@@ -242,7 +266,10 @@ class SignalGenerationService
         }
 
         return [
+            'asset_class' => $context['asset_class'] ?? 'stock',
+            'market_instrument_id' => $context['market_instrument_id'] ?? null,
             'symbol' => $context['symbol'] ?? null,
+            'display_symbol' => $context['display_symbol'] ?? $context['symbol'] ?? null,
             'marketplace' => $context['marketplace'] ?? null,
             'current_price' => $context['current_price'] ?? null,
             'analysis_source' => $context['analysis_source'] ?? null,
@@ -256,7 +283,12 @@ class SignalGenerationService
             'risk_reward' => $context['risk_reward'] ?? null,
             'default_timeframe' => $context['default_timeframe'] ?? null,
             'market_session' => $context['market_session'] ?? null,
+            'active_sessions' => $context['active_sessions'] ?? [],
+            'preferred_sessions' => $context['preferred_sessions'] ?? [],
+            'preferred_session_active' => $context['preferred_session_active'] ?? null,
             'captured_at' => $context['captured_at'] ?? null,
+            'price_precision' => $context['price_precision'] ?? null,
+            'pip_size' => $context['pip_size'] ?? null,
             'timeframe_samples' => $timeframes,
         ];
     }

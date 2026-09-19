@@ -4,7 +4,7 @@ namespace App\Services\Market;
 
 use App\Contracts\MarketPriceProvider;
 use App\Models\ControlledMarketInstrument;
-use App\Models\Stock;
+use App\Models\MarketInstrument;
 use RuntimeException;
 
 final class ControlledMarketPriceProvider implements MarketPriceProvider
@@ -14,21 +14,21 @@ final class ControlledMarketPriceProvider implements MarketPriceProvider
         return 'controlled';
     }
 
-    public function price(Stock $stock): float
+    public function price(MarketInstrument $instrument): float
     {
-        $instrument = ControlledMarketInstrument::query()
-            ->where('stock_id', $stock->id)
+        $controlled = ControlledMarketInstrument::query()
+            ->where('market_instrument_id', $instrument->id)
             ->where('is_active', true)
             ->first();
 
-        if (! $instrument) {
-            throw new RuntimeException('Controlled market instrument is unavailable for '.$stock->symbol.'.');
+        if (! $controlled) {
+            throw new RuntimeException('Controlled market instrument is unavailable for '.$instrument->display_symbol.'.');
         }
 
-        $price = (float) $instrument->current_price;
+        $price = (float) $controlled->current_price;
 
         if ($price <= 0) {
-            throw new RuntimeException('Controlled market price is invalid for '.$stock->symbol.'.');
+            throw new RuntimeException('Controlled market price is invalid for '.$instrument->display_symbol.'.');
         }
 
         return $price;

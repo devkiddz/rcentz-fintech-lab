@@ -23,7 +23,7 @@
                     <div class="mt-3 grid gap-3 sm:grid-cols-2">
                         <div><label class="ui-label">Instrument Name</label><input class="ui-input w-full" name="name" placeholder="e.g. Lekki Income Property Fund" required></div>
                         <div><label class="ui-label">Symbol</label><input class="ui-input w-full" name="symbol" placeholder="e.g. LIPF" required></div>
-                        <div><label class="ui-label">Asset Class</label><select class="ui-input w-full" name="category" required><option value="stock_market">Stocks</option><option value="cryptocurrency">Cryptocurrency</option><option value="real_estate">Real Estate</option><option value="bonds">Bonds & Fixed Income</option></select></div>
+                        <div><label class="ui-label">Asset Class</label><select class="ui-input w-full" name="category" required><option value="stock_market">Stocks</option><option value="forex">Forex</option><option value="cryptocurrency">Cryptocurrency</option><option value="real_estate">Real Estate</option><option value="bonds">Bonds & Fixed Income</option></select></div>
                         <div><label class="ui-label">Risk Level</label><select class="ui-input w-full" name="risk_level" required><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="very_high">Very High</option></select></div>
                     </div>
                 </div>

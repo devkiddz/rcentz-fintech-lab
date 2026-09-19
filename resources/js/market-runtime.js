@@ -1,10 +1,14 @@
-// V5.14.3 automatic market runtime.
-// Polling is intentionally lightweight and uses the server-side tickIfDue lock,
-// so an open browser can drive Controlled Market locally even when schedule:work
-// is not running. Production scheduler and browser heartbeat share one clock.
+// Parent-first automatic market runtime.
+// MarketInstrument IDs are the generic authority. Legacy stock-symbol hooks remain
+// supported so the mature stock trading UI can migrate without a big-bang rewrite.
 
 const runtimeSelector = [
     '[data-market-runtime]',
+    '[data-market-price-instrument]',
+    '[data-market-previous-instrument]',
+    '[data-market-change-instrument]',
+    '[data-market-change-percent-instrument]',
+    '[data-market-analysis-instrument]',
     '[data-market-price-symbol]',
     '[data-market-position-pnl]',
     '[data-market-analysis-symbol]',
@@ -19,16 +23,12 @@ const tone = (el, value) => {
     if (Number(value) < 0) el.classList.add('text-red-600');
 };
 
-// V5.20.1 price movement tick.
-// This is deliberately a transient tick-to-tick indicator, not the session/day change.
-// The authoritative price remains the server runtime payload; the browser only compares
-// the previous rendered value with the newest authoritative value.
 const movementState = new WeakMap();
 const movementBadges = new WeakMap();
 const movementTimers = new WeakMap();
 
 const applyMovementTick = (el, row) => {
-    if (!el || !row) return;
+    if (!el || !row || row.unavailable) return;
 
     const current = Number(row.price);
     if (!Number.isFinite(current)) return;
@@ -36,7 +36,6 @@ const applyMovementTick = (el, row) => {
     const previous = movementState.get(el);
     movementState.set(el, current);
 
-    // First authoritative snapshot seeds the comparator without displaying movement.
     if (!Number.isFinite(previous) || previous === current) return;
 
     const delta = current - previous;
@@ -69,7 +68,7 @@ const applyMovementTick = (el, row) => {
     );
 
     badge.textContent = arrow + ' ' + sign + percent.toFixed(2) + '%';
-    badge.title = 'Movement since the previous price update';
+    badge.title = 'Movement since the previous authoritative price update';
 
     const oldTimer = movementTimers.get(el);
     if (oldTimer) window.clearTimeout(oldTimer);
@@ -81,9 +80,25 @@ const applyMovementTick = (el, row) => {
 };
 
 const collect = () => {
+    const instruments = new Set();
+    const instrumentAnalyses = new Set();
     const symbols = new Set();
     const positions = new Set();
     const analyses = new Set();
+
+    document.querySelectorAll('[data-market-price-instrument],[data-market-previous-instrument],[data-market-change-instrument],[data-market-change-percent-instrument]').forEach((el) => {
+        const id = el.dataset.marketPriceInstrument || el.dataset.marketPreviousInstrument || el.dataset.marketChangeInstrument || el.dataset.marketChangePercentInstrument;
+        if (id) instruments.add(String(id));
+    });
+
+    document.querySelectorAll('[data-market-analysis-instrument]').forEach((el) => {
+        const id = String(el.dataset.marketAnalysisInstrument || '');
+        const marketplace = String(el.dataset.marketplace || 'live').toLowerCase();
+        if (id) {
+            instruments.add(id);
+            instrumentAnalyses.add(id + ':' + marketplace);
+        }
+    });
 
     document.querySelectorAll('[data-market-price-symbol],[data-market-previous-symbol],[data-market-change-symbol],[data-market-change-percent-symbol]').forEach((el) => {
         const symbol = String(el.dataset.marketPriceSymbol || el.dataset.marketPreviousSymbol || el.dataset.marketChangeSymbol || el.dataset.marketChangePercentSymbol || '').toUpperCase();
@@ -96,6 +111,7 @@ const collect = () => {
     });
 
     document.querySelectorAll('[data-market-analysis-symbol]').forEach((el) => {
+        if (el.dataset.marketAnalysisInstrument) return;
         const symbol = String(el.dataset.marketAnalysisSymbol || '').toUpperCase();
         const marketplace = String(el.dataset.marketplace || 'live').toLowerCase();
         if (symbol) {
@@ -104,44 +120,93 @@ const collect = () => {
         }
     });
 
-    return { symbols: [...symbols], positions: [...positions], analyses: [...analyses] };
+    return {
+        instruments: [...instruments],
+        instrumentAnalyses: [...instrumentAnalyses],
+        symbols: [...symbols],
+        positions: [...positions],
+        analyses: [...analyses],
+    };
 };
 
-const marketRowFor = (payload, el, symbol) => {
+const instrumentRowFor = (payload, el, id) => {
+    const marketplace = String(el.dataset.marketplace || payload.active_marketplace || 'live').toLowerCase();
+    return payload.instruments?.[id]?.[marketplace] || null;
+};
+
+const stockRowFor = (payload, el, symbol) => {
     const marketplace = String(el.dataset.marketplace || payload.active_marketplace || 'live').toLowerCase();
     return payload.stocks?.[symbol]?.[marketplace] || null;
 };
 
+const applyPriceRow = (el, row, field) => {
+    if (!row || row.unavailable) return;
+
+    if (field === 'price') {
+        applyMovementTick(el, row);
+        el.textContent = row.formatted_price;
+        return;
+    }
+
+    if (field === 'previous') {
+        el.textContent = row.formatted_previous;
+        return;
+    }
+
+    if (field === 'change') {
+        el.textContent = row.formatted_change;
+        tone(el, row.change);
+        return;
+    }
+
+    if (field === 'change_percent') {
+        el.textContent = row.formatted_change_percent;
+        tone(el, row.change_percent);
+    }
+};
+
 const apply = (payload) => {
+    document.querySelectorAll('[data-market-price-instrument]').forEach((el) => {
+        const id = String(el.dataset.marketPriceInstrument || '');
+        applyPriceRow(el, instrumentRowFor(payload, el, id), 'price');
+    });
+
+    document.querySelectorAll('[data-market-previous-instrument]').forEach((el) => {
+        const id = String(el.dataset.marketPreviousInstrument || '');
+        applyPriceRow(el, instrumentRowFor(payload, el, id), 'previous');
+    });
+
+    document.querySelectorAll('[data-market-change-instrument]').forEach((el) => {
+        const id = String(el.dataset.marketChangeInstrument || '');
+        applyPriceRow(el, instrumentRowFor(payload, el, id), 'change');
+    });
+
+    document.querySelectorAll('[data-market-change-percent-instrument]').forEach((el) => {
+        const id = String(el.dataset.marketChangePercentInstrument || '');
+        applyPriceRow(el, instrumentRowFor(payload, el, id), 'change_percent');
+    });
+
+    // Legacy stock-specific DOM hooks remain supported.
     document.querySelectorAll('[data-market-price-symbol]').forEach((el) => {
+        if (el.dataset.marketPriceInstrument) return;
         const symbol = String(el.dataset.marketPriceSymbol || '').toUpperCase();
-        const row = marketRowFor(payload, el, symbol);
-        if (row) {
-            applyMovementTick(el, row);
-            el.textContent = row.formatted_price;
-        }
+        applyPriceRow(el, stockRowFor(payload, el, symbol), 'price');
     });
 
     document.querySelectorAll('[data-market-previous-symbol]').forEach((el) => {
         const symbol = String(el.dataset.marketPreviousSymbol || '').toUpperCase();
-        const row = marketRowFor(payload, el, symbol);
-        if (row) el.textContent = row.formatted_previous;
+        applyPriceRow(el, stockRowFor(payload, el, symbol), 'previous');
     });
 
     document.querySelectorAll('[data-market-change-symbol]').forEach((el) => {
         const symbol = String(el.dataset.marketChangeSymbol || '').toUpperCase();
-        const row = marketRowFor(payload, el, symbol);
-        if (!row) return;
-        el.textContent = row.formatted_change;
-        tone(el, row.change);
+        applyPriceRow(el, stockRowFor(payload, el, symbol), 'change');
     });
 
     document.querySelectorAll('[data-market-change-percent-symbol]').forEach((el) => {
+        if (el.dataset.marketChangePercentInstrument) return;
         const symbol = String(el.dataset.marketChangePercentSymbol || '').toUpperCase();
-        const row = marketRowFor(payload, el, symbol);
-        if (!row) return;
-        el.textContent = row.formatted_change_percent;
-        tone(el, row.change_percent);
+        applyPriceRow(el, stockRowFor(payload, el, symbol), 'change_percent');
     });
 
     Object.entries(payload.positions || {}).forEach(([id, row]) => {
@@ -155,7 +220,17 @@ const apply = (payload) => {
         });
     });
 
+    document.querySelectorAll('[data-market-analysis-instrument]').forEach((el) => {
+        const id = String(el.dataset.marketAnalysisInstrument || '');
+        const marketplace = String(el.dataset.marketplace || 'live').toLowerCase();
+        const next = payload.instrument_analysis?.[id + ':' + marketplace];
+        if (next && window.RcentzCharts?.refreshAnalysis) {
+            window.RcentzCharts.refreshAnalysis(el, next);
+        }
+    });
+
     document.querySelectorAll('[data-market-analysis-symbol]').forEach((el) => {
+        if (el.dataset.marketAnalysisInstrument) return;
         const symbol = String(el.dataset.marketAnalysisSymbol || '').toUpperCase();
         const marketplace = String(el.dataset.marketplace || 'live').toLowerCase();
         const next = payload.analysis?.[symbol + ':' + marketplace];
@@ -171,9 +246,12 @@ let timer = null;
 const poll = async () => {
     if (busy || document.hidden || !nodesExist()) return;
     busy = true;
+
     try {
         const request = collect();
         const params = new URLSearchParams();
+        if (request.instruments.length) params.set('instruments', request.instruments.join(','));
+        if (request.instrumentAnalyses.length) params.set('instrument_analysis', request.instrumentAnalyses.join(','));
         if (request.symbols.length) params.set('symbols', request.symbols.join(','));
         if (request.positions.length) params.set('positions', request.positions.join(','));
         if (request.analyses.length) params.set('analysis', request.analyses.join(','));

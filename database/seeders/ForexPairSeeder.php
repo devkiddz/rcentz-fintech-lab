@@ -58,7 +58,7 @@ class ForexPairSeeder extends Seeder
                 ]
             );
 
-            MarketInstrument::updateOrCreate(
+            $parent = MarketInstrument::updateOrCreate(
                 ['asset_class' => MarketInstrument::ASSET_FOREX, 'symbol' => $symbol],
                 [
                     'display_symbol' => $display,
@@ -75,10 +75,14 @@ class ForexPairSeeder extends Seeder
                     'metadata' => ['preferred_sessions' => $sessions],
                 ]
             );
+
+            if ((int) ($pair->market_instrument_id ?? 0) !== (int) $parent->id) {
+                $pair->update(['market_instrument_id' => $parent->id]);
+            }
         }
 
         Stock::query()->orderBy('id')->each(function (Stock $stock) {
-            MarketInstrument::updateOrCreate(
+            $parent = MarketInstrument::updateOrCreate(
                 ['asset_class' => MarketInstrument::ASSET_STOCK, 'symbol' => strtoupper($stock->symbol)],
                 [
                     'display_symbol' => strtoupper($stock->symbol),
@@ -95,8 +99,12 @@ class ForexPairSeeder extends Seeder
                     'metadata' => ['source' => 'stocks'],
                 ]
             );
+
+            if ((int) ($stock->market_instrument_id ?? 0) !== (int) $parent->id) {
+                $stock->update(['market_instrument_id' => $parent->id]);
+            }
         });
 
-        $this->command?->info('Forex market foundation seeded: 10 pairs plus generic stock/forex MarketInstrument registry.');
+        $this->command?->info('Forex market foundation seeded: 10 pairs plus parent-first stock/forex MarketInstrument registry.');
     }
 }

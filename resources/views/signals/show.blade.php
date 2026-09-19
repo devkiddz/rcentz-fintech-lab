@@ -8,13 +8,16 @@
         $distributionReason = data_get($delivery->metadata, 'distribution_reason');
         $timingToneClasses = match(data_get($timing, 'entry.tone')) {
             'positive' => 'bg-emerald-500/10 text-emerald-600 ring-emerald-500/15 dark:text-emerald-400',
+            'info' => 'bg-sky-500/10 text-sky-700 ring-sky-500/15 dark:text-sky-400',
             'warning' => 'bg-amber-500/10 text-amber-700 ring-amber-500/15 dark:text-amber-400',
             'negative' => 'bg-red-500/10 text-red-600 ring-red-500/15 dark:text-red-400',
             default => 'bg-muted text-muted-foreground ring-border',
         };
         $timingIcon = match(data_get($timing, 'entry.state')) {
+            'early' => 'clock-3',
             'optimal' => 'badge-check',
             'moderate' => 'triangle-alert',
+            'too_late' => 'clock-alert',
             'dangerous' => 'shield-alert',
             'inactive' => 'circle-off',
             default => 'clock-3',
@@ -37,63 +40,100 @@
             </div>
         </section>
 
-        <section class="ui-panel overflow-hidden" data-signal-timing>
-            <div class="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                <div>
-                    <p class="ui-kicker">Timing intelligence</p>
-                    <h2 class="mt-1 text-lg font-semibold">When this setup is safest to approach</h2>
-                    <p class="mt-1 max-w-3xl text-xs leading-5 text-muted-foreground">Live timing is derived from the current price, the original entry contract, stop distance, first target and market session.</p>
+        @include('signals._instrument_chart', [
+            'signal' => $signal,
+            'analysis' => $analysis,
+            'chartHeight' => 'h-[280px] md:h-[360px]',
+        ])
+
+        <section class="ui-panel overflow-hidden" data-signal-timing data-timing-layout="chart-first">
+            <div class="flex flex-col gap-4 border-b border-border px-5 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+                <div class="min-w-0">
+                    <p class="ui-kicker">Entry timing</p>
+                    <h2 class="mt-1 text-lg font-semibold">Execution timing</h2>
+                    <p class="mt-1 max-w-3xl text-xs leading-5 text-muted-foreground">Read the setup after the chart: where price sits now, where a fresh entry remains acceptable, and when the original risk contract is no longer worth chasing.</p>
                 </div>
-                <span class="inline-flex self-start items-center gap-2 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-[.1em] ring-1 {{ $timingToneClasses }}">
-                    <i data-lucide="{{ $timingIcon }}" class="h-3.5 w-3.5"></i>
-                    {{ data_get($timing, 'entry.label', 'Timing unavailable') }}
-                </span>
+                <div class="flex flex-wrap items-center gap-2 sm:justify-end">
+                    <div class="rounded-xl border border-border bg-muted/15 px-3 py-2">
+                        <p class="text-[9px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Market price</p>
+                        <p class="mt-1 text-sm font-semibold tabular-nums">{{ data_get($timing, 'current_price') > 0 ? number_format((float)data_get($timing, 'current_price'), $precision) : '—' }}</p>
+                    </div>
+                    <span class="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-[10px] font-bold uppercase tracking-[.1em] ring-1 {{ $timingToneClasses }}">
+                        <i data-lucide="{{ $timingIcon }}" class="h-3.5 w-3.5"></i>
+                        {{ data_get($timing, 'entry.label', 'Timing unavailable') }}
+                    </span>
+                </div>
             </div>
 
-            <div class="grid gap-px bg-border/70 lg:grid-cols-[1.15fr_1fr_1fr]">
+            <div class="grid gap-px bg-border/70 xl:grid-cols-[.9fr_1.35fr_.95fr]">
+                <article class="bg-background p-5 sm:p-6">
+                    <div class="flex items-start gap-3">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 {{ $timingToneClasses }}">
+                            <i data-lucide="{{ $timingIcon }}" class="h-4 w-4"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="ui-label">Current assessment</p>
+                            <p class="mt-1 text-xl font-semibold">{{ data_get($timing, 'entry.label', 'Unavailable') }}</p>
+                        </div>
+                    </div>
+                    <p class="mt-4 text-xs leading-5 text-muted-foreground">{{ data_get($timing, 'entry.description') }}</p>
+                    <div class="mt-4 rounded-xl border border-border bg-muted/15 px-3.5 py-3">
+                        <div class="flex items-center justify-between gap-3 text-xs">
+                            <span class="text-muted-foreground">Signal timeframe</span>
+                            <strong>{{ data_get($timing, 'best_timeframe', strtoupper((string)$signal->timeframe)) }}</strong>
+                        </div>
+                    </div>
+                </article>
+
                 <article class="bg-background p-5 sm:p-6">
                     <div class="flex items-start justify-between gap-4">
                         <div>
-                            <p class="ui-label">Current timing</p>
-                            <p class="mt-2 text-xl font-semibold">{{ data_get($timing, 'entry.label', 'Unavailable') }}</p>
+                            <p class="ui-label">Fresh-entry map</p>
+                            <h3 class="mt-1 text-sm font-semibold">Price zones</h3>
                         </div>
-                        <div class="text-right">
-                            <p class="ui-label">Market price</p>
-                            <p class="mt-2 text-lg font-semibold tabular-nums">{{ data_get($timing, 'current_price') > 0 ? number_format((float)data_get($timing, 'current_price'), 2) : '—' }}</p>
+                        <span class="rounded-full border border-border bg-muted/20 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">{{ strtoupper((string)$signal->direction) }}</span>
+                    </div>
+                    <div class="mt-4 grid gap-2 sm:grid-cols-2" data-entry-timing-spectrum>
+                        <div @class(['rounded-xl border p-3', 'border-sky-500/30 bg-sky-500/[.06]' => data_get($timing, 'entry.state') === 'early', 'border-border bg-muted/10' => data_get($timing, 'entry.state') !== 'early'])>
+                            <div class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-sky-500"></span><span class="text-[9px] font-bold uppercase tracking-[.12em] text-sky-700 dark:text-sky-400">Early</span></div>
+                            <p class="mt-2 text-xs font-semibold leading-5">{{ data_get($timing, 'early.label') }}</p>
+                        </div>
+                        <div @class(['rounded-xl border p-3', 'border-emerald-500/30 bg-emerald-500/[.06]' => data_get($timing, 'entry.state') === 'optimal', 'border-border bg-muted/10' => data_get($timing, 'entry.state') !== 'optimal'])>
+                            <div class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-emerald-500"></span><span class="text-[9px] font-bold uppercase tracking-[.12em] text-emerald-600 dark:text-emerald-400">Optimal</span></div>
+                            <p class="mt-2 text-xs font-semibold tabular-nums">{{ data_get($timing, 'optimal_range.label') }}</p>
+                        </div>
+                        <div @class(['rounded-xl border p-3', 'border-amber-500/30 bg-amber-500/[.06]' => data_get($timing, 'entry.state') === 'moderate', 'border-border bg-muted/10' => data_get($timing, 'entry.state') !== 'moderate'])>
+                            <div class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-amber-500"></span><span class="text-[9px] font-bold uppercase tracking-[.12em] text-amber-700 dark:text-amber-400">Moderate</span></div>
+                            <p class="mt-2 text-xs font-semibold tabular-nums">{{ data_get($timing, 'moderate_range.label') }}</p>
+                        </div>
+                        <div @class(['rounded-xl border p-3', 'border-rose-500/30 bg-rose-500/[.06]' => data_get($timing, 'entry.state') === 'too_late', 'border-border bg-muted/10' => data_get($timing, 'entry.state') !== 'too_late'])>
+                            <div class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-rose-500"></span><span class="text-[9px] font-bold uppercase tracking-[.12em] text-rose-600 dark:text-rose-400">Too late</span></div>
+                            <p class="mt-2 text-xs font-semibold leading-5">{{ data_get($timing, 'too_late.label') }}</p>
+                        </div>
+                        <div @class(['rounded-xl border p-3 sm:col-span-2', 'border-red-500/30 bg-red-500/[.06]' => data_get($timing, 'entry.state') === 'dangerous', 'border-border bg-muted/10' => data_get($timing, 'entry.state') !== 'dangerous'])>
+                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-red-500"></span><span class="text-[9px] font-bold uppercase tracking-[.12em] text-red-600 dark:text-red-400">Danger</span></div>
+                                <p class="text-xs font-semibold leading-5 sm:text-right">{{ data_get($timing, 'danger.label') }}</p>
+                            </div>
                         </div>
                     </div>
-                    <p class="mt-3 text-xs leading-5 text-muted-foreground">{{ data_get($timing, 'entry.description') }}</p>
+                    <p class="mt-3 text-[10px] leading-4 text-muted-foreground">Early: wait. Optimal: preferred entry zone. Moderate: still tolerable. Too late: do not chase. Danger: stop/session contract is no longer safe for a fresh entry.</p>
                 </article>
 
                 <article class="bg-background p-5 sm:p-6">
-                    <p class="ui-label">Entry timing bands</p>
-                    <dl class="mt-3 space-y-3 text-xs">
-                        <div class="flex items-start justify-between gap-4"><dt class="text-muted-foreground">Optimal</dt><dd class="text-right font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">{{ data_get($timing, 'optimal_range.label') }}</dd></div>
-                        <div class="flex items-start justify-between gap-4"><dt class="text-muted-foreground">Moderate tolerance</dt><dd class="text-right font-semibold tabular-nums text-amber-700 dark:text-amber-400">{{ data_get($timing, 'moderate_range.label') }}</dd></div>
-                        <div class="flex items-start justify-between gap-4"><dt class="text-muted-foreground">Danger zone</dt><dd class="max-w-[13rem] text-right font-semibold text-red-600 dark:text-red-400">{{ data_get($timing, 'danger.label') }}</dd></div>
-                    </dl>
-                    <p class="mt-3 text-[10px] leading-4 text-muted-foreground">Moderate applies only outside the optimal entry zone while price remains inside the wider tolerance band.</p>
-                </article>
-
-                <article class="bg-background p-5 sm:p-6">
-                    <p class="ui-label">Timeframe & session</p>
-                    <dl class="mt-3 space-y-3 text-xs">
-                        <div class="flex items-start justify-between gap-4"><dt class="text-muted-foreground">Best timeframe</dt><dd class="font-semibold">{{ data_get($timing, 'best_timeframe', strtoupper((string)$signal->timeframe)) }}</dd></div>
-                        <div class="flex items-start justify-between gap-4"><dt class="text-muted-foreground">Best session</dt><dd class="text-right font-semibold">{{ data_get($timing, 'session.best') }}</dd></div>
-                        <div class="flex items-start justify-between gap-4"><dt class="text-muted-foreground">Session window</dt><dd class="text-right font-semibold tabular-nums">{{ data_get($timing, 'session.window') }}</dd></div>
-                        <div class="flex items-start justify-between gap-4"><dt class="text-muted-foreground">Current session</dt><dd class="text-right font-semibold">{{ data_get($timing, 'session.label') }} · {{ data_get($timing, 'session.market_time') }} {{ data_get($timing, 'session.timezone') }}</dd></div>
+                    <p class="ui-label">Market context</p>
+                    <h3 class="mt-1 text-sm font-semibold">Session intelligence</h3>
+                    <dl class="mt-4 divide-y divide-border rounded-xl border border-border bg-muted/10 text-xs">
+                        <div class="flex items-start justify-between gap-4 px-3.5 py-3"><dt class="text-muted-foreground">Best session</dt><dd class="max-w-[12rem] text-right font-semibold">{{ data_get($timing, 'session.best') }}</dd></div>
+                        <div class="flex items-start justify-between gap-4 px-3.5 py-3"><dt class="text-muted-foreground">Window</dt><dd class="max-w-[12rem] text-right font-semibold tabular-nums">{{ data_get($timing, 'session.window') }}</dd></div>
+                        <div class="flex items-start justify-between gap-4 px-3.5 py-3"><dt class="text-muted-foreground">Now</dt><dd class="max-w-[12rem] text-right font-semibold">{{ data_get($timing, 'session.label') }}</dd></div>
+                        <div class="flex items-start justify-between gap-4 px-3.5 py-3"><dt class="text-muted-foreground">Market clock</dt><dd class="text-right font-semibold tabular-nums">{{ data_get($timing, 'session.market_time') }} {{ data_get($timing, 'session.timezone') }}</dd></div>
                     </dl>
                 </article>
             </div>
 
             <div class="border-t border-border bg-muted/15 px-5 py-3 text-[10px] leading-4 text-muted-foreground sm:px-6">{{ data_get($timing, 'method') }} Timing describes execution context, not guaranteed profitability.</div>
         </section>
-
-        @include('signals._instrument_chart', [
-            'signal' => $signal,
-            'analysis' => $analysis,
-            'chartHeight' => 'h-[280px] md:h-[360px]',
-        ])
 
         <section class="grid gap-4 lg:grid-cols-3">
             <article class="ui-panel overflow-hidden">

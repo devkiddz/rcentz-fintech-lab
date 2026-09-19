@@ -17,9 +17,9 @@ class InspectSignalAutomation extends Command
     public function handle(SignalRevisionService $revisions): int
     {
         $duplicateGroups = DB::table('signals')
-            ->select('stock_id', 'marketplace', DB::raw('COUNT(*) as aggregate'))
+            ->select('market_instrument_id', 'marketplace', DB::raw('COUNT(*) as aggregate'))
             ->whereIn('status', Signal::OPEN_STATUSES)
-            ->groupBy('stock_id', 'marketplace')
+            ->groupBy('market_instrument_id', 'marketplace')
             ->havingRaw('COUNT(*) > 1');
 
         $openDuplicates = DB::query()
@@ -42,12 +42,13 @@ class InspectSignalAutomation extends Command
             return self::FAILURE;
         }
 
-        $latest = Signal::query()->with(['stock', 'targets'])->latest('id')->first();
+        $latest = Signal::query()->with(['stock', 'marketInstrument.stock', 'marketInstrument.forexPair', 'targets'])->latest('id')->first();
 
         if ($latest) {
             $this->table(['Latest Signal', 'Value'], [
                 ['ID', $latest->id],
-                ['Instrument', $latest->stock?->symbol ?? '-'],
+                ['Instrument', $latest->instrument_symbol],
+                ['Asset class', strtoupper((string) $latest->asset_class)],
                 ['Marketplace', $latest->marketplace],
                 ['Status', $latest->status],
                 ['Direction', strtoupper((string) $latest->direction)],
@@ -76,6 +77,7 @@ class InspectSignalAutomation extends Command
                 $run = SignalAnalysisRun::create([
                     'signal_id' => $latest->id,
                     'stock_id' => $latest->stock_id,
+                    'market_instrument_id' => $latest->market_instrument_id,
                     'marketplace' => $latest->marketplace,
                     'trigger' => 'inspection_probe',
                     'source' => 's3_revision_probe',

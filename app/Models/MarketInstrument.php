@@ -11,6 +11,7 @@ class MarketInstrument extends Model
 
     public const ASSET_STOCK = 'stock';
     public const ASSET_FOREX = 'forex';
+    public const ASSET_CRYPTO = 'crypto';
 
     protected $fillable = [
         'symbol',
@@ -47,6 +48,30 @@ class MarketInstrument extends Model
         return $this->belongsTo(ForexPair::class);
     }
 
+    /**
+     * Canonical parent -> child relations. Legacy stock_id / forex_pair_id
+     * remain temporarily as compatibility rails while the runtime migrates.
+     */
+    public function canonicalStock()
+    {
+        return $this->hasOne(Stock::class, 'market_instrument_id');
+    }
+
+    public function canonicalForexPair()
+    {
+        return $this->hasOne(ForexPair::class, 'market_instrument_id');
+    }
+
+    public function canonicalCryptoPair()
+    {
+        return $this->hasOne(CryptoPair::class, 'market_instrument_id');
+    }
+
+    public function controlledMarketInstrument()
+    {
+        return $this->hasOne(ControlledMarketInstrument::class, 'market_instrument_id');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
@@ -65,5 +90,10 @@ class MarketInstrument extends Model
     public function isForex(): bool
     {
         return $this->asset_class === self::ASSET_FOREX;
+    }
+
+    public function isCrypto(): bool
+    {
+        return $this->asset_class === self::ASSET_CRYPTO;
     }
 }

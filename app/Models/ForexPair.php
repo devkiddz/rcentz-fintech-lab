@@ -10,6 +10,7 @@ class ForexPair extends Model
     use HasFactory;
 
     protected $fillable = [
+        'market_instrument_id',
         'symbol',
         'display_symbol',
         'name',
@@ -38,14 +39,19 @@ class ForexPair extends Model
         'last_updated' => 'datetime',
     ];
 
+    public function marketInstrument()
+    {
+        return $this->belongsTo(MarketInstrument::class);
+    }
+
     public function candles()
     {
         return $this->hasMany(ForexCandle::class);
     }
 
-    public function marketInstrument()
+    public function legacyMarketInstrument()
     {
-        return $this->hasOne(MarketInstrument::class);
+        return $this->hasOne(MarketInstrument::class, 'forex_pair_id');
     }
 
     public function scopeActive($query)

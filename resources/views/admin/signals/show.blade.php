@@ -145,6 +145,22 @@
                 <div class="border-b border-border px-5 py-4"><p class="ui-kicker">Trade context</p><h2 class="mt-1 text-base font-semibold">Rationale & timing</h2></div>
                 <div class="p-5">
                     <div class="rounded-xl border border-border bg-muted/10 p-4"><p class="ui-label">Rationale</p><p class="mt-2 text-sm leading-6 text-muted-foreground">{{ $signal->rationale ?: 'No narrative rationale is attached to this Signal.' }}</p></div>
+                    @if($signal->marketInstrument?->isCrypto())
+                        <div class="mt-4 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3" data-crypto-timing-context>
+                            <div class="bg-card p-4">
+                                <p class="ui-label">Market hours</p>
+                                <p class="mt-1.5 text-sm font-semibold">24/7</p>
+                            </div>
+                            <div class="bg-card p-4">
+                                <p class="ui-label">Session</p>
+                                <p class="mt-1.5 text-sm font-semibold">Always open</p>
+                            </div>
+                            <div class="bg-card p-4">
+                                <p class="ui-label">Timing model</p>
+                                <p class="mt-1.5 text-sm font-semibold">Continuous crypto market</p>
+                            </div>
+                        </div>
+                    @endif
                     <div class="mt-4 grid gap-3 text-xs text-muted-foreground sm:grid-cols-2"><div><span class="font-semibold text-foreground">Generated:</span> {{ $signal->generated_at?->format('M j, Y g:i A') ?? '—' }}</div><div><span class="font-semibold text-foreground">Expires:</span> {{ $signal->expires_at?->format('M j, Y g:i A') ?? '—' }}</div><div><span class="font-semibold text-foreground">Published:</span> {{ $signal->published_at?->format('M j, Y g:i A') ?? '—' }}</div><div><span class="font-semibold text-foreground">Activated:</span> {{ $signal->activated_at?->format('M j, Y g:i A') ?? '—' }}</div></div>
                     <div class="mt-4 flex flex-wrap gap-2 text-[10px] text-muted-foreground"><span class="rounded-full border border-border px-2.5 py-1">{{ $signal->revisions->count() }} revisions</span><span class="rounded-full border border-border px-2.5 py-1">{{ $signal->analysisRuns->count() }} analyses</span><span class="rounded-full border border-border px-2.5 py-1">{{ $signal->distributions->sum('deliveries_count') }} deliveries</span></div>
                 </div>

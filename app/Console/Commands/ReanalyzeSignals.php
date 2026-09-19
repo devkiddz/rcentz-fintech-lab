@@ -9,7 +9,7 @@ use Illuminate\Console\Command;
 class ReanalyzeSignals extends Command
 {
     protected $signature = 'signals:reanalyze {signal? : Signal id; defaults to latest open Signal} {--all : Re-analyze every open Signal} {--no-adjust : Report recommended changes without applying revisions}';
-    protected $description = 'Re-analyze open Signals and apply safe automatic adjustments through immutable revisions.';
+    protected $description = 'Re-analyze open multi-asset Signals and apply safe automatic adjustments through immutable revisions.';
 
     public function handle(SignalReanalysisService $service): int
     {
@@ -17,7 +17,7 @@ class ReanalyzeSignals extends Command
 
         if ($signals->isEmpty()) {
             $this->warn('No open Signal is available for re-analysis.');
-            $this->info('SIGNALS_S3_REANALYSIS_OK');
+            $this->info('SIGNALS_FX2_REANALYSIS_OK');
             return self::SUCCESS;
         }
 
@@ -29,7 +29,8 @@ class ReanalyzeSignals extends Command
                 $result = $service->reanalyze($signal, ! $this->option('no-adjust'), 'manual_reanalysis');
                 $rows[] = [
                     $signal->id,
-                    $signal->stock?->symbol,
+                    $signal->instrument_symbol,
+                    strtoupper((string) $signal->asset_class),
                     strtoupper((string) $result['status']),
                     strtoupper((string) ($result['assessment'] ?? '-')),
                     $result['revision_number'] ?? '-',
@@ -38,35 +39,32 @@ class ReanalyzeSignals extends Command
                 ];
             } catch (\Throwable $e) {
                 $failed++;
-                $rows[] = [$signal->id, $signal->stock?->symbol, 'FAILED', '-', '-', '-', $e->getMessage()];
+                $rows[] = [$signal->id, $signal->instrument_symbol, strtoupper((string) $signal->asset_class), 'FAILED', '-', '-', '-', $e->getMessage()];
             }
         }
 
         $this->table(
-            ['Signal', 'Instrument', 'Result', 'Assessment', 'Revision', 'Analysis run', 'Reason'],
+            ['Signal', 'Instrument', 'Asset', 'Result', 'Assessment', 'Revision', 'Analysis run', 'Reason'],
             $rows
         );
 
         if ($failed > 0) {
-            $this->error('SIGNALS_S3_REANALYSIS_FAILED');
+            $this->error('SIGNALS_FX2_REANALYSIS_FAILED');
             return self::FAILURE;
         }
 
-        $this->info('SIGNALS_S3_REANALYSIS_OK');
+        $this->info('SIGNALS_FX2_REANALYSIS_OK');
         return self::SUCCESS;
     }
 
     private function signals()
     {
-        $query = Signal::query()->with(['stock', 'targets'])->whereIn('status', Signal::OPEN_STATUSES);
+        $query = Signal::query()
+            ->with(['stock', 'marketInstrument.stock', 'marketInstrument.forexPair', 'marketInstrument.canonicalCryptoPair', 'targets'])
+            ->whereIn('status', Signal::OPEN_STATUSES);
 
-        if ($this->option('all')) {
-            return $query->orderBy('id')->get();
-        }
-
-        if ($this->argument('signal')) {
-            return $query->whereKey((int) $this->argument('signal'))->get();
-        }
+        if ($this->option('all')) return $query->orderBy('id')->get();
+        if ($this->argument('signal')) return $query->whereKey((int) $this->argument('signal'))->get();
 
         $latest = $query->latest('id')->first();
         return $latest ? collect([$latest]) : collect();

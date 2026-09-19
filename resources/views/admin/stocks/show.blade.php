@@ -32,7 +32,7 @@
         </div>
 
         <div class="flex flex-wrap gap-2">
-            <a href="{{ route('admin.stocks.index') }}" class="ui-btn ui-btn-secondary">
+            <a href="{{ route('admin.instruments.stocks') }}" class="ui-btn ui-btn-secondary">
                 <i data-lucide="arrow-left" class="h-4 w-4"></i>
                 Stocks
             </a>

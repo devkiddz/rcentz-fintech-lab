@@ -10,13 +10,13 @@ use Illuminate\Support\Facades\DB;
 class SignalLifecycleService
 {
     public function __construct(
-        private readonly SignalMarketContextService $marketContext
+        private readonly MarketInstrumentContextService $marketContext
     ) {}
 
     public function process(?int $signalId = null): array
     {
         $query = Signal::query()
-            ->with(['stock', 'targets'])
+            ->with(['stock', 'marketInstrument.stock', 'marketInstrument.forexPair', 'marketInstrument.canonicalCryptoPair', 'targets'])
             ->whereIn('status', Signal::OPEN_STATUSES)
             ->orderBy('id');
 
@@ -52,7 +52,7 @@ class SignalLifecycleService
                     $stats['failed']++;
                     $items[] = [
                         'signal_id' => $signal->id,
-                        'symbol' => $signal->stock?->symbol,
+                        'symbol' => $signal->instrument_symbol,
                         'status' => 'failed',
                         'price' => null,
                         'message' => $e->getMessage(),
@@ -67,12 +67,15 @@ class SignalLifecycleService
 
     public function processOne(Signal $signal): array
     {
-        $signal->loadMissing(['stock', 'targets']);
-        $context = $this->marketContext->forStock($signal->stock, $signal->marketplace);
+        $signal->loadMissing(['stock', 'marketInstrument.stock', 'marketInstrument.forexPair', 'marketInstrument.canonicalCryptoPair', 'targets']);
+        $context = $this->marketContext->forSignal($signal);
         $price = (float) $context['current_price'];
 
         return DB::transaction(function () use ($signal, $price) {
-            $locked = Signal::query()->with('targets')->lockForUpdate()->findOrFail($signal->id);
+            $locked = Signal::query()
+                ->with(['stock', 'marketInstrument', 'targets'])
+                ->lockForUpdate()
+                ->findOrFail($signal->id);
             $counters = [
                 'activated' => 0,
                 'target_hits' => 0,
@@ -88,13 +91,10 @@ class SignalLifecycleService
             }
 
             if ($locked->expires_at && $locked->expires_at->lte(now())) {
-                $locked->update([
-                    'status' => 'expired',
-                    'closed_at' => now(),
-                ]);
+                $locked->update(['status' => 'expired', 'closed_at' => now()]);
                 $this->event($locked, 'expired', ['market_price' => $price]);
                 $counters['expired']++;
-                return $this->result($locked->fresh(), $price, 'Signal expired.', $counters);
+                return $this->result($locked->fresh(['marketInstrument', 'stock']), $price, 'Signal expired.', $counters);
             }
 
             if ($locked->status === 'ready') {
@@ -103,10 +103,7 @@ class SignalLifecycleService
             }
 
             if ($locked->status === 'published' && $this->entryReached($locked, $price)) {
-                $locked->update([
-                    'status' => 'active',
-                    'activated_at' => now(),
-                ]);
+                $locked->update(['status' => 'active', 'activated_at' => now()]);
                 $this->event($locked, 'activated', ['market_price' => $price]);
                 $counters['activated']++;
                 $locked->refresh();
@@ -118,27 +115,17 @@ class SignalLifecycleService
             }
 
             if ($this->stopReached($locked, $price)) {
-                $locked->update([
-                    'status' => 'stopped',
-                    'closed_at' => now(),
-                ]);
-                $this->event($locked, 'stopped', [
-                    'market_price' => $price,
-                    'stop_loss' => (float) $locked->stop_loss,
-                ]);
+                $locked->update(['status' => 'stopped', 'closed_at' => now()]);
+                $this->event($locked, 'stopped', ['market_price' => $price, 'stop_loss' => (float) $locked->stop_loss]);
                 $counters['stopped']++;
-                return $this->result($locked->fresh(), $price, 'Stop loss reached.', $counters);
+                return $this->result($locked->fresh(['marketInstrument', 'stock']), $price, 'Stop loss reached.', $counters);
             }
 
             foreach ($locked->targets()->where('status', 'pending')->orderBy('sequence')->lockForUpdate()->get() as $target) {
                 if (! $this->targetReached($locked, $target, $price)) {
                     continue;
                 }
-
-                $target->update([
-                    'status' => 'hit',
-                    'hit_at' => now(),
-                ]);
+                $target->update(['status' => 'hit', 'hit_at' => now()]);
                 $this->event($locked, 'target_hit', [
                     'sequence' => $target->sequence,
                     'target_price' => (float) $target->price,
@@ -148,20 +135,17 @@ class SignalLifecycleService
             }
 
             if (! $locked->targets()->where('status', 'pending')->exists()) {
-                $locked->update([
-                    'status' => 'closed',
-                    'closed_at' => now(),
-                ]);
+                $locked->update(['status' => 'closed', 'closed_at' => now()]);
                 $this->event($locked, 'closed', ['market_price' => $price, 'reason' => 'all_targets_hit']);
                 $counters['closed']++;
-                return $this->result($locked->fresh(), $price, 'All Signal targets were reached.', $counters);
+                return $this->result($locked->fresh(['marketInstrument', 'stock']), $price, 'All Signal targets were reached.', $counters);
             }
 
             if (array_sum($counters) === 0) {
                 $counters['unchanged']++;
             }
 
-            return $this->result($locked->fresh(), $price, 'Active Signal checked.', $counters);
+            return $this->result($locked->fresh(['marketInstrument', 'stock']), $price, 'Active Signal checked.', $counters);
         }, 3);
     }
 
@@ -172,27 +156,15 @@ class SignalLifecycleService
 
     private function stopReached(Signal $signal, float $price): bool
     {
-        if ($signal->direction === 'buy') {
-            return $price <= (float) $signal->stop_loss;
-        }
-
-        if ($signal->direction === 'sell') {
-            return $price >= (float) $signal->stop_loss;
-        }
-
+        if ($signal->direction === 'buy') return $price <= (float) $signal->stop_loss;
+        if ($signal->direction === 'sell') return $price >= (float) $signal->stop_loss;
         return false;
     }
 
     private function targetReached(Signal $signal, SignalTarget $target, float $price): bool
     {
-        if ($signal->direction === 'buy') {
-            return $price >= (float) $target->price;
-        }
-
-        if ($signal->direction === 'sell') {
-            return $price <= (float) $target->price;
-        }
-
+        if ($signal->direction === 'buy') return $price >= (float) $target->price;
+        if ($signal->direction === 'sell') return $price <= (float) $target->price;
         return false;
     }
 
@@ -211,7 +183,7 @@ class SignalLifecycleService
     {
         return [
             'signal_id' => $signal->id,
-            'symbol' => $signal->stock?->symbol,
+            'symbol' => $signal->instrument_symbol,
             'status' => $signal->status,
             'price' => $price,
             'message' => $message,

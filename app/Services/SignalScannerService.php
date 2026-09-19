@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Stock;
+use App\Models\MarketInstrument;
 use Illuminate\Support\Collection;
 
 class SignalScannerService
@@ -17,14 +17,20 @@ class SignalScannerService
         int $limit = 25,
         bool $force = false,
         ?string $symbol = null,
-        string $trigger = 'scheduled'
+        string $trigger = 'scheduled',
+        string $assetClass = 'stock'
     ): array {
-        $marketplace = $this->marketPriceRouter->normalizeMarketplace(
-            $marketplace ?: $this->marketPriceRouter->activeMarketplace()
-        );
+        $assetClass = strtolower(trim($assetClass ?: 'stock'));
+        if (! in_array($assetClass, ['stock', 'forex', 'crypto', 'all'], true)) {
+            $assetClass = 'stock';
+        }
+
+        $marketplace = in_array($assetClass, ['forex', 'crypto'], true)
+            ? 'live'
+            : $this->marketPriceRouter->normalizeMarketplace($marketplace ?: $this->marketPriceRouter->activeMarketplace());
         $limit = max(1, min(250, $limit));
 
-        $stocks = $this->stocks($limit, $symbol);
+        $instruments = $this->instruments($limit, $symbol, $assetClass);
         $items = [];
         $stats = [
             'scanned' => 0,
@@ -37,11 +43,11 @@ class SignalScannerService
             'failed' => 0,
         ];
 
-        foreach ($stocks as $stock) {
+        foreach ($instruments as $instrument) {
             $stats['scanned']++;
 
             try {
-                $item = $this->generation->generateForStock($stock, $marketplace, $force, $trigger);
+                $item = $this->generation->generateForInstrument($instrument, $marketplace, $force, $trigger);
                 $status = $item['status'];
                 if (array_key_exists($status, $stats)) {
                     $stats[$status]++;
@@ -53,8 +59,10 @@ class SignalScannerService
                 $stats['failed']++;
                 $items[] = [
                     'status' => 'failed',
-                    'stock_id' => $stock->id,
-                    'symbol' => strtoupper($stock->symbol),
+                    'market_instrument_id' => $instrument->id,
+                    'stock_id' => $instrument->stock_id,
+                    'asset_class' => $instrument->asset_class,
+                    'symbol' => $instrument->display_symbol,
                     'signal_id' => null,
                     'signal_status' => null,
                     'reason' => $e->getMessage(),
@@ -68,17 +76,26 @@ class SignalScannerService
 
         return [
             'marketplace' => $marketplace,
+            'asset_class' => $assetClass,
             'stats' => $stats,
             'items' => $items,
         ];
     }
 
-    private function stocks(int $limit, ?string $symbol): Collection
+    private function instruments(int $limit, ?string $symbol, string $assetClass): Collection
     {
-        $query = Stock::query()->active();
+        $query = MarketInstrument::query()->active()->with(['stock', 'forexPair', 'canonicalCryptoPair']);
+
+        if ($assetClass !== 'all') {
+            $query->where('asset_class', $assetClass);
+        }
 
         if ($symbol) {
-            $query->where('symbol', strtoupper(trim($symbol)));
+            $needle = strtoupper(str_replace('/', '', trim($symbol)));
+            $query->where(function ($q) use ($needle) {
+                $q->where('symbol', $needle)
+                    ->orWhereRaw("REPLACE(display_symbol, '/', '') = ?", [$needle]);
+            });
         }
 
         return $query->orderBy('id')->limit($limit)->get();

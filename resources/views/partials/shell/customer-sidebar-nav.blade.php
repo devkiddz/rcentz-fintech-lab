@@ -13,7 +13,7 @@
 @endphp
 
 <div class="px-3 pt-3 pb-1">
-    <p class="sidebar-section-label px-3 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Workspace</p>
+    <p class="sidebar-section-label px-3 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Home</p>
 </div>
 
 <nav class="flex-1 overflow-y-auto px-3 pb-4 space-y-1.5" data-sidebar-nav>
@@ -22,6 +22,43 @@
         <i data-lucide="layout-dashboard" class="h-4 w-4 shrink-0"></i>
         <span class="sidebar-label">Overview</span>
     </a>
+
+    <div class="sidebar-section-label px-3 pt-4 pb-1 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Markets & Intelligence</div>
+
+    <details class="sidebar-group group rounded-xl"
+             data-nav-group="instruments"
+             {{ request()->routeIs('instruments.*','stocks.*') ? 'open' : '' }}>
+        <summary title="Instruments"
+                 class="{{ $parentBase }} justify-between {{ request()->routeIs('instruments.*','stocks.*') ? $parentActive : $parentIdle }}">
+            <span class="flex min-w-0 items-center gap-3"><i data-lucide="chart-candlestick" class="h-4 w-4 shrink-0"></i><span class="sidebar-label truncate">Instruments</span></span>
+            <i data-lucide="chevron-down" class="sidebar-chevron h-4 w-4 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
+            <a href="{{ route('instruments.index') }}" class="{{ $childBase }} {{ request()->routeIs('instruments.index') ? $childActive : $childIdle }}"><i data-lucide="layout-grid" class="h-4 w-4"></i><span>Overview</span></a>
+            <a href="{{ route('instruments.stocks') }}" class="{{ $childBase }} {{ request()->routeIs('instruments.stocks','instruments.stocks.*','stocks.*') ? $childActive : $childIdle }}"><i data-lucide="chart-no-axes-combined" class="h-4 w-4"></i><span>Stocks</span></a>
+            <a href="{{ route('instruments.forex') }}" class="{{ $childBase }} {{ request()->routeIs('instruments.forex','instruments.forex.*') ? $childActive : $childIdle }}"><i data-lucide="arrow-left-right" class="h-4 w-4"></i><span>Forex</span></a>
+            <a href="{{ route('instruments.crypto') }}" class="{{ $childBase }} {{ request()->routeIs('instruments.crypto','instruments.crypto.*') ? $childActive : $childIdle }}"><i data-lucide="bitcoin" class="h-4 w-4"></i><span>Crypto</span></a>
+        </div>
+    </details>
+
+    <details class="sidebar-group group rounded-xl"
+             data-nav-group="signals"
+             {{ request()->routeIs('signals.*') ? 'open' : '' }}>
+        <summary title="Signals"
+                 class="{{ $parentBase }} justify-between {{ request()->routeIs('signals.*') ? $parentActive : $parentIdle }}">
+            <span class="flex min-w-0 items-center gap-3">
+                <i data-lucide="radio-tower" class="h-4 w-4 shrink-0"></i>
+                <span class="sidebar-label truncate">Signals</span>
+            </span>
+            <i data-lucide="chevron-down" class="sidebar-chevron h-4 w-4 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
+            <a href="{{ route('signals.index') }}" class="{{ $childBase }} {{ request()->routeIs('signals.index','signals.show') ? $childActive : $childIdle }}"><i data-lucide="radio-tower" class="h-4 w-4"></i><span>Current Signals</span></a>
+            <a href="{{ route('signals.history') }}" class="{{ $childBase }} {{ request()->routeIs('signals.history') ? $childActive : $childIdle }}"><i data-lucide="history" class="h-4 w-4"></i><span>History</span></a>
+        </div>
+    </details>
+
+    <div class="sidebar-section-label px-3 pt-4 pb-1 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Trading & Automation</div>
 
     <details class="sidebar-group group rounded-xl"
              data-nav-group="trading"
@@ -35,7 +72,7 @@
             <i data-lucide="chevron-down" class="sidebar-chevron h-4 w-4 transition-transform group-open:rotate-180"></i>
         </summary>
         <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
-            <a href="{{ route('stocks.index') }}" class="{{ $childBase }} {{ request()->routeIs('stocks.*') ? $childActive : $childIdle }}"><i data-lucide="activity" class="h-4 w-4"></i><span>Live Markets</span></a>
+
             <a href="{{ route('trading.positions.index') }}" class="{{ $childBase }} {{ request()->routeIs('trading.positions.*') ? $childActive : $childIdle }}"><i data-lucide="target" class="h-4 w-4"></i><span>Trade Positions</span></a>
             <a href="{{ route('trading.portfolio') }}" class="{{ $childBase }} {{ request()->routeIs('trading.portfolio') ? $childActive : $childIdle }}"><i data-lucide="briefcase-business" class="h-4 w-4"></i><span>Stock Portfolio</span></a>
             <a href="{{ route('trading.transactions') }}" class="{{ $childBase }} {{ request()->routeIs('trading.transactions') ? $childActive : $childIdle }}"><i data-lucide="receipt-text" class="h-4 w-4"></i><span>Transactions</span></a>
@@ -84,7 +121,9 @@
         </div>
     </details>
 
-        <details class="sidebar-group group rounded-xl"
+        <div class="sidebar-section-label px-3 pt-4 pb-1 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Investments</div>
+
+    <details class="sidebar-group group rounded-xl"
              data-nav-group="investments"
              {{ request()->routeIs('investments.*','account.investments*','admin.investments.*') ? 'open' : '' }}>
         <summary title="Investments"
@@ -100,6 +139,7 @@
             <p class="px-3 pt-1 text-[8px] font-semibold uppercase tracking-[.14em] text-muted-foreground">Market</p>
             <a href="{{ route('investments.index') }}" class="{{ $childBase }} {{ request()->routeIs('investments.index','investments.show') ? $childActive : $childIdle }}"><i data-lucide="layout-grid" class="h-4 w-4"></i><span>All Investments</span></a>
             <a href="{{ route('investments.stocks') }}" class="{{ $childBase }} {{ request()->routeIs('investments.stocks') ? $childActive : $childIdle }}"><i data-lucide="chart-no-axes-combined" class="h-4 w-4"></i><span>Stocks</span></a>
+            <a href="{{ route('investments.forex') }}" class="{{ $childBase }} {{ request()->routeIs('investments.forex') ? $childActive : $childIdle }}"><i data-lucide="landmark" class="h-4 w-4"></i><span>Forex</span></a>
             <a href="{{ route('investments.crypto') }}" class="{{ $childBase }} {{ request()->routeIs('investments.crypto') ? $childActive : $childIdle }}"><i data-lucide="coins" class="h-4 w-4"></i><span>Cryptocurrency</span></a>
             <a href="{{ route('investments.real-estate') }}" class="{{ $childBase }} {{ request()->routeIs('investments.real-estate') ? $childActive : $childIdle }}"><i data-lucide="house" class="h-4 w-4"></i><span>Real Estate</span></a>
             <a href="{{ route('investments.bonds') }}" class="{{ $childBase }} {{ request()->routeIs('investments.bonds') ? $childActive : $childIdle }}"><i data-lucide="landmark" class="h-4 w-4"></i><span>Bonds & Fixed Income</span></a>
@@ -120,6 +160,8 @@
             @endif
         </div>
     </details>
+
+    <div class="sidebar-section-label px-3 pt-4 pb-1 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Finance & Services</div>
 
     <details class="sidebar-group group rounded-xl"
              data-nav-group="money"
@@ -195,24 +237,6 @@
         </div>
     </details>
 
-    <div class="sidebar-section-label px-3 pt-4 pb-1 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Intelligence</div>
-
-    <details class="sidebar-group group rounded-xl"
-             data-nav-group="signals"
-             {{ request()->routeIs('signals.*') ? 'open' : '' }}>
-        <summary title="Signals"
-                 class="{{ $parentBase }} justify-between {{ request()->routeIs('signals.*') ? $parentActive : $parentIdle }}">
-            <span class="flex min-w-0 items-center gap-3">
-                <i data-lucide="radio-tower" class="h-4 w-4 shrink-0"></i>
-                <span class="sidebar-label truncate">Signals</span>
-            </span>
-            <i data-lucide="chevron-down" class="sidebar-chevron h-4 w-4 transition-transform group-open:rotate-180"></i>
-        </summary>
-        <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
-            <a href="{{ route('signals.index') }}" class="{{ $childBase }} {{ request()->routeIs('signals.index','signals.show') ? $childActive : $childIdle }}"><i data-lucide="radio-tower" class="h-4 w-4"></i><span>Current Signals</span></a>
-            <a href="{{ route('signals.history') }}" class="{{ $childBase }} {{ request()->routeIs('signals.history') ? $childActive : $childIdle }}"><i data-lucide="history" class="h-4 w-4"></i><span>History</span></a>
-        </div>
-    </details>
 </nav>
 
 <div class="border-t border-border p-3 space-y-1">

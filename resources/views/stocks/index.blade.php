@@ -157,7 +157,7 @@
                     <div class="mt-3 flex items-center justify-between border-t border-border pt-3">
                         <span class="text-[10px] text-muted-foreground">{{ $stock->sector }}</span>
                         <div class="flex gap-2">
-                            <a href="{{ route('stocks.show',$stock) }}" class="ui-btn ui-btn-secondary !h-8 !px-3 !text-[10px]">Details</a>
+                            <a href="{{ route('instruments.stocks.show', ['stock' => $stock->symbol]) }}" class="ui-btn ui-btn-secondary !h-8 !px-3 !text-[10px]">Details</a>
                             <a href="{{ route('trading.buy',$stock) }}" class="ui-btn ui-btn-primary !h-8 !px-3 !text-[10px]">Buy</a>
                         </div>
                     </div>
@@ -218,7 +218,7 @@
                                 <td class="px-4 py-3 text-xs tabular-nums">{{ $stock->formatted_market_cap }}</td>
                                 <td class="px-4 py-3">
                                     <div class="flex justify-end gap-2">
-                                        <a href="{{ route('stocks.show',$stock) }}" class="ui-btn ui-btn-secondary !h-8 !w-8 !p-0" title="View details">
+                                        <a href="{{ route('instruments.stocks.show', ['stock' => $stock->symbol]) }}" class="ui-btn ui-btn-secondary !h-8 !w-8 !p-0" title="View details">
                                             <i data-lucide="eye" class="h-3.5 w-3.5"></i>
                                         </a>
                                         <a href="{{ route('trading.buy',$stock) }}" class="ui-btn ui-btn-primary !h-8 !px-3 !text-[10px]">

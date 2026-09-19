@@ -113,7 +113,7 @@
                         </div>
 
                         <div class="flex justify-end">
-                            <a href="{{ route('admin.stocks.show', $stock) }}" class="ui-btn ui-btn-secondary !h-8 !px-3">
+                            <a href="{{ route('admin.instruments.stocks.show', ['stock' => $stock->symbol]) }}" class="ui-btn ui-btn-secondary !h-8 !px-3">
                                 View
                                 <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
                             </a>

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ControlledMarketInstrument extends Model
 {
     protected $fillable = [
+        'market_instrument_id',
         'stock_id',
         'symbol',
         'label',
@@ -39,6 +40,11 @@ class ControlledMarketInstrument extends Model
         'is_active' => 'boolean',
         'last_moved_at' => 'datetime',
     ];
+
+    public function marketInstrument()
+    {
+        return $this->belongsTo(MarketInstrument::class);
+    }
 
     public function stock()
     {

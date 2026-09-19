@@ -7,8 +7,14 @@ use Illuminate\Console\Command;
 
 class ScanSignals extends Command
 {
-    protected $signature = 'signals:scan {symbol? : Optional stock symbol} {--marketplace= : live or controlled} {--limit=25 : Maximum instruments} {--force : Bypass generation cooldown; open-Signal protection still applies}';
-    protected $description = 'Scan market instruments and automatically generate qualified Signal records.';
+    protected $signature = 'signals:scan
+        {symbol? : Optional instrument symbol, e.g. AAPL or EURUSD}
+        {--marketplace= : live or controlled; Forex and Crypto Signals are live-only}
+        {--asset=stock : stock, forex, crypto or all}
+        {--limit=25 : Maximum instruments}
+        {--force : Bypass generation cooldown; open-Signal protection still applies}';
+
+    protected $description = 'Scan multi-asset market instruments and generate qualified READY Signal records without publishing or execution.';
 
     public function handle(SignalScannerService $scanner): int
     {
@@ -17,11 +23,13 @@ class ScanSignals extends Command
             (int) $this->option('limit'),
             (bool) $this->option('force'),
             $this->argument('symbol') ? (string) $this->argument('symbol') : null,
-            'manual_scan'
+            'manual_scan',
+            (string) $this->option('asset')
         );
 
         $rows = collect($result['items'])->map(fn ($item) => [
             $item['symbol'],
+            strtoupper((string) ($item['asset_class'] ?? '-')),
             strtoupper((string) $item['status']),
             $item['signal_id'] ?? '-',
             strtoupper((string) ($item['direction'] ?? '-')),
@@ -31,20 +39,20 @@ class ScanSignals extends Command
         ])->all();
 
         $this->table(
-            ['Instrument', 'Outcome', 'Signal', 'Direction', 'Strength', 'Confluence', 'Reason'],
+            ['Instrument', 'Asset', 'Outcome', 'Signal', 'Direction', 'Strength', 'Confluence', 'Reason'],
             $rows
         );
 
         $stats = $result['stats'];
-        $this->line('Marketplace: '.$result['marketplace']);
+        $this->line('Asset class: '.strtoupper((string) $result['asset_class']).' | Marketplace: '.strtoupper((string) $result['marketplace']));
         $this->line('Scanned: '.$stats['scanned'].' | Generated: '.$stats['generated'].' | Rejected: '.$stats['rejected'].' | Duplicate open: '.$stats['duplicate_open'].' | Cooldown: '.$stats['cooldown'].' | Failed: '.$stats['failed']);
 
         if ($stats['failed'] > 0) {
-            $this->error('SIGNALS_S3_SCAN_FAILED');
+            $this->error('SIGNALS_FX2_SCAN_FAILED');
             return self::FAILURE;
         }
 
-        $this->info('SIGNALS_S3_SCAN_OK');
+        $this->info('SIGNALS_FX2_SCAN_OK');
         return self::SUCCESS;
     }
 }

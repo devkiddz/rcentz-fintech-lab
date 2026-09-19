@@ -21,7 +21,7 @@ class SignalReanalysisService
         string $trigger = 'scheduled',
         ?User $actor = null
     ): array {
-        $signal->loadMissing(['stock', 'targets']);
+        $signal->loadMissing(['stock', 'marketInstrument.stock', 'marketInstrument.forexPair', 'marketInstrument.canonicalCryptoPair', 'targets']);
 
         if (! in_array($signal->status, Signal::OPEN_STATUSES, true)) {
             return [
@@ -33,8 +33,13 @@ class SignalReanalysisService
             ];
         }
 
-        $result = $this->intelligence->analyzeStock(
-            $signal->stock,
+        $instrument = $signal->marketInstrument;
+        if (! $instrument) {
+            throw new \RuntimeException("Signal #{$signal->id} has no market-instrument authority.");
+        }
+
+        $result = $this->intelligence->analyzeInstrument(
+            $instrument,
             $signal->marketplace,
             $signal->timeframe
         );
@@ -46,6 +51,7 @@ class SignalReanalysisService
         $analysisRun = SignalAnalysisRun::create([
             'signal_id' => $signal->id,
             'stock_id' => $signal->stock_id,
+            'market_instrument_id' => $signal->market_instrument_id,
             'marketplace' => $signal->marketplace,
             'trigger' => $trigger,
             'source' => 'signal_intelligence',
@@ -351,7 +357,10 @@ class SignalReanalysisService
         }
 
         return [
+            'asset_class' => $context['asset_class'] ?? 'stock',
+            'market_instrument_id' => $context['market_instrument_id'] ?? null,
             'symbol' => $context['symbol'] ?? null,
+            'display_symbol' => $context['display_symbol'] ?? $context['symbol'] ?? null,
             'marketplace' => $context['marketplace'] ?? null,
             'current_price' => $context['current_price'] ?? null,
             'analysis_source' => $context['analysis_source'] ?? null,
@@ -363,6 +372,11 @@ class SignalReanalysisService
             'sma50' => $context['sma50'] ?? null,
             'sma200' => $context['sma200'] ?? null,
             'market_session' => $context['market_session'] ?? null,
+            'active_sessions' => $context['active_sessions'] ?? [],
+            'preferred_sessions' => $context['preferred_sessions'] ?? [],
+            'preferred_session_active' => $context['preferred_session_active'] ?? null,
+            'price_precision' => $context['price_precision'] ?? null,
+            'pip_size' => $context['pip_size'] ?? null,
             'captured_at' => $context['captured_at'] ?? null,
             'timeframe_samples' => $counts,
         ];

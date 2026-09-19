@@ -17,9 +17,19 @@ use Illuminate\Support\Str;
 
 class PrivateInvestmentAdminController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $instruments = PrivateInvestmentInstrument::query()
+        $category = in_array((string) $request->query('category'), ['stock_market', 'forex', 'cryptocurrency', 'real_estate', 'bonds'], true)
+            ? (string) $request->query('category')
+            : null;
+
+        $query = PrivateInvestmentInstrument::query();
+
+        if ($category) {
+            $query->where('category', $category);
+        }
+
+        $instruments = $query
             ->withCount([
                 'assets',
                 'events',
@@ -58,7 +68,7 @@ class PrivateInvestmentAdminController extends Controller
         $data = $request->validate([
             'name'=>'required|string|max:255',
             'symbol'=>'required|string|max:24|unique:private_investment_instruments,symbol',
-            'category'=>'required|in:stock_market,cryptocurrency,real_estate,bonds',
+            'category'=>'required|in:stock_market,forex,cryptocurrency,real_estate,bonds',
             'description'=>'nullable|string|max:2000',
             'risk_level'=>'required|in:low,medium,high,very_high',
             'opening_price'=>'required|numeric|min:0.000001',
@@ -126,7 +136,7 @@ class PrivateInvestmentAdminController extends Controller
     {
         $data=$request->validate([
             'name'=>'required|string|max:255',
-            'category'=>'required|in:stock_market,cryptocurrency,real_estate,bonds',
+            'category'=>'required|in:stock_market,forex,cryptocurrency,real_estate,bonds',
             'description'=>'nullable|string|max:2000',
             'risk_level'=>'required|in:low,medium,high,very_high',
             'minimum_investment'=>'required|numeric|min:0',

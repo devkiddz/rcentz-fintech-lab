@@ -6,9 +6,10 @@ use App\Events\StockPriceUpdated;
 use App\Models\ControlledMarketInstrument;
 use App\Models\ControlledMarketTick;
 use App\Models\MarketEnvironment;
+use App\Models\MarketInstrument;
 use App\Models\Stock;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 final class ControlledMarketEngine
@@ -19,24 +20,42 @@ final class ControlledMarketEngine
 
     public function registerInstrument(Stock $stock, string $label, float $startingPrice): ControlledMarketInstrument
     {
+        $parentId = (int) ($stock->market_instrument_id ?? 0);
+        $parent = $parentId > 0
+            ? MarketInstrument::query()->find($parentId)
+            : MarketInstrument::query()->where('stock_id', $stock->id)->first();
+
+        if (! $parent) {
+            throw new RuntimeException('MarketInstrument parent is unavailable for '.$stock->symbol.'.');
+        }
+
+        return $this->registerMarketInstrument($parent, $label, $startingPrice);
+    }
+
+    public function registerMarketInstrument(
+        MarketInstrument $parent,
+        string $label,
+        float $startingPrice
+    ): ControlledMarketInstrument {
         if ($startingPrice <= 0) {
             throw new RuntimeException('Starting market price must be greater than zero.');
         }
 
-        $defaults = $this->defaultsForPrice($startingPrice);
+        $defaults = $this->defaultsForMarketInstrument($parent, $startingPrice);
 
-        return DB::transaction(function () use ($stock, $label, $startingPrice, $defaults) {
+        return DB::transaction(function () use ($parent, $label, $startingPrice, $defaults) {
             $instrument = ControlledMarketInstrument::query()->updateOrCreate(
-                ['stock_id' => $stock->id],
+                ['market_instrument_id' => $parent->id],
                 [
-                    'symbol' => strtoupper($stock->symbol),
+                    'stock_id' => $parent->stock_id,
+                    'symbol' => strtoupper($parent->symbol),
                     'label' => $label,
-                    'asset_class' => 'equity',
-                    'current_price' => $startingPrice,
-                    'previous_price' => $startingPrice,
-                    'opening_price' => $startingPrice,
-                    'high' => $startingPrice,
-                    'low' => $startingPrice,
+                    'asset_class' => $parent->asset_class,
+                    'current_price' => round($startingPrice, $defaults['decimal_precision']),
+                    'previous_price' => round($startingPrice, $defaults['decimal_precision']),
+                    'opening_price' => round($startingPrice, $defaults['decimal_precision']),
+                    'high' => round($startingPrice, $defaults['decimal_precision']),
+                    'low' => round($startingPrice, $defaults['decimal_precision']),
                     'decimal_precision' => $defaults['decimal_precision'],
                     'minimum_tick' => $defaults['minimum_tick'],
                     'minimum_price' => $defaults['minimum_price'],
@@ -47,17 +66,19 @@ final class ControlledMarketEngine
                 ]
             );
 
-            ControlledMarketTick::create([
-                'controlled_market_instrument_id' => $instrument->id,
-                'drive_mode' => 'seed',
-                'open' => $startingPrice,
-                'high' => $startingPrice,
-                'low' => $startingPrice,
-                'close' => $startingPrice,
-                'change_amount' => 0,
-                'change_percent' => 0,
-                'ticked_at' => now(),
-            ]);
+            if (! $instrument->ticks()->exists()) {
+                ControlledMarketTick::create([
+                    'controlled_market_instrument_id' => $instrument->id,
+                    'drive_mode' => 'seed',
+                    'open' => $instrument->current_price,
+                    'high' => $instrument->current_price,
+                    'low' => $instrument->current_price,
+                    'close' => $instrument->current_price,
+                    'change_amount' => 0,
+                    'change_percent' => 0,
+                    'ticked_at' => now(),
+                ]);
+            }
 
             return $instrument->refresh();
         });
@@ -69,7 +90,11 @@ final class ControlledMarketEngine
             throw new RuntimeException('Controlled market price must be greater than zero.');
         }
 
-        $defaults = $this->defaultsForPrice($price);
+        $instrument->loadMissing('marketInstrument');
+        $defaults = $instrument->marketInstrument
+            ? $this->defaultsForMarketInstrument($instrument->marketInstrument, $price)
+            : $this->defaultsForPrice($price);
+
         $old = (float) $instrument->current_price;
         $precision = $defaults['decimal_precision'];
         $price = round($price, $precision);
@@ -99,9 +124,7 @@ final class ControlledMarketEngine
             'ticked_at' => now(),
         ]);
 
-        if ($instrument->stock) {
-            $this->valuation->syncStock($instrument->stock, 'controlled');
-        }
+        $this->syncStockCompatibility($instrument);
 
         return $instrument->refresh();
     }
@@ -166,7 +189,7 @@ final class ControlledMarketEngine
 
         ControlledMarketInstrument::query()
             ->where('is_active', true)
-            ->with('stock')
+            ->with(['marketInstrument.stock'])
             ->orderBy('id')
             ->chunkById(100, function ($instruments) use ($mode, $strength, &$result) {
                 foreach ($instruments as $instrument) {
@@ -176,6 +199,7 @@ final class ControlledMarketEngine
                     } catch (\Throwable $e) {
                         \Log::warning('Controlled market tick failed', [
                             'instrument_id' => $instrument->id,
+                            'market_instrument_id' => $instrument->market_instrument_id,
                             'symbol' => $instrument->symbol,
                             'error' => $e->getMessage(),
                         ]);
@@ -190,7 +214,10 @@ final class ControlledMarketEngine
     public function tick(ControlledMarketInstrument $instrument, string $mode, float $strength = 1): ControlledMarketInstrument
     {
         return DB::transaction(function () use ($instrument, $mode, $strength) {
-            $instrument = ControlledMarketInstrument::query()->lockForUpdate()->findOrFail($instrument->id);
+            $instrument = ControlledMarketInstrument::query()
+                ->with(['marketInstrument.stock'])
+                ->lockForUpdate()
+                ->findOrFail($instrument->id);
 
             $open = (float) $instrument->current_price;
             if ($open <= 0) {
@@ -253,30 +280,66 @@ final class ControlledMarketEngine
                 'ticked_at' => now(),
             ]);
 
-            if ($instrument->stock) {
-                $this->valuation->syncStock($instrument->stock, 'controlled');
-
-
-                if (MarketEnvironment::current()->active_marketplace === 'controlled') {
-                    try {
-                        broadcast(new StockPriceUpdated($instrument->stock, [
-                            'current_price' => $close,
-                            'previous_close' => $open,
-                            'change' => $changeAmount,
-                            'change_percent' => $changePercent,
-                            'volume' => 0,
-                            'high' => round($high, $precision),
-                            'low' => round($low, $precision),
-                            'open' => $open,
-                        ]));
-                    } catch (\Throwable $e) {
-                        \Log::debug('Controlled market broadcast skipped', ['error' => $e->getMessage()]);
-                    }
-                }
-            }
+            $this->syncStockCompatibility($instrument, $close, $open, $changeAmount, $changePercent, $high, $low);
 
             return $instrument->refresh();
         });
+    }
+
+    private function syncStockCompatibility(
+        ControlledMarketInstrument $instrument,
+        ?float $close = null,
+        ?float $open = null,
+        ?float $changeAmount = null,
+        ?float $changePercent = null,
+        ?float $high = null,
+        ?float $low = null
+    ): void {
+        $instrument->loadMissing(['marketInstrument.stock']);
+        $stock = $instrument->marketInstrument?->stock ?: $instrument->stock;
+
+        if (! $stock) {
+            return;
+        }
+
+        $this->valuation->syncStock($stock, 'controlled');
+
+        if ($close === null || MarketEnvironment::current()->active_marketplace !== 'controlled') {
+            return;
+        }
+
+        try {
+            broadcast(new StockPriceUpdated($stock, [
+                'current_price' => $close,
+                'previous_close' => $open,
+                'change' => $changeAmount,
+                'change_percent' => $changePercent,
+                'volume' => 0,
+                'high' => round((float) $high, $instrument->decimal_precision),
+                'low' => round((float) $low, $instrument->decimal_precision),
+                'open' => $open,
+            ]));
+        } catch (\Throwable $e) {
+            \Log::debug('Controlled market stock broadcast skipped', ['error' => $e->getMessage()]);
+        }
+    }
+
+    public function defaultsForMarketInstrument(MarketInstrument $instrument, float $price): array
+    {
+        $defaults = $this->defaultsForPrice($price);
+        $precision = max(0, min(8, (int) ($instrument->price_precision ?? $defaults['decimal_precision'])));
+        $tick = (float) ($instrument->pip_size ?? 0);
+
+        if ($tick <= 0) {
+            $tick = $defaults['minimum_tick'];
+        }
+
+        return [
+            'decimal_precision' => $precision,
+            'minimum_tick' => $tick,
+            'minimum_price' => $tick,
+            'volatility_percent' => $defaults['volatility_percent'],
+        ];
     }
 
     public function defaultsForPrice(float $price): array

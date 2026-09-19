@@ -19,7 +19,9 @@ class SignalSetupBuilder
         }
 
         $atr = max((float) ($analysis['atr'] ?? 0), $price * 0.0025, 0.000001);
-        $precision = $this->precision($price);
+        $precision = isset($context['price_precision'])
+            ? max(0, min(8, (int) $context['price_precision']))
+            : $this->precision($price);
         $entryHalfWidth = max($atr * 0.15, $price * 0.0005);
         $baseRisk = max($atr * 1.2, $price * 0.0075);
 

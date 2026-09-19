@@ -14,6 +14,7 @@ class Signal extends Model
 
     protected $fillable = [
         'stock_id',
+        'market_instrument_id',
         'marketplace',
         'source',
         'direction',
@@ -57,6 +58,11 @@ class Signal extends Model
     public function stock()
     {
         return $this->belongsTo(Stock::class);
+    }
+
+    public function marketInstrument()
+    {
+        return $this->belongsTo(MarketInstrument::class);
     }
 
     public function targets()
@@ -107,5 +113,30 @@ class Signal extends Model
     public function getIsOpenAttribute(): bool
     {
         return in_array($this->status, self::OPEN_STATUSES, true);
+    }
+
+    public function getInstrumentSymbolAttribute(): string
+    {
+        return (string) ($this->marketInstrument?->display_symbol
+            ?: $this->marketInstrument?->symbol
+            ?: $this->stock?->symbol
+            ?: 'Unknown');
+    }
+
+    public function getInstrumentNameAttribute(): string
+    {
+        return (string) ($this->marketInstrument?->name
+            ?: $this->stock?->company_name
+            ?: $this->instrument_symbol);
+    }
+
+    public function getAssetClassAttribute(): string
+    {
+        return (string) ($this->marketInstrument?->asset_class ?: 'stock');
+    }
+
+    public function getPricePrecisionAttribute(): int
+    {
+        return (int) ($this->marketInstrument?->price_precision ?? 2);
     }
 }

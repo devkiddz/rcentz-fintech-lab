@@ -111,6 +111,18 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.act
     Route::patch('/profile/kyc/{kyc}', [KYCController::class, 'update'])->name('profile.kyc.update');
     Route::get('/profile/kyc/status', [KYCController::class, 'show'])->name('profile.kyc.status');
 
+    // Read-only MarketInstrument registry. Trading and investment products remain separate domains.
+    Route::prefix('instruments')->name('instruments.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\MarketInstrumentController::class, 'index'])->name('index');
+        Route::get('/stocks', [\App\Http\Controllers\MarketInstrumentController::class, 'stocks'])->name('stocks');
+        Route::get('/stocks/{stock:symbol}', [\App\Http\Controllers\StockController::class, 'show'])->name('stocks.show');
+        Route::get('/forex', [\App\Http\Controllers\MarketInstrumentController::class, 'forex'])->name('forex');
+        Route::get('/forex/{symbol}', [\App\Http\Controllers\MarketInstrumentController::class, 'showForex'])->where('symbol', '[A-Za-z0-9.\\-]+')->name('forex.show');
+        Route::get('/crypto', [\App\Http\Controllers\MarketInstrumentController::class, 'crypto'])->name('crypto');
+        Route::get('/crypto/{symbol}', [\App\Http\Controllers\MarketInstrumentController::class, 'showCrypto'])->where('symbol', '[A-Za-z0-9.\\-]+')->name('crypto.show');
+        Route::get('/{instrument}', [\App\Http\Controllers\MarketInstrumentController::class, 'show'])->name('show');
+    });
+
     // Customer Signal workspace. SignalDelivery is the access authority.
     Route::prefix('signals')->name('signals.')->group(function () {
         Route::get('/', [\App\Http\Controllers\SignalController::class, 'index'])->name('index');
@@ -179,6 +191,7 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.act
     // Every listing below uses PrivateInvestmentInstrument pricing/history only.
     Route::get('/investments', [PrivateInvestmentMarketController::class, 'index'])->name('investments.index');
     Route::get('/investments/stocks', [PrivateInvestmentMarketController::class, 'stocks'])->name('investments.stocks');
+    Route::get('/investments/forex', [PrivateInvestmentMarketController::class, 'forex'])->name('investments.forex');
     Route::get('/investments/crypto', [PrivateInvestmentMarketController::class, 'crypto'])->name('investments.crypto');
     Route::get('/investments/real-estate', [PrivateInvestmentMarketController::class, 'realEstate'])->name('investments.real-estate');
     Route::get('/investments/bonds', [PrivateInvestmentMarketController::class, 'bonds'])->name('investments.bonds');
@@ -353,6 +366,18 @@ Route::middleware(['auth', 'admin'])
         // Admin Dashboard
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
         
+
+        // Read-only generic MarketInstrument registry for admin inspection.
+        Route::prefix('instruments')->name('instruments.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'index'])->name('index');
+            Route::get('/stocks', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'stocks'])->name('stocks');
+            Route::get('/stocks/{stock:symbol}', [\App\Http\Controllers\Admin\StockController::class, 'show'])->name('stocks.show');
+            Route::get('/forex', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'forex'])->name('forex');
+            Route::get('/forex/{symbol}', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'showForex'])->where('symbol', '[A-Za-z0-9.\\-]+')->name('forex.show');
+            Route::get('/crypto', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'crypto'])->name('crypto');
+            Route::get('/crypto/{symbol}', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'showCrypto'])->where('symbol', '[A-Za-z0-9.\\-]+')->name('crypto.show');
+            Route::get('/{instrument}', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'show'])->name('show');
+        });
 
         // Admin Trading Command
         Route::get('trading', [\App\Http\Controllers\Admin\TradingOperationsController::class, 'index'])->name('trading.index');

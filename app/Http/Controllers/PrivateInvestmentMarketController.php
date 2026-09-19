@@ -97,6 +97,11 @@ class PrivateInvestmentMarketController extends Controller
         return $this->categoryListing($request, 'stock_market', 'Stocks');
     }
 
+    public function forex(Request $request)
+    {
+        return $this->categoryListing($request, 'forex', 'Forex');
+    }
+
     public function crypto(Request $request)
     {
         return $this->categoryListing($request, 'cryptocurrency', 'Cryptocurrency');
@@ -390,6 +395,7 @@ class PrivateInvestmentMarketController extends Controller
     {
         return match ($type) {
             'stock_market' => redirect()->route('investments.stocks'),
+            'forex' => redirect()->route('investments.forex'),
             'cryptocurrency' => redirect()->route('investments.crypto'),
             'real_estate' => redirect()->route('investments.real-estate'),
             'bonds', 'fixed_income' => redirect()->route('investments.bonds'),
@@ -449,6 +455,7 @@ class PrivateInvestmentMarketController extends Controller
         $mapping = [
             'real_estate' => 'real_estate',
             'stock_market' => 'stock_market',
+            'forex' => 'forex',
             'cryptocurrency' => 'cryptocurrency',
         ];
 

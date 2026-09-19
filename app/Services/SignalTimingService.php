@@ -15,7 +15,7 @@ class SignalTimingService
 
     public function forSignal(Signal $signal, array $analysis): array
     {
-        $signal->loadMissing(['targets', 'marketInstrument.forexPair']);
+        $signal->loadMissing(['targets', 'marketInstrument.forexPair', 'marketInstrument.canonicalCryptoPair']);
 
         $price = (float) ($analysis['current_price'] ?? 0);
         $entryMin = (float) $signal->entry_min;
@@ -40,6 +40,7 @@ class SignalTimingService
             $entryMax,
             $moderateLow,
             $moderateHigh,
+            $stop,
             $session
         );
 
@@ -56,9 +57,17 @@ class SignalTimingService
                 'max' => $moderateHigh,
                 'label' => $this->range($moderateLow, $moderateHigh, $precision),
             ],
+            'early' => [
+                'label' => $this->earlyLabel((string) $signal->direction, $moderateLow, $moderateHigh, $stop, $precision),
+                'description' => 'Price is still on the pre-entry side of the setup. Wait for the market to reach the planned tolerance band before considering a fresh entry.',
+            ],
+            'too_late' => [
+                'label' => $this->tooLateLabel((string) $signal->direction, $moderateLow, $moderateHigh, $precision),
+                'description' => 'Price has already moved beyond the acceptable entry tolerance in the Signal direction. Avoid chasing the move.',
+            ],
             'danger' => [
-                'label' => $this->dangerLabel($moderateLow, $moderateHigh, $precision),
-                'description' => 'Outside the moderate tolerance band, or outside the preferred trading session, fresh-entry risk is elevated.',
+                'label' => $this->dangerLabel((string) $signal->direction, $stop, $precision),
+                'description' => 'The stop boundary has been breached, the market is closed, or the original fresh-entry risk contract is no longer valid.',
             ],
             'best_timeframe' => strtoupper((string) $signal->timeframe),
             'session' => $session,
@@ -94,6 +103,7 @@ class SignalTimingService
         float $entryMax,
         float $moderateLow,
         float $moderateHigh,
+        float $stop,
         array $session
     ): array {
         if (in_array($signal->status, Signal::TERMINAL_STATUSES, true)) {
@@ -126,7 +136,35 @@ class SignalTimingService
             return ['state' => 'moderate', 'label' => 'Moderate timing', 'description' => "Current price is {$relation} the original entry zone but remains inside the moderate tolerance band.{$sessionNote}", 'tone' => 'warning'];
         }
 
-        return ['state' => 'dangerous', 'label' => 'Dangerous timing', 'description' => 'Current price is materially outside the Signal entry tolerance and no longer matches the original risk/reward contract for a fresh entry.', 'tone' => 'negative'];
+        $direction = strtolower((string) $signal->direction);
+
+        if ($direction === 'sell') {
+            if ($stop > 0 && $price >= $stop) {
+                return ['state' => 'dangerous', 'label' => 'Dangerous timing', 'description' => 'Current price has crossed the Signal stop boundary. The original risk contract is no longer valid for a fresh entry.', 'tone' => 'negative'];
+            }
+
+            if ($price > $moderateHigh) {
+                return ['state' => 'early', 'label' => 'Early timing', 'description' => 'Price has not yet reached the planned SELL entry window. Waiting for price to return into the tolerance band avoids anticipating the setup.', 'tone' => 'info'];
+            }
+
+            if ($price < $moderateLow) {
+                return ['state' => 'too_late', 'label' => 'Too late for fresh entry', 'description' => 'Price has already moved beyond the acceptable SELL entry tolerance. A fresh entry here would be chasing the move.', 'tone' => 'negative'];
+            }
+        } else {
+            if ($stop > 0 && $price <= $stop) {
+                return ['state' => 'dangerous', 'label' => 'Dangerous timing', 'description' => 'Current price has crossed the Signal stop boundary. The original risk contract is no longer valid for a fresh entry.', 'tone' => 'negative'];
+            }
+
+            if ($price < $moderateLow) {
+                return ['state' => 'early', 'label' => 'Early timing', 'description' => 'Price has not yet reached the planned BUY entry window. Waiting for price to return into the tolerance band avoids anticipating the setup.', 'tone' => 'info'];
+            }
+
+            if ($price > $moderateHigh) {
+                return ['state' => 'too_late', 'label' => 'Too late for fresh entry', 'description' => 'Price has already moved beyond the acceptable BUY entry tolerance. A fresh entry here would be chasing the move.', 'tone' => 'negative'];
+            }
+        }
+
+        return ['state' => 'dangerous', 'label' => 'Dangerous timing', 'description' => 'Current market conditions no longer fit the original fresh-entry risk contract.', 'tone' => 'negative'];
     }
 
     private function sessionContext(Signal $signal): array
@@ -148,6 +186,20 @@ class SignalTimingService
                 'market_open' => (bool) ($state['market_open'] ?? false),
                 'preferred_session_active' => (bool) ($state['preferred_session_active'] ?? false),
                 'active_sessions' => $active,
+            ];
+        }
+
+        if ($instrument?->isCrypto() && strtolower((string) $signal->marketplace) === 'live') {
+            return [
+                'status' => '24_7',
+                'label' => '24/7 crypto market',
+                'best' => '24/7 market',
+                'window' => 'Always open',
+                'market_time' => now()->utc()->format('H:i'),
+                'timezone' => 'UTC',
+                'market_open' => true,
+                'preferred_session_active' => true,
+                'active_sessions' => ['24_7'],
             ];
         }
 
@@ -196,8 +248,33 @@ class SignalTimingService
         return number_format($min, $precision).' – '.number_format($max, $precision);
     }
 
-    private function dangerLabel(float $moderateLow, float $moderateHigh, int $precision): string
+    private function earlyLabel(string $direction, float $moderateLow, float $moderateHigh, float $stop, int $precision): string
     {
-        return 'Below '.number_format($moderateLow, $precision).' or above '.number_format($moderateHigh, $precision);
+        if (strtolower($direction) === 'sell') {
+            $upper = $stop > $moderateHigh ? number_format($stop, $precision) : 'the stop boundary';
+            return 'Above '.number_format($moderateHigh, $precision).' and below '.$upper;
+        }
+
+        $lower = $stop > 0 && $stop < $moderateLow ? number_format($stop, $precision) : 'the stop boundary';
+        return 'Above '.$lower.' and below '.number_format($moderateLow, $precision);
     }
+
+    private function tooLateLabel(string $direction, float $moderateLow, float $moderateHigh, int $precision): string
+    {
+        return strtolower($direction) === 'sell'
+            ? 'Below '.number_format($moderateLow, $precision).' — do not chase'
+            : 'Above '.number_format($moderateHigh, $precision).' — do not chase';
+    }
+
+    private function dangerLabel(string $direction, float $stop, int $precision): string
+    {
+        if ($stop <= 0) {
+            return 'Stop boundary breached or market unavailable';
+        }
+
+        return strtolower($direction) === 'sell'
+            ? 'At or above stop '.number_format($stop, $precision)
+            : 'At or below stop '.number_format($stop, $precision);
+    }
+
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ControlledMarketInstrument;
 use App\Models\MarketEnvironment;
+use App\Models\MarketInstrument;
 use App\Models\Stock;
 use App\Models\StockHolding;
 use App\Models\TradePosition;
@@ -23,7 +24,7 @@ class MarketEnvironmentController extends Controller
     ) {
         $environment = MarketEnvironment::current();
         $instruments = ControlledMarketInstrument::query()
-            ->with('stock')
+            ->with(['marketInstrument.stock','marketInstrument.forexPair'])
             ->orderBy('symbol')
             ->paginate(30);
 
@@ -51,8 +52,6 @@ class MarketEnvironmentController extends Controller
 
         $requested = $data['active_marketplace'];
 
-        // V5.12: holdings and living contracts are marketplace-scoped, so the
-        // operator can change the active desk without re-pricing existing exposure.
         $prices->setActiveMarketplace($requested, auth()->id());
 
         return back()->with('success', 'Price source updated. New browsing and executions now use the selected source. Existing exposure remains bound to its opening source.');
@@ -94,8 +93,6 @@ class MarketEnvironmentController extends Controller
         $symbol = strtoupper($data['symbol']);
         $price = (float) $data['current_price'];
 
-        // A newly-created internal instrument is not automatically a real
-        // external-feed symbol. Existing public stocks keep their feed eligibility.
         $stock = Stock::query()->firstOrNew(['symbol' => $symbol]);
 
         if (! $stock->exists) {
@@ -116,13 +113,39 @@ class MarketEnvironmentController extends Controller
             $stock->save();
         }
 
-        if (ControlledMarketInstrument::query()->where('stock_id', $stock->id)->exists()) {
+        $parent = MarketInstrument::query()->firstOrCreate(
+            ['asset_class' => MarketInstrument::ASSET_STOCK, 'symbol' => $symbol],
+            [
+                'display_symbol' => $symbol,
+                'name' => $data['label'],
+                'market' => 'internal_equity',
+                'base_asset' => $symbol,
+                'quote_asset' => 'USD',
+                'price_precision' => 2,
+                'pip_size' => null,
+                'stock_id' => $stock->id,
+                'forex_pair_id' => null,
+                'is_active' => true,
+                'is_featured' => false,
+                'metadata' => ['source' => 'manual_internal'],
+            ]
+        );
+
+        if (! $parent->stock_id) {
+            $parent->update(['stock_id' => $stock->id]);
+        }
+
+        if ((int) ($stock->market_instrument_id ?? 0) !== (int) $parent->id) {
+            $stock->update(['market_instrument_id' => $parent->id]);
+        }
+
+        if (ControlledMarketInstrument::query()->where('market_instrument_id', $parent->id)->exists()) {
             return back()->withErrors(['symbol' => 'This instrument already exists.'])->withInput();
         }
 
-        $engine->registerInstrument($stock, $data['label'], $price);
+        $engine->registerMarketInstrument($parent, $data['label'], $price);
 
-        return back()->with('success', $symbol.' added.');
+        return back()->with('success', $symbol.' added as a Stock MarketInstrument child.');
     }
 
     public function resetInstrumentPrice(

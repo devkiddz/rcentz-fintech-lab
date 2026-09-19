@@ -12,6 +12,7 @@ class SignalAnalysisRun extends Model
     protected $fillable = [
         'signal_id',
         'stock_id',
+        'market_instrument_id',
         'marketplace',
         'trigger',
         'source',
@@ -41,6 +42,11 @@ class SignalAnalysisRun extends Model
     public function stock()
     {
         return $this->belongsTo(Stock::class);
+    }
+
+    public function marketInstrument()
+    {
+        return $this->belongsTo(MarketInstrument::class);
     }
 
     public function actor()
