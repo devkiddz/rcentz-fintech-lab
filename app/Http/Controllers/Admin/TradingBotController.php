@@ -4,17 +4,18 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\BotProduct;
 use App\Models\BotSubscription;
-use App\Models\Stock;
+use App\Models\MarketInstrument;
 use App\Models\TradingBotExecution;
+use App\Services\BotMarketContextService;
+use App\Services\TradingPerformanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
-use App\Services\TradingPerformanceService;
 
 class TradingBotController extends Controller
 {
     public function index(TradingPerformanceService $performance)
     {
-        $products = BotProduct::with('stock')
+        $products = BotProduct::with(['stock','marketInstrument'])
             ->withCount([
                 'subscriptions',
                 'subscriptions as active_subscriptions_count' => fn ($q) => $q->whereIn('status', ['active','paused']),
@@ -25,13 +26,14 @@ class TradingBotController extends Controller
         foreach ($products as $product) {
             $product->performance_metrics = $performance->botProduct($product);
         }
+
         return view('admin.ai-bots.index',compact('products'));
     }
 
     public function create()
     {
-        $stocks=Stock::where('is_active',true)->orderBy('symbol')->get();
-        return view('admin.ai-bots.create',compact('stocks'));
+        $instruments = $this->activeInstruments();
+        return view('admin.ai-bots.create',compact('instruments'));
     }
 
     public function store(Request $request)
@@ -48,8 +50,9 @@ class TradingBotController extends Controller
 
     public function edit(BotProduct $botProduct)
     {
-        $stocks=Stock::where('is_active',true)->orderBy('symbol')->get();
-        return view('admin.ai-bots.edit',compact('botProduct','stocks'));
+        $botProduct->loadMissing(['marketInstrument','stock']);
+        $instruments = $this->activeInstruments();
+        return view('admin.ai-bots.edit',compact('botProduct','instruments'));
     }
 
     public function update(Request $request, BotProduct $botProduct)
@@ -84,7 +87,13 @@ class TradingBotController extends Controller
 
     public function subscriptions()
     {
-        $subscriptions=BotSubscription::with(['user','product.stock','bot'])->latest()->paginate(40);
+        $subscriptions=BotSubscription::with([
+            'user',
+            'product.stock',
+            'product.marketInstrument',
+            'bot.marketInstrument',
+        ])->latest()->paginate(40);
+
         return view('admin.ai-bots.subscriptions',compact('subscriptions'));
     }
 
@@ -92,44 +101,47 @@ class TradingBotController extends Controller
     {
         $executions = TradingBotExecution::with([
             'subscription.user',
-            'subscription.product',
+            'subscription.product.marketInstrument',
             'bot.stock',
+            'bot.marketInstrument',
+            'marketInstrument',
             'stockTransaction',
+            'brokerOrder',
+            'marketExecution',
         ])->latest()->paginate(50);
 
         return view('admin.ai-bots.executions', compact('executions'));
     }
 
-    public function executionShow(TradingBotExecution $execution)
-    {
+    public function executionShow(
+        TradingBotExecution $execution,
+        TradingPerformanceService $performance,
+        BotMarketContextService $markets
+    ) {
         $execution->load([
             'subscription.user',
-            'subscription.product',
+            'subscription.product.marketInstrument',
             'bot.stock',
+            'bot.marketInstrument',
+            'marketInstrument',
             'stockTransaction',
+            'brokerOrder',
+            'marketExecution',
         ]);
 
-        $currentPrice = (float) ($execution->bot?->stock?->current_price ?? 0);
-        $entryPrice = (float) $execution->price;
-        $quantity = (float) $execution->quantity;
+        $instrument = $execution->marketInstrument ?? $execution->bot?->marketInstrument ?? $execution->bot?->stock?->marketInstrument;
+        $market = $instrument ? $markets->forInstrument($instrument, 0) : null;
+        $mark = $performance->executionMark($execution);
 
-        $profitLoss = 0.0;
-        if ($execution->status === 'completed' && $entryPrice > 0 && $quantity > 0 && $currentPrice > 0) {
-            $profitLoss = $execution->action === 'sell'
-                ? ($entryPrice - $currentPrice) * $quantity
-                : ($currentPrice - $entryPrice) * $quantity;
-        }
-
-        $returnPercent = (float) $execution->amount > 0
-            ? ($profitLoss / (float) $execution->amount) * 100
-            : 0;
-
-        return view('admin.ai-bots.execution-show', compact(
-            'execution',
-            'currentPrice',
-            'profitLoss',
-            'returnPercent'
-        ));
+        return view('admin.ai-bots.execution-show', [
+            'execution' => $execution,
+            'market' => $market,
+            'currentPrice' => $mark['current_price'],
+            'currentPriceDisplay' => $mark['current_price_display'],
+            'entryPriceDisplay' => $mark['entry_price_display'],
+            'profitLoss' => $mark['profit_loss'],
+            'returnPercent' => $mark['return_percent'],
+        ]);
     }
 
     private function validated(Request $request):array
@@ -137,7 +149,7 @@ class TradingBotController extends Controller
         $data = $request->validate([
             'name'=>'required|string|max:120',
             'description'=>'nullable|string|max:2000',
-            'stock_id'=>'required|exists:stocks,id',
+            'market_instrument_id'=>'required|exists:market_instruments,id',
             'strategy'=>'required|in:dca,price_below,price_above',
             'action'=>'required|in:buy,sell',
             'risk_level'=>'required|in:low,medium,high',
@@ -148,7 +160,7 @@ class TradingBotController extends Controller
             'default_interval_minutes'=>'required|integer|min:5|max:10080',
             'default_max_daily_trades'=>'required|integer|min:1|max:24',
             'default_trade_amount'=>'nullable|numeric|min:1|max:100000',
-            'default_trigger_price'=>'nullable|numeric|min:0.01',
+            'default_trigger_price'=>'nullable|numeric|min:0.00000001',
             'allow_user_trade_amount'=>'nullable|boolean',
             'allow_user_trigger_price'=>'nullable|boolean',
             'is_active'=>'nullable|boolean',
@@ -167,6 +179,23 @@ class TradingBotController extends Controller
             'use_manual_performance'=>$request->boolean('use_manual_performance'),
         ];
 
+        $instrument = MarketInstrument::query()
+            ->with('canonicalStock')
+            ->whereKey($data['market_instrument_id'])
+            ->firstOrFail();
+
+        if (! $instrument->is_active) {
+            abort(422, 'Selected market instrument is inactive.');
+        }
+
+        $data['stock_id'] = $instrument->isStock()
+            ? ($instrument->canonicalStock?->id ?? $instrument->stock_id)
+            : null;
+
+        if ($instrument->isStock() && ! $data['stock_id']) {
+            abort(422, 'Selected Stock instrument has no canonical Stock child.');
+        }
+
         if ($data['use_manual_performance']) {
             $base = (float) ($data['max_user_allocation'] ?? $data['minimum_balance'] ?? $data['default_trade_amount'] ?? 0);
             $source = $data['manual_performance_source'] ?? null;
@@ -182,5 +211,20 @@ class TradingBotController extends Controller
 
         unset($data['manual_performance_source']);
         return $data;
+    }
+
+    private function activeInstruments()
+    {
+        return MarketInstrument::query()
+            ->active()
+            ->with(['canonicalStock','canonicalForexPair','canonicalCryptoPair'])
+            ->whereIn('asset_class', [
+                MarketInstrument::ASSET_STOCK,
+                MarketInstrument::ASSET_FOREX,
+                MarketInstrument::ASSET_CRYPTO,
+            ])
+            ->orderBy('asset_class')
+            ->orderBy('display_symbol')
+            ->get();
     }
 }

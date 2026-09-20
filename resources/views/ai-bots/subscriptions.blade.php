@@ -23,7 +23,7 @@
         <div class="flex items-start justify-between gap-3">
             <div>
                 <div class="flex flex-wrap items-center gap-2">
-                    <span class="rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-1 text-[10px] font-semibold text-sky-600">{{ $s->product?->stock?->symbol }}</span>
+                    <span class="rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-1 text-[10px] font-semibold text-sky-600">{{ $s->product?->marketInstrument?->display_symbol ?? $s->product?->stock?->symbol ?? '—' }}</span>
                     <span class="rounded-full border px-2 py-1 text-[10px] font-semibold {{ $statusClass }}">{{ ucfirst($expired ? 'expired' : $s->status) }}</span>
                 </div>
                 <h2 class="mt-2 text-sm font-semibold">{{ $s->product?->name }}</h2>

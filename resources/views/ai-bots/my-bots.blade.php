@@ -18,7 +18,7 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
     <div class="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
         <div>
             <div class="flex flex-wrap items-center gap-2">
-                <span class="inline-flex items-center gap-1 rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-600"><i data-lucide="candlestick-chart" class="h-3.5 w-3.5"></i>{{ $product->stock->symbol }}</span>
+                <span class="inline-flex items-center gap-1 rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-600"><i data-lucide="candlestick-chart" class="h-3.5 w-3.5"></i>{{ $chart['symbol'] ?? $product->marketInstrument?->display_symbol ?? $product->stock?->symbol ?? '—' }}</span>
                 <span class="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"><i data-lucide="cpu" class="h-3.5 w-3.5"></i>{{ strtoupper(str_replace('_',' ',$product->strategy)) }}</span>
                 <span class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold {{ $bot?->status==='active'?'border border-emerald-500/20 bg-emerald-500/10 text-emerald-600':'border border-border bg-muted text-muted-foreground' }}">@if($bot?->status==='active')<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>@else<i data-lucide="pause" class="h-3 w-3"></i>@endif{{ $bot?->status==='active'?'Running':'Paused' }}</span>
             </div>
@@ -50,7 +50,7 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
                     </span>
                 </div>
                 <div class="mt-1.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <span class="text-[13px] font-semibold">{{ $product->stock->symbol }} {{ format_currency($chart['current'] ?? 0) }}</span>
+                    <span class="text-[13px] font-semibold">{{ $chart['symbol'] ?? '—' }} {{ $chart['current_display'] ?? format_currency($chart['current'] ?? 0) }}</span>
                     @php
                         $dayMove = (float)($chart['previous_close'] ?? 0) > 0
                             ? (((float)($chart['current'] ?? 0) - (float)$chart['previous_close']) / (float)$chart['previous_close']) * 100
@@ -75,7 +75,7 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
             </div>
         </div>
 
-        <div class="p-2">@include('trading.partials.mini-analysis-card',['symbol'=>$product->stock->symbol,'height'=>'h-[230px] sm:h-[280px]'])</div></section>
+        <div class="p-2"><div class="h-[230px] sm:h-[280px] w-full" data-rcentz-candles data-quotes='@json($chart["quotes"] ?? [])'></div></div></section>
 
     <section class="mt-3 overflow-hidden rounded-xl border border-border/70 bg-muted/10" data-bot-tabs>
         <div class="flex items-center gap-1 border-b border-border/70 px-2.5 pt-2.5">

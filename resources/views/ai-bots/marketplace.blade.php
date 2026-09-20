@@ -14,7 +14,8 @@
 @forelse($products as $product)
     @php
         $m = $product->performance_metrics;
-        $stock = $product->stock;
+        $market = $product->market_context ?? [];
+        $symbol = $market['symbol'] ?? $product->marketInstrument?->display_symbol ?? $product->stock?->symbol ?? '—';
     @endphp
 
     <a href="{{ route('ai-bots.show',$product) }}" class="ui-panel block overflow-hidden border border-border/70 bg-background/60 shadow-sm transition hover:-translate-y-0.5">
@@ -28,7 +29,7 @@
             <div class="flex items-start justify-between gap-3">
                 <div>
                     <div class="flex flex-wrap gap-2">
-                        <span class="inline-flex items-center gap-1 rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-1 text-[10px] font-semibold text-sky-600"><i data-lucide="candlestick-chart" class="h-3.5 w-3.5"></i>{{ $stock->symbol }}</span>
+                        <span class="inline-flex items-center gap-1 rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-1 text-[10px] font-semibold text-sky-600"><i data-lucide="candlestick-chart" class="h-3.5 w-3.5"></i>{{ $symbol }}</span>
                         <span class="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-600">{{ ucfirst($product->risk_level) }} risk</span>
                     </div>
                     <h2 class="mt-2.5 text-base font-semibold">{{ $product->name }}</h2>
@@ -43,20 +44,20 @@
             <div class="flex items-center justify-between px-3.5 pt-3">
                 <div>
                     <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Live price</p>
-                    <p class="mt-1 text-sm font-semibold">{{ format_currency($stock->current_price) }}</p>
+                    <p class="mt-1 text-sm font-semibold">{{ $market['current_display'] ?? '—' }}</p>
                 </div>
-                <span class="text-[10px] font-semibold {{ (float)$stock->change_percentage >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
-                    {{ (float)$stock->change_percentage >= 0 ? '+' : '' }}{{ number_format((float)$stock->change_percentage,2) }}%
+                <span class="text-[10px] font-semibold {{ (float)($market['change_percentage'] ?? 0) >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                    {{ (float)($market['change_percentage'] ?? 0) >= 0 ? '+' : '' }}{{ number_format((float)($market['change_percentage'] ?? 0),2) }}%
                 </span>
             </div>
             <div class="relative h-[110px] px-2 pb-2">
                 @if(count($product->quote_history ?? []) >= 2)
-                    @include('trading.partials.mini-analysis-card',['symbol'=>$stock->symbol,'height'=>'h-[110px]'])
+                    <div class="h-full w-full" data-rcentz-candles data-compact="true" data-quotes='@json($product->quote_history ?? [])'></div>
                 @else
                     <div class="absolute inset-0 flex items-center justify-center px-3 pb-2">
                         <div class="text-center">
                             <p class="text-[10px] font-medium text-foreground">Building live price history</p>
-                            <p class="mt-1 text-[9px] text-muted-foreground">Waiting for regular-session quotes.</p>
+                            <p class="mt-1 text-[9px] text-muted-foreground">Waiting for authoritative {{ strtoupper($market['asset_class'] ?? 'market') }} price history.</p>
                         </div>
                     </div>
                 @endif

@@ -5,7 +5,7 @@
     <div>
         <p class="ui-kicker text-[10px]">AI Trading Bots</p>
         <h1 class="ui-heading !text-xl">Performance & Executions</h1>
-        <p class="ui-lead !text-[13px]">Live bot performance, market movement, stock context and execution activity.</p>
+        <p class="ui-lead !text-[13px]">Live bot performance, multi-asset market movement and execution activity.</p>
     </div>
 </section>
 
@@ -32,12 +32,12 @@
         <div>
             <div class="flex items-center gap-2">
                 <i data-lucide="chart-candlestick" class="h-4 w-4 text-sky-500"></i>
-                <p class="text-[10px] font-semibold uppercase tracking-[.15em] text-muted-foreground">Stock Performance</p>
+                <p class="text-[10px] font-semibold uppercase tracking-[.15em] text-muted-foreground">Multi-Asset Performance</p>
             </div>
             <div class="mt-1 flex items-center gap-2">
             <h2 class="text-sm font-semibold">Live market performance & related intelligence</h2>
             <span class="rounded-full border border-border bg-muted px-2 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-muted-foreground">
-                {{ str_replace('_', ' ', $marketStatus ?? 'closed') }}
+                MULTI ASSET
             </span>
         </div>
         </div>
@@ -48,7 +48,7 @@
             @endphp
             <div class="flex flex-wrap items-center gap-3 text-[10px]">
                 <span class="rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-1 font-semibold text-sky-600">{{ $leadStock['symbol'] }}</span>
-                <span class="font-semibold">{{ format_currency($leadStock['current']) }}</span>
+                <span class="font-semibold">{{ $leadStock['current_display'] ?? format_currency($leadStock['current']) }}</span>
                 <span class="{{ $leadStock['change_percentage'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
                     {{ $leadStock['change_percentage'] >= 0 ? '+' : '' }}{{ number_format($leadStock['change_percentage'],2) }}%
                 </span>
@@ -73,7 +73,7 @@
                         </div>
                         <div class="text-right">
                             <p class="text-[10px] text-muted-foreground">Current</p>
-                            <p class="mt-1 text-sm font-semibold">{{ format_currency($primaryBot['current']) }}</p>
+                            <p class="mt-1 text-sm font-semibold">{{ $primaryBot['current_display'] ?? format_currency($primaryBot['current']) }}</p>
                         </div>
                     </div>
                 </div>
@@ -177,7 +177,7 @@
                                 {{ $stock['change_percentage'] >= 0 ? '+' : '' }}{{ number_format($stock['change_percentage'],2) }}%
                             </span>
                         </div>
-                        <p class="mt-1 text-xs font-semibold">{{ format_currency($stock['current']) }}</p>
+                        <p class="mt-1 text-xs font-semibold">{{ $stock['current_display'] ?? format_currency($stock['current']) }}</p>
                     </div>
                 @endforeach
             </div>
@@ -200,7 +200,7 @@
             <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-2">
-                        <span class="rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-1 text-[10px] font-semibold text-sky-600">{{ $e->bot?->stock?->symbol }}</span>
+                        <span class="rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-1 text-[10px] font-semibold text-sky-600">{{ $e->marketInstrument?->display_symbol ?? $e->bot?->marketInstrument?->display_symbol ?? $e->bot?->stock?->symbol ?? '—' }}</span>
                         <span class="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-600">{{ ucfirst($e->status) }}</span>
                     </div>
                     <h3 class="mt-2 text-sm font-semibold">{{ $e->subscription?->product?->name ?? $e->bot?->name }}</h3>

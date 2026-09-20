@@ -1,6 +1,10 @@
 <x-user-layout>
 <x-slot name="header">{{ $product->name }}</x-slot>
 <div class="ui-page max-w-[1300px]">
+@php
+    $market = $market ?? [];
+    $symbol = $market['symbol'] ?? $product->marketInstrument?->display_symbol ?? $product->stock?->symbol ?? '—';
+@endphp
 <section class="ui-page-header">
     <div>
         <p class="ui-kicker text-[10px]">AI Trading Bots</p>
@@ -15,12 +19,12 @@
         <div class="flex items-center justify-between gap-3 border-b border-border/70 px-4 py-3">
             <div>
                 <div class="flex flex-wrap gap-2">
-                    <span class="rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-1 text-[10px] font-semibold text-sky-600">{{ $product->stock->symbol }}</span>
+                    <span class="rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-1 text-[10px] font-semibold text-sky-600">{{ $symbol }}</span>
                     <span class="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold text-amber-600">{{ ucfirst($product->risk_level) }} risk</span>
                     <span class="rounded-full border border-border bg-muted px-2 py-1 text-[10px] font-semibold">{{ strtoupper($product->strategy) }}</span>
                 </div>
                 <div class="mt-2 flex items-center gap-2">
-                    <h2 class="text-sm font-semibold">Live {{ $product->stock->symbol }} Market</h2>
+                    <h2 class="text-sm font-semibold">{{ strtoupper($market['asset_class'] ?? 'market') }} · {{ $symbol }}</h2>
                     <span class="rounded-full border border-border bg-muted px-2 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-muted-foreground">
                         {{ str_replace('_', ' ', $marketStatus ?? 'closed') }}
                     </span>
@@ -28,9 +32,9 @@
             </div>
             <div class="text-right">
                 <p class="text-[10px] text-muted-foreground">Current</p>
-                <p class="mt-1 text-lg font-semibold">{{ format_currency($product->stock->current_price) }}</p>
-                <p class="text-[10px] font-medium {{ (float)$product->stock->change_percentage >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
-                    {{ (float)$product->stock->change_percentage >= 0 ? '+' : '' }}{{ number_format((float)$product->stock->change_percentage,2) }}%
+                <p class="mt-1 text-lg font-semibold">{{ $market['current_display'] ?? '—' }}</p>
+                <p class="text-[10px] font-medium {{ (float)($market['change_percentage'] ?? 0) >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                    {{ (float)($market['change_percentage'] ?? 0) >= 0 ? '+' : '' }}{{ number_format((float)($market['change_percentage'] ?? 0),2) }}%
                 </p>
             </div>
         </div>
@@ -48,7 +52,7 @@
                         </div>
                         <p class="mt-3 text-xs font-medium">Building live price history</p>
                         <p class="mt-1 text-[10px] leading-4 text-muted-foreground">
-                            The chart appears as regular-session market quotes are collected.
+                            The chart appears as authoritative {{ strtoupper($market['asset_class'] ?? 'market') }} history is collected.
                         </p>
                     </div>
                 </div>
@@ -57,14 +61,14 @@
 
         <div class="grid grid-cols-2 gap-2 border-t border-border/70 p-3 sm:grid-cols-4">
             @foreach([
-                ['Open',$product->stock->open],
-                ['High',$product->stock->high],
-                ['Low',$product->stock->low],
-                ['Prev. Close',$product->stock->previous_close],
+                ['Open',$market['open_display'] ?? '—'],
+                ['High',$market['high_display'] ?? '—'],
+                ['Low',$market['low_display'] ?? '—'],
+                ['Prev. Close',$market['previous_close_display'] ?? '—'],
             ] as [$label,$value])
                 <div class="rounded-lg border border-border bg-muted/10 p-2.5">
                     <p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">{{ $label }}</p>
-                    <p class="mt-1 text-[13px] font-semibold">{{ format_currency($value) }}</p>
+                    <p class="mt-1 text-[13px] font-semibold">{{ $value }}</p>
                 </div>
             @endforeach
         </div>

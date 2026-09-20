@@ -6,14 +6,22 @@ use App\Models\BotProduct;
 use App\Models\BotSubscription;
 use App\Models\CopyRelationship;
 use App\Models\CopyStrategy;
+use App\Models\TradePosition;
+use App\Models\TradingBot;
 use App\Models\TradingBotExecution;
 use Illuminate\Support\Collection;
 
 class TradingPerformanceService
 {
+    public function __construct(
+        private MarketPriceRouter $prices,
+        private MarketSettlementService $settlement,
+        private BotMarketContextService $markets
+    ) {}
+
     public function botProduct(BotProduct $product): array
     {
-        $executions = TradingBotExecution::with('bot.stock')
+        $executions = TradingBotExecution::with(['bot.stock','bot.marketInstrument','marketInstrument','marketExecution'])
             ->whereHas('subscription', fn ($q) => $q->where('bot_product_id', $product->id))
             ->get();
 
@@ -31,7 +39,7 @@ class TradingPerformanceService
 
     public function botSubscription(BotSubscription $subscription): array
     {
-        $executions = TradingBotExecution::with('bot.stock')
+        $executions = TradingBotExecution::with(['bot.stock','bot.marketInstrument','marketInstrument','marketExecution'])
             ->where('bot_subscription_id', $subscription->id)
             ->get();
 
@@ -50,6 +58,62 @@ class TradingPerformanceService
             $subscription->product?->manual_performance_label,
             $subscription->product?->manual_performance_note
         );
+    }
+
+    public function executionMark(TradingBotExecution $execution): array
+    {
+        $execution->loadMissing([
+            'bot.user.wallet',
+            'bot.stock.marketInstrument',
+            'bot.marketInstrument',
+            'marketInstrument',
+            'marketExecution',
+        ]);
+
+        $instrument = $execution->marketInstrument
+            ?? $execution->bot?->marketInstrument
+            ?? $execution->bot?->stock?->marketInstrument;
+
+        $market = $instrument ? $this->markets->forInstrument($instrument, 0) : null;
+        $current = (float) ($market['current'] ?? 0.0);
+        $entry = (float) $execution->price;
+        $qty = (float) $execution->quantity;
+        $amount = (float) $execution->amount;
+        $pnl = 0.0;
+
+        if ($execution->status === 'completed' && $entry > 0 && $qty > 0 && $instrument) {
+            if ($execution->action === 'sell' && $execution->marketExecution?->realized_profit_loss !== null) {
+                $pnl = (float) $execution->marketExecution->realized_profit_loss;
+            } elseif ($current > 0) {
+                $quotePnl = ($current - $entry) * $qty;
+
+                if ($instrument->isStock()) {
+                    $pnl = $execution->action === 'sell' ? -$quotePnl : $quotePnl;
+                } else {
+                    try {
+                        $currency = strtoupper((string) ($execution->bot?->user?->wallet?->currency ?: 'USD'));
+                        $converted = $this->settlement->profitLossToSettlement(
+                            $instrument,
+                            $quotePnl,
+                            $current,
+                            $currency,
+                            false
+                        );
+                        $pnl = $execution->action === 'sell' ? -$converted : $converted;
+                    } catch (\Throwable) {
+                        $pnl = 0.0;
+                    }
+                }
+            }
+        }
+
+        return [
+            'current_price' => $current,
+            'current_price_display' => $this->markets->displayPrice($instrument, $current),
+            'entry_price_display' => $this->markets->displayPrice($instrument, $entry),
+            'profit_loss' => $pnl,
+            'return_percent' => $amount > 0 ? ($pnl / $amount) * 100 : 0.0,
+        ];
     }
 
     public function copyStrategy(CopyStrategy $strategy): array
@@ -127,7 +191,6 @@ class TradingPerformanceService
                 ]
             );
         } else {
-            // Backward compatibility for pre-position-engine copy contracts.
             $metrics = $this->fromCopyExecutions(
                 $executions,
                 (float) $relationship->allocation_limit
@@ -156,15 +219,54 @@ class TradingPerformanceService
         $realizedCostBasis = 0.0;
         $openPnl = 0.0;
         $openCostBasis = 0.0;
-
         $positive = 0;
         $negative = 0;
         $neutral = 0;
 
         foreach ($completed->groupBy('trading_bot_id') as $botExecutions) {
+            /** @var TradingBot|null $bot */
+            $bot = $botExecutions->last()?->bot;
+            if (! $bot) {
+                continue;
+            }
+
+            $positions = TradePosition::query()
+                ->with([
+                    'user.wallet',
+                    'marketInstrument',
+                    'stock.marketInstrument',
+                    'entryMarketExecutionTransaction',
+                ])
+                ->where('context_type', 'trading_bot')
+                ->where('context_id', $bot->id)
+                ->orderBy('opened_at')
+                ->get();
+
+            if ($positions->isNotEmpty()) {
+                foreach ($positions as $position) {
+                    $basis = $this->positionBasis($position);
+                    $initialQty = max((float) $position->initial_quantity, 0.00000001);
+                    $openQty = max((float) $position->open_quantity, 0.0);
+                    $closedRatio = min(1.0, max(0.0, ($initialQty - $openQty) / $initialQty));
+                    $openRatio = min(1.0, max(0.0, $openQty / $initialQty));
+                    $realized = (float) $position->realized_profit_loss;
+                    $openMark = $this->openPositionPnl($position);
+                    $net = $realized + $openMark;
+
+                    $realizedPnl += $realized;
+                    $openPnl += $openMark;
+                    $realizedCostBasis += $basis * $closedRatio;
+                    $openCostBasis += $basis * $openRatio;
+                    $this->countMark($net, $positive, $negative, $neutral);
+                }
+                continue;
+            }
+
+            // Compatibility fallback for legacy executions that predate position attribution.
             $inventoryQty = 0.0;
             $inventoryCost = 0.0;
-            $currentPrice = (float) ($botExecutions->last()?->bot?->stock?->current_price ?? 0);
+            $instrument = $bot->marketInstrument ?? $bot->stock?->marketInstrument;
+            $currentPrice = $instrument ? ($this->safePrice($instrument) ?? 0.0) : (float) ($bot->stock?->current_price ?? 0);
 
             foreach ($botExecutions as $execution) {
                 $qty = (float) $execution->quantity;
@@ -178,9 +280,6 @@ class TradingPerformanceService
                 if ($execution->action === 'buy') {
                     $inventoryQty += $qty;
                     $inventoryCost += $amount > 0 ? $amount : ($entry * $qty);
-
-                    $markPnl = $currentPrice > 0 ? ($currentPrice - $entry) * $qty : 0.0;
-                    $this->countMark($markPnl, $positive, $negative, $neutral);
                     continue;
                 }
 
@@ -188,23 +287,26 @@ class TradingPerformanceService
                     $matchedQty = min($qty, $inventoryQty);
                     $averageCost = $inventoryQty > 0 ? $inventoryCost / $inventoryQty : 0.0;
                     $costBasis = $averageCost * $matchedQty;
-                    $proceeds = $entry * $matchedQty;
-                    $tradeRealized = $proceeds - $costBasis;
+                    $tradeRealized = (float) ($execution->marketExecution?->realized_profit_loss ?? (($entry * $matchedQty) - $costBasis));
 
                     $realizedPnl += $tradeRealized;
                     $realizedCostBasis += $costBasis;
                     $this->countMark($tradeRealized, $positive, $negative, $neutral);
-
                     $inventoryQty -= $matchedQty;
                     $inventoryCost = max(0, $inventoryCost - $costBasis);
-                } else {
-                    $neutral++;
                 }
             }
 
-            if ($inventoryQty > 0 && $inventoryCost > 0 && $currentPrice > 0) {
+            if ($inventoryQty > 0 && $inventoryCost > 0 && $currentPrice > 0 && $instrument) {
                 $openCostBasis += $inventoryCost;
-                $openPnl += ($currentPrice * $inventoryQty) - $inventoryCost;
+                $legacyOpen = $this->convertQuotePnl(
+                    $instrument,
+                    ($currentPrice * $inventoryQty) - ($inventoryCost > 0 ? $inventoryCost : 0),
+                    $currentPrice,
+                    $bot
+                );
+                $openPnl += $legacyOpen;
+                $this->countMark($legacyOpen, $positive, $negative, $neutral);
             }
         }
 
@@ -231,6 +333,72 @@ class TradingPerformanceService
                 'open_return_percent' => $openCostBasis > 0 ? ($openPnl / $openCostBasis) * 100 : 0,
             ]
         );
+    }
+
+    private function positionBasis(TradePosition $position): float
+    {
+        if ($position->entryMarketExecutionTransaction) {
+            return (float) ($position->entryMarketExecutionTransaction->settlement_amount
+                ?? $position->entryMarketExecutionTransaction->gross_value
+                ?? 0);
+        }
+
+        return (float) $position->entry_price * (float) $position->initial_quantity;
+    }
+
+    private function openPositionPnl(TradePosition $position): float
+    {
+        $openQty = (float) $position->open_quantity;
+        if ($openQty <= 0) {
+            return 0.0;
+        }
+
+        $instrument = $position->marketInstrument ?? $position->stock?->marketInstrument;
+        if (! $instrument) {
+            return 0.0;
+        }
+
+        $current = $this->safePrice($instrument, $position->marketplace);
+        if (! $current || $current <= 0) {
+            return 0.0;
+        }
+
+        $quotePnl = ($current - (float) $position->entry_price) * $openQty;
+        if ($instrument->isStock()) {
+            return $quotePnl;
+        }
+
+        try {
+            $currency = strtoupper((string) ($position->user?->wallet?->currency ?: 'USD'));
+            return $this->settlement->profitLossToSettlement($instrument, $quotePnl, $current, $currency, false);
+        } catch (\Throwable) {
+            return 0.0;
+        }
+    }
+
+    private function convertQuotePnl($instrument, float $quotePnl, float $price, TradingBot $bot): float
+    {
+        if ($instrument->isStock()) {
+            return $quotePnl;
+        }
+
+        try {
+            $bot->loadMissing('user.wallet');
+            $currency = strtoupper((string) ($bot->user?->wallet?->currency ?: 'USD'));
+            return $this->settlement->profitLossToSettlement($instrument, $quotePnl, $price, $currency, false);
+        } catch (\Throwable) {
+            return 0.0;
+        }
+    }
+
+    private function safePrice($instrument, ?string $marketplace = null): ?float
+    {
+        try {
+            $price = (float) $this->prices->price($instrument, $marketplace);
+            return $price > 0 ? $price : null;
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     private function fromCopyExecutions(Collection $executions, float $minimumAmount): array
@@ -304,6 +472,7 @@ class TradingPerformanceService
             $note
         );
     }
+
     private function summary(
         Collection $all,
         Collection $completed,

@@ -19,14 +19,15 @@
                 </div>
 
                 <div>
-                    <label class="ui-label">Stock</label>
-                    <select name="stock_id" class="ui-input" required>
-                        @foreach($stocks as $stock)
-                            <option value="{{ $stock->id }}" @selected(old('stock_id', $botProduct->stock_id) == $stock->id)>
-                                {{ $stock->symbol }} — {{ $stock->name }}
+                    <label class="ui-label">Market instrument</label>
+                    <select name="market_instrument_id" class="ui-input" required>
+                        @foreach($instruments as $instrument)
+                            <option value="{{ $instrument->id }}" @selected(old('market_instrument_id', $botProduct->market_instrument_id) == $instrument->id)>
+                                [{{ strtoupper($instrument->asset_class) }}] {{ $instrument->display_symbol }} — {{ $instrument->name }}
                             </option>
                         @endforeach
                     </select>
+                    <p class="mt-1 text-xs text-muted-foreground">Changing the instrument changes the bot execution market while preserving the product contract.</p>
                 </div>
             </div>
 
@@ -94,7 +95,7 @@
                 </div>
                 <div id="admin-trigger-field">
                     <label class="ui-label" id="admin-trigger-label">Default trigger price</label>
-                    <input name="default_trigger_price" type="number" min="0.01" step="0.01" class="ui-input" value="{{ old('default_trigger_price', $botProduct->default_trigger_price) }}">
+                    <input name="default_trigger_price" type="number" min="0.00000001" step="any" class="ui-input" value="{{ old('default_trigger_price', $botProduct->default_trigger_price) }}">
                 </div>
             </div>
 

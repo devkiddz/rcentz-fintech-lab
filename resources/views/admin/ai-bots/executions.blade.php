@@ -16,7 +16,7 @@
                 $isCompleted = $execution->status === 'completed';
                 $isFailed = $execution->status === 'failed';
                 $isSkipped = $execution->status === 'skipped';
-                $symbol = $execution->bot?->stock?->symbol ?? '—';
+                $symbol = $execution->marketInstrument?->display_symbol ?? $execution->bot?->marketInstrument?->display_symbol ?? $execution->bot?->stock?->symbol ?? '—';
                 $botName = $execution->subscription?->product?->name ?? $execution->bot?->name ?? 'Bot';
             @endphp
 

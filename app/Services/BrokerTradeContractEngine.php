@@ -12,9 +12,9 @@ use RuntimeException;
 /**
  * Cross-asset financial trade boundary used by the Broker Order authority.
  *
- * Stock retains its mature native ledger/position engine. Forex and Crypto use
- * the parent MarketInstrument execution/position engine. The result is always
- * normalized to the unified MarketExecutionTransaction receipt.
+ * BrokerOrder remains the order authority. Optional execution context lets
+ * trusted internal callers such as TradingBot preserve strategy attribution
+ * without bypassing the broker or asset execution adapters.
  */
 final class BrokerTradeContractEngine
 {
@@ -31,9 +31,11 @@ final class BrokerTradeContractEngine
         float $quantity,
         string $quantityMode,
         array $risk,
-        BrokerOrder $order
+        BrokerOrder $order,
+        array $context = []
     ): MarketExecutionTransaction {
         $marketplace = $this->prices->normalizeMarketplace($order->marketplace ?: $this->prices->activeMarketplace());
+        $ctx = $this->context($user, $order, $context);
 
         if ($instrument->isStock()) {
             if ($quantityMode !== 'units') {
@@ -49,14 +51,14 @@ final class BrokerTradeContractEngine
                 $user,
                 $stock,
                 $quantity,
-                'broker_order',
-                'broker_order',
+                $ctx['execution_source'],
+                $ctx['context_type'],
                 $risk,
-                $order->id,
-                $order->id,
+                $ctx['context_id'],
+                $ctx['execution_source_id'],
                 null,
-                'user',
-                $user->id,
+                $ctx['actor_type'],
+                $ctx['actor_id'],
                 null,
                 $marketplace
             );
@@ -68,13 +70,13 @@ final class BrokerTradeContractEngine
             $user,
             $instrument,
             $quantity,
-            'broker_order',
-            'broker_order',
+            $ctx['execution_source'],
+            $ctx['context_type'],
             $risk,
-            $order->id,
-            $order->id,
-            'user',
-            $user->id,
+            $ctx['context_id'],
+            $ctx['execution_source_id'],
+            $ctx['actor_type'],
+            $ctx['actor_id'],
             $marketplace,
             $quantityMode,
             $order->idempotency_key
@@ -85,7 +87,8 @@ final class BrokerTradeContractEngine
         User $user,
         TradePosition $position,
         float $quantity,
-        BrokerOrder $order
+        BrokerOrder $order,
+        array $context = []
     ): MarketExecutionTransaction {
         $position->loadMissing(['marketInstrument', 'stock.marketInstrument']);
 
@@ -103,16 +106,18 @@ final class BrokerTradeContractEngine
             throw new RuntimeException('Position close quantity must be greater than zero.');
         }
 
+        $ctx = $this->context($user, $order, $context);
+
         if ($instrument->isStock()) {
             $native = $this->stocks->closePosition(
                 $position,
-                'broker_order_close',
+                $ctx['exit_reason'],
                 $quantity,
-                'user',
-                $user->id,
+                $ctx['actor_type'],
+                $ctx['actor_id'],
                 false,
                 null,
-                'broker_order_position_close'
+                $ctx['execution_source']
             );
 
             return $this->ledger->forStockTransaction($native)->refresh();
@@ -120,11 +125,12 @@ final class BrokerTradeContractEngine
 
         return $this->markets->closePosition(
             $position,
-            'broker_order_close',
+            $ctx['exit_reason'],
             $quantity,
-            'user',
-            $user->id,
-            $order->idempotency_key
+            $ctx['actor_type'],
+            $ctx['actor_id'],
+            $order->idempotency_key,
+            $ctx['execution_source']
         );
     }
 
@@ -133,9 +139,11 @@ final class BrokerTradeContractEngine
         MarketInstrument $instrument,
         float $quantity,
         string $quantityMode,
-        BrokerOrder $order
+        BrokerOrder $order,
+        array $context = []
     ): MarketExecutionTransaction {
         $marketplace = $this->prices->normalizeMarketplace($order->marketplace ?: $this->prices->activeMarketplace());
+        $ctx = $this->context($user, $order, $context);
 
         if ($instrument->isStock()) {
             if ($quantityMode !== 'units') {
@@ -151,14 +159,14 @@ final class BrokerTradeContractEngine
                 $user,
                 $stock,
                 $quantity,
-                'broker_order',
-                'broker_order_sell',
+                $ctx['execution_source'],
+                $ctx['exit_reason'],
+                $ctx['context_type'],
+                $ctx['context_id'],
+                $ctx['execution_source_id'],
                 null,
-                null,
-                $order->id,
-                null,
-                'user',
-                $user->id,
+                $ctx['actor_type'],
+                $ctx['actor_id'],
                 $marketplace
             );
 
@@ -169,16 +177,56 @@ final class BrokerTradeContractEngine
             $user,
             $instrument,
             $quantity,
-            'broker_order',
-            'broker_order_sell',
-            null,
-            null,
-            $order->id,
-            'user',
-            $user->id,
+            $ctx['execution_source'],
+            $ctx['exit_reason'],
+            $ctx['context_type'],
+            $ctx['context_id'],
+            $ctx['execution_source_id'],
+            $ctx['actor_type'],
+            $ctx['actor_id'],
             $marketplace,
             $quantityMode,
             $order->idempotency_key
         );
+    }
+
+    private function context(User $user, BrokerOrder $order, array $context): array
+    {
+        $executionSource = trim((string) ($context['execution_source'] ?? $order->execution_source ?? 'broker_order'));
+        if ($executionSource === '') {
+            $executionSource = 'broker_order';
+        }
+
+        $contextType = trim((string) ($context['context_type'] ?? 'broker_order'));
+        if ($contextType === '') {
+            $contextType = 'broker_order';
+        }
+
+        $contextId = array_key_exists('context_id', $context) && $context['context_id'] !== null
+            ? (int) $context['context_id']
+            : ($contextType === 'broker_order' ? (int) $order->id : null);
+
+        $executionSourceId = array_key_exists('execution_source_id', $context) && $context['execution_source_id'] !== null
+            ? (int) $context['execution_source_id']
+            : ($executionSource === 'broker_order' ? (int) $order->id : $contextId);
+
+        $actorType = trim((string) ($context['actor_type'] ?? 'user'));
+        if ($actorType === '') {
+            $actorType = 'user';
+        }
+
+        $actorId = array_key_exists('actor_id', $context)
+            ? ($context['actor_id'] === null ? null : (int) $context['actor_id'])
+            : (int) $user->id;
+
+        return [
+            'execution_source' => $executionSource,
+            'execution_source_id' => $executionSourceId,
+            'context_type' => $contextType,
+            'context_id' => $contextId,
+            'actor_type' => $actorType,
+            'actor_id' => $actorId,
+            'exit_reason' => trim((string) ($context['exit_reason'] ?? ($executionSource === 'broker_order' ? 'broker_order_close' : $executionSource.'_exit'))),
+        ];
     }
 }

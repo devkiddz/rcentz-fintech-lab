@@ -139,7 +139,8 @@ final class MarketInstrumentTradeContractEngine
         ?float $quantity = null,
         string $actorType = 'system',
         ?int $actorId = null,
-        ?string $idempotencyKey = null
+        ?string $idempotencyKey = null,
+        string $executionSource = 'position_exit'
     ): MarketExecutionTransaction {
         return DB::transaction(fn () => $this->positions->close(
             $position,
@@ -147,7 +148,7 @@ final class MarketInstrumentTradeContractEngine
             $quantity,
             $actorType,
             $actorId,
-            'position_exit',
+            $executionSource,
             $idempotencyKey
         ));
     }

@@ -6,7 +6,7 @@
         <div>
             <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Execution #{{ $execution->id }}</p>
             <h1 class="mt-1.5 text-xl font-semibold tracking-tight">{{ $execution->subscription?->product?->name ?? $execution->bot?->name }}</h1>
-            <p class="mt-1 text-sm text-muted-foreground">{{ $execution->subscription?->user?->name }} · {{ $execution->bot?->stock?->symbol }}</p>
+            <p class="mt-1 text-sm text-muted-foreground">{{ $execution->subscription?->user?->name }} · {{ $execution->marketInstrument?->display_symbol ?? $execution->bot?->marketInstrument?->display_symbol ?? $execution->bot?->stock?->symbol ?? '—' }}</p>
         </div>
         <a href="{{ route('admin.ai-bots.executions') }}" class="ui-btn ui-btn-secondary">
             <i data-lucide="arrow-left" class="h-4 w-4"></i>
@@ -20,7 +20,7 @@
                 <div>
                     <div class="flex flex-wrap items-center gap-2">
                         <span class="inline-flex items-center gap-1 rounded-full border border-sky-500/20 bg-sky-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-600">
-                            <i data-lucide="candlestick-chart" class="h-3.5 w-3.5"></i>{{ $execution->bot?->stock?->symbol }}
+                            <i data-lucide="candlestick-chart" class="h-3.5 w-3.5"></i>{{ $execution->marketInstrument?->display_symbol ?? $execution->bot?->marketInstrument?->display_symbol ?? $execution->bot?->stock?->symbol ?? '—' }}
                         </span>
                         <span class="inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                             <i data-lucide="cpu" class="h-3.5 w-3.5"></i>{{ strtoupper($execution->action) }}
@@ -53,11 +53,11 @@
                 </div>
                 <div class="rounded-xl border border-border bg-background/50 p-3">
                     <div class="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground"><i data-lucide="badge-dollar-sign" class="h-3.5 w-3.5 text-amber-600"></i>Entry Price</div>
-                    <p class="mt-1.5 text-sm font-semibold">{{ (float)$execution->price > 0 ? format_currency($execution->price) : '—' }}</p>
+                    <p class="mt-1.5 text-sm font-semibold">{{ (float)$execution->price > 0 ? $entryPriceDisplay : '—' }}</p>
                 </div>
                 <div class="rounded-xl border border-border bg-background/50 p-3">
                     <div class="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground"><i data-lucide="radar" class="h-3.5 w-3.5 text-violet-600"></i>Current Price</div>
-                    <p class="mt-1.5 text-sm font-semibold">{{ $currentPrice > 0 ? format_currency($currentPrice) : '—' }}</p>
+                    <p class="mt-1.5 text-sm font-semibold">{{ $currentPrice > 0 ? $currentPriceDisplay : '—' }}</p>
                 </div>
                 <div class="rounded-xl border {{ $profitLoss > 0 ? 'border-emerald-500/20 bg-emerald-500/5' : ($profitLoss < 0 ? 'border-red-500/20 bg-red-500/5' : 'border-border bg-background/50') }} p-3">
                     <div class="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] text-muted-foreground"><i data-lucide="line-chart" class="h-3.5 w-3.5 {{ $profitLoss > 0 ? 'text-emerald-600' : ($profitLoss < 0 ? 'text-red-600' : '') }}"></i>Current P/L</div>

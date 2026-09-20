@@ -15,14 +15,14 @@
         <div class="flex items-start justify-between gap-4 border-b border-border/70 p-4">
             <div>
                 <p class="text-[10px] uppercase tracking-[.13em] text-muted-foreground">Execution #{{ $execution->id }}</p>
-                <h2 class="mt-1 text-base font-semibold">{{ strtoupper($execution->action) }} {{ $execution->bot?->stock?->symbol }}</h2>
+                <h2 class="mt-1 text-base font-semibold">{{ strtoupper($execution->action) }} {{ $execution->marketInstrument?->display_symbol ?? $execution->bot?->marketInstrument?->display_symbol ?? $execution->bot?->stock?->symbol ?? '—' }}</h2>
             </div>
             <span class="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-600">{{ ucfirst($execution->status) }}</span>
         </div>
 
         <div class="border-b border-border/70 p-3">
             <div class="flex items-baseline gap-3">
-                <span class="text-sm font-semibold">{{ format_currency($currentPrice) }}</span>
+                <span class="text-sm font-semibold">{{ $currentPriceDisplay }}</span>
                 <span class="text-xs {{ $profitLoss>=0?'text-emerald-600':'text-red-600' }}">{{ $profitLoss>=0?'+':'' }}{{ format_currency($profitLoss) }}</span>
                 <span class="text-xs text-muted-foreground">{{ $returnPercent>=0?'+':'' }}{{ number_format($returnPercent,2) }}%</span>
             </div>
@@ -55,8 +55,8 @@
             @foreach([
                 ['Amount',format_currency($execution->amount)],
                 ['Quantity',number_format((float)$execution->quantity,6)],
-                ['Entry Price',format_currency($execution->price)],
-                ['Current Price',format_currency($currentPrice)],
+                ['Entry Price',$entryPriceDisplay],
+                ['Current Price',$currentPriceDisplay],
                 ['Current P/L',($profitLoss>0?'+':'').format_currency($profitLoss)],
                 ['Current Return',($returnPercent>0?'+':'').number_format($returnPercent,2).'%'],
             ] as [$label,$value])

@@ -28,11 +28,13 @@ final class BrokerOrderService
         float $quantity,
         string $quantityMode,
         string $idempotencyKey,
-        array $risk = []
+        array $risk = [],
+        array $context = []
     ): BrokerOrder {
         $side = strtolower(trim($side));
         $quantityMode = strtolower(trim($quantityMode));
         $idempotencyKey = trim($idempotencyKey);
+        $context = $this->normalizeContext($user, $context);
 
         if (! in_array($side, ['buy', 'sell'], true)) {
             throw new InvalidArgumentException('Broker order side must be buy or sell.');
@@ -76,14 +78,19 @@ final class BrokerOrderService
                 'status' => BrokerOrder::STATUS_ACCEPTED,
                 'time_in_force' => 'IOC',
                 'idempotency_key' => $idempotencyKey,
-                'execution_source' => 'broker_order',
+                'execution_source' => $context['execution_source'],
                 'risk_controls' => $risk ?: null,
                 'accepted_at' => now(),
-                'metadata' => [
+                'metadata' => array_merge([
                     'asset_class' => $instrument->asset_class,
                     'display_symbol' => $instrument->display_symbol,
                     'execution_policy' => 'market_order_immediate_or_fail',
-                ],
+                    'context_type' => $context['context_type'],
+                    'context_id' => $context['context_id'],
+                    'execution_source_id' => $context['execution_source_id'],
+                    'actor_type' => $context['actor_type'],
+                    'actor_id' => $context['actor_id'],
+                ], $context['metadata']),
             ]);
         } catch (QueryException $e) {
             $existing = BrokerOrder::query()
@@ -108,8 +115,8 @@ final class BrokerOrderService
 
         try {
             $execution = $side === 'buy'
-                ? $this->trades->buy($user, $instrument, $quantity, $quantityMode, $risk, $order)
-                : $this->trades->sell($user, $instrument, $quantity, $quantityMode, $order);
+                ? $this->trades->buy($user, $instrument, $quantity, $quantityMode, $risk, $order, $context)
+                : $this->trades->sell($user, $instrument, $quantity, $quantityMode, $order, $context);
 
             $this->fill($order, $execution);
             return $order->refresh();
@@ -136,9 +143,12 @@ final class BrokerOrderService
         User $user,
         TradePosition $position,
         ?float $quantity,
-        string $idempotencyKey
+        string $idempotencyKey,
+        array $context = []
     ): BrokerOrder {
         $idempotencyKey = trim($idempotencyKey);
+        $context = $this->normalizeContext($user, $context);
+
         if ($idempotencyKey === '' || strlen($idempotencyKey) > 120) {
             throw new InvalidArgumentException('A valid execution idempotency key is required.');
         }
@@ -189,14 +199,19 @@ final class BrokerOrderService
                 'status' => BrokerOrder::STATUS_ACCEPTED,
                 'time_in_force' => 'IOC',
                 'idempotency_key' => $idempotencyKey,
-                'execution_source' => 'broker_position_close',
+                'execution_source' => $context['execution_source'],
                 'accepted_at' => now(),
-                'metadata' => [
+                'metadata' => array_merge([
                     'asset_class' => $instrument->asset_class,
                     'display_symbol' => $instrument->display_symbol,
                     'target_position_id' => $position->id,
                     'execution_policy' => 'market_position_close_immediate_or_fail',
-                ],
+                    'context_type' => $context['context_type'],
+                    'context_id' => $context['context_id'],
+                    'execution_source_id' => $context['execution_source_id'],
+                    'actor_type' => $context['actor_type'],
+                    'actor_id' => $context['actor_id'],
+                ], $context['metadata']),
             ]);
         } catch (QueryException $e) {
             $existing = BrokerOrder::query()
@@ -223,7 +238,7 @@ final class BrokerOrderService
         $this->event($order, 'submitted', BrokerOrder::STATUS_ACCEPTED, BrokerOrder::STATUS_EXECUTING, 'Position close submitted to the asset execution adapter.');
 
         try {
-            $execution = $this->trades->closePosition($user, $position, $quantity, $order);
+            $execution = $this->trades->closePosition($user, $position, $quantity, $order, $context);
             $this->fill($order, $execution);
             return $order->refresh();
         } catch (Throwable $e) {
@@ -313,6 +328,51 @@ final class BrokerOrderService
         }
     }
 
+    private function normalizeContext(User $user, array $context): array
+    {
+        $source = trim((string) ($context['execution_source'] ?? 'broker_order'));
+        if ($source === '') {
+            $source = 'broker_order';
+        }
+
+        $contextType = trim((string) ($context['context_type'] ?? 'broker_order'));
+        if ($contextType === '') {
+            $contextType = 'broker_order';
+        }
+
+        $contextId = array_key_exists('context_id', $context)
+            ? ($context['context_id'] === null ? null : (int) $context['context_id'])
+            : null;
+
+        $sourceId = array_key_exists('execution_source_id', $context)
+            ? ($context['execution_source_id'] === null ? null : (int) $context['execution_source_id'])
+            : $contextId;
+
+        $actorType = trim((string) ($context['actor_type'] ?? 'user'));
+        if ($actorType === '') {
+            $actorType = 'user';
+        }
+
+        $actorId = array_key_exists('actor_id', $context)
+            ? ($context['actor_id'] === null ? null : (int) $context['actor_id'])
+            : (int) $user->id;
+
+        $metadata = $context['metadata'] ?? [];
+        if (! is_array($metadata)) {
+            throw new InvalidArgumentException('Broker execution context metadata must be an array.');
+        }
+
+        return array_merge($context, [
+            'execution_source' => Str::limit($source, 60, ''),
+            'execution_source_id' => $sourceId,
+            'context_type' => Str::limit($contextType, 60, ''),
+            'context_id' => $contextId,
+            'actor_type' => Str::limit($actorType, 30, ''),
+            'actor_id' => $actorId,
+            'metadata' => $metadata,
+        ]);
+    }
+
     private function event(
         BrokerOrder $order,
         string $type,
@@ -321,9 +381,15 @@ final class BrokerOrderService
         ?string $note = null,
         array $metadata = []
     ): void {
+        $orderMetadata = $order->metadata ?? [];
+        $actorType = (string) ($orderMetadata['actor_type'] ?? 'user');
+        $actorId = array_key_exists('actor_id', $orderMetadata)
+            ? $orderMetadata['actor_id']
+            : $order->user_id;
+
         $order->events()->create([
-            'actor_id' => $order->user_id,
-            'actor_type' => 'user',
+            'actor_id' => $actorId,
+            'actor_type' => $actorType,
             'event_type' => $type,
             'from_status' => $from,
             'to_status' => $to,

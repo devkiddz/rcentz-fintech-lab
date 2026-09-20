@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\BotSubscription;
 use App\Models\TradePosition;
 use App\Models\TradingBot;
 use App\Models\TradingBotExecution;
@@ -10,10 +9,15 @@ use App\Models\User;
 
 class BotTradingPortfolioService
 {
+    public function __construct(
+        private MarketPriceRouter $prices,
+        private MarketSettlementService $settlement
+    ) {}
+
     public function buildForUser(User $user): array
     {
         $bots = TradingBot::query()
-            ->with(['stock', 'subscription'])
+            ->with(['stock', 'marketInstrument', 'subscription'])
             ->where('user_id', $user->id)
             ->latest('id')
             ->get();
@@ -23,7 +27,12 @@ class BotTradingPortfolioService
         $positions = $botIds->isEmpty()
             ? collect()
             : TradePosition::query()
-                ->with('stock')
+                ->with([
+                    'stock.marketInstrument',
+                    'marketInstrument',
+                    'user.wallet',
+                    'entryMarketExecutionTransaction',
+                ])
                 ->where('user_id', $user->id)
                 ->where('context_type', 'trading_bot')
                 ->whereIn('context_id', $botIds)
@@ -36,7 +45,7 @@ class BotTradingPortfolioService
         $executions = $botIds->isEmpty()
             ? collect()
             : TradingBotExecution::query()
-                ->with(['bot.stock', 'subscription'])
+                ->with(['bot.stock', 'bot.marketInstrument', 'marketInstrument', 'subscription', 'brokerOrder', 'marketExecution'])
                 ->whereIn('trading_bot_id', $botIds)
                 ->latest('executed_at')
                 ->latest('id')
@@ -46,29 +55,25 @@ class BotTradingPortfolioService
             $botPositions = $positionsByBot->get($bot->id, collect());
 
             $positionItems = $botPositions->map(function (TradePosition $position) {
-                $initialCapital = round(
-                    (float) $position->entry_price * (float) $position->initial_quantity,
-                    2
-                );
-
-                $openCapital = round(
-                    (float) $position->entry_price * (float) $position->open_quantity,
-                    2
-                );
-
+                $basis = $this->positionBasis($position);
+                $initialQty = max((float) $position->initial_quantity, 0.00000001);
+                $openQty = max((float) $position->open_quantity, 0.0);
+                $openCapital = round($basis * min(1, $openQty / $initialQty), 2);
                 $realized = round((float) $position->realized_profit_loss, 2);
-                $net = round((float) $position->current_profit_loss, 2);
-                $unrealized = round($net - $realized, 2);
+                $unrealized = round($this->openPositionPnl($position), 2);
+                $net = round($realized + $unrealized, 2);
+                $instrument = $position->marketInstrument ?? $position->stock?->marketInstrument;
 
                 return [
                     'position' => $position,
+                    'instrument' => $instrument,
                     'stock' => $position->stock,
-                    'initial_capital' => $initialCapital,
+                    'initial_capital' => round($basis, 2),
                     'open_capital' => $openCapital,
                     'realized_profit_loss' => $realized,
                     'unrealized_profit_loss' => $unrealized,
                     'net_profit_loss' => $net,
-                    'return_percent' => round((float) $position->current_return_percent, 4),
+                    'return_percent' => $basis > 0 ? round(($net / $basis) * 100, 4) : 0.0,
                 ];
             })->values();
 
@@ -84,6 +89,7 @@ class BotTradingPortfolioService
 
             return [
                 'bot' => $bot,
+                'instrument' => $bot->marketInstrument ?? $bot->stock?->marketInstrument,
                 'subscription' => $bot->subscription,
                 'positions' => $positionItems,
                 'executions' => $botExecutions,
@@ -129,5 +135,38 @@ class BotTradingPortfolioService
             'summary' => $summary,
             'activity' => $executions->take(12)->values(),
         ];
+    }
+
+    private function positionBasis(TradePosition $position): float
+    {
+        if ($position->entryMarketExecutionTransaction) {
+            return (float) ($position->entryMarketExecutionTransaction->settlement_amount
+                ?? $position->entryMarketExecutionTransaction->gross_value
+                ?? 0);
+        }
+
+        return (float) $position->entry_price * (float) $position->initial_quantity;
+    }
+
+    private function openPositionPnl(TradePosition $position): float
+    {
+        $openQty = (float) $position->open_quantity;
+        if ($openQty <= 0) return 0.0;
+
+        $instrument = $position->marketInstrument ?? $position->stock?->marketInstrument;
+        if (! $instrument) return 0.0;
+
+        try {
+            $current = (float) $this->prices->price($instrument, $position->marketplace ?: null);
+            if ($current <= 0) return 0.0;
+
+            $quotePnl = ($current - (float) $position->entry_price) * $openQty;
+            if ($instrument->isStock()) return $quotePnl;
+
+            $currency = strtoupper((string) ($position->user?->wallet?->currency ?: 'USD'));
+            return $this->settlement->profitLossToSettlement($instrument, $quotePnl, $current, $currency, false);
+        } catch (\Throwable) {
+            return 0.0;
+        }
     }
 }

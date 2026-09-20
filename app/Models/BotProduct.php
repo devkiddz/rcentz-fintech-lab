@@ -10,7 +10,7 @@ class BotProduct extends Model
     use HasFactory;
 
     protected $fillable = [
-        'created_by','stock_id','name','slug','description','strategy','action','risk_level',
+        'created_by','market_instrument_id','stock_id','name','slug','description','strategy','action','risk_level',
         'price','billing_period','minimum_balance','max_user_allocation',
         'default_interval_minutes','default_max_daily_trades','default_trade_amount',
         'default_trigger_price','allow_user_trade_amount','allow_user_trigger_price','is_active',
@@ -24,7 +24,7 @@ class BotProduct extends Model
         'minimum_balance'=>'decimal:2',
         'max_user_allocation'=>'decimal:2',
         'default_trade_amount'=>'decimal:2',
-        'default_trigger_price'=>'decimal:2',
+        'default_trigger_price'=>'decimal:8',
         'allow_user_trade_amount'=>'boolean',
         'allow_user_trigger_price'=>'boolean',
         'is_active'=>'boolean',
@@ -34,7 +34,21 @@ class BotProduct extends Model
         'manual_performance_updated_at'=>'datetime',
     ];
 
+    protected static function booted(): void
+    {
+        static::saving(function (BotProduct $product) {
+            if (! $product->market_instrument_id && $product->stock_id) {
+                $parentId = Stock::query()->whereKey($product->stock_id)->value('market_instrument_id');
+                if (! $parentId) {
+                    throw new \RuntimeException('BotProduct Stock is missing canonical MarketInstrument authority.');
+                }
+                $product->market_instrument_id = $parentId;
+            }
+        });
+    }
+
     public function creator(){return $this->belongsTo(User::class,'created_by');}
+    public function marketInstrument(){return $this->belongsTo(MarketInstrument::class);}
     public function stock(){return $this->belongsTo(Stock::class);}
     public function subscriptions(){return $this->hasMany(BotSubscription::class);}
     public function manualPerformanceEditor(){return $this->belongsTo(User::class,'manual_performance_updated_by');}

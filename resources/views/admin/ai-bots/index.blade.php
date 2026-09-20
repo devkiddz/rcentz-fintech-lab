@@ -46,7 +46,7 @@
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2">
                                 <span class="inline-flex items-center gap-1 rounded-full border border-sky-500/20 bg-sky-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-600">
-                                    <i data-lucide="candlestick-chart" class="h-3.5 w-3.5"></i>{{ $product->stock->symbol }}
+                                    <i data-lucide="candlestick-chart" class="h-3.5 w-3.5"></i>{{ $product->marketInstrument?->display_symbol ?? $product->stock?->symbol ?? '—' }}
                                 </span>
                                 <span class="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                                     <i data-lucide="cpu" class="h-3.5 w-3.5"></i>{{ $strategyLabel }}

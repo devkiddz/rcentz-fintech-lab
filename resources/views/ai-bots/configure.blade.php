@@ -7,6 +7,8 @@
     $isDca = $product->strategy === 'dca';
     $isBelow = $product->strategy === 'price_below';
     $isAbove = $product->strategy === 'price_above';
+    $symbol = $product->marketInstrument?->display_symbol ?? $product->stock?->symbol ?? '—';
+    $assetClass = strtoupper($product->marketInstrument?->asset_class ?? 'stock');
 @endphp
 
 <div class="ui-page max-w-5xl">
@@ -31,7 +33,7 @@
                 </div>
                 <div class="rounded-xl bg-muted/35 p-4">
                     <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Asset</p>
-                    <p class="mt-2 text-lg font-semibold">{{ $product->stock->symbol }}</p>
+                    <p class="mt-2 text-lg font-semibold">{{ $symbol }}</p><p class="mt-1 text-[10px] uppercase tracking-[.12em] text-muted-foreground">{{ $assetClass }}</p>
                 </div>
                 <div class="rounded-xl bg-muted/35 p-4">
                     <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Product Limit</p>
@@ -65,17 +67,17 @@
                         <input
                             name="trigger_price"
                             type="number"
-                            min="0.01"
-                            step="0.01"
+                            min="0.00000001"
+                            step="any"
                             class="ui-input"
                             value="{{ old('trigger_price',$bot?->trigger_price) }}"
                             {{ $product->allow_user_trigger_price ? '' : 'readonly' }}
                         >
                         <p class="mt-1.5 text-xs text-muted-foreground">
                             @if($isBelow)
-                                The bot only executes when {{ $product->stock->symbol }} is at or below this price.
+                                The bot only executes when {{ $symbol }} is at or below this price.
                             @elseif($isAbove)
-                                The bot only executes when {{ $product->stock->symbol }} is at or above this price.
+                                The bot only executes when {{ $symbol }} is at or above this price.
                             @else
                                 The market condition that must be met before execution.
                             @endif
@@ -150,14 +152,14 @@
                     <h2 class="mt-3 text-lg font-semibold">Price below is the trigger.</h2>
                     <p class="mt-2 text-sm leading-6 text-muted-foreground">
                         Every {{ number_format((int)($bot?->interval_minutes ?? 0)) }} minutes, the bot checks the market.
-                        It executes only when {{ $product->stock->symbol }} is at or below
+                        It executes only when {{ $symbol }} is at or below
                         <strong class="text-foreground">{{ format_currency($bot?->trigger_price ?? 0) }}</strong>.
                     </p>
                 @elseif($isAbove)
                     <h2 class="mt-3 text-lg font-semibold">Price above is the trigger.</h2>
                     <p class="mt-2 text-sm leading-6 text-muted-foreground">
                         Every {{ number_format((int)($bot?->interval_minutes ?? 0)) }} minutes, the bot checks the market.
-                        It executes only when {{ $product->stock->symbol }} is at or above
+                        It executes only when {{ $symbol }} is at or above
                         <strong class="text-foreground">{{ format_currency($bot?->trigger_price ?? 0) }}</strong>.
                     </p>
                 @else
