@@ -125,5 +125,6 @@
         </div>
     </nav>
 </div>
+    @include('partials.shell.communication-launcher')
 </body>
 </html>

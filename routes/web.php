@@ -162,9 +162,34 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.act
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
     Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
 
-    // Support
-    Route::get('/support', [SupportController::class, 'index'])->name('support.index');
-    Route::post('/support', [SupportController::class, 'store'])->name('support.store');
+    // Private Messages — direct conversations only.
+    Route::prefix('messages')->name('messages.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\MessageController::class, 'index'])->name('index');
+        Route::get('/attachments/{attachment}', [\App\Http\Controllers\MessageController::class, 'attachment'])->name('attachments.download');
+        Route::get('/attachments/{attachment}/preview', [\App\Http\Controllers\MessageController::class, 'previewAttachment'])->name('attachments.preview');
+        Route::get('/{conversation}', [\App\Http\Controllers\MessageController::class, 'show'])->name('show');
+        Route::post('/{conversation}/reply', [\App\Http\Controllers\MessageController::class, 'reply'])->name('reply');
+        Route::patch('/{conversation}/messages/{message}', [\App\Http\Controllers\MessageController::class, 'editMessage'])->name('messages.edit');
+        Route::patch('/{conversation}/archive', [\App\Http\Controllers\MessageController::class, 'archive'])->name('archive');
+        Route::delete('/{conversation}/delete-for-me', [\App\Http\Controllers\MessageController::class, 'deleteForMe'])->name('delete-for-me');
+        Route::delete('/{conversation}/messages/{message}/me', [\App\Http\Controllers\MessageController::class, 'deleteMessageForMe'])->name('messages.delete-for-me');
+        Route::delete('/{conversation}/messages/{message}/everyone', [\App\Http\Controllers\MessageController::class, 'deleteMessageForEveryone'])->name('messages.delete-for-everyone');
+    });
+
+    // Support Center — ticket conversations only.
+    Route::prefix('support')->name('support.')->group(function () {
+        Route::get('/', [SupportController::class, 'index'])->name('index');
+        Route::post('/', [SupportController::class, 'store'])->name('store');
+        Route::get('/attachments/{attachment}', [SupportController::class, 'attachment'])->name('attachments.download');
+        Route::get('/attachments/{attachment}/preview', [SupportController::class, 'previewAttachment'])->name('attachments.preview');
+        Route::get('/{conversation}', [SupportController::class, 'show'])->name('show');
+        Route::post('/{conversation}/reply', [SupportController::class, 'reply'])->name('reply');
+        Route::patch('/{conversation}/messages/{message}', [SupportController::class, 'editMessage'])->name('messages.edit');
+        Route::patch('/{conversation}/archive', [SupportController::class, 'archive'])->name('archive');
+        Route::delete('/{conversation}/delete-for-me', [SupportController::class, 'deleteForMe'])->name('delete-for-me');
+        Route::delete('/{conversation}/messages/{message}/me', [SupportController::class, 'deleteMessageForMe'])->name('messages.delete-for-me');
+        Route::delete('/{conversation}/messages/{message}/everyone', [SupportController::class, 'deleteMessageForEveryone'])->name('messages.delete-for-everyone');
+    });
     
     // Financial history / audit trail
     Route::get('/account/history', [FinancialHistoryController::class, 'index'])->name('account.history');
@@ -626,6 +651,36 @@ Route::middleware(['auth', 'admin'])
         Route::post('/', [\App\Http\Controllers\Admin\RewardController::class, 'store'])->name('store');
         Route::post('/{campaign}/grant', [\App\Http\Controllers\Admin\RewardController::class, 'grant'])->name('grant');
         Route::patch('/{campaign}/toggle', [\App\Http\Controllers\Admin\RewardController::class, 'toggle'])->name('toggle');
+    });
+
+    // Admin Messages — private/direct customer conversations.
+    Route::prefix('messages')->name('messages.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\CommunicationController::class, 'messagesIndex'])->name('index');
+        Route::post('/direct', [\App\Http\Controllers\Admin\CommunicationController::class, 'storeDirect'])->name('direct.store');
+        Route::get('/attachments/{attachment}', [\App\Http\Controllers\Admin\CommunicationController::class, 'attachment'])->name('attachments.download');
+        Route::get('/attachments/{attachment}/preview', [\App\Http\Controllers\Admin\CommunicationController::class, 'previewAttachment'])->name('attachments.preview');
+        Route::get('/{conversation}', [\App\Http\Controllers\Admin\CommunicationController::class, 'showMessage'])->name('show');
+        Route::post('/{conversation}/reply', [\App\Http\Controllers\Admin\CommunicationController::class, 'replyMessage'])->name('reply');
+        Route::patch('/{conversation}/messages/{message}', [\App\Http\Controllers\Admin\CommunicationController::class, 'editDirectMessage'])->name('messages.edit');
+        Route::patch('/{conversation}/archive', [\App\Http\Controllers\Admin\CommunicationController::class, 'archive'])->name('archive');
+        Route::delete('/{conversation}/delete-for-me', [\App\Http\Controllers\Admin\CommunicationController::class, 'deleteForMe'])->name('delete-for-me');
+        Route::delete('/{conversation}/messages/{message}/me', [\App\Http\Controllers\Admin\CommunicationController::class, 'deleteMessageForMe'])->name('messages.delete-for-me');
+        Route::delete('/{conversation}/messages/{message}/everyone', [\App\Http\Controllers\Admin\CommunicationController::class, 'deleteMessageForEveryone'])->name('messages.delete-for-everyone');
+    });
+
+    // Admin Support — ticket queue only.
+    Route::prefix('support')->name('support.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\CommunicationController::class, 'supportIndex'])->name('index');
+        Route::get('/attachments/{attachment}', [\App\Http\Controllers\Admin\CommunicationController::class, 'attachment'])->name('attachments.download');
+        Route::get('/attachments/{attachment}/preview', [\App\Http\Controllers\Admin\CommunicationController::class, 'previewAttachment'])->name('attachments.preview');
+        Route::get('/{conversation}', [\App\Http\Controllers\Admin\CommunicationController::class, 'showSupport'])->name('show');
+        Route::post('/{conversation}/reply', [\App\Http\Controllers\Admin\CommunicationController::class, 'replySupport'])->name('reply');
+        Route::patch('/{conversation}/messages/{message}', [\App\Http\Controllers\Admin\CommunicationController::class, 'editSupportMessage'])->name('messages.edit');
+        Route::patch('/{conversation}', [\App\Http\Controllers\Admin\CommunicationController::class, 'update'])->name('update');
+        Route::patch('/{conversation}/archive', [\App\Http\Controllers\Admin\CommunicationController::class, 'archive'])->name('archive');
+        Route::delete('/{conversation}/delete-for-me', [\App\Http\Controllers\Admin\CommunicationController::class, 'deleteForMe'])->name('delete-for-me');
+        Route::delete('/{conversation}/messages/{message}/me', [\App\Http\Controllers\Admin\CommunicationController::class, 'deleteMessageForMe'])->name('messages.delete-for-me');
+        Route::delete('/{conversation}/messages/{message}/everyone', [\App\Http\Controllers\Admin\CommunicationController::class, 'deleteMessageForEveryone'])->name('messages.delete-for-everyone');
     });
 
     // Admin Settings Control Plane

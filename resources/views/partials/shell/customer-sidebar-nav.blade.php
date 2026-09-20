@@ -225,9 +225,9 @@
 
     <details class="sidebar-group group rounded-xl"
              data-nav-group="account"
-             {{ request()->routeIs('notifications.*','profile.*','support.*') ? 'open' : '' }}>
+             {{ request()->routeIs('notifications.*','profile.*','messages.*','support.*') ? 'open' : '' }}>
         <summary title="Account"
-                 class="{{ $parentBase }} justify-between {{ request()->routeIs('notifications.*','profile.*','support.*') ? $parentActive : $parentIdle }}">
+                 class="{{ $parentBase }} justify-between {{ request()->routeIs('notifications.*','profile.*','messages.*','support.*') ? $parentActive : $parentIdle }}">
             <span class="flex min-w-0 items-center gap-3">
                 <i data-lucide="circle-user-round" class="h-4 w-4 shrink-0"></i>
                 <span class="sidebar-label truncate">Account</span>
@@ -238,6 +238,7 @@
             <a href="{{ route('notifications.index') }}" class="{{ $childBase }} {{ request()->routeIs('notifications.*') ? $childActive : $childIdle }}"><i data-lucide="bell" class="h-4 w-4"></i><span>Notifications</span></a>
             <a href="{{ route('profile.edit') }}" class="{{ $childBase }} {{ request()->routeIs('profile.edit','profile.update') ? $childActive : $childIdle }}"><i data-lucide="user-round-cog" class="h-4 w-4"></i><span>Profile & Security</span></a>
             <a href="{{ route('profile.kyc') }}" class="{{ $childBase }} {{ request()->routeIs('profile.kyc*') ? $childActive : $childIdle }}"><i data-lucide="shield-check" class="h-4 w-4"></i><span>Identity Verification</span></a>
+            <a href="{{ route('messages.index') }}" class="{{ $childBase }} {{ request()->routeIs('messages.*') ? $childActive : $childIdle }}"><i data-lucide="messages-square" class="h-4 w-4"></i><span>Messages</span></a>
             <a href="{{ route('support.index') }}" class="{{ $childBase }} {{ request()->routeIs('support.*') ? $childActive : $childIdle }}"><i data-lucide="headphones" class="h-4 w-4"></i><span>Support Center</span></a>
         </div>
     </details>

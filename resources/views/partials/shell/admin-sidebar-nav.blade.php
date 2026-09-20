@@ -278,6 +278,15 @@
 
     <div class="sidebar-section-label px-3 pt-4 pb-1 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Communication & Platform</div>
 
+    <a href="{{ route('admin.messages.index') }}" title="Messages"
+       class="{{ $standaloneBase }} {{ request()->routeIs('admin.messages.*') ? $standaloneActive : $standaloneIdle }}">
+        <i data-lucide="messages-square" class="h-4 w-4 shrink-0"></i><span class="sidebar-label">Messages</span>
+    </a>
+    <a href="{{ route('admin.support.index') }}" title="Support Tickets"
+       class="{{ $standaloneBase }} {{ request()->routeIs('admin.support.*') ? $standaloneActive : $standaloneIdle }}">
+        <i data-lucide="life-buoy" class="h-4 w-4 shrink-0"></i><span class="sidebar-label">Support Tickets</span>
+    </a>
+
     <details class="sidebar-group group rounded-xl"
              data-nav-group="admin-email"
              {{ request()->routeIs('admin.emails.*') ? 'open' : '' }}>

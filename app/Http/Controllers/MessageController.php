@@ -7,35 +7,18 @@ use App\Models\CommunicationConversation;
 use App\Models\CommunicationMessage;
 use App\Services\CommunicationService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
-class SupportController extends Controller
+class MessageController extends Controller
 {
     public function index(Request $request, CommunicationService $communications)
     {
         $user = $request->user();
         $archived = $request->boolean('archived');
 
-        $categories = [
-            'General Inquiry',
-            'Account',
-            'KYC',
-            'Wallet',
-            'Deposits',
-            'Withdrawals',
-            'Investments',
-            'Trading',
-            'Signals',
-            'Membership',
-            'Rewards',
-            'Technical Issue',
-        ];
-
         $conversations = CommunicationConversation::query()
-            ->with(['creator', 'assignee'])
-            ->where('type', 'support_ticket')
+            ->with(['creator', 'participants.user'])
+            ->where('type', 'direct')
             ->whereHas('participants', function ($query) use ($user, $archived) {
                 $query->where('user_id', $user->id)
                     ->whereNull('conversation_hidden_at')
@@ -46,7 +29,7 @@ class SupportController extends Controller
             })
             ->latest('last_message_at')
             ->latest('id')
-            ->paginate(24)
+            ->paginate(30)
             ->withQueryString();
 
         $conversations->getCollection()->each(function (CommunicationConversation $conversation) use ($user, $communications) {
@@ -58,70 +41,33 @@ class SupportController extends Controller
                 ->first();
         });
 
-        return view('support.index', compact('categories', 'conversations', 'archived'));
-    }
-
-    public function store(Request $request, CommunicationService $communications)
-    {
-        $validated = $request->validate([
-            'category' => ['required', 'string', 'max:100'],
-            'subject' => ['required', 'string', 'max:180'],
-            'message' => ['required', 'string', 'min:10', 'max:10000'],
-            'attachments' => ['nullable', 'array', 'max:8'],
-            'attachments.*' => ['file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf,txt,csv,doc,docx,xls,xlsx'],
-            'attachment' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf,txt,csv,doc,docx,xls,xlsx'],
-            'idempotency_key' => ['required', 'string', 'max:120'],
-        ]);
-
-        $conversation = $communications->createSupportTicket(
-            $request->user(),
-            $validated,
-            $this->uploads($request)
-        );
-
-        try {
-            $to = config('support.email', config('mail.from.address'));
-
-            if ($to) {
-                $html = view('emails.support_request', [
-                    'user' => $request->user(),
-                    'category' => $validated['category'],
-                    'subject' => $validated['subject'],
-                    'bodyMessage' => $validated['message'],
-                ])->render();
-
-                Mail::send([], [], function ($message) use ($to, $conversation, $html) {
-                    $message->to($to)
-                        ->subject('[Support '.$conversation->ticket_number.'] '.$conversation->subject)
-                        ->setBody($html, 'text/html');
-                });
-            }
-        } catch (\Throwable $e) {
-            Log::warning('Support notification email failed after ticket persistence.', [
-                'conversation_id' => $conversation->id,
-                'error' => $e->getMessage(),
-            ]);
-        }
-
-        return redirect()
-            ->route('support.show', $conversation)
-            ->with('success', 'Support request created. Your ticket number is '.$conversation->ticket_number.'.');
+        return view('messages.index', compact('conversations', 'archived'));
     }
 
     public function show(Request $request, CommunicationConversation $conversation, CommunicationService $communications)
     {
-        $this->assertSupport($conversation);
+        $this->assertDirect($conversation);
         $user = $request->user();
         abort_unless($communications->canAccess($user, $conversation), 403);
 
         $communications->markRead($user, $conversation);
-        $this->loadConversation($conversation, $user);
+
+        $conversation->load([
+            'creator',
+            'assignee',
+            'participants.user',
+            'messages' => fn ($query) => $query
+                ->visibleTo($user)
+                ->with(['sender', 'attachments', 'replyTo.sender', 'replyTo.attachments'])
+                ->orderBy('id'),
+            'events' => fn ($query) => $query->latest('id')->limit(20),
+        ]);
 
         $participant = $conversation->participants->firstWhere('user_id', $user->id);
         $media = $communications->mediaFor($user, $conversation);
         $conversationList = $this->conversationList($user, $communications, $conversation);
-        $workspace = 'support';
-        $routeBase = 'support';
+        $workspace = 'messages';
+        $routeBase = 'messages';
 
         return view('support.show', compact(
             'conversation',
@@ -135,10 +81,35 @@ class SupportController extends Controller
 
     public function reply(Request $request, CommunicationConversation $conversation, CommunicationService $communications)
     {
-        $this->assertSupport($conversation);
+        $this->assertDirect($conversation);
         abort_unless($communications->canAccess($request->user(), $conversation), 403);
 
-        return $this->sendReply($request, $conversation, $communications);
+        $validated = $request->validate([
+            'message' => ['nullable', 'string', 'max:10000', 'required_without:attachments'],
+            'attachments' => ['nullable', 'array', 'max:8', 'required_without:message'],
+            'attachments.*' => ['file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf,txt,csv,doc,docx,xls,xlsx'],
+            'reply_to_message_id' => ['nullable', 'integer', 'exists:communication_messages,id'],
+            'idempotency_key' => ['required', 'string', 'max:120'],
+        ]);
+
+        $replyTo = ! empty($validated['reply_to_message_id'])
+            ? CommunicationMessage::query()->findOrFail($validated['reply_to_message_id'])
+            : null;
+
+        try {
+            $communications->sendMessage(
+                $request->user(),
+                $conversation,
+                $validated['message'] ?? null,
+                $validated['idempotency_key'],
+                array_values(array_filter((array) $request->file('attachments', []))),
+                $replyTo
+            );
+        } catch (\Throwable $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Message sent.');
     }
 
     public function editMessage(
@@ -147,7 +118,7 @@ class SupportController extends Controller
         CommunicationMessage $message,
         CommunicationService $communications
     ) {
-        $this->assertSupport($conversation);
+        $this->assertDirect($conversation);
         abort_unless($message->conversation_id === $conversation->id, 404);
 
         $data = $request->validate([
@@ -165,26 +136,26 @@ class SupportController extends Controller
 
     public function archive(Request $request, CommunicationConversation $conversation, CommunicationService $communications)
     {
-        $this->assertSupport($conversation);
+        $this->assertDirect($conversation);
         abort_unless($communications->canAccess($request->user(), $conversation), 403);
 
         $communications->setArchived($request->user(), $conversation, $request->boolean('archived'));
 
-        return back()->with('success', $request->boolean('archived') ? 'Support ticket archived.' : 'Support ticket restored.');
+        return back()->with('success', $request->boolean('archived') ? 'Conversation archived.' : 'Conversation restored to messages.');
     }
 
     public function deleteForMe(Request $request, CommunicationConversation $conversation, CommunicationService $communications)
     {
-        $this->assertSupport($conversation);
+        $this->assertDirect($conversation);
         abort_unless($communications->canAccess($request->user(), $conversation), 403);
         $communications->hideConversationForMe($request->user(), $conversation);
 
-        return redirect()->route('support.index')->with('success', 'Support ticket deleted for you. New replies can make it appear again.');
+        return redirect()->route('messages.index')->with('success', 'Conversation deleted for you. New messages can make it appear again.');
     }
 
     public function deleteMessageForMe(Request $request, CommunicationConversation $conversation, CommunicationMessage $message, CommunicationService $communications)
     {
-        $this->assertSupport($conversation);
+        $this->assertDirect($conversation);
         abort_unless($message->conversation_id === $conversation->id, 404);
         $communications->hideMessageForMe($request->user(), $conversation, $message);
 
@@ -193,7 +164,7 @@ class SupportController extends Controller
 
     public function deleteMessageForEveryone(Request $request, CommunicationConversation $conversation, CommunicationMessage $message, CommunicationService $communications)
     {
-        $this->assertSupport($conversation);
+        $this->assertDirect($conversation);
         abort_unless($message->conversation_id === $conversation->id, 404);
 
         try {
@@ -207,7 +178,7 @@ class SupportController extends Controller
 
     public function attachment(Request $request, CommunicationAttachment $attachment, CommunicationService $communications)
     {
-        $this->assertSupportAttachment($attachment);
+        $this->assertDirectAttachment($attachment);
         abort_unless($communications->canViewAttachment($request->user(), $attachment), 403);
         abort_unless(Storage::disk($attachment->disk)->exists($attachment->path), 404);
 
@@ -220,7 +191,7 @@ class SupportController extends Controller
 
     public function previewAttachment(Request $request, CommunicationAttachment $attachment, CommunicationService $communications)
     {
-        $this->assertSupportAttachment($attachment);
+        $this->assertDirectAttachment($attachment);
         abort_unless($communications->canViewAttachment($request->user(), $attachment), 403);
         abort_unless(Storage::disk($attachment->disk)->exists($attachment->path), 404);
 
@@ -235,8 +206,8 @@ class SupportController extends Controller
     private function conversationList($user, CommunicationService $communications, CommunicationConversation $current)
     {
         $list = CommunicationConversation::query()
-            ->with('participants.user')
-            ->where('type', 'support_ticket')
+            ->with(['creator', 'participants.user'])
+            ->where('type', 'direct')
             ->whereHas('participants', fn ($query) => $query
                 ->where('user_id', $user->id)
                 ->whereNull('conversation_hidden_at')
@@ -258,70 +229,14 @@ class SupportController extends Controller
         return $list;
     }
 
-    private function sendReply(Request $request, CommunicationConversation $conversation, CommunicationService $communications)
+    private function assertDirect(CommunicationConversation $conversation): void
     {
-        $validated = $request->validate([
-            'message' => ['nullable', 'string', 'max:10000', 'required_without:attachments'],
-            'attachments' => ['nullable', 'array', 'max:8', 'required_without:message'],
-            'attachments.*' => ['file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf,txt,csv,doc,docx,xls,xlsx'],
-            'attachment' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,webp,pdf,txt,csv,doc,docx,xls,xlsx'],
-            'reply_to_message_id' => ['nullable', 'integer', 'exists:communication_messages,id'],
-            'idempotency_key' => ['required', 'string', 'max:120'],
-        ]);
-
-        $replyTo = ! empty($validated['reply_to_message_id'])
-            ? CommunicationMessage::query()->findOrFail($validated['reply_to_message_id'])
-            : null;
-
-        try {
-            $communications->sendMessage(
-                $request->user(),
-                $conversation,
-                $validated['message'] ?? null,
-                $validated['idempotency_key'],
-                $this->uploads($request),
-                $replyTo
-            );
-        } catch (\Throwable $e) {
-            return back()->withInput()->with('error', $e->getMessage());
-        }
-
-        return back()->with('success', 'Message sent.');
+        abort_unless($conversation->type === 'direct', 404);
     }
 
-    private function loadConversation(CommunicationConversation $conversation, $user): void
-    {
-        $conversation->load([
-            'creator',
-            'assignee',
-            'participants.user',
-            'messages' => fn ($query) => $query
-                ->visibleTo($user)
-                ->with(['sender', 'attachments', 'replyTo.sender', 'replyTo.attachments'])
-                ->orderBy('id'),
-            'events' => fn ($query) => $query->latest('id')->limit(20),
-        ]);
-    }
-
-    private function assertSupport(CommunicationConversation $conversation): void
-    {
-        abort_unless($conversation->type === 'support_ticket', 404);
-    }
-
-    private function assertSupportAttachment(CommunicationAttachment $attachment): void
+    private function assertDirectAttachment(CommunicationAttachment $attachment): void
     {
         $attachment->loadMissing('message.conversation');
-        abort_unless($attachment->message?->conversation?->type === 'support_ticket', 404);
-    }
-
-    private function uploads(Request $request): array
-    {
-        $uploads = array_values(array_filter((array) $request->file('attachments', [])));
-
-        if ($request->hasFile('attachment')) {
-            $uploads[] = $request->file('attachment');
-        }
-
-        return $uploads;
+        abort_unless($attachment->message?->conversation?->type === 'direct', 404);
     }
 }
