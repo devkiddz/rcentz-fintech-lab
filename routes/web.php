@@ -98,6 +98,7 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.act
     // Membership workspace. Customer surface is the account's current membership overview.
     Route::prefix('memberships')->name('memberships.')->group(function () {
         Route::get('/', [\App\Http\Controllers\MembershipController::class, 'index'])->name('index');
+        Route::post('/{type:slug}/plans/{plan}/purchase', [\App\Http\Controllers\MembershipController::class, 'purchase'])->name('purchase');
     });
 
     // Profile Routes

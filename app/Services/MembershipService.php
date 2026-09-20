@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Membership;
 use App\Models\MembershipPlan;
+use App\Models\MembershipTransaction;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -52,6 +53,8 @@ class MembershipService
             if (in_array($membership->status, ['cancelled', 'expired'], true)) {
                 throw new RuntimeException('Cancelled or expired memberships cannot be activated.');
             }
+
+            $this->assertCommercialAuthority($membership);
 
             $startsAt = $membership->starts_at ?? now();
             $endsAt = $membership->ends_at;
@@ -146,6 +149,54 @@ class MembershipService
 
             return $membership->fresh(['user', 'plan.type']);
         });
+    }
+
+    private function assertCommercialAuthority(Membership $membership): void
+    {
+        if ($membership->source !== 'wallet_purchase') {
+            return;
+        }
+
+        $transaction = MembershipTransaction::query()
+            ->with('walletTransaction')
+            ->where('membership_id', $membership->id)
+            ->where('status', 'completed')
+            ->latest('id')
+            ->first();
+
+        if (! $transaction) {
+            throw new RuntimeException(
+                'Paid membership cannot activate without a completed MembershipTransaction.'
+            );
+        }
+
+        if ((int) $transaction->user_id !== (int) $membership->user_id
+            || (int) $transaction->membership_plan_id !== (int) $membership->membership_plan_id
+            || $transaction->reference !== $membership->reference
+            || strtoupper((string) $transaction->currency) !== strtoupper((string) $membership->currency)
+            || abs((float) $transaction->amount - (float) $membership->price_paid) > 0.01
+        ) {
+            throw new RuntimeException('Paid membership commercial authority does not match the membership record.');
+        }
+
+        if ((float) $transaction->amount <= 0) {
+            return;
+        }
+
+        $walletTransaction = $transaction->walletTransaction;
+
+        if (
+            ! $walletTransaction
+            || $walletTransaction->type !== 'membership'
+            || $walletTransaction->direction !== 'debit'
+            || $walletTransaction->status !== 'completed'
+            || $walletTransaction->reference_id !== $transaction->reference
+            || abs((float) $walletTransaction->amount - (float) $transaction->amount) > 0.01
+        ) {
+            throw new RuntimeException(
+                'Paid membership cannot activate without a matching completed wallet debit.'
+            );
+        }
     }
 
     private function reference(MembershipPlan $plan): string
