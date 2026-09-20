@@ -121,6 +121,7 @@
 <div class="mt-4 grid gap-4 lg:grid-cols-2">
     <form method="POST" action="{{ route('admin.investments.account-operations.subscribe',$instrument) }}" class="rounded-xl border border-border p-4">
         @csrf
+        <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
         <p class="text-xs font-semibold">Admin Subscription</p>
         <label class="ui-label mt-3">Customer Account</label>
         <select class="ui-input mt-1 w-full" name="user_id" required>
@@ -137,6 +138,7 @@
 
     <form method="POST" action="{{ route('admin.investments.account-operations.redeem',$instrument) }}" class="rounded-xl border border-border p-4">
         @csrf
+        <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
         <p class="text-xs font-semibold">Admin Redemption</p>
         <label class="ui-label mt-3">Customer Account</label>
         <select class="ui-input mt-1 w-full" name="user_id" required>

@@ -9,7 +9,7 @@ class PrivateInvestmentTransaction extends Model
 {
     protected $fillable = [
         'user_id','instrument_id','holding_id','type','units','price_per_unit','gross_amount',
-        'fee','net_amount','status','reference','metadata','executed_at',
+        'fee','net_amount','status','reference','idempotency_key','metadata','executed_at',
     ];
 
     protected $casts = [
@@ -43,6 +43,7 @@ class PrivateInvestmentTransaction extends Model
                     'fee' => (string) $transaction->fee,
                     'net_amount' => (string) $transaction->net_amount,
                     'wallet_transaction_id' => $metadata['wallet_transaction_id'] ?? null,
+                    'idempotency_key' => $transaction->idempotency_key,
                 ],
                 'occurred_at' => $transaction->executed_at ?? now(),
             ]);

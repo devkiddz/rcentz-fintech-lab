@@ -45,6 +45,7 @@
 
         <form method="POST" action="{{ route('account.investments.subscribe',$instrument) }}" class="mt-4">
             @csrf
+            <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
             <label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-zinc-400">Investment amount</label>
             <div class="flex gap-2">
                 <input class="ui-input flex-1" type="number" step="0.01" min="{{ max(.01,(float)$instrument->minimum_investment) }}" name="amount" placeholder="Minimum {{ currency_symbol() }}{{ number_format((float)$instrument->minimum_investment,2) }}" required>
@@ -55,6 +56,7 @@
         @if($holdingUnits > 0)
             <form method="POST" action="{{ route('account.investments.redeem',$instrument) }}" class="mt-3">
                 @csrf
+                <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
                 <label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-zinc-400">Redeem units</label>
                 <div class="flex gap-2">
                     <input class="ui-input flex-1" type="number" step="0.000001" min="0.000001" max="{{ $holdingUnits }}" name="units" value="{{ $holdingUnits }}" required>

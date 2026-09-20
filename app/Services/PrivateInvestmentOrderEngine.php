@@ -11,6 +11,8 @@ use App\Models\WalletTransaction;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
+use RuntimeException;
 
 class PrivateInvestmentOrderEngine
 {
@@ -19,14 +21,30 @@ class PrivateInvestmentOrderEngine
         PrivateInvestmentInstrument $instrument,
         float $amount,
         ?int $actorUserId = null,
-        string $source = 'customer'
+        string $source = 'customer',
+        ?string $idempotencyKey = null
     ): PrivateInvestmentTransaction {
-        return DB::transaction(function () use ($user, $instrument, $amount, $actorUserId, $source) {
+        $idempotencyKey = $this->normalizeIdempotencyKey($idempotencyKey);
+
+        return DB::transaction(function () use ($user, $instrument, $amount, $actorUserId, $source, $idempotencyKey) {
             $instrument = PrivateInvestmentInstrument::query()->lockForUpdate()->findOrFail($instrument->id);
             $wallet = Wallet::query()->where('user_id', $user->id)->lockForUpdate()->first();
 
             if (! $wallet) {
                 throw ValidationException::withMessages(['amount' => 'This customer does not have a wallet.']);
+            }
+
+            if ($idempotencyKey !== null) {
+                $existing = PrivateInvestmentTransaction::query()
+                    ->where('user_id', $user->id)
+                    ->where('idempotency_key', $idempotencyKey)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($existing) {
+                    $this->assertSubscriptionReplay($existing, $instrument, $amount);
+                    return $existing;
+                }
             }
 
             if ($instrument->status !== 'active') {
@@ -151,11 +169,13 @@ class PrivateInvestmentOrderEngine
                 'net_amount' => $deployedAmount,
                 'status' => 'completed',
                 'reference' => $reference,
+                'idempotency_key' => $idempotencyKey,
                 'metadata' => [
                     'source' => $source,
                     'actor_user_id' => $actorUserId,
                     'wallet_transaction_id' => $walletTransaction->id,
                     'locked_until' => $newLock?->toIso8601String(),
+                    'idempotency_key' => $idempotencyKey,
                 ],
                 'executed_at' => now(),
             ]);
@@ -167,14 +187,30 @@ class PrivateInvestmentOrderEngine
         PrivateInvestmentInstrument $instrument,
         float $units,
         ?int $actorUserId = null,
-        string $source = 'customer'
+        string $source = 'customer',
+        ?string $idempotencyKey = null
     ): PrivateInvestmentTransaction {
-        return DB::transaction(function () use ($user, $instrument, $units, $actorUserId, $source) {
+        $idempotencyKey = $this->normalizeIdempotencyKey($idempotencyKey);
+
+        return DB::transaction(function () use ($user, $instrument, $units, $actorUserId, $source, $idempotencyKey) {
             $instrument = PrivateInvestmentInstrument::query()->lockForUpdate()->findOrFail($instrument->id);
             $wallet = Wallet::query()->where('user_id', $user->id)->lockForUpdate()->first();
 
             if (! $wallet) {
                 throw ValidationException::withMessages(['units' => 'This customer does not have a wallet.']);
+            }
+
+            if ($idempotencyKey !== null) {
+                $existing = PrivateInvestmentTransaction::query()
+                    ->where('user_id', $user->id)
+                    ->where('idempotency_key', $idempotencyKey)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($existing) {
+                    $this->assertRedemptionReplay($existing, $instrument, $units);
+                    return $existing;
+                }
             }
 
             if ($instrument->status !== 'active') {
@@ -262,15 +298,59 @@ class PrivateInvestmentOrderEngine
                 'net_amount' => $net,
                 'status' => 'completed',
                 'reference' => $reference,
+                'idempotency_key' => $idempotencyKey,
                 'metadata' => [
                     'source' => $source,
                     'actor_user_id' => $actorUserId,
                     'wallet_transaction_id' => $walletTransaction->id,
                     'realized_profit_loss' => $realized,
                     'cost_basis_removed' => $costRemoved,
+                    'idempotency_key' => $idempotencyKey,
                 ],
                 'executed_at' => now(),
             ]);
         });
+    }
+
+    private function normalizeIdempotencyKey(?string $key): ?string
+    {
+        if ($key === null || trim($key) === '') {
+            return null;
+        }
+
+        $key = trim($key);
+        if (strlen($key) > 120) {
+            throw new InvalidArgumentException('Private investment idempotency key cannot exceed 120 characters.');
+        }
+
+        return $key;
+    }
+
+    private function assertSubscriptionReplay(
+        PrivateInvestmentTransaction $transaction,
+        PrivateInvestmentInstrument $instrument,
+        float $amount
+    ): void {
+        $matches = $transaction->type === 'subscription'
+            && (int) $transaction->instrument_id === (int) $instrument->id
+            && abs((float) $transaction->gross_amount - $amount) < 0.01;
+
+        if (! $matches) {
+            throw new RuntimeException('Idempotency key was already used for a different private investment request.');
+        }
+    }
+
+    private function assertRedemptionReplay(
+        PrivateInvestmentTransaction $transaction,
+        PrivateInvestmentInstrument $instrument,
+        float $units
+    ): void {
+        $matches = $transaction->type === 'redemption'
+            && (int) $transaction->instrument_id === (int) $instrument->id
+            && abs((float) $transaction->units - $units) < 0.000001;
+
+        if (! $matches) {
+            throw new RuntimeException('Idempotency key was already used for a different private investment request.');
+        }
     }
 }

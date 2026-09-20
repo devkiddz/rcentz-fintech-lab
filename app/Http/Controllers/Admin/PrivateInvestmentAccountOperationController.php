@@ -18,6 +18,7 @@ class PrivateInvestmentAccountOperationController extends Controller
         $data = $request->validate([
             'user_id' => 'required|exists:users,id',
             'amount' => 'required|numeric|min:0.01',
+            'idempotency_key' => 'required|string|max:120',
         ]);
 
         $user = User::query()->findOrFail($data['user_id']);
@@ -28,7 +29,8 @@ class PrivateInvestmentAccountOperationController extends Controller
             $instrument,
             (float) $data['amount'],
             auth()->id(),
-            'admin_control'
+            'admin_control',
+            $data['idempotency_key']
         );
 
         return back()->with('success', 'Admin subscription completed for '.$user->name.'.');
@@ -42,6 +44,7 @@ class PrivateInvestmentAccountOperationController extends Controller
         $data = $request->validate([
             'user_id' => 'required|exists:users,id',
             'units' => 'required|numeric|min:0.000001',
+            'idempotency_key' => 'required|string|max:120',
         ]);
 
         $user = User::query()->findOrFail($data['user_id']);
@@ -52,7 +55,8 @@ class PrivateInvestmentAccountOperationController extends Controller
             $instrument,
             (float) $data['units'],
             auth()->id(),
-            'admin_control'
+            'admin_control',
+            $data['idempotency_key']
         );
 
         return back()->with('success', 'Admin redemption completed for '.$user->name.'.');

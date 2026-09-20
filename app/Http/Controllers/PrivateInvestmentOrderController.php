@@ -17,6 +17,7 @@ class PrivateInvestmentOrderController extends Controller
 
         $data = $request->validate([
             'amount' => 'required|numeric|min:0.01',
+            'idempotency_key' => 'required|string|max:120',
         ]);
 
         $orders->subscribe(
@@ -24,7 +25,8 @@ class PrivateInvestmentOrderController extends Controller
             $instrument,
             (float) $data['amount'],
             auth()->id(),
-            'customer'
+            'customer',
+            $data['idempotency_key']
         );
 
         return back()->with('success', 'Investment subscription completed.');
@@ -39,6 +41,7 @@ class PrivateInvestmentOrderController extends Controller
 
         $data = $request->validate([
             'units' => 'required|numeric|min:0.000001',
+            'idempotency_key' => 'required|string|max:120',
         ]);
 
         $orders->redeem(
@@ -46,7 +49,8 @@ class PrivateInvestmentOrderController extends Controller
             $instrument,
             (float) $data['units'],
             auth()->id(),
-            'customer'
+            'customer',
+            $data['idempotency_key']
         );
 
         return back()->with('success', 'Investment redemption completed.');
