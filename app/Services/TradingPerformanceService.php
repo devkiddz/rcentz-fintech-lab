@@ -118,11 +118,42 @@ class TradingPerformanceService
 
     public function copyStrategy(CopyStrategy $strategy): array
     {
-        $executions = \App\Models\CopyTradeExecution::with('followerTrade.stock')
-            ->whereHas('relationship', fn ($q) => $q->where('copy_strategy_id', $strategy->id))
-            ->get();
+        $relationshipIds = CopyRelationship::query()
+            ->where('copy_strategy_id', $strategy->id)
+            ->pluck('id');
 
-        $metrics = $this->fromCopyExecutions($executions, (float) $strategy->minimum_allocation);
+        $executions = $relationshipIds->isEmpty()
+            ? collect()
+            : \App\Models\CopyTradeExecution::query()
+                ->with([
+                    'relationship.follower.wallet',
+                    'marketInstrument',
+                    'followerMarketExecution.marketInstrument',
+                    'followerMarketExecution.tradePosition.entryMarketExecutionTransaction',
+                    'followerTrade.stock.marketInstrument',
+                    'followerTrade.marketInstrument',
+                ])
+                ->whereIn('copy_relationship_id', $relationshipIds)
+                ->get();
+
+        $positions = $relationshipIds->isEmpty()
+            ? collect()
+            : TradePosition::query()
+                ->with([
+                    'user.wallet',
+                    'marketInstrument',
+                    'stock.marketInstrument',
+                    'entryMarketExecutionTransaction',
+                ])
+                ->where('context_type', 'copy_relationship')
+                ->whereIn('context_id', $relationshipIds)
+                ->get();
+
+        $metrics = $this->fromCopyPositions(
+            $executions,
+            $positions,
+            (float) $strategy->minimum_allocation
+        );
 
         return $this->applyManualPerformance(
             $metrics,
@@ -136,68 +167,35 @@ class TradingPerformanceService
 
     public function copyRelationship(CopyRelationship $relationship): array
     {
-        $executions = $relationship->executions()->with('followerTrade.stock')->get();
+        $executions = $relationship->executions()
+            ->with([
+                'relationship.follower.wallet',
+                'marketInstrument',
+                'followerMarketExecution.marketInstrument',
+                'followerMarketExecution.tradePosition.entryMarketExecutionTransaction',
+                'followerTrade.stock.marketInstrument',
+                'followerTrade.marketInstrument',
+            ])
+            ->get();
 
-        $positions = \App\Models\TradePosition::with('stock')
+        $positions = TradePosition::query()
+            ->with([
+                'user.wallet',
+                'marketInstrument',
+                'stock.marketInstrument',
+                'entryMarketExecutionTransaction',
+            ])
             ->where('context_type', 'copy_relationship')
             ->where('context_id', $relationship->id)
             ->get();
 
-        if ($positions->isNotEmpty()) {
-            $realized = (float) $positions->sum('realized_profit_loss');
-            $open = 0.0;
-            $basis = 0.0;
-            $positive = 0;
-            $negative = 0;
-            $neutral = 0;
-
-            foreach ($positions as $position) {
-                $entry = (float) $position->entry_price;
-                $initial = (float) $position->initial_quantity;
-                $openQty = (float) $position->open_quantity;
-                $basis += $entry * $initial;
-
-                $positionPnl = (float) $position->realized_profit_loss;
-
-                if ($openQty > 0 && $position->stock) {
-                    $mark = ((float) $position->stock->current_price - $entry) * $openQty;
-                    $open += $mark;
-                    $positionPnl += $mark;
-                }
-
-                $this->countMark($positionPnl, $positive, $negative, $neutral);
-            }
-
-            $total = $realized + $open;
-            $completed = $executions->where('status', 'completed');
-            $volume = (float) $completed->sum('executed_amount');
-
-            $metrics = $this->summary(
-                $executions,
-                $completed,
-                $volume,
-                $total,
-                $positive,
-                $negative,
-                $neutral,
-                (float) $relationship->allocation_limit,
-                [
-                    'realized_profit_loss' => $realized,
-                    'open_profit_loss' => $open,
-                    'performance_basis' => $basis,
-                    'return_percent' => $basis > 0 ? ($total / $basis) * 100 : 0,
-                    'realized_return_percent' => $basis > 0 ? ($realized / $basis) * 100 : 0,
-                    'open_return_percent' => $basis > 0 ? ($open / $basis) * 100 : 0,
-                ]
-            );
-        } else {
-            $metrics = $this->fromCopyExecutions(
-                $executions,
-                (float) $relationship->allocation_limit
-            );
-        }
-
+        $metrics = $this->fromCopyPositions(
+            $executions,
+            $positions,
+            (float) $relationship->allocation_limit
+        );
         $metrics['copy_ratio_percent'] = (float) $relationship->copy_ratio_percent;
+
         $relationship->loadMissing('strategy');
 
         return $this->applyManualPerformance(
@@ -401,7 +399,66 @@ class TradingPerformanceService
         }
     }
 
-    private function fromCopyExecutions(Collection $executions, float $minimumAmount): array
+    private function fromCopyPositions(Collection $executions, Collection $positions, float $minimumAmount): array
+    {
+        $completed = $executions->where('status', 'completed');
+        $volume = (float) $completed->sum('executed_amount');
+
+        if ($positions->isEmpty()) {
+            return $this->fromCopyExecutionMarks($executions, $minimumAmount);
+        }
+
+        $realized = 0.0;
+        $open = 0.0;
+        $realizedBasis = 0.0;
+        $openBasis = 0.0;
+        $positive = 0;
+        $negative = 0;
+        $neutral = 0;
+
+        foreach ($positions as $position) {
+            $basis = $this->positionBasis($position);
+            $initialQty = max((float) $position->initial_quantity, 0.00000001);
+            $openQty = max((float) $position->open_quantity, 0.0);
+            $closedRatio = min(1.0, max(0.0, ($initialQty - $openQty) / $initialQty));
+            $openRatio = min(1.0, max(0.0, $openQty / $initialQty));
+            $positionRealized = (float) $position->realized_profit_loss;
+            $positionOpen = $this->openPositionPnl($position);
+            $net = $positionRealized + $positionOpen;
+
+            $realized += $positionRealized;
+            $open += $positionOpen;
+            $realizedBasis += $basis * $closedRatio;
+            $openBasis += $basis * $openRatio;
+            $this->countMark($net, $positive, $negative, $neutral);
+        }
+
+        $total = $realized + $open;
+        $basis = $realizedBasis + $openBasis;
+
+        return $this->summary(
+            $executions,
+            $completed,
+            $volume,
+            $total,
+            $positive,
+            $negative,
+            $neutral,
+            $minimumAmount,
+            [
+                'realized_profit_loss' => $realized,
+                'open_profit_loss' => $open,
+                'realized_cost_basis' => $realizedBasis,
+                'open_cost_basis' => $openBasis,
+                'performance_basis' => $basis,
+                'return_percent' => $basis > 0 ? ($total / $basis) * 100 : 0,
+                'realized_return_percent' => $realizedBasis > 0 ? ($realized / $realizedBasis) * 100 : 0,
+                'open_return_percent' => $openBasis > 0 ? ($open / $openBasis) * 100 : 0,
+            ]
+        );
+    }
+
+    private function fromCopyExecutionMarks(Collection $executions, float $minimumAmount): array
     {
         $completed = $executions->where('status', 'completed');
         $volume = (float) $completed->sum('executed_amount');
@@ -410,22 +467,52 @@ class TradingPerformanceService
         $negative = 0;
         $neutral = 0;
 
-        foreach ($completed as $execution) {
-            $trade = $execution->followerTrade;
-            if (! $trade || ! $trade->stock) {
+        foreach ($completed as $copyExecution) {
+            $marketExecution = $copyExecution->followerMarketExecution;
+            $instrument = $copyExecution->marketInstrument
+                ?? $marketExecution?->marketInstrument
+                ?? $copyExecution->followerTrade?->marketInstrument
+                ?? $copyExecution->followerTrade?->stock?->marketInstrument;
+
+            if (! $instrument) {
                 continue;
             }
 
-            $qty = (float) $trade->quantity;
-            $entry = (float) $trade->price_per_share;
-            $current = (float) $trade->stock->current_price;
+            $quantity = (float) ($marketExecution?->quantity ?? $copyExecution->followerTrade?->quantity ?? 0);
+            $entry = (float) ($marketExecution?->price ?? $copyExecution->followerTrade?->price_per_share ?? 0);
+            if ($quantity <= 0 || $entry <= 0) {
+                continue;
+            }
 
-            $tradePnl = $trade->type === 'sell'
-                ? ($entry - $current) * $qty
-                : ($current - $entry) * $qty;
+            if (($marketExecution?->side ?? $copyExecution->action) === 'sell' && $marketExecution?->realized_profit_loss !== null) {
+                $mark = (float) $marketExecution->realized_profit_loss;
+            } else {
+                $current = $this->safePrice($instrument, $marketExecution?->marketplace ?? $copyExecution->followerTrade?->marketplace);
+                if (! $current || $current <= 0) {
+                    $mark = 0.0;
+                } else {
+                    $quotePnl = ($current - $entry) * $quantity;
+                    if ($instrument->isStock()) {
+                        $mark = $quotePnl;
+                    } else {
+                        try {
+                            $currency = strtoupper((string) ($copyExecution->relationship?->follower?->wallet?->currency ?: 'USD'));
+                            $mark = $this->settlement->profitLossToSettlement(
+                                $instrument,
+                                $quotePnl,
+                                $current,
+                                $currency,
+                                false
+                            );
+                        } catch (\Throwable) {
+                            $mark = 0.0;
+                        }
+                    }
+                }
+            }
 
-            $pnl += $tradePnl;
-            $this->countMark($tradePnl, $positive, $negative, $neutral);
+            $pnl += $mark;
+            $this->countMark($mark, $positive, $negative, $neutral);
         }
 
         return $this->summary(

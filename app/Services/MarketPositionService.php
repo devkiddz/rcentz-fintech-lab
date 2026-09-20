@@ -379,7 +379,23 @@ final class MarketPositionService
                         }
 
                         $key = 'auto-'.$assetClass.'-position-'.$position->id.'-'.$reason.'-'.$position->updated_at?->timestamp;
-                        $this->close($position, $reason, null, 'system', null, 'position_exit', $key);
+                        $execution = $this->close($position, $reason, null, 'system', null, 'position_exit', $key);
+
+                        if ($position->context_type === 'copy_strategy' && (int) $position->context_id > 0) {
+                            try {
+                                app(CopyTradingService::class)->mirrorCompletedExecution(
+                                    $execution,
+                                    (int) $position->context_id
+                                );
+                            } catch (\Throwable $mirrorError) {
+                                \Log::warning('Automatic multi-asset copy strategy exit mirroring failed', [
+                                    'position_id' => $position->id,
+                                    'market_execution_transaction_id' => $execution->id,
+                                    'error' => $mirrorError->getMessage(),
+                                ]);
+                            }
+                        }
+
                         $stats[$reason] = ($stats[$reason] ?? 0) + 1;
                     } catch (\Throwable $e) {
                         \Log::warning(ucfirst($assetClass).' position automatic lifecycle failed', [

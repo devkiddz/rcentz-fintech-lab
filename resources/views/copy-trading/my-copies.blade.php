@@ -86,13 +86,23 @@
     </div>
 
     <div class="border-y border-border/70 bg-muted/10 p-3">
-        @if($relationship->market_symbol)
+        @if($relationship->market_symbol && $relationship->market_asset_class === 'stock')
             @include('trading.partials.mini-analysis-card',['symbol'=>$relationship->market_symbol,'height'=>'h-[250px] sm:h-[300px]'])
+        @elseif($relationship->market_symbol)
+            <div class="flex h-[250px] sm:h-[300px] items-center justify-center p-4 text-center">
+                <div>
+                    <span class="inline-flex rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-sky-600">{{ strtoupper($relationship->market_asset_class) }}</span>
+                    <p class="mt-3 text-xl font-semibold">{{ $relationship->market_symbol }}</p>
+                    <p class="mt-1 text-sm font-semibold">{{ $relationship->market_price_display }}</p>
+                    <p class="mt-2 text-[9px] uppercase tracking-[.12em] text-muted-foreground">{{ $relationship->market_marketplace }} · {{ str_replace('_',' ',$relationship->market_status) }}</p>
+                    <p class="mt-2 text-[9px] text-muted-foreground">Current copied position context is marked in the same marketplace where the follower execution occurred.</p>
+                </div>
+            </div>
         @else
             <div class="flex h-[250px] sm:h-[300px] items-center justify-center p-4 text-center">
                 <div>
                     <p class="text-[11px] font-medium">Waiting for the first completed mirror</p>
-                    <p class="mt-1 text-[9px] text-muted-foreground">Once a provider trade is copied successfully, the unified stock-history chart binds here.</p>
+                    <p class="mt-1 text-[9px] text-muted-foreground">Market context appears after the provider's first successful copied execution.</p>
                 </div>
             </div>
         @endif

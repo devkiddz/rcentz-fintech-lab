@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BrokerOrder;
+use App\Models\CopyStrategy;
 use App\Models\MarketExecutionTransaction;
 use App\Models\MarketHolding;
 use App\Models\MarketInstrument;
@@ -11,6 +12,7 @@ use App\Models\TradePosition;
 use App\Services\BrokerOrderService;
 use App\Services\BrokerPortfolioService;
 use App\Services\BrokerPositionService;
+use App\Services\CopyTradingService;
 use App\Services\MarketExecutionRouter;
 use App\Services\MarketInstrumentAnalysisService;
 use App\Services\MarketPriceRouter;
@@ -80,6 +82,15 @@ final class BrokerController extends Controller
             default => [],
         };
 
+        $copyStrategies = CopyStrategy::query()
+            ->with('profile')
+            ->where('is_active', true)
+            ->whereHas('profile', fn ($q) => $q
+                ->where('user_id', $user->id)
+                ->whereNotNull('approved_at'))
+            ->orderBy('name')
+            ->get();
+
         return view('broker.workstation', compact(
             'instrument',
             'analysis',
@@ -90,7 +101,8 @@ final class BrokerController extends Controller
             'holding',
             'positions',
             'recentOrders',
-            'quantityModes'
+            'quantityModes',
+            'copyStrategies'
         ) + ['idempotencyKey' => (string) Str::uuid()]);
     }
 
@@ -98,7 +110,8 @@ final class BrokerController extends Controller
         Request $request,
         string $assetClass,
         string $symbol,
-        BrokerOrderService $orders
+        BrokerOrderService $orders,
+        CopyTradingService $copyTrading
     ) {
         $instrument = $this->resolveInstrument($assetClass, $symbol);
         $user = Auth::user();
@@ -111,7 +124,35 @@ final class BrokerController extends Controller
             'stop_loss_percent' => 'nullable|numeric|min:0.01|max:100',
             'take_profit_percent' => 'nullable|numeric|min:0.01|max:100',
             'duration_minutes' => 'nullable|integer|min:1|max:43200',
+            'copy_strategy_id' => 'nullable|integer|exists:copy_strategies,id',
         ]);
+
+        $strategy = $this->resolveCopyStrategy($user, isset($data['copy_strategy_id']) ? (int) $data['copy_strategy_id'] : null);
+        $marketplace = app(MarketPriceRouter::class)->activeMarketplace();
+
+        if ($strategy && $data['side'] === 'sell') {
+            if ($data['quantity_mode'] !== 'units') {
+                return back()->withErrors([
+                    'order' => 'Copy-strategy exits use asset/base units so the sale cannot exceed strategy-attributed exposure.',
+                ])->withInput($request->except('idempotency_key'));
+            }
+
+            $available = (float) TradePosition::query()
+                ->where('user_id', $user->id)
+                ->where('market_instrument_id', $instrument->id)
+                ->where('marketplace', $marketplace)
+                ->where('context_type', 'copy_strategy')
+                ->where('context_id', $strategy->id)
+                ->whereIn('status', ['open', 'exit_queued'])
+                ->where('open_quantity', '>', 0)
+                ->sum('open_quantity');
+
+            if ((float) $data['quantity'] > $available + 0.00000001) {
+                return back()->withErrors([
+                    'order' => 'Copy-strategy sell quantity exceeds the strategy-attributed open exposure.',
+                ])->withInput($request->except('idempotency_key'));
+            }
+        }
 
         $risk = $data['side'] === 'buy'
             ? array_filter([
@@ -121,6 +162,25 @@ final class BrokerController extends Controller
             ], fn ($value) => $value !== null && $value !== '')
             : [];
 
+        $context = [];
+        if ($strategy) {
+            $risk['metadata'] = array_merge($risk['metadata'] ?? [], [
+                'copy_strategy_id' => $strategy->id,
+            ]);
+            $context = [
+                'execution_source' => 'copy_strategy',
+                'execution_source_id' => $strategy->id,
+                'context_type' => 'copy_strategy',
+                'context_id' => $strategy->id,
+                'actor_type' => 'user',
+                'actor_id' => $user->id,
+                'exit_reason' => 'provider_exit',
+                'metadata' => [
+                    'copy_strategy_id' => $strategy->id,
+                ],
+            ];
+        }
+
         try {
             $order = $orders->placeMarketOrder(
                 $user,
@@ -129,7 +189,8 @@ final class BrokerController extends Controller
                 (float) $data['quantity'],
                 $data['quantity_mode'],
                 $data['idempotency_key'],
-                $risk
+                $risk,
+                $context
             );
 
             if ($order->status === BrokerOrder::STATUS_FAILED) {
@@ -139,6 +200,21 @@ final class BrokerController extends Controller
             return back()
                 ->withErrors(['order' => $e->getMessage() ?: 'The order could not be executed. No partial customer action was accepted.'])
                 ->withInput($request->except('idempotency_key'));
+        }
+
+        if ($strategy && $order->status === BrokerOrder::STATUS_FILLED) {
+            try {
+                $order->loadMissing('execution');
+                if ($order->execution) {
+                    $copyTrading->mirrorCompletedExecution($order->execution, $strategy->id);
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('Provider BrokerOrder completed but copy mirroring encountered an error.', [
+                    'broker_order_id' => $order->id,
+                    'copy_strategy_id' => $strategy->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         return redirect()
@@ -248,7 +324,8 @@ final class BrokerController extends Controller
     public function closePosition(
         Request $request,
         TradePosition $position,
-        BrokerPositionService $positions
+        BrokerPositionService $positions,
+        CopyTradingService $copyTrading
     ) {
         abort_unless((int) $position->user_id === (int) Auth::id(), 403);
 
@@ -257,12 +334,28 @@ final class BrokerController extends Controller
             'idempotency_key' => 'required|string|max:120',
         ]);
 
+        $strategyId = $position->context_type === 'copy_strategy' && (int) $position->context_id > 0
+            ? (int) $position->context_id
+            : null;
+
+        $context = $strategyId ? [
+            'execution_source' => 'copy_strategy',
+            'execution_source_id' => $strategyId,
+            'context_type' => 'copy_strategy',
+            'context_id' => $strategyId,
+            'actor_type' => 'user',
+            'actor_id' => Auth::id(),
+            'exit_reason' => 'provider_exit',
+            'metadata' => ['copy_strategy_id' => $strategyId],
+        ] : [];
+
         try {
             $order = $positions->close(
                 Auth::user(),
                 $position,
                 isset($data['quantity']) ? (float) $data['quantity'] : null,
-                $data['idempotency_key']
+                $data['idempotency_key'],
+                $context
             );
 
             if ($order->status === BrokerOrder::STATUS_FAILED) {
@@ -272,9 +365,42 @@ final class BrokerController extends Controller
             return back()->withErrors(['position' => $e->getMessage()]);
         }
 
+        if ($strategyId && $order->status === BrokerOrder::STATUS_FILLED) {
+            try {
+                $order->loadMissing('execution');
+                if ($order->execution) {
+                    $copyTrading->mirrorCompletedExecution($order->execution, $strategyId);
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('Provider position close completed but copy mirroring encountered an error.', [
+                    'broker_order_id' => $order->id,
+                    'copy_strategy_id' => $strategyId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         return redirect()
             ->route('broker.orders.show', ['publicId' => $order->public_id])
             ->with('success', 'Position close order completed.');
+    }
+
+    private function resolveCopyStrategy($user, ?int $strategyId): ?CopyStrategy
+    {
+        if (! $strategyId) {
+            return null;
+        }
+
+        $strategy = CopyStrategy::query()->with('profile')->findOrFail($strategyId);
+        abort_unless(
+            (int) $strategy->profile?->user_id === (int) $user->id
+            && $strategy->profile?->approved_at
+            && $strategy->is_active,
+            403,
+            'This copy strategy is not available for provider execution.'
+        );
+
+        return $strategy;
     }
 
     private function resolveInstrument(string $assetClass, string $symbol): MarketInstrument

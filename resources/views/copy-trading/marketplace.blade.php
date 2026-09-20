@@ -33,13 +33,23 @@
     </div>
 
     <div class="border-y border-border/70 bg-muted/10 p-3">
-        @if($strategy->market_symbol)
+        @if($strategy->market_symbol && $strategy->market_asset_class === 'stock')
             @include('trading.partials.mini-analysis-card',['symbol'=>$strategy->market_symbol,'height'=>'h-[230px] sm:h-[270px]'])
+        @elseif($strategy->market_symbol)
+            <div class="flex h-[230px] sm:h-[270px] items-center justify-center px-4 text-center">
+                <div>
+                    <span class="inline-flex rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-1 text-[9px] font-semibold uppercase tracking-[.12em] text-sky-600">{{ strtoupper($strategy->market_asset_class) }}</span>
+                    <p class="mt-3 text-lg font-semibold">{{ $strategy->market_symbol }}</p>
+                    <p class="mt-1 text-sm font-semibold">{{ $strategy->market_price_display }}</p>
+                    <p class="mt-2 text-[9px] uppercase tracking-[.12em] text-muted-foreground">{{ $strategy->market_marketplace }} · {{ str_replace('_',' ',$strategy->market_status) }}</p>
+                    <p class="mt-2 text-[9px] text-muted-foreground">Multi-asset execution context from the latest successfully mirrored trade.</p>
+                </div>
+            </div>
         @else
             <div class="flex h-[230px] sm:h-[270px] items-center justify-center px-4 text-center">
                 <div>
                     <p class="text-[11px] font-medium">Waiting for first mirrored execution</p>
-                    <p class="mt-1 text-[9px] text-muted-foreground">The strategy chart will bind to the first successfully mirrored stock.</p>
+                    <p class="mt-1 text-[9px] text-muted-foreground">The strategy market context appears after its first successful mirrored trade.</p>
                 </div>
             </div>
         @endif

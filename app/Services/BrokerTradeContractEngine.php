@@ -13,8 +13,8 @@ use RuntimeException;
  * Cross-asset financial trade boundary used by the Broker Order authority.
  *
  * BrokerOrder remains the order authority. Optional execution context lets
- * trusted internal callers such as TradingBot preserve strategy attribution
- * without bypassing the broker or asset execution adapters.
+ * trusted internal callers preserve strategy attribution without bypassing
+ * the broker or asset execution adapters.
  */
 final class BrokerTradeContractEngine
 {
@@ -36,6 +36,7 @@ final class BrokerTradeContractEngine
     ): MarketExecutionTransaction {
         $marketplace = $this->prices->normalizeMarketplace($order->marketplace ?: $this->prices->activeMarketplace());
         $ctx = $this->context($user, $order, $context);
+        $copyStrategyId = $this->copyStrategyId($ctx);
 
         if ($instrument->isStock()) {
             if ($quantityMode !== 'units') {
@@ -56,10 +57,10 @@ final class BrokerTradeContractEngine
                 $risk,
                 $ctx['context_id'],
                 $ctx['execution_source_id'],
-                null,
+                $copyStrategyId,
                 $ctx['actor_type'],
                 $ctx['actor_id'],
-                null,
+                $ctx['source_position_id'],
                 $marketplace
             );
 
@@ -79,7 +80,8 @@ final class BrokerTradeContractEngine
             $ctx['actor_id'],
             $marketplace,
             $quantityMode,
-            $order->idempotency_key
+            $order->idempotency_key,
+            $ctx['source_position_id']
         );
     }
 
@@ -144,6 +146,7 @@ final class BrokerTradeContractEngine
     ): MarketExecutionTransaction {
         $marketplace = $this->prices->normalizeMarketplace($order->marketplace ?: $this->prices->activeMarketplace());
         $ctx = $this->context($user, $order, $context);
+        $copyStrategyId = $this->copyStrategyId($ctx);
 
         if ($instrument->isStock()) {
             if ($quantityMode !== 'units') {
@@ -164,7 +167,7 @@ final class BrokerTradeContractEngine
                 $ctx['context_type'],
                 $ctx['context_id'],
                 $ctx['execution_source_id'],
-                null,
+                $copyStrategyId,
                 $ctx['actor_type'],
                 $ctx['actor_id'],
                 $marketplace
@@ -219,14 +222,26 @@ final class BrokerTradeContractEngine
             ? ($context['actor_id'] === null ? null : (int) $context['actor_id'])
             : (int) $user->id;
 
+        $sourcePositionId = array_key_exists('source_position_id', $context) && $context['source_position_id'] !== null
+            ? (int) $context['source_position_id']
+            : null;
+
         return [
             'execution_source' => $executionSource,
             'execution_source_id' => $executionSourceId,
             'context_type' => $contextType,
             'context_id' => $contextId,
+            'source_position_id' => $sourcePositionId,
             'actor_type' => $actorType,
             'actor_id' => $actorId,
             'exit_reason' => trim((string) ($context['exit_reason'] ?? ($executionSource === 'broker_order' ? 'broker_order_close' : $executionSource.'_exit'))),
         ];
+    }
+
+    private function copyStrategyId(array $context): ?int
+    {
+        return $context['context_type'] === 'copy_strategy' && (int) ($context['context_id'] ?? 0) > 0
+            ? (int) $context['context_id']
+            : null;
     }
 }

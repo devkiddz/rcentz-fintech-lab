@@ -106,6 +106,23 @@
                     </select>
                 </div>
 
+                @if($copyStrategies->isNotEmpty())
+                    <div>
+                        <label class="ui-label">Execution purpose</label>
+                        <select name="copy_strategy_id" class="ui-input w-full">
+                            <option value="">Personal trade — do not copy</option>
+                            @foreach($copyStrategies as $strategy)
+                                <option value="{{ $strategy->id }}" @selected((string) old('copy_strategy_id') === (string) $strategy->id)>
+                                    Copy Strategy · {{ $strategy->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="mt-1 text-[9px] leading-4 text-muted-foreground">
+                            Only orders explicitly assigned to a Copy Strategy are mirrored to that strategy's active followers. Strategy exits use unit quantity.
+                        </p>
+                    </div>
+                @endif
+
                 <div>
                     <label class="ui-label">Quantity type</label>
                     <select name="quantity_mode" class="ui-input w-full" required>

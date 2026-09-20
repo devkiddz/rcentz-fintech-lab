@@ -7,7 +7,7 @@ use App\Models\CopyStrategy;
 use App\Models\CopyTraderProfile;
 use App\Models\CopyTradeExecution;
 use App\Models\StrategyProviderApplication;
-use App\Services\MarketSessionService;
+use App\Services\CopyTradingSurfaceService;
 use App\Services\TradingPerformanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +19,7 @@ class CopyTradingController extends Controller
         return redirect()->route('copy-trading.marketplace');
     }
 
-    public function marketplace(TradingPerformanceService $performance)
+    public function marketplace(TradingPerformanceService $performance, CopyTradingSurfaceService $surfaces)
     {
         $user = Auth::user();
 
@@ -40,25 +40,17 @@ class CopyTradingController extends Controller
 
         foreach ($strategies as $strategy) {
             $strategy->performance_metrics = $performance->copyStrategy($strategy);
-
-            $latestExecution = CopyTradeExecution::with('followerTrade.stock')
-                ->whereHas('relationship', fn ($q) => $q->where('copy_strategy_id', $strategy->id))
-                ->where('status', 'completed')
-                ->whereNotNull('follower_stock_transaction_id')
-                ->latest('executed_at')
-                ->first();
-
-            $strategy->market_symbol = $latestExecution?->followerTrade?->stock?->symbol;
+            $surfaces->decorateStrategy($strategy);
         }
 
-        $marketStatus = app(MarketSessionService::class)->status();
-
-        return view('copy-trading.marketplace', compact('strategies', 'marketStatus'));
+        return view('copy-trading.marketplace', compact('strategies'));
     }
 
-    public function myCopies(TradingPerformanceService $performance, \App\Services\CopyRelationshipLifecycleService $lifecycle)
-    {
-        // Due contracts settle their attributed positions before completion.
+    public function myCopies(
+        TradingPerformanceService $performance,
+        \App\Services\CopyRelationshipLifecycleService $lifecycle,
+        CopyTradingSurfaceService $surfaces
+    ) {
         $lifecycle->expireDue();
 
         $relationships = CopyRelationship::with(['strategy.profile.user', 'provider'])
@@ -67,22 +59,11 @@ class CopyTradingController extends Controller
             ->get();
 
         foreach ($relationships as $relationship) {
-
             $relationship->performance_metrics = $performance->copyRelationship($relationship);
-
-            $latestExecution = $relationship->executions()
-                ->with('followerTrade.stock')
-                ->where('status', 'completed')
-                ->whereNotNull('follower_stock_transaction_id')
-                ->latest('executed_at')
-                ->first();
-
-            $relationship->market_symbol = $latestExecution?->followerTrade?->stock?->symbol;
+            $surfaces->decorateRelationship($relationship);
         }
 
-        $marketStatus = app(MarketSessionService::class)->status();
-
-        return view('copy-trading.my-copies', compact('relationships', 'marketStatus'));
+        return view('copy-trading.my-copies', compact('relationships'));
     }
 
     public function applyForm()
@@ -125,7 +106,12 @@ class CopyTradingController extends Controller
             $strategy->performance_metrics = $performance->copyStrategy($strategy);
         }
 
-        $executions = CopyTradeExecution::with(['relationship.follower', 'providerTrade.stock'])
+        $executions = CopyTradeExecution::with([
+                'relationship.follower',
+                'marketInstrument',
+                'providerMarketExecution.marketInstrument',
+                'providerTrade.stock.marketInstrument',
+            ])
             ->whereHas('relationship', fn ($q) => $q->where('provider_id', Auth::id()))
             ->latest()
             ->limit(20)
@@ -234,44 +220,15 @@ class CopyTradingController extends Controller
             ->with('error', 'This copy contract is locked. Contract terms cannot be changed after activation.');
     }
 
-    public function executionShow(CopyTradeExecution $execution)
+    public function executionShow(CopyTradeExecution $execution, CopyTradingSurfaceService $surfaces)
     {
-        $execution->load([
-            'relationship.strategy.profile.user',
-            'relationship.provider',
-            'followerTrade.stock',
-            'providerTrade.stock',
-        ]);
-
+        $execution->load(['relationship.strategy.profile.user', 'relationship.provider']);
         abort_unless($execution->relationship?->follower_id === Auth::id(), 403);
 
-        $trade = $execution->followerTrade;
-        $currentPrice = (float) ($trade?->stock?->current_price ?? 0);
-        $entryPrice = (float) ($trade?->price_per_share ?? 0);
-        $quantity = (float) ($trade?->quantity ?? 0);
-
-        $profitLoss = 0.0;
-        if ($execution->status === 'completed' && $trade && $entryPrice > 0 && $quantity > 0 && $currentPrice > 0) {
-            $profitLoss = $trade->type === 'sell'
-                ? ($entryPrice - $currentPrice) * $quantity
-                : ($currentPrice - $entryPrice) * $quantity;
-        }
-
-        $returnPercent = (float) $execution->executed_amount > 0
-            ? ($profitLoss / (float) $execution->executed_amount) * 100
-            : 0;
-
-        $symbol = $trade?->stock?->symbol;
-        $marketStatus = app(MarketSessionService::class)->status();
-
-        return view('copy-trading.execution-show', compact(
-            'execution',
-            'currentPrice',
-            'profitLoss',
-            'returnPercent',
-            'symbol',
-            'marketStatus'
-        ));
+        return view('copy-trading.execution-show', [
+            'execution' => $execution,
+            ...$surfaces->detail($execution),
+        ]);
     }
 
     public function status(Request $request, CopyRelationship $relationship)
@@ -286,8 +243,12 @@ class CopyTradingController extends Controller
     {
         $items = CopyTradeExecution::with([
             'relationship.strategy.profile.user',
-            'providerTrade.stock',
-            'followerTrade.stock',
+            'relationship.provider.copyTraderProfile',
+            'marketInstrument',
+            'providerMarketExecution.marketInstrument',
+            'followerMarketExecution.marketInstrument',
+            'providerTrade.stock.marketInstrument',
+            'followerTrade.stock.marketInstrument',
         ])
             ->whereHas('relationship', fn ($q) => $q->where('follower_id', Auth::id()))
             ->latest()

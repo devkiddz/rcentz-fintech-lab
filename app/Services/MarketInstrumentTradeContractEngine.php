@@ -29,7 +29,8 @@ final class MarketInstrumentTradeContractEngine
         ?int $actorId = null,
         ?string $marketplace = null,
         string $quantityMode = 'units',
-        ?string $idempotencyKey = null
+        ?string $idempotencyKey = null,
+        ?int $sourcePositionId = null
     ): MarketExecutionTransaction {
         $marketplace = $this->prices->normalizeMarketplace($marketplace ?: $this->prices->activeMarketplace());
 
@@ -46,7 +47,8 @@ final class MarketInstrumentTradeContractEngine
             $actorId,
             $marketplace,
             $quantityMode,
-            $idempotencyKey
+            $idempotencyKey,
+            $sourcePositionId
         ) {
             $execution = $this->execution->execute($user, $instrument, 'buy', $quantity, [
                 'source' => $executionSource,
@@ -66,7 +68,7 @@ final class MarketInstrumentTradeContractEngine
                     $risk,
                     $contextType,
                     $contextId,
-                    null,
+                    $sourcePositionId,
                     $actorType,
                     $actorId
                 );

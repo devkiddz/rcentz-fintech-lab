@@ -49,10 +49,11 @@ final class BrokerPositionService
         User $user,
         TradePosition $position,
         ?float $quantity,
-        string $idempotencyKey
+        string $idempotencyKey,
+        array $context = []
     ): BrokerOrder {
         $this->assertOwned($user, $position);
-        return $this->orders->placePositionClose($user, $position, $quantity, $idempotencyKey);
+        return $this->orders->placePositionClose($user, $position, $quantity, $idempotencyKey, $context);
     }
 
     private function assertOwned(User $user, TradePosition $position): void

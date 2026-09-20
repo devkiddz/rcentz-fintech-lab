@@ -54,7 +54,7 @@
         @forelse($executions as $e)
             <div class="ui-panel flex items-center justify-between gap-3 p-3.5">
                 <div>
-                    <p class="text-xs font-semibold">{{ $e->providerTrade?->stock?->symbol ?? '—' }} · {{ ucfirst($e->status) }}</p>
+                    <p class="text-xs font-semibold">{{ $e->display_symbol }} · {{ $e->asset_class }} · {{ ucfirst($e->status) }}</p>
                     <p class="mt-1 text-[10px] text-muted-foreground">Follower {{ $e->relationship?->follower?->name }} · {{ optional($e->executed_at)->format('M d · H:i') }}</p>
                 </div>
                 <p class="text-xs font-semibold">{{ format_currency($e->executed_amount) }}</p>
