@@ -152,6 +152,29 @@ class MembershipAccessService
             ->values();
     }
 
+    public function entitlementAny(User $user, string $key, $at = null): ?MembershipEntitlement
+    {
+        foreach ($this->activeMemberships($user, $at) as $membership) {
+            $membership->loadMissing('plan.entitlements');
+
+            $entitlement = $membership->plan?->entitlements
+                ?->first(fn (MembershipEntitlement $entitlement) =>
+                    $entitlement->enabled && $entitlement->key === $key
+                );
+
+            if ($entitlement) {
+                return $entitlement;
+            }
+        }
+
+        return null;
+    }
+
+    public function hasAny(User $user, string $key, $at = null): bool
+    {
+        return $this->entitlementAny($user, $key, $at) !== null;
+    }
+
     private function typeSlug(string|MembershipType $type): string
     {
         return $type instanceof MembershipType ? $type->slug : $type;

@@ -90,6 +90,15 @@ Schedule::command('stocks:refresh-history')
     ->withoutOverlapping()
     ->onOneServer();
 
+// Forex daily OHLC is Signal-analysis authority, not execution-grade live pricing.
+// Refresh all active pairs once per weekday and pace requests conservatively for Alpha Vantage.
+Schedule::command('forex:refresh-history --all --output=compact --throttle-ms=12500')
+    ->weekdays()
+    ->dailyAt('01:15')
+    ->timezone('UTC')
+    ->withoutOverlapping()
+    ->onOneServer();
+
 
 Schedule::call(fn () => app(CopyRelationshipLifecycleService::class)->expireDue())
     ->name('copy-relationships:expire-due')

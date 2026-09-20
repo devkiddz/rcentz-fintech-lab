@@ -8,6 +8,7 @@ use App\Models\CopyTraderProfile;
 use App\Models\CopyTradeExecution;
 use App\Models\StrategyProviderApplication;
 use App\Services\CopyTradingSurfaceService;
+use App\Services\FeatureAccessService;
 use App\Services\TradingPerformanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -145,9 +146,10 @@ class CopyTradingController extends Controller
         return back()->with('success', 'Strategy availability updated.');
     }
 
-    public function follow(Request $request, CopyStrategy $strategy)
+    public function follow(Request $request, CopyStrategy $strategy, FeatureAccessService $access)
     {
         $user = Auth::user();
+        $access->require($user, FeatureAccessService::COPY_TRADER);
         $strategy->load('profile');
 
         abort_if($strategy->profile->user_id === $user->id, 422);

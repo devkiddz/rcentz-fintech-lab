@@ -9,6 +9,7 @@ use App\Models\TradingBot;
 use App\Models\TradingBotExecution;
 use App\Services\BotMarketContextService;
 use App\Services\FinancialActivityService;
+use App\Services\FeatureAccessService;
 use App\Services\TradingBotService;
 use App\Services\TradingPerformanceService;
 use Illuminate\Http\Request;
@@ -65,9 +66,10 @@ class TradingBotController extends Controller
         ));
     }
 
-    public function subscribe(BotProduct $product, FinancialActivityService $activity)
+    public function subscribe(BotProduct $product, FinancialActivityService $activity, FeatureAccessService $access)
     {
         $user=Auth::user();
+        $access->require($user, FeatureAccessService::BOT_TRADER);
         abort_unless($product->is_active,404);
         $product->loadMissing(['marketInstrument','stock']);
         abort_unless($product->marketInstrument, 422, 'This bot product has no market instrument authority.');
@@ -348,20 +350,22 @@ class TradingBotController extends Controller
         return back()->with('success','Bot configuration updated.');
     }
 
-    public function toggle(BotSubscription $subscription)
+    public function toggle(BotSubscription $subscription, FeatureAccessService $access)
     {
         $this->own($subscription);
         abort_unless($subscription->is_usable,422,'This bot subscription is not usable.');
         $new=$subscription->status==='active'?'paused':'active';
+        if($new==='active') $access->require(Auth::user(), FeatureAccessService::BOT_TRADER);
         $subscription->update(['status'=>$new]);
         $subscription->bot->update(['status'=>$new,'next_run_at'=>$new==='active'?now():$subscription->bot->next_run_at]);
         return back()->with('success','Bot '.$new.'.');
     }
 
-    public function run(BotSubscription $subscription, TradingBotService $service)
+    public function run(BotSubscription $subscription, TradingBotService $service, FeatureAccessService $access)
     {
         $this->own($subscription);
         abort_unless($subscription->is_usable,422,'This bot subscription is not usable.');
+        if(($subscription->bot?->action ?? 'buy') !== 'sell') $access->require(Auth::user(), FeatureAccessService::BOT_TRADER);
         $execution=$service->run($subscription->bot,true);
         return back()->with($execution->status==='completed'?'success':'error',$execution->status==='completed'?'Bot execution completed.':($execution->reason?:'Bot did not execute.'));
     }

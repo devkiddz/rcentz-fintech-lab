@@ -183,12 +183,6 @@ class SignalDistributionService
 
     private function hasSignalAccess(User $user): bool
     {
-        return $this->membershipAccess
-            ->activeMemberships($user)
-            ->contains(function ($membership) {
-                return $membership->plan?->entitlements
-                    ?->contains(fn ($entitlement) => $entitlement->enabled && $entitlement->key === 'signals.access')
-                    ?? false;
-            });
+        return $this->membershipAccess->hasAny($user, FeatureAccessService::SIGNALS);
     }
 }

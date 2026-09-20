@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 
 class RefreshForexHistory extends Command
 {
-    protected $signature = 'forex:refresh-history {symbol? : Pair symbol such as EURUSD or EUR/USD} {--all : Refresh all active pairs} {--output=compact : Alpha Vantage compact or full output}';
+    protected $signature = 'forex:refresh-history {symbol? : Pair symbol such as EURUSD or EUR/USD} {--all : Refresh all active pairs} {--output=compact : Alpha Vantage compact or full output} {--throttle-ms=12500 : Delay between provider requests when refreshing multiple pairs}';
     protected $description = 'Refresh real daily OHLC history for configured forex pairs without fabricating market data.';
 
     public function handle(ForexMarketDataService $marketData): int
@@ -22,6 +22,7 @@ class RefreshForexHistory extends Command
 
         $rows = [];
         $failed = 0;
+        $throttleMs = max(0, (int) $this->option('throttle-ms'));
 
         foreach ($pairs as $index => $pair) {
             try {
@@ -38,8 +39,8 @@ class RefreshForexHistory extends Command
                 $rows[] = [$pair->display_symbol, 'FAILED', '-', '-', $e->getMessage()];
             }
 
-            if ($index < $pairs->count() - 1) {
-                usleep(850000);
+            if ($index < $pairs->count() - 1 && $throttleMs > 0) {
+                usleep($throttleMs * 1000);
             }
         }
 

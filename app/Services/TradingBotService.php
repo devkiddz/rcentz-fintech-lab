@@ -15,7 +15,8 @@ class TradingBotService
     public function __construct(
         private BrokerOrderService $brokerOrders,
         private MarketPriceRouter $prices,
-        private MarketSettlementService $settlement
+        private MarketSettlementService $settlement,
+        private FeatureAccessService $featureAccess
     ){}
 
     public function run(TradingBot $bot,bool $manual=false):TradingBotExecution
@@ -38,6 +39,10 @@ class TradingBotService
         }
         if(!$manual && ($bot->status!=='active' || ($bot->next_run_at && $bot->next_run_at->isFuture()))){
             return $this->log($bot,null,null,0,0,0,'skipped','Bot is not due.',$instrument);
+        }
+        if($bot->action!=='sell' && !$this->featureAccess->allows($user, FeatureAccessService::BOT_TRADER)){
+            $bot->update(['status'=>'paused']);
+            return $this->log($bot,null,null,0,0,0,'skipped','Bot paused because active membership with Bot Trader access is required.',$instrument);
         }
         if(!$user->kyc || !$user->kyc->isApproved()){
             return $this->log($bot,null,null,0,0,0,'skipped','KYC is not approved.',$instrument);

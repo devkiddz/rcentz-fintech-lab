@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PrivateInvestmentInstrument;
+use App\Services\FeatureAccessService;
 use App\Services\PrivateInvestmentOrderEngine;
 use Illuminate\Http\Request;
 
@@ -11,9 +12,11 @@ class PrivateInvestmentOrderController extends Controller
     public function subscribe(
         Request $request,
         PrivateInvestmentInstrument $instrument,
-        PrivateInvestmentOrderEngine $orders
+        PrivateInvestmentOrderEngine $orders,
+        FeatureAccessService $access
     ) {
         abort_if(auth()->user()->isAdmin(), 403);
+        $access->require(auth()->user(), FeatureAccessService::INVESTMENTS);
 
         $data = $request->validate([
             'amount' => 'required|numeric|min:0.01',
