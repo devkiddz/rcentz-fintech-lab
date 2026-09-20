@@ -154,12 +154,41 @@ final class BrokerOrderService
         }
 
         $position->loadMissing(['marketInstrument', 'stock.marketInstrument']);
-        if ((int) $position->user_id !== (int) $user->id || ! $position->is_open) {
+        if ((int) $position->user_id !== (int) $user->id) {
             throw new RuntimeException('This position is not available for customer close execution.');
         }
 
         $instrument = $position->marketInstrument ?? $position->stock?->marketInstrument;
-        if (! $instrument || ! $instrument->is_active || ! $this->execution->canExecute($instrument)) {
+        if (! $instrument) {
+            throw new RuntimeException('The position instrument authority is unavailable.');
+        }
+
+        $marketplace = $this->prices->normalizeMarketplace($position->marketplace ?: $this->prices->activeMarketplace());
+
+        // Idempotency replay must resolve before live position-state validation.
+        // A successful first close makes the position terminal; retrying the same
+        // request/key should return that original filled BrokerOrder rather than
+        // failing only because the position is now closed.
+        $existing = BrokerOrder::query()
+            ->where('user_id', $user->id)
+            ->where('idempotency_key', $idempotencyKey)
+            ->first();
+
+        if ($existing) {
+            $replayQuantity = $quantity === null
+                ? (float) $existing->quantity
+                : (float) $quantity;
+            $this->assertSameRequest($existing, $instrument, 'sell', $replayQuantity, 'units', $marketplace);
+            if ((int) (($existing->metadata ?? [])['target_position_id'] ?? 0) !== (int) $position->id) {
+                throw new RuntimeException('Idempotency key was already used for a different position close.');
+            }
+            return $existing;
+        }
+
+        if (! $position->is_open) {
+            throw new RuntimeException('This position is not available for customer close execution.');
+        }
+        if (! $instrument->is_active || ! $this->execution->canExecute($instrument)) {
             throw new RuntimeException('The position instrument is not currently executable.');
         }
 
@@ -167,21 +196,6 @@ final class BrokerOrderService
         $quantity = $quantity === null ? $openQuantity : (float) $quantity;
         if ($quantity <= 0 || $quantity > $openQuantity) {
             throw new InvalidArgumentException('Position close quantity must be greater than zero and cannot exceed open exposure.');
-        }
-
-        $marketplace = $this->prices->normalizeMarketplace($position->marketplace ?: $this->prices->activeMarketplace());
-
-        $existing = BrokerOrder::query()
-            ->where('user_id', $user->id)
-            ->where('idempotency_key', $idempotencyKey)
-            ->first();
-
-        if ($existing) {
-            $this->assertSameRequest($existing, $instrument, 'sell', $quantity, 'units', $marketplace);
-            if ((int) (($existing->metadata ?? [])['target_position_id'] ?? 0) !== (int) $position->id) {
-                throw new RuntimeException('Idempotency key was already used for a different position close.');
-            }
-            return $existing;
         }
 
         try {
