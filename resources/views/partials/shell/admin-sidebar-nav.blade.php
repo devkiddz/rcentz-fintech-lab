@@ -238,6 +238,10 @@
             @endforeach
         </div>
     </details>
+    <a href="{{ route('admin.rewards.index') }}" title="Rewards & Bonuses"
+       class="{{ $standaloneBase }} {{ request()->routeIs('admin.rewards.*') ? $standaloneActive : $standaloneIdle }}">
+        <i data-lucide="gift" class="h-4 w-4 shrink-0"></i><span class="sidebar-label">Rewards & Bonuses</span>
+    </a>
     <a href="{{ route('admin.users.index') }}" title="Customers"
        class="{{ $standaloneBase }} {{ request()->routeIs('admin.users.*') ? $standaloneActive : $standaloneIdle }}">
         <i data-lucide="users" class="h-4 w-4 shrink-0"></i><span class="sidebar-label">Customers</span>

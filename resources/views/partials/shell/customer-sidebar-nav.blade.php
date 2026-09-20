@@ -216,6 +216,11 @@
     </details>
 
 
+    <a href="{{ route('rewards.index') }}" title="Rewards & Bonuses"
+       class="{{ $standaloneBase }} {{ request()->routeIs('rewards.*') ? $standaloneActive : $standaloneIdle }}">
+        <i data-lucide="gift" class="h-4 w-4 shrink-0"></i><span class="sidebar-label">Rewards & Bonuses</span>
+    </a>
+
     <div class="sidebar-section-label px-3 pt-4 pb-1 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">Account & Trust</div>
 
     <details class="sidebar-group group rounded-xl"

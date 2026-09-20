@@ -101,6 +101,9 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.act
         Route::post('/{type:slug}/plans/{plan}/purchase', [\App\Http\Controllers\MembershipController::class, 'purchase'])->name('purchase');
     });
 
+    // Rewards / Bonuses / Giveaways. RewardService is the financial fulfillment authority.
+    Route::get('/rewards', [\App\Http\Controllers\RewardController::class, 'index'])->name('rewards.index');
+
     // Profile Routes
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -615,6 +618,14 @@ Route::middleware(['auth', 'admin'])
         Route::patch('/{type:slug}/memberships/{membership}/activate', [\App\Http\Controllers\Admin\MembershipController::class, 'activateMembership'])->name('registry.activate');
         Route::patch('/{type:slug}/memberships/{membership}/cancel', [\App\Http\Controllers\Admin\MembershipController::class, 'cancelMembership'])->name('registry.cancel');
         Route::patch('/{type:slug}/memberships/{membership}/expire', [\App\Http\Controllers\Admin\MembershipController::class, 'expireMembership'])->name('registry.expire');
+    });
+
+    // Reward Engine Admin Control
+    Route::prefix('rewards')->name('rewards.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\RewardController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Admin\RewardController::class, 'store'])->name('store');
+        Route::post('/{campaign}/grant', [\App\Http\Controllers\Admin\RewardController::class, 'grant'])->name('grant');
+        Route::patch('/{campaign}/toggle', [\App\Http\Controllers\Admin\RewardController::class, 'toggle'])->name('toggle');
     });
 
     // Admin Settings Control Plane
