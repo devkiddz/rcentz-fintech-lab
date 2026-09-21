@@ -29,7 +29,7 @@ class AppHelper
      */
     public static function siteName()
     {
-        return self::setting('site_name', config('app.name', 'Tesla Investment Platform'));
+        return self::setting('site_name', config('app.name', 'Financial Platform'));
     }
 
     /**

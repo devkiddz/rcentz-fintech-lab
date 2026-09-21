@@ -13,6 +13,8 @@ use Illuminate\Support\Collection;
 
 class TradingPerformanceService
 {
+    private array $executionMarketCache = [];
+
     public function __construct(
         private MarketPriceRouter $prices,
         private MarketSettlementService $settlement,
@@ -74,7 +76,12 @@ class TradingPerformanceService
             ?? $execution->bot?->marketInstrument
             ?? $execution->bot?->stock?->marketInstrument;
 
-        $market = $instrument ? $this->markets->forInstrument($instrument, 0) : null;
+        $market = null;
+        if ($instrument) {
+            $cacheKey = (string) $instrument->id;
+            $market = $this->executionMarketCache[$cacheKey]
+                ??= $this->markets->forInstrument($instrument, 0);
+        }
         $current = (float) ($market['current'] ?? 0.0);
         $entry = (float) $execution->price;
         $qty = (float) $execution->quantity;

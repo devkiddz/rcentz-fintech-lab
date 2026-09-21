@@ -11,17 +11,18 @@ class InspectMarketIntegrity extends Command
 {
     protected $signature = 'market:integrity';
 
-    protected $description = 'Inspect current marketplace/source-of-truth invariants';
+    protected $description = 'Inspect current marketplace/source-of-truth invariants across canonical market instruments';
 
     public function handle(): int
     {
-        $this->info('Rcentz market source-of-truth integrity');
+        $this->info('Platform market source-of-truth integrity');
 
         $requiredTables = [
             'stocks',
             'stock_holdings',
             'stock_transactions',
             'trade_positions',
+            'market_instruments',
             'controlled_market_instruments',
         ];
 
@@ -32,9 +33,20 @@ class InspectMarketIntegrity extends Command
             }
         }
 
-        if (! Schema::hasColumn('stocks', 'external_feed_enabled')) {
-            $this->error('Missing stocks.external_feed_enabled. V5.21 migration has not been applied.');
-            return self::FAILURE;
+        $requiredColumns = [
+            'stocks' => ['external_feed_enabled'],
+            'stock_holdings' => ['stock_id', 'market_instrument_id', 'marketplace'],
+            'trade_positions' => ['stock_id', 'market_instrument_id', 'marketplace'],
+            'controlled_market_instruments' => ['stock_id', 'market_instrument_id'],
+        ];
+
+        foreach ($requiredColumns as $table => $columns) {
+            foreach ($columns as $column) {
+                if (! Schema::hasColumn($table, $column)) {
+                    $this->error("Missing {$table}.{$column}; the current market authority schema is incomplete.");
+                    return self::FAILURE;
+                }
+            }
         }
 
         $checks = [];
@@ -54,19 +66,38 @@ class InspectMarketIntegrity extends Command
             ->where('s.external_feed_enabled', false)
             ->count();
 
-        $checks['CONTROLLED holdings without instrument'] = DB::table('stock_holdings as h')
-            ->leftJoin('controlled_market_instruments as i', 'i.stock_id', '=', 'h.stock_id')
+        $checks['CONTROLLED holdings without instrument authority'] = DB::table('stock_holdings as h')
             ->where('h.marketplace', 'controlled')
             ->where('h.quantity', '>', 0)
-            ->whereNull('i.id')
+            ->whereNotExists(function ($query) {
+                $query->selectRaw('1')
+                    ->from('controlled_market_instruments as i')
+                    ->where(function ($match) {
+                        $match->whereColumn('i.market_instrument_id', 'h.market_instrument_id')
+                            ->orWhereColumn('i.stock_id', 'h.stock_id');
+                    });
+            })
             ->count();
 
-        $checks['CONTROLLED open positions without instrument'] = DB::table('trade_positions as p')
-            ->leftJoin('controlled_market_instruments as i', 'i.stock_id', '=', 'p.stock_id')
+        $checks['CONTROLLED open positions without instrument authority'] = DB::table('trade_positions as p')
             ->where('p.marketplace', 'controlled')
             ->whereIn('p.status', ['open', 'exit_queued'])
             ->where('p.open_quantity', '>', 0)
-            ->whereNull('i.id')
+            ->whereNotExists(function ($query) {
+                $query->selectRaw('1')
+                    ->from('controlled_market_instruments as i')
+                    ->where(function ($match) {
+                        $match->whereColumn('i.market_instrument_id', 'p.market_instrument_id')
+                            ->orWhereColumn('i.stock_id', 'p.stock_id');
+                    });
+            })
+            ->count();
+
+        $checks['Open positions without canonical identity'] = DB::table('trade_positions')
+            ->whereIn('status', ['open', 'exit_queued'])
+            ->where('open_quantity', '>', 0)
+            ->whereNull('market_instrument_id')
+            ->whereNull('stock_id')
             ->count();
 
         $checks['Holdings with invalid marketplace'] = DB::table('stock_holdings')
@@ -100,9 +131,13 @@ class InspectMarketIntegrity extends Command
         $this->table(['Invariant', 'Rows', 'Status'], $rows);
 
         $summary = [
+            ['Canonical market instruments', DB::table('market_instruments')->count()],
             ['External-feed eligible stocks', Stock::query()->where('external_feed_enabled', true)->count()],
             ['Internal-only stocks', Stock::query()->where('external_feed_enabled', false)->count()],
             ['Controlled instruments', DB::table('controlled_market_instruments')->count()],
+            ['Controlled Stocks', DB::table('controlled_market_instruments')->where('asset_class', 'stock')->count()],
+            ['Controlled Forex', DB::table('controlled_market_instruments')->where('asset_class', 'forex')->count()],
+            ['Controlled Crypto', DB::table('controlled_market_instruments')->where('asset_class', 'crypto')->count()],
         ];
 
         $this->table(['Source inventory', 'Count'], $summary);

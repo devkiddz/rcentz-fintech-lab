@@ -3,153 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Install {{ config('app.name', 'Rcentz Fintech Lab') }}</title>
+    <title>Install {{ config('app.name', 'Financial Platform') }}</title>
     <style>
-        :root { color-scheme: dark; --bg:#0a0b0d; --panel:#111318; --line:#262a33; --muted:#9298a5; --text:#f6f7f9; --accent:#e53935; --ok:#33c27f; --bad:#ff6b6b; }
-        * { box-sizing: border-box; }
-        body { margin:0; min-height:100vh; background:radial-gradient(circle at top, #17191f 0, var(--bg) 42%); color:var(--text); font:14px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        .shell { width:min(1120px, calc(100% - 32px)); margin:0 auto; padding:48px 0 72px; }
-        .eyebrow { color:var(--muted); text-transform:uppercase; letter-spacing:.14em; font-size:11px; }
-        h1 { font-size:clamp(30px,5vw,54px); line-height:1; margin:10px 0 12px; letter-spacing:-.04em; }
-        .lead { max-width:720px; color:#b6bbc5; font-size:16px; }
-        .grid { display:grid; grid-template-columns:340px 1fr; gap:20px; margin-top:34px; align-items:start; }
-        .card { background:rgba(17,19,24,.92); border:1px solid var(--line); border-radius:18px; padding:22px; box-shadow:0 20px 60px rgba(0,0,0,.22); }
-        .card h2 { margin:0 0 14px; font-size:18px; }
-        .req { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:11px 0; border-bottom:1px solid #1e222a; }
+        :root { color-scheme: dark; --bg:#080a0f; --panel:#0f131b; --soft:#151b25; --line:#242c3a; --muted:#8f98a8; --text:#f7f9fc; --accent:#e5484d; --ok:#35c88a; --bad:#ff6b72; }
+        * { box-sizing:border-box; }
+        body { margin:0; min-height:100vh; background:radial-gradient(circle at top right,#182032 0,transparent 34%),linear-gradient(180deg,#0a0d13 0,var(--bg) 100%); color:var(--text); font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+        .shell { width:min(1180px,calc(100% - 32px)); margin:0 auto; padding:48px 0 72px; }
+        .eyebrow { color:#aab2c0; text-transform:uppercase; letter-spacing:.16em; font-size:10px; font-weight:700; }
+        h1 { max-width:820px; font-size:clamp(34px,5vw,58px); line-height:1.02; margin:10px 0 14px; letter-spacing:-.045em; }
+        .lead { max-width:760px; color:#b2bac8; font-size:16px; }
+        .grid { display:grid; grid-template-columns:330px 1fr; gap:20px; margin-top:34px; align-items:start; }
+        .card { background:rgba(15,19,27,.94); border:1px solid var(--line); border-radius:20px; padding:22px; box-shadow:0 24px 70px rgba(0,0,0,.28); }
+        .card h2 { margin:0 0 14px; font-size:17px; }
+        .req { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:11px 0; border-bottom:1px solid #1d2430; }
         .req:last-child { border-bottom:0; }
-        .badge { font-size:11px; padding:4px 8px; border-radius:999px; font-weight:700; }
-        .badge.ok { color:#bff5da; background:rgba(51,194,127,.13); }
-        .badge.bad { color:#ffd0d0; background:rgba(255,107,107,.13); }
-        .section { margin-bottom:26px; }
+        .badge { font-size:10px; padding:4px 8px; border-radius:999px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; }
+        .badge.ok { color:#bff6dd; background:rgba(53,200,138,.13); }
+        .badge.bad { color:#ffd3d5; background:rgba(255,107,114,.13); }
+        .section { margin-bottom:28px; }
         .section:last-child { margin-bottom:0; }
-        .section-title { display:flex; align-items:center; gap:10px; margin-bottom:14px; font-weight:700; }
-        .step { width:26px; height:26px; display:grid; place-items:center; border-radius:8px; background:#20242c; color:#d6d9df; font-size:12px; }
+        .section-title { display:flex; align-items:center; gap:10px; margin-bottom:14px; font-weight:750; }
+        .step { width:27px; height:27px; display:grid; place-items:center; border-radius:9px; background:#202735; color:#e0e5ed; font-size:11px; }
         .fields { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
         .full { grid-column:1 / -1; }
-        label { display:block; color:#c9cdd5; font-size:12px; margin-bottom:6px; }
-        input, select { width:100%; border:1px solid #303540; background:#0d0f13; color:var(--text); border-radius:11px; padding:11px 12px; outline:none; }
-        input:focus, select:focus { border-color:#666e7d; box-shadow:0 0 0 3px rgba(255,255,255,.04); }
-        .check { display:flex; gap:10px; align-items:flex-start; padding:13px; border:1px solid var(--line); border-radius:12px; background:#0e1014; }
-        .check input { width:auto; margin-top:4px; }
-        .check strong { display:block; }
-        .check span { color:var(--muted); font-size:12px; }
+        label { display:block; color:#c9cfda; font-size:11px; margin-bottom:6px; font-weight:650; }
+        input,select,textarea { width:100%; border:1px solid #30394a; background:#0b0f16; color:var(--text); border-radius:11px; padding:11px 12px; outline:none; font:inherit; }
+        textarea { min-height:92px; resize:vertical; }
+        input:focus,select:focus,textarea:focus { border-color:#657086; box-shadow:0 0 0 3px rgba(255,255,255,.04); }
         button { width:100%; border:0; border-radius:12px; padding:13px 16px; background:var(--accent); color:white; font-weight:800; cursor:pointer; font-size:14px; }
         button:disabled { opacity:.45; cursor:not-allowed; }
-        .error { margin-bottom:18px; padding:12px 14px; border:1px solid rgba(255,107,107,.3); background:rgba(255,107,107,.08); color:#ffd1d1; border-radius:12px; }
-        .hint { color:var(--muted); font-size:12px; margin-top:8px; }
-        @media (max-width:860px) { .grid { grid-template-columns:1fr; } .fields { grid-template-columns:1fr; } .full { grid-column:auto; } .shell { padding-top:28px; } }
+        .error { margin-bottom:18px; padding:12px 14px; border:1px solid rgba(255,107,114,.3); background:rgba(255,107,114,.08); color:#ffd7d8; border-radius:12px; }
+        .hint { color:var(--muted); font-size:11px; margin-top:9px; }
+        .note { margin-top:16px; border:1px solid var(--line); border-radius:14px; background:var(--soft); padding:14px; color:#aeb7c5; font-size:11px; }
+        @media (max-width:880px) { .grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.full{grid-column:auto}.shell{padding-top:28px} }
     </style>
 </head>
 <body>
 <div class="shell">
-    <div class="eyebrow">Rcentz Fintech Lab · Laravel reference build</div>
-    <h1>Install the application.</h1>
-    <p class="lead">Configure the application, connect an empty MySQL database, create the first administrator and optionally install sample portfolio data.</p>
+    <div class="eyebrow">Secure platform installation</div>
+    <h1>Configure the company, platform and operating environment.</h1>
+    <p class="lead">This setup creates a production-ready installation with independent company identity, database connectivity and the first administrator account.</p>
 
     <div class="grid">
         <aside class="card">
             <h2>Server readiness</h2>
             @foreach ($requirements as $requirement)
-                <div class="req">
-                    <span>{{ $requirement['label'] }}</span>
-                    <span class="badge {{ $requirement['ok'] ? 'ok' : 'bad' }}">{{ $requirement['ok'] ? 'Ready' : 'Missing' }}</span>
-                </div>
+                <div class="req"><span>{{ $requirement['label'] }}</span><span class="badge {{ $requirement['ok'] ? 'ok' : 'bad' }}">{{ $requirement['ok'] ? 'Ready' : 'Missing' }}</span></div>
             @endforeach
-            <p class="hint">The installer locks itself after a successful setup. Remove <code>storage/app/installed</code> only when intentionally rebuilding a test environment.</p>
+            <div class="note">After successful installation this setup is locked automatically. Reopening it requires an intentional deployment action on the server.</div>
         </aside>
 
         <main class="card">
             @if ($errors->any())
-                <div class="error">
-                    <strong>Installation could not continue.</strong>
-                    <div>{{ $errors->first() }}</div>
-                </div>
+                <div class="error"><strong>Installation could not continue.</strong><div>{{ $errors->first() }}</div></div>
             @endif
 
             <form method="POST" action="{{ route('install.store') }}">
                 @csrf
 
                 <div class="section">
-                    <div class="section-title"><span class="step">1</span> Application</div>
+                    <div class="section-title"><span class="step">1</span> Company & platform</div>
                     <div class="fields">
-                        <div>
-                            <label for="app_name">Application name</label>
-                            <input id="app_name" name="app_name" value="{{ old('app_name', 'Rcentz Fintech Lab') }}" required>
-                        </div>
-                        <div>
-                            <label for="app_env">Environment</label>
-                            <select id="app_env" name="app_env">
-                                <option value="local" @selected(old('app_env', app()->environment('local') ? 'local' : 'production') === 'local')>Local / development</option>
-                                <option value="production" @selected(old('app_env') === 'production')>Production</option>
-                            </select>
-                        </div>
-                        <div class="full">
-                            <label for="app_url">Application URL</label>
-                            <input id="app_url" type="url" name="app_url" value="{{ old('app_url', request()->getSchemeAndHttpHost()) }}" required>
-                        </div>
+                        <div><label for="app_name">Platform name</label><input id="app_name" name="app_name" value="{{ old('app_name', 'Financial Platform') }}" required></div>
+                        <div><label for="company_name">Company / operator name</label><input id="company_name" name="company_name" value="{{ old('company_name') }}" required></div>
+                        <div class="full"><label for="legal_company_name">Legal company name <span style="color:#7f8999;font-weight:400">(optional when identical)</span></label><input id="legal_company_name" name="legal_company_name" value="{{ old('legal_company_name') }}"></div>
+                        <div class="full"><label for="site_tagline">Tagline</label><input id="site_tagline" name="site_tagline" value="{{ old('site_tagline', 'Markets, intelligence and financial control.') }}" required></div>
+                        <div class="full"><label for="site_description">Company description</label><textarea id="site_description" name="site_description" required>{{ old('site_description', 'A modern financial platform for markets, portfolio management, intelligent signals, automation and private investments.') }}</textarea></div>
+                        <div><label for="support_email">Support email</label><input id="support_email" type="email" name="support_email" value="{{ old('support_email') }}" required></div>
+                        <div><label for="support_phone">Support phone</label><input id="support_phone" name="support_phone" value="{{ old('support_phone') }}"></div>
+                        <div class="full"><label for="app_url">Primary website URL</label><input id="app_url" type="url" name="app_url" value="{{ old('app_url', request()->getSchemeAndHttpHost()) }}" required></div>
+                        <div class="full"><label for="app_env">Operating environment</label><select id="app_env" name="app_env"><option value="production" @selected(old('app_env','production')==='production')>Production</option><option value="local" @selected(old('app_env')==='local')>Development</option></select></div>
                     </div>
                 </div>
 
                 <div class="section">
                     <div class="section-title"><span class="step">2</span> Database</div>
                     <div class="fields">
-                        <div>
-                            <label for="db_host">Host</label>
-                            <input id="db_host" name="db_host" value="{{ old('db_host', '127.0.0.1') }}" required>
-                        </div>
-                        <div>
-                            <label for="db_port">Port</label>
-                            <input id="db_port" type="number" name="db_port" value="{{ old('db_port', '3306') }}" required>
-                        </div>
-                        <div>
-                            <label for="db_database">Database name</label>
-                            <input id="db_database" name="db_database" value="{{ old('db_database') }}" placeholder="rcentz_fintech" required>
-                        </div>
-                        <div>
-                            <label for="db_username">Username</label>
-                            <input id="db_username" name="db_username" value="{{ old('db_username', 'root') }}" required>
-                        </div>
-                        <div class="full">
-                            <label for="db_password">Database password</label>
-                            <input id="db_password" type="password" name="db_password" autocomplete="new-password">
-                        </div>
+                        <div><label for="db_host">Host</label><input id="db_host" name="db_host" value="{{ old('db_host','127.0.0.1') }}" required></div>
+                        <div><label for="db_port">Port</label><input id="db_port" type="number" name="db_port" value="{{ old('db_port','3306') }}" required></div>
+                        <div><label for="db_database">Database name</label><input id="db_database" name="db_database" value="{{ old('db_database') }}" placeholder="platform_database" required></div>
+                        <div><label for="db_username">Username</label><input id="db_username" name="db_username" value="{{ old('db_username','root') }}" required></div>
+                        <div class="full"><label for="db_password">Database password</label><input id="db_password" type="password" name="db_password" autocomplete="new-password"></div>
                     </div>
                 </div>
 
                 <div class="section">
                     <div class="section-title"><span class="step">3</span> Administrator</div>
                     <div class="fields">
-                        <div>
-                            <label for="admin_name">Name</label>
-                            <input id="admin_name" name="admin_name" value="{{ old('admin_name', 'Platform Administrator') }}" required>
-                        </div>
-                        <div>
-                            <label for="admin_email">Email</label>
-                            <input id="admin_email" type="email" name="admin_email" value="{{ old('admin_email') }}" required>
-                        </div>
-                        <div>
-                            <label for="admin_password">Password</label>
-                            <input id="admin_password" type="password" name="admin_password" minlength="10" autocomplete="new-password" required>
-                        </div>
-                        <div>
-                            <label for="admin_password_confirmation">Confirm password</label>
-                            <input id="admin_password_confirmation" type="password" name="admin_password_confirmation" minlength="10" autocomplete="new-password" required>
-                        </div>
+                        <div><label for="admin_name">Administrator name</label><input id="admin_name" name="admin_name" value="{{ old('admin_name','Platform Administrator') }}" required></div>
+                        <div><label for="admin_email">Administrator email</label><input id="admin_email" type="email" name="admin_email" value="{{ old('admin_email') }}" required></div>
+                        <div><label for="admin_password">Password</label><input id="admin_password" type="password" name="admin_password" minlength="10" autocomplete="new-password" required></div>
+                        <div><label for="admin_password_confirmation">Confirm password</label><input id="admin_password_confirmation" type="password" name="admin_password_confirmation" minlength="10" autocomplete="new-password" required></div>
                     </div>
                 </div>
 
-                <div class="section">
-                    <div class="section-title"><span class="step">4</span> Demo world</div>
-                    <label class="check">
-                        <input type="checkbox" name="seed_demo" value="1" @checked(old('seed_demo', true))>
-                        <span>
-                            <strong>Install sample portfolio data</strong>
-                            <span>Populates sample users, wallets, holdings and activity so the product can be explored immediately.</span>
-                        </span>
-                    </label>
-                </div>
-
-                <button type="submit" @disabled(! $allRequirementsMet)>Install application</button>
+                <button type="submit" @disabled(! $allRequirementsMet)>Install platform</button>
             </form>
         </main>
     </div>

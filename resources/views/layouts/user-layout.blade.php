@@ -16,30 +16,60 @@
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
-    @include('partials.theme-init')
+    @include('partials.theme-init', ['themeScope' => 'customer'])
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @include('partials.shell.sidebar-behavior')
+
+    <style>
+        .customer-workspace #sidebar{border-right:0!important;background:linear-gradient(180deg,hsl(var(--card)) 0%,color-mix(in srgb,hsl(var(--card)) 96%,var(--brand-primary) 4%) 100%);box-shadow:18px 0 44px rgba(15,23,42,.045)}
+        .dark .customer-workspace #sidebar{box-shadow:18px 0 50px rgba(0,0,0,.18)}
+        .customer-workspace .customer-sidebar-head{border-bottom:0!important;padding-top:.35rem}
+        .customer-workspace .customer-sidebar-profile{margin:.35rem .75rem .65rem;border:0!important;border-radius:1rem;background:hsl(var(--muted)/.58);box-shadow:inset 0 0 0 1px hsl(var(--border)/.42)}
+        .customer-workspace #sidebar [data-sidebar-nav] > a,
+        .customer-workspace #sidebar [data-sidebar-nav] > details > summary{border:0!important;box-shadow:none!important;min-height:2.5rem;border-radius:.9rem!important}
+        .customer-workspace #sidebar [data-sidebar-nav] > a:hover,
+        .customer-workspace #sidebar [data-sidebar-nav] > details > summary:hover{background:hsl(var(--muted)/.72)!important}
+        .customer-workspace #sidebar details[open] > summary{background:color-mix(in srgb,var(--brand-primary) 5%,hsl(var(--muted)))!important;box-shadow:inset 3px 0 0 color-mix(in srgb,var(--brand-primary) 62%,transparent)!important}
+        .customer-workspace #sidebar [class*="bg-red-500"]{background:color-mix(in srgb,var(--brand-primary) 6%,hsl(var(--muted)))!important;color:color-mix(in srgb,var(--brand-primary) 78%,hsl(var(--foreground)))!important;box-shadow:inset 3px 0 0 color-mix(in srgb,var(--brand-primary) 68%,transparent)!important}
+        .customer-workspace #sidebar .sidebar-subnav{position:relative;border-left:0!important;margin-left:.8rem!important;padding-left:1rem!important}
+        .customer-workspace #sidebar .sidebar-subnav::before{content:"";position:absolute;left:.14rem;top:.3rem;bottom:.3rem;width:1px;background:linear-gradient(180deg,transparent,hsl(var(--border)/.78) 15%,hsl(var(--border)/.78) 85%,transparent)}
+        .customer-workspace #sidebar .sidebar-subnav a{border-radius:.8rem!important}
+        .customer-shell-topbar{position:sticky;top:0;z-index:40;padding:.65rem .9rem 0;background:linear-gradient(180deg,hsl(var(--background)) 60%,transparent)}
+        .customer-shell-topbar-inner{display:flex;min-height:3.65rem;align-items:center;justify-content:space-between;gap:1rem;border-radius:1rem;background:hsl(var(--card)/.84);padding:.55rem .75rem;box-shadow:0 14px 34px rgba(15,23,42,.06),inset 0 0 0 1px hsl(var(--border)/.55);backdrop-filter:blur(18px)}
+        .dark .customer-shell-topbar-inner{box-shadow:0 16px 36px rgba(0,0,0,.22),inset 0 0 0 1px hsl(var(--border)/.50)}
+        .customer-shell-icon{display:inline-flex;height:2.35rem;width:2.35rem;align-items:center;justify-content:center;border:0;border-radius:.8rem;background:hsl(var(--muted)/.58);color:hsl(var(--muted-foreground));transition:.18s ease}
+        .customer-shell-icon:hover{background:hsl(var(--muted));color:hsl(var(--foreground))}
+        .customer-shell-topbar .shell-icon-button{display:inline-flex!important;height:2.35rem!important;width:2.35rem!important;align-items:center!important;justify-content:center!important;border:0!important;border-radius:.8rem!important;background:hsl(var(--muted)/.58)!important;color:hsl(var(--muted-foreground))!important;box-shadow:none!important;transition:.18s ease!important}
+        .customer-shell-topbar .shell-icon-button:hover{background:hsl(var(--muted))!important;color:hsl(var(--foreground))!important}
+        .customer-mobile-dock{border:0!important;background:hsl(var(--card)/.94)!important;box-shadow:0 -8px 34px rgba(15,23,42,.10),inset 0 0 0 1px hsl(var(--border)/.52);backdrop-filter:blur(18px)}
+        .dark .customer-mobile-dock{box-shadow:0 -10px 36px rgba(0,0,0,.28),inset 0 0 0 1px hsl(var(--border)/.42)}
+    </style>
 </head>
 
-<body class="customer-workspace bg-background text-foreground font-sans antialiased" data-theme-scope="customer">
+@php
+    $configuredBrandPrimary = (string) setting('brand_primary_color', '#c8102e');
+    $brandPrimary = preg_match('/^#[0-9a-fA-F]{6}$/', $configuredBrandPrimary) ? $configuredBrandPrimary : '#c8102e';
+@endphp
+<body class="customer-workspace bg-background text-foreground font-sans antialiased" data-theme-scope="customer" style="--brand-primary: {{ $brandPrimary }}">
 <div class="min-h-screen">
     <div id="sidebar-overlay"
          class="fixed inset-0 z-[60] hidden bg-black/60 backdrop-blur-[1px] lg:hidden"
          onclick="toggleSidebar()"></div>
 
     <aside id="sidebar"
-           class="fixed inset-y-0 left-0 z-[70] flex w-72 -translate-x-full flex-col border-r border-border bg-card text-card-foreground shadow-sm transition-all duration-300 lg:translate-x-0">
-        <div class="flex h-16 shrink-0 items-center justify-between border-b border-border px-4">
+           class="fixed inset-y-0 left-0 z-[70] flex w-72 -translate-x-full flex-col bg-card text-card-foreground transition-all duration-300 lg:translate-x-0">
+        <div class="customer-sidebar-head flex h-16 shrink-0 items-center justify-between px-4">
             <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('dashboard') }}" class="flex min-w-0 items-center gap-3">
                 @if(site_logo_light() || site_logo_dark())
+                    <div class="sidebar-brand-compact hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white" style="background:var(--brand-primary)">{{ strtoupper(substr(trim(site_name()), 0, 1)) ?: 'F' }}</div>
                     <img src="{{ site_logo_light() ?? site_logo_dark() }}"
                          alt="{{ site_name() }}"
-                         class="h-7 w-auto max-w-[150px] object-contain dark:hidden">
+                         class="sidebar-brand-full h-7 w-auto max-w-[150px] object-contain dark:hidden">
                     <img src="{{ site_logo_dark() ?? site_logo_light() }}"
                          alt="{{ site_name() }}"
-                         class="hidden h-7 w-auto max-w-[150px] object-contain dark:block">
+                         class="sidebar-brand-full hidden h-7 w-auto max-w-[150px] object-contain dark:block">
                 @else
-                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-xs font-bold text-background">R</div>
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-xs font-bold text-background">{{ strtoupper(substr(trim(site_name()), 0, 1)) ?: 'F' }}</div>
                     <span class="sidebar-label truncate text-sm font-semibold">{{ site_name() }}</span>
                 @endif
             </a>
@@ -51,7 +81,7 @@
             </button>
         </div>
 
-        <div class="flex items-center gap-3 border-b border-border px-4 py-3">
+        <div class="customer-sidebar-profile flex items-center gap-3 px-4 py-3">
             <div class="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-foreground text-xs font-semibold text-background">
                 @if(auth()->user()->profile_image)
                     <img src="{{ asset('storage/' . auth()->user()->profile_image) }}" alt="{{ auth()->user()->name }}" class="h-full w-full object-cover">
@@ -96,7 +126,7 @@
         </main>
     </div>
 
-    <nav class="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 px-2 py-2 backdrop-blur lg:hidden">
+    <nav class="customer-mobile-dock fixed inset-x-3 bottom-3 z-50 rounded-2xl px-2 py-2 lg:hidden">
         <div class="mx-auto grid max-w-lg grid-cols-5 items-end">
             <a href="{{ route('dashboard') }}"
                class="flex flex-col items-center gap-1 py-1 text-[10px] {{ request()->routeIs('dashboard') ? 'text-foreground' : 'text-muted-foreground' }}">

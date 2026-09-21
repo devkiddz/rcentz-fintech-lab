@@ -186,22 +186,21 @@
                 @foreach($conversation->messages as $message)
                     @php
                         $mine=$message->sender_user_id===auth()->id();
-                        $adminMessage=$message->sender?->isAdmin();
                         $images=$message->attachments->filter(fn($a)=>!$a->revoked_at&&$a->is_image);
                         $files=$message->attachments->filter(fn($a)=>!$a->revoked_at&&!$a->is_image);
                         $readByOther=$mine&&$conversation->participants->where('user_id','!=',auth()->id())->contains(fn($p)=>(int)($p->last_read_message_id??0)>=$message->id);
                         $replyVisible=$message->replyTo&&!$message->replyTo->deleted_for_everyone_at; $replyText=$replyVisible?($message->replyTo->body?:'Attachment'):null;
                     @endphp
-                    <div id="message-{{ $message->id }}" class="rcentz-message-row flex {{ $adminMessage?'justify-end':'justify-start' }}">
+                    <div id="message-{{ $message->id }}" data-message-mine="{{ $mine ? '1' : '0' }}" class="rcentz-message-row flex {{ $mine?'justify-end':'justify-start' }}">
                         <div class="relative max-w-[88%] sm:max-w-[76%]">
-                            <div class="rounded-2xl px-3.5 py-2.5 shadow-sm {{ $adminMessage?'rounded-br-md bg-red-500/[.10] ring-1 ring-red-500/15':'rounded-bl-md bg-background ring-1 ring-border' }}">
+                            <div class="rounded-2xl px-3.5 py-2.5 shadow-sm {{ $mine?'rounded-br-md bg-red-500/[.10] ring-1 ring-red-500/15':'rounded-bl-md bg-background ring-1 ring-border' }}">
                                 @if($replyVisible)<button type="button" onclick="document.getElementById('message-{{ $message->replyTo->id }}')?.scrollIntoView({behavior:'smooth',block:'center'})" class="mb-2 block w-full rounded-lg border-l-2 border-red-500 bg-muted/35 px-3 py-2 text-left"><span class="block text-[9px] font-semibold text-red-600">{{ $message->replyTo->sender?->name??'Message' }}</span><span class="mt-0.5 block truncate text-[10px] text-muted-foreground">{{ $replyText }}</span></button>@endif
                                     @if($images->isNotEmpty())<div class="mb-2 grid gap-1 overflow-hidden rounded-xl {{ $images->count()>1?'grid-cols-2':'grid-cols-1' }}">@foreach($images as $attachment)<button type="button" class="overflow-hidden bg-muted" data-media-preview="{{ route($routeBase.'.attachments.preview',$attachment) }}" data-media-name="{{ $attachment->original_name }}"><img src="{{ route($routeBase.'.attachments.preview',$attachment) }}" alt="{{ $attachment->original_name }}" class="h-44 w-full object-cover sm:h-52"></button>@endforeach</div>@endif
                                     @if($message->body!=='')<p class="whitespace-pre-wrap break-words text-[13px] leading-5">{{ $message->body }}</p>@endif
                                     @if($files->isNotEmpty())<div class="mt-2 space-y-1.5">@foreach($files as $attachment)<a href="{{ route($routeBase.'.attachments.download',$attachment) }}" class="flex items-center gap-2 rounded-lg bg-background/70 px-3 py-2 text-xs ring-1 ring-border/70"><span class="flex h-8 w-8 items-center justify-center rounded-lg bg-muted"><i data-lucide="file-text" class="h-4 w-4"></i></span><span class="min-w-0 flex-1"><span class="block truncate font-medium">{{ $attachment->original_name }}</span><span class="text-[9px] text-muted-foreground">{{ number_format($attachment->size_bytes/1024,1) }} KB</span></span><i data-lucide="download" class="h-3.5 w-3.5"></i></a>@endforeach</div>@endif
                                 <div class="mt-1.5 flex items-center justify-end gap-1 text-[8px] text-muted-foreground"><span>{{ $message->sent_at?->format('H:i') }}</span>@if($mine)<i data-lucide="{{ $readByOther?'check-check':'check' }}" class="h-3 w-3 {{ $readByOther?'text-sky-500':'' }}"></i>@endif</div>
                             </div>
-                            <div class="rcentz-message-tools {{ $adminMessage ? 'rcentz-message-tools-left' : 'rcentz-message-tools-right' }}" aria-label="Message actions">
+                            <div class="rcentz-message-tools {{ $mine ? 'rcentz-message-tools-left' : 'rcentz-message-tools-right' }}" aria-label="Message actions">
                                 <button type="button" class="rcentz-message-tool rcentz-quick-reply" data-reply-id="{{ $message->id }}" data-reply-name="{{ $message->sender?->name }}" data-reply-text="{{ \Illuminate\Support\Str::limit($message->body ?: 'Attachment',90) }}" title="Reply" aria-label="Reply"><i data-lucide="reply" class="h-3.5 w-3.5"></i></button>
                                 <details class="rcentz-message-actions">
                                     <summary class="rcentz-message-tool" title="Message actions" aria-label="Message actions"><i data-lucide="more-vertical" class="h-3.5 w-3.5"></i></summary>
@@ -970,7 +969,7 @@
         root.querySelectorAll('.rcentz-message-row, [id^="message-"]').forEach((row) => {
             if (!row.classList.contains('rcentz-message-row')) return;
             const tools = row.querySelector('.rcentz-message-tools');
-            const mine = !!tools?.classList.contains('rcentz-message-tools-left');
+            const mine = row.dataset.messageMine === '1';
             row.classList.toggle('rcentz-telegram-outgoing', mine);
             row.classList.toggle('rcentz-telegram-incoming', !mine);
         });
@@ -1237,6 +1236,80 @@
     enhanceMessages(document);
 })();
 </script>
+
+
+{{-- RCENTZ_MS9_R3_CONVERSATION_SIDE_LAYOUT_REPAIR --}}
+<style id="rcentz-ms9-r3-conversation-side-layout-repair">
+    /*
+     * R9 moved message controls into the row as a direct flex child and gave
+     * that tool rail width:100%. In a horizontal flex row that consumes the
+     * line and visually pins the bubble left even when the message is owned
+     * by the current viewer. Ownership itself is authoritative via R2's
+     * data-message-mine marker; this block only repairs physical layout.
+     */
+    .rcentz-message-row[data-message-mine="1"],
+    .rcentz-message-row.rcentz-telegram-outgoing {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        justify-content: flex-start !important;
+        width: 100% !important;
+    }
+
+    .rcentz-message-row[data-message-mine="0"],
+    .rcentz-message-row.rcentz-telegram-incoming {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        width: 100% !important;
+    }
+
+    .rcentz-message-row[data-message-mine="1"] > div:first-child,
+    .rcentz-message-row.rcentz-telegram-outgoing > div:first-child {
+        align-self: flex-end !important;
+        margin-left: auto !important;
+        margin-right: 0 !important;
+    }
+
+    .rcentz-message-row[data-message-mine="0"] > div:first-child,
+    .rcentz-message-row.rcentz-telegram-incoming > div:first-child {
+        align-self: flex-start !important;
+        margin-left: 0 !important;
+        margin-right: auto !important;
+    }
+
+    [data-rcentz-message-row="r9"][data-message-mine="1"] > .rcentz-message-tools,
+    [data-rcentz-message-row="r9"].rcentz-telegram-outgoing > .rcentz-message-tools,
+    .rcentz-message-row[data-message-mine="1"] > .rcentz-message-tools.rcentz-r9-tools,
+    .rcentz-message-row.rcentz-telegram-outgoing > .rcentz-message-tools.rcentz-r9-tools {
+        align-self: flex-end !important;
+        justify-content: flex-end !important;
+        width: auto !important;
+        max-width: min(82%, 46rem) !important;
+        margin: .3rem 0 0 auto !important;
+    }
+
+    [data-rcentz-message-row="r9"][data-message-mine="0"] > .rcentz-message-tools,
+    [data-rcentz-message-row="r9"].rcentz-telegram-incoming > .rcentz-message-tools,
+    .rcentz-message-row[data-message-mine="0"] > .rcentz-message-tools.rcentz-r9-tools,
+    .rcentz-message-row.rcentz-telegram-incoming > .rcentz-message-tools.rcentz-r9-tools {
+        align-self: flex-start !important;
+        justify-content: flex-start !important;
+        width: auto !important;
+        max-width: min(82%, 46rem) !important;
+        margin: .3rem auto 0 0 !important;
+    }
+
+    @media (max-width: 767px) {
+        [data-rcentz-message-row="r9"] > .rcentz-message-tools,
+        .rcentz-message-tools.rcentz-r9-tools {
+            max-width: 88% !important;
+        }
+    }
+</style>
+{{-- /RCENTZ_MS9_R3_CONVERSATION_SIDE_LAYOUT_REPAIR --}}
+
 {{-- /RCENTZ_MS7_R12_ASYNC_TELEGRAM_CHAT --}}
 
 </x-admin-layout>

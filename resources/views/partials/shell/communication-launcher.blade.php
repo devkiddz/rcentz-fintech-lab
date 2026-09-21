@@ -1,16 +1,33 @@
 @php
-    $communicationLauncherIsAdmin = auth()->check() && auth()->user()->isAdmin();
+    $communicationLauncherAuthenticated = auth()->check();
+    $communicationLauncherIsAdmin = $communicationLauncherAuthenticated && auth()->user()->isAdmin();
     $communicationLauncherMessagesRoute = $communicationLauncherIsAdmin ? 'admin.messages.index' : 'messages.index';
     $communicationLauncherSupportRoute = $communicationLauncherIsAdmin ? 'admin.support.index' : 'support.index';
-    $communicationLauncherReady = auth()->check()
-        && \Illuminate\Support\Facades\Route::has($communicationLauncherMessagesRoute)
-        && \Illuminate\Support\Facades\Route::has($communicationLauncherSupportRoute);
+
+    $communicationLauncherMessagesReady = \Illuminate\Support\Facades\Route::has($communicationLauncherMessagesRoute);
+    $communicationLauncherSupportReady = \Illuminate\Support\Facades\Route::has($communicationLauncherSupportRoute);
+    $communicationLauncherLoginReady = \Illuminate\Support\Facades\Route::has('login');
+    $communicationLauncherContactReady = \Illuminate\Support\Facades\Route::has('contact');
+    $communicationLauncherReady = $communicationLauncherAuthenticated
+        ? ($communicationLauncherMessagesReady && $communicationLauncherSupportReady)
+        : ($communicationLauncherLoginReady || $communicationLauncherContactReady);
+
+    $communicationLauncherFallbackUrl = $communicationLauncherLoginReady
+        ? route('login')
+        : route('home');
+    $communicationLauncherMessagesUrl = $communicationLauncherAuthenticated && $communicationLauncherMessagesReady
+        ? route($communicationLauncherMessagesRoute)
+        : $communicationLauncherFallbackUrl;
+    $communicationLauncherSupportUrl = $communicationLauncherAuthenticated && $communicationLauncherSupportReady
+        ? route($communicationLauncherSupportRoute)
+        : ($communicationLauncherContactReady ? route('contact') : $communicationLauncherFallbackUrl);
+    $communicationLauncherAudience = $communicationLauncherIsAdmin ? 'admin' : ($communicationLauncherAuthenticated ? 'customer' : 'public');
 @endphp
 
 @if($communicationLauncherReady)
 <div id="rcentz-communication-launcher"
      class="rcentz-communication-launcher"
-     data-storage-key="rcentz:communication-launcher:{{ $communicationLauncherIsAdmin ? 'admin' : 'customer' }}:v2">
+     data-storage-key="platform:communication-launcher:{{ $communicationLauncherAudience }}:v3">
     <button id="rcentz-communication-launcher-button"
             type="button"
             class="rcentz-communication-launcher-button"
@@ -30,12 +47,12 @@
         <div class="rcentz-communication-launcher-menu-head">
             <div>
                 <strong>Communication</strong>
-                <span>{{ $communicationLauncherIsAdmin ? 'Customer communication' : 'How can we help?' }}</span>
+                <span>{{ $communicationLauncherIsAdmin ? 'Customer communication' : ($communicationLauncherAuthenticated ? 'How can we help?' : 'Questions or account help?') }}</span>
             </div>
             <i data-lucide="grip-vertical" aria-hidden="true"></i>
         </div>
 
-        <a href="{{ route($communicationLauncherMessagesRoute) }}"
+        <a href="{{ $communicationLauncherMessagesUrl }}"
            class="rcentz-communication-launcher-link"
            role="menuitem">
             <span class="rcentz-communication-launcher-link-icon">
@@ -43,12 +60,12 @@
             </span>
             <span>
                 <strong>Messages</strong>
-                <small>{{ $communicationLauncherIsAdmin ? 'Direct customer conversations' : 'Private conversations' }}</small>
+                <small>{{ $communicationLauncherIsAdmin ? 'Direct customer conversations' : ($communicationLauncherAuthenticated ? 'Private conversations' : 'Sign in to continue private conversations') }}</small>
             </span>
             <i data-lucide="chevron-right" class="rcentz-communication-launcher-chevron" aria-hidden="true"></i>
         </a>
 
-        <a href="{{ route($communicationLauncherSupportRoute) }}"
+        <a href="{{ $communicationLauncherSupportUrl }}"
            class="rcentz-communication-launcher-link"
            role="menuitem">
             <span class="rcentz-communication-launcher-link-icon">
@@ -56,12 +73,12 @@
             </span>
             <span>
                 <strong>{{ $communicationLauncherIsAdmin ? 'Support Tickets' : 'Support Center' }}</strong>
-                <small>{{ $communicationLauncherIsAdmin ? 'Review and resolve tickets' : 'Open or follow a support ticket' }}</small>
+                <small>{{ $communicationLauncherIsAdmin ? 'Review and resolve tickets' : ($communicationLauncherAuthenticated ? 'Open or follow a support ticket' : 'Contact support or ask for help') }}</small>
             </span>
             <i data-lucide="chevron-right" class="rcentz-communication-launcher-chevron" aria-hidden="true"></i>
         </a>
 
-        <p class="rcentz-communication-launcher-hint">Drag the bubble anywhere. Its position is remembered on this device.</p>
+        <p class="rcentz-communication-launcher-hint">{{ $communicationLauncherAuthenticated ? 'Drag the bubble anywhere. Its position is remembered on this device.' : 'Drag the bubble anywhere. Sign in to access private messages and ticket history.' }}</p>
     </div>
 </div>
 
@@ -231,7 +248,7 @@
         if (!launcher || !button || !menu || launcher.dataset.ready === '1') return;
         launcher.dataset.ready = '1';
 
-        const storageKey = launcher.dataset.storageKey || 'rcentz:communication-launcher:v2';
+        const storageKey = launcher.dataset.storageKey || 'platform:communication-launcher:v3';
         const margin = 10;
         const dragThreshold = 7;
         let pointerId = null;

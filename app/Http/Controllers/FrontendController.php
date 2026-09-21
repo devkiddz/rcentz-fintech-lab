@@ -5,6 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Car;
 use App\Models\StockNews;
 use App\Models\Stock;
+use App\Models\BotProduct;
+use App\Models\CryptoPair;
+use App\Models\CopyStrategy;
+use App\Models\ForexPair;
+use App\Models\MarketInstrument;
+use App\Models\PrivateInvestmentInstrument;
+use App\Models\Signal;
+use App\Services\BotMarketContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
@@ -37,28 +45,358 @@ class FrontendController extends Controller
         }
     }
 
-    public function index()
+    public function index(BotMarketContextService $markets)
     {
-        $featuredCars = Car::where('is_available', true)
-            ->orderBy('created_at', 'desc')
-            ->limit(3)
-            ->get();
-
-        // Fetch featured market news first; fallback to latest news
         $latestNews = StockNews::getFeaturedNews(6);
         if ($latestNews->isEmpty()) {
-            $latestNews = StockNews::orderBy('published_at', 'desc')
-                ->limit(6)
-                ->get();
+            $latestNews = StockNews::orderBy('published_at', 'desc')->limit(6)->get();
         }
 
-        // Stock market snapshots
-        $featuredStocks = Stock::active()->featured()->limit(3)->get();
-        $gainers = Stock::active()->gainers()->orderBy('change_percentage', 'desc')->limit(5)->get();
-        $losers = Stock::active()->losers()->orderBy('change_percentage', 'asc')->limit(5)->get();
-        $mostActive = Stock::active()->mostActive()->limit(5)->get();
+        $featuredStocks = Stock::active()
+            ->with('marketInstrument')
+            ->where('company_name', 'not like', '%ACCEPTANCE%')
+            ->orderByDesc('is_featured')
+            ->orderByDesc('volume')
+            ->limit(8)
+            ->get();
 
-        return view('frontend.home', compact('featuredCars', 'latestNews', 'featuredStocks', 'gainers', 'losers', 'mostActive'));
+        $forexPairs = ForexPair::active()
+            ->with('marketInstrument')
+            ->where('name', 'not like', '%ACCEPTANCE%')
+            ->orderByDesc('is_featured')
+            ->orderBy('symbol')
+            ->limit(8)
+            ->get();
+
+        $cryptoPairs = CryptoPair::active()
+            ->with('marketInstrument')
+            ->where('name', 'not like', '%ACCEPTANCE%')
+            ->orderByDesc('is_featured')
+            ->orderBy('symbol')
+            ->limit(8)
+            ->get();
+
+        $marketShowcase = collect();
+        $seriesFor = function (?MarketInstrument $instrument, array $fallback = []) use ($markets): array {
+            $quotes = $instrument
+                ? collect($markets->priceSeries($instrument, 28))
+                    ->pluck('price')
+                    ->map(fn ($price) => (float) $price)
+                    ->filter(fn ($price) => $price > 0)
+                    ->values()
+                : collect();
+
+            if ($quotes->count() < 2) {
+                $quotes = collect($fallback)
+                    ->map(fn ($price) => (float) $price)
+                    ->filter(fn ($price) => $price > 0)
+                    ->values();
+            }
+
+            return $quotes->all();
+        };
+
+        foreach ($featuredStocks as $stock) {
+            $current = (float) $stock->current_price;
+            $previous = (float) ($stock->previous_close ?? 0);
+            $marketShowcase->push([
+                'market_instrument_id' => $stock->market_instrument_id,
+                'asset_class' => 'stock',
+                'asset_label' => 'Stock',
+                'symbol' => (string) $stock->symbol,
+                'name' => (string) ($stock->company_name ?: 'Listed equity'),
+                'price' => $current,
+                'price_display' => '$'.number_format($current, 2),
+                'previous_display' => $previous > 0 ? '$'.number_format($previous, 2) : '—',
+                'change' => (float) ($stock->change_percentage ?? 0),
+                'icon' => 'chart-no-axes-combined',
+                'quotes' => $seriesFor($stock->marketInstrument, [$previous, $current]),
+            ]);
+        }
+
+        foreach ($forexPairs as $pair) {
+            $current = (float) $pair->current_rate;
+            $previous = (float) $pair->previous_close;
+            $change = $previous > 0 ? (($current - $previous) / $previous) * 100 : 0.0;
+            $precision = max(2, min(8, (int) ($pair->price_precision ?? 5)));
+
+            $marketShowcase->push([
+                'market_instrument_id' => $pair->market_instrument_id,
+                'asset_class' => 'forex',
+                'asset_label' => 'Forex',
+                'symbol' => (string) ($pair->display_symbol ?: $pair->symbol),
+                'name' => (string) ($pair->name ?: 'Currency pair'),
+                'price' => $current,
+                'price_display' => number_format($current, $precision),
+                'previous_display' => $previous > 0 ? number_format($previous, $precision) : '—',
+                'change' => $change,
+                'icon' => 'arrow-left-right',
+                'quotes' => $seriesFor($pair->marketInstrument, [$previous, $current]),
+            ]);
+        }
+
+        foreach ($cryptoPairs as $pair) {
+            $current = (float) $pair->current_rate;
+            $previous = (float) $pair->previous_close;
+            $change = $previous > 0 ? (($current - $previous) / $previous) * 100 : 0.0;
+            $precision = max(2, min(8, (int) ($pair->price_precision ?? 2)));
+            $quote = strtoupper((string) ($pair->quote_asset ?: 'USD'));
+            $price = number_format($current, $precision);
+            $previousPrice = number_format($previous, $precision);
+
+            $marketShowcase->push([
+                'market_instrument_id' => $pair->market_instrument_id,
+                'asset_class' => 'crypto',
+                'asset_label' => 'Crypto',
+                'symbol' => (string) ($pair->display_symbol ?: $pair->symbol),
+                'name' => (string) ($pair->name ?: 'Digital asset pair'),
+                'price' => $current,
+                'price_display' => $quote === 'USD' ? '$'.$price : $price.' '.$quote,
+                'previous_display' => $previous > 0 ? ($quote === 'USD' ? '$'.$previousPrice : $previousPrice.' '.$quote) : '—',
+                'change' => $change,
+                'icon' => 'bitcoin',
+                'quotes' => $seriesFor($pair->marketInstrument, [$previous, $current]),
+            ]);
+        }
+
+        $marketGroups = $marketShowcase
+            ->groupBy('asset_class')
+            ->map(fn ($items) => $items->values());
+
+        $marketShowcase = collect(range(0, 7))
+            ->flatMap(function (int $index) use ($marketGroups) {
+                return collect(['stock', 'forex', 'crypto'])
+                    ->map(fn ($assetClass) => $marketGroups->get($assetClass, collect())->get($index))
+                    ->filter();
+            })
+            ->take(18)
+            ->values();
+
+        $marketTape = $marketShowcase->take(12)->values();
+
+        $heroMarkets = collect(['stock', 'forex', 'crypto'])
+            ->map(function (string $assetClass) use ($marketGroups, $markets) {
+                $candidate = $marketGroups
+                    ->get($assetClass, collect())
+                    ->sortByDesc(fn (array $market) => abs((float) ($market['change'] ?? 0)))
+                    ->first();
+
+                if (! $candidate) {
+                    return null;
+                }
+
+                $instrumentId = $candidate['market_instrument_id'] ?? null;
+                $instrument = $instrumentId
+                    ? MarketInstrument::query()
+                        ->with(['canonicalStock', 'canonicalForexPair', 'canonicalCryptoPair', 'stock', 'forexPair'])
+                        ->find($instrumentId)
+                    : null;
+
+                if (! $instrument) {
+                    return [
+                        ...$candidate,
+                        'market_status_label' => 'Available',
+                        'opportunity_label' => 'Strongest movement',
+                    ];
+                }
+
+                $context = $markets->forInstrument($instrument, 32);
+                $quotes = collect($context['quotes'] ?? [])
+                    ->pluck('price')
+                    ->map(fn ($price) => (float) $price)
+                    ->filter(fn ($price) => $price > 0)
+                    ->values();
+
+                if ($quotes->count() < 2) {
+                    $quotes = collect($candidate['quotes'] ?? [])
+                        ->map(fn ($price) => (float) $price)
+                        ->filter(fn ($price) => $price > 0)
+                        ->values();
+                }
+
+                $status = (string) ($context['market_status'] ?? 'available');
+                $statusLabel = match ($status) {
+                    '24_7' => '24 / 7',
+                    'open' => 'Open',
+                    'closed' => 'Closed',
+                    'controlled' => 'Controlled',
+                    'unavailable' => 'Unavailable',
+                    default => ucfirst(str_replace('_', ' ', $status)),
+                };
+
+                return [
+                    ...$candidate,
+                    'symbol' => (string) ($context['symbol'] ?? $candidate['symbol']),
+                    'name' => (string) ($context['name'] ?? $candidate['name']),
+                    'price_display' => (string) ($context['current_display'] ?? $candidate['price_display']),
+                    'previous_display' => (string) ($context['previous_close_display'] ?? $candidate['previous_display']),
+                    'change' => (float) ($context['change_percentage'] ?? $candidate['change']),
+                    'market_status_label' => $statusLabel,
+                    'quotes' => $quotes->all(),
+                    'opportunity_label' => 'Strongest movement',
+                ];
+            })
+            ->filter()
+            ->values();
+
+        $investmentUniverse = PrivateInvestmentInstrument::query()
+            ->where('is_visible', true)
+            ->whereIn('status', ['active', 'paused'])
+            ->whereIn('category', ['real_estate', 'stock_market', 'forex', 'cryptocurrency'])
+            ->where('name', 'not like', '%ACCEPTANCE%')
+            ->orderByDesc('is_featured')
+            ->orderByDesc('last_valued_at')
+            ->orderBy('name')
+            ->get();
+
+        $durationLabel = static function (?PrivateInvestmentInstrument $instrument): string {
+            $days = (int) ($instrument?->duration_days ?? 0);
+            if ($days <= 0) {
+                return 'Flexible';
+            }
+            if ($days < 30) {
+                return $days.' '.($days === 1 ? 'day' : 'days');
+            }
+            if ($days % 365 === 0) {
+                $years = (int) ($days / 365);
+                return $years.' '.($years === 1 ? 'year' : 'years');
+            }
+            if ($days % 30 === 0) {
+                $months = (int) ($days / 30);
+                return $months.' '.($months === 1 ? 'month' : 'months');
+            }
+            return $days.' days';
+        };
+
+        $investmentCategoryMeta = collect([
+            'real_estate' => [
+                'label' => 'Real Estate',
+                'eyebrow' => 'Property-backed opportunities',
+                'icon' => 'building-2',
+                'route' => 'investments.real-estate',
+                'accent' => '#f59e0b',
+                'description' => 'Structured property exposure with defined capital requirements, duration and independent private-market valuation.',
+            ],
+            'stock_market' => [
+                'label' => 'Stocks',
+                'eyebrow' => 'Equity investment products',
+                'icon' => 'chart-no-axes-combined',
+                'route' => 'investments.stocks',
+                'accent' => '#10b981',
+                'description' => 'Private investment instruments built around equity exposure with their own unit pricing and investment lifecycle.',
+            ],
+            'forex' => [
+                'label' => 'Forex',
+                'eyebrow' => 'Currency-market opportunities',
+                'icon' => 'arrow-left-right',
+                'route' => 'investments.forex',
+                'accent' => '#0ea5e9',
+                'description' => 'Structured currency-market products separated from brokerage trading and governed by private investment pricing authority.',
+            ],
+            'cryptocurrency' => [
+                'label' => 'Crypto',
+                'eyebrow' => 'Digital-asset opportunities',
+                'icon' => 'bitcoin',
+                'route' => 'investments.crypto',
+                'accent' => '#8b5cf6',
+                'description' => 'Digital-asset investment products with explicit risk, duration and projected-range information before capital is committed.',
+            ],
+        ]);
+
+        $investmentCategories = $investmentCategoryMeta->map(function (array $meta, string $category) use ($investmentUniverse, $durationLabel) {
+            $items = $investmentUniverse->where('category', $category)->values();
+            /** @var PrivateInvestmentInstrument|null $featured */
+            $featured = $items->first();
+            $currency = strtoupper((string) ($featured?->currency ?: 'USD'));
+            $move = $featured ? (float) $featured->change_percent : null;
+
+            return [
+                ...$meta,
+                'category' => $category,
+                'count' => $items->count(),
+                'featured' => $featured,
+                'minimum_display' => $featured
+                    ? $currency.' '.number_format((float) $featured->minimum_investment, 0)
+                    : '—',
+                'range_display' => $featured
+                    ? number_format((float) $featured->projected_return_min_percent, 1).'–'.number_format((float) $featured->projected_return_max_percent, 1).'%'
+                    : '—',
+                'duration_display' => $durationLabel($featured),
+                'risk_display' => $featured
+                    ? ucwords(str_replace('_', ' ', (string) ($featured->risk_level ?: 'standard')))
+                    : '—',
+                'price_display' => $featured
+                    ? $currency.' '.number_format((float) $featured->current_price, 2)
+                    : '—',
+                'move' => $move,
+            ];
+        })->values();
+
+        $featuredInventory = Car::query()
+            ->where('is_available', true)
+            ->latest('created_at')
+            ->limit(6)
+            ->get();
+
+        $signalShowcase = collect([
+            ['asset_class' => 'stock', 'label' => 'Stock signal intelligence', 'icon' => 'chart-no-axes-combined'],
+            ['asset_class' => 'forex', 'label' => 'Forex signal intelligence', 'icon' => 'arrow-left-right'],
+            ['asset_class' => 'crypto', 'label' => 'Crypto signal intelligence', 'icon' => 'bitcoin'],
+        ])->map(function (array $item) {
+            $item['count'] = Signal::query()
+                ->whereIn('status', ['published', 'active'])
+                ->whereHas('marketInstrument', fn ($query) => $query->where('asset_class', $item['asset_class']))
+                ->count();
+
+            return $item;
+        });
+
+        $botAssetClassCount = BotProduct::query()
+            ->with('marketInstrument:id,asset_class')
+            ->where('is_active', true)
+            ->where('name', 'not like', '%ACCEPTANCE%')
+            ->get(['id', 'market_instrument_id'])
+            ->pluck('marketInstrument.asset_class')
+            ->filter()
+            ->unique()
+            ->count();
+
+        $publicCopyStrategies = CopyStrategy::query()
+            ->where('is_public', true)
+            ->where('is_active', true)
+            ->count();
+
+        $platformSystems = [
+            'bot_asset_classes' => $botAssetClassCount,
+            'copy_strategies' => $publicCopyStrategies,
+            'signal_asset_classes' => $signalShowcase->where('count', '>', 0)->count(),
+        ];
+
+        $platformStats = [
+            'instruments' => MarketInstrument::active()->count(),
+            'investments' => PrivateInvestmentInstrument::query()
+                ->where('is_visible', true)
+                ->whereIn('status', ['active', 'paused'])
+                ->where('name', 'not like', '%ACCEPTANCE%')
+                ->count(),
+            'bots' => BotProduct::query()
+                ->where('is_active', true)
+                ->where('name', 'not like', '%ACCEPTANCE%')
+                ->count(),
+            'signals' => Signal::query()->whereIn('status', ['published', 'active'])->count(),
+        ];
+
+        return view('frontend.home', compact(
+            'latestNews',
+            'marketShowcase',
+            'marketTape',
+            'heroMarkets',
+            'investmentCategories',
+            'featuredInventory',
+            'signalShowcase',
+            'platformSystems',
+            'platformStats'
+        ));
     }
 
     public function show($id)

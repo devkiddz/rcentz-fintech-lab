@@ -79,6 +79,17 @@ final class BotMarketContextService
         ];
     }
 
+    /**
+     * Read-only chart history for public and customer market surfaces.
+     * This intentionally avoids requesting a fresh routed market price.
+     */
+    public function priceSeries(MarketInstrument $instrument, int $limit = 48): array
+    {
+        $instrument->loadMissing(['canonicalStock', 'canonicalForexPair', 'canonicalCryptoPair', 'stock', 'forexPair']);
+
+        return $limit > 0 ? $this->series($instrument, $limit) : [];
+    }
+
     public function displayPrice(?MarketInstrument $instrument, float $price): string
     {
         if (! $instrument || $price <= 0) {

@@ -58,6 +58,14 @@
                                            class="ui-input w-full">
                                 @elseif($setting->isTextarea())
                                     <textarea name="settings[{{ $setting->key }}]" rows="4" class="ui-input w-full">{{ $setting->value }}</textarea>
+                                @elseif($setting->type === 'color')
+                                    <div class="flex items-center gap-3 rounded-xl border border-border bg-muted/10 p-3">
+                                        <input type="color" name="settings[{{ $setting->key }}]" value="{{ preg_match('/^#[0-9a-fA-F]{6}$/', (string)$setting->value) ? $setting->value : '#c8102e' }}" class="h-10 w-14 cursor-pointer rounded-lg border border-border bg-transparent p-1">
+                                        <div>
+                                            <p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">Current color</p>
+                                            <p class="mt-1 text-xs font-semibold uppercase">{{ $setting->value ?: '#c8102e' }}</p>
+                                        </div>
+                                    </div>
                                 @else
                                     <input type="text" name="settings[{{ $setting->key }}]" value="{{ $setting->value }}" class="ui-input w-full">
                                 @endif

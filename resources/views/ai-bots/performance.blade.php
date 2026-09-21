@@ -207,10 +207,21 @@
                     <p class="mt-1 text-[11px] text-muted-foreground">{{ ucfirst($e->action) }} · {{ optional($e->executed_at)->format('M d · H:i') }}</p>
                 </div>
 
-                <div class="grid flex-1 grid-cols-3 gap-2 lg:max-w-xl">
-                    <div class="rounded-lg border border-border bg-muted/15 p-2.5"><p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">Entry</p><p class="mt-1 text-[13px] font-semibold">{{ format_currency($e->price) }}</p></div>
-                    <div class="rounded-lg border border-border bg-muted/15 p-2.5"><p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">Amount</p><p class="mt-1 text-[13px] font-semibold">{{ format_currency($e->amount) }}</p></div>
-                    <div class="rounded-lg border border-border bg-muted/15 p-2.5"><p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">Qty</p><p class="mt-1 text-[13px] font-semibold">{{ number_format((float)$e->quantity,4) }}</p></div>
+                @php $mark = $e->performance_mark; @endphp
+                <div class="grid flex-1 grid-cols-2 gap-2 sm:grid-cols-4 lg:max-w-3xl">
+                    <div class="rounded-lg border border-border bg-muted/15 p-2.5"><p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">Entry</p><p class="mt-1 text-[13px] font-semibold">{{ (float)$e->price > 0 ? format_currency($e->price) : '—' }}</p></div>
+                    <div class="rounded-lg border border-border bg-muted/15 p-2.5"><p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">Amount</p><p class="mt-1 text-[13px] font-semibold">{{ (float)$e->amount > 0 ? format_currency($e->amount) : '—' }}</p></div>
+                    <div class="rounded-lg border border-border bg-muted/15 p-2.5"><p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">Qty</p><p class="mt-1 text-[13px] font-semibold">{{ (float)$e->quantity > 0 ? number_format((float)$e->quantity,4) : '—' }}</p></div>
+                    <div class="rounded-lg border border-border bg-muted/15 p-2.5">
+                        <p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">P/L</p>
+                        @if($mark)
+                            @php $pnl=(float)$mark['profit_loss']; $ret=(float)$mark['return_percent']; @endphp
+                            <p class="mt-1 text-[13px] font-semibold {{ $pnl > 0 ? 'text-emerald-600' : ($pnl < 0 ? 'text-red-600' : 'text-muted-foreground') }}">{{ $pnl > 0 ? '+' : '' }}{{ format_currency($pnl) }}</p>
+                            <p class="mt-0.5 text-[9px] {{ $ret > 0 ? 'text-emerald-600' : ($ret < 0 ? 'text-red-600' : 'text-muted-foreground') }}">{{ $ret > 0 ? '+' : '' }}{{ number_format($ret,2) }}%</p>
+                        @else
+                            <p class="mt-1 text-[13px] font-semibold text-muted-foreground">—</p><p class="mt-0.5 text-[9px] text-muted-foreground">No completed fill</p>
+                        @endif
+                    </div>
                 </div>
 
                 <a href="{{ route('ai-bots.executions.show',$e) }}" class="ui-btn ui-btn-secondary !h-8 !px-3 !text-[11px]">

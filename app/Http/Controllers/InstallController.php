@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Setting;
 use App\Models\User;
 use Database\Seeders\CoreDataSeeder;
-use Database\Seeders\LiveTestDataSeeder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -43,6 +43,12 @@ class InstallController extends Controller
 
         $validated = $request->validate([
             'app_name' => ['required', 'string', 'max:80'],
+            'company_name' => ['required', 'string', 'max:120'],
+            'legal_company_name' => ['nullable', 'string', 'max:160'],
+            'site_tagline' => ['required', 'string', 'max:180'],
+            'site_description' => ['required', 'string', 'max:800'],
+            'support_email' => ['required', 'email', 'max:255'],
+            'support_phone' => ['nullable', 'string', 'max:60'],
             'app_url' => ['required', 'url', 'max:255'],
             'app_env' => ['required', 'in:local,production'],
             'db_host' => ['required', 'string', 'max:255'],
@@ -53,7 +59,6 @@ class InstallController extends Controller
             'admin_name' => ['required', 'string', 'max:120'],
             'admin_email' => ['required', 'email', 'max:255'],
             'admin_password' => ['required', 'string', 'min:10', 'confirmed'],
-            'seed_demo' => ['nullable', 'boolean'],
         ]);
 
         try {
@@ -62,7 +67,6 @@ class InstallController extends Controller
 
             $this->writeEnvironment($validated);
 
-            // Rebuild configuration from the newly-written .env values.
             Artisan::call('config:clear');
 
             if (blank(config('app.key'))) {
@@ -75,6 +79,12 @@ class InstallController extends Controller
                 '--class' => CoreDataSeeder::class,
                 '--force' => true,
             ]);
+            Artisan::call('db:seed', [
+                '--class' => \Database\Seeders\SettingsSeeder::class,
+                '--force' => true,
+            ]);
+
+            $this->applyBrandSettings($validated);
 
             User::updateOrCreate(
                 ['email' => $validated['admin_email']],
@@ -86,22 +96,16 @@ class InstallController extends Controller
                 ]
             );
 
-            if ($request->boolean('seed_demo')) {
-                Artisan::call('db:seed', [
-                    '--class' => LiveTestDataSeeder::class,
-                    '--force' => true,
-                ]);
-            }
-
             try {
                 Artisan::call('storage:link');
             } catch (Throwable $ignored) {
-                // Existing links are harmless during reinstall/test cycles.
+                // Existing public storage links are harmless during an intentional reinstall.
             }
 
             File::put($this->lockPath(), json_encode([
                 'installed_at' => now()->toIso8601String(),
                 'app_name' => $validated['app_name'],
+                'company_name' => $validated['company_name'],
                 'app_url' => $validated['app_url'],
             ], JSON_PRETTY_PRINT));
 
@@ -118,6 +122,23 @@ class InstallController extends Controller
                 'install' => $exception->getMessage(),
             ])->withInput($request->except(['db_password', 'admin_password', 'admin_password_confirmation']));
         }
+    }
+
+    private function applyBrandSettings(array $values): void
+    {
+        $legalName = trim((string) ($values['legal_company_name'] ?? '')) ?: $values['company_name'];
+
+        Setting::set('site_name', $values['app_name']);
+        Setting::set('company_name', $values['company_name']);
+        Setting::set('legal_company_name', $legalName);
+        Setting::set('site_tagline', $values['site_tagline']);
+        Setting::set('site_description', $values['site_description']);
+        Setting::set('site_url', rtrim($values['app_url'], '/'));
+        Setting::set('site_email', $values['support_email']);
+        Setting::set('site_phone', $values['support_phone'] ?? '');
+        Setting::set('footer_text', '© '.date('Y').' '.$legalName.'. All rights reserved.');
+        Setting::set('developer_credit_enabled', '0');
+        Setting::clearCache();
     }
 
     private function configureDatabase(array $values): void
@@ -155,6 +176,8 @@ class InstallController extends Controller
             'DB_USERNAME' => $values['db_username'],
             'DB_PASSWORD' => $values['db_password'] ?? '',
             'MAIL_MAILER' => 'log',
+            'MAIL_FROM_ADDRESS' => $values['support_email'],
+            'MAIL_FROM_NAME' => $values['app_name'],
             'SESSION_DRIVER' => 'file',
             'CACHE_STORE' => 'file',
         ];

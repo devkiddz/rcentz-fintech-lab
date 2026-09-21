@@ -1,733 +1,681 @@
 @extends('layouts.main')
 
 @section('content')
-<div style="background: linear-gradient(to bottom right, #8B0A1E, #C8102E, #8B0A1E);">
-  <header class="relative overflow-hidden text-white" style="background: linear-gradient(to bottom right, #8B0A1E, #C8102E, #8B0A1E);">
-    <svg class="absolute inset-0 opacity-[0.06] z-0 pointer-events-none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-      <defs>
-        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-          <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width="1" />
-        </pattern>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#grid)" />
-    </svg>
+@php
+    $tagline = setting('site_tagline', 'Markets, intelligence and financial control.');
+    $description = setting('site_description', 'A modern financial platform for markets, portfolio management, intelligent signals, automation and private investments.');
+    $company = setting('company_name', site_name());
+    $accountUrl = auth()->check() ? (auth()->user()->isAdmin() ? route('admin.dashboard') : route('dashboard')) : route('register');
+    $marketUrl = auth()->check() ? route('instruments.index') : route('login');
+    $investmentUrl = auth()->check() ? route('investments.index') : route('login');
+    $botUrl = auth()->check() ? route('ai-bots.marketplace') : route('login');
+    $copyUrl = auth()->check() ? route('copy-trading.marketplace') : route('login');
+    $signalUrl = auth()->check() ? route('signals.index') : route('login');
+    $activeSignalTotal = (int) $signalShowcase->sum('count');
 
-    <div class="absolute inset-0 z-0 pointer-events-none" aria-hidden="true">
-      <img
-        src="{{ asset('images/tesla-hero.jpg') }}"
-        alt=""
-        class="h-full w-full object-cover opacity-30 mix-blend-lighten"
-        loading="eager"
-        decoding="async"
-      />
-      <div class="absolute inset-0" style="background: linear-gradient(to bottom, rgba(139, 10, 30, 0.9), rgba(200, 16, 46, 0.8), rgba(139, 10, 30, 0.95));"></div>
+    $sparklinePoints = function ($quotes, int $width = 300, int $height = 96) {
+        $values = collect($quotes ?? [])
+            ->map(fn ($value) => is_array($value) ? ($value['price'] ?? null) : $value)
+            ->filter(fn ($value) => is_numeric($value) && (float) $value > 0)
+            ->map(fn ($value) => (float) $value)
+            ->values();
+
+        if ($values->count() < 2) {
+            return '';
+        }
+
+        $min = (float) $values->min();
+        $max = (float) $values->max();
+        $range = max($max - $min, abs($max) * 0.0001, 0.00000001);
+        $count = max(1, $values->count() - 1);
+
+        return $values->map(function ($value, $index) use ($min, $range, $count, $width, $height) {
+            $x = ($index / $count) * $width;
+            $normalized = ((float) $value - $min) / $range;
+            $y = $height - ($normalized * ($height - 12)) - 6;
+            return number_format($x, 2, '.', '').','.number_format($y, 2, '.', '');
+        })->implode(' ');
+    };
+@endphp
+
+<style>
+    .home-hero {
+        background:
+            radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--brand-primary) 32%, transparent) 0, transparent 36%),
+            radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--brand-primary) 18%, transparent) 0, transparent 30%),
+            linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 20%, #090d14) 0%, #090d14 52%, #0b1018 100%);
+    }
+    .home-hero::after {
+        content:"";
+        position:absolute;
+        inset:auto -12rem -17rem auto;
+        width:34rem;
+        height:34rem;
+        border-radius:9999px;
+        background:color-mix(in srgb, var(--brand-primary) 24%, transparent);
+        filter:blur(90px);
+        pointer-events:none;
+    }
+    .home-hero-orb { animation:home-float 8s ease-in-out infinite; }
+    @keyframes home-float { 0%,100%{transform:translate3d(0,0,0)} 50%{transform:translate3d(0,-10px,0)} }
+    .market-tape-track{display:flex;width:max-content;animation:market-tape 38s linear infinite}
+    .market-tape:hover .market-tape-track{animation-play-state:paused}
+    @keyframes market-tape{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+    .home-carousel{scrollbar-width:none;-ms-overflow-style:none}
+    .home-carousel::-webkit-scrollbar{display:none}
+    .home-market-card{min-width:min(82vw,300px)}
+    .home-pulse-glow{box-shadow:0 24px 78px color-mix(in srgb,var(--brand-primary) 14%,transparent),0 22px 64px rgba(0,0,0,.24)}
+    .home-pulse-shell{isolation:isolate}
+    .home-pulse-shell::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(circle at 92% 5%,color-mix(in srgb,var(--brand-primary) 20%,transparent),transparent 34%),radial-gradient(circle at 8% 100%,rgba(37,99,235,.08),transparent 30%),linear-gradient(145deg,#0d1119 0%,#090d14 54%,#0d1017 100%)}
+    .home-pulse-shell::after{content:"";position:absolute;inset:0 auto 0 0;width:2px;background:linear-gradient(180deg,transparent 5%,var(--brand-primary) 44%,color-mix(in srgb,var(--brand-primary) 24%,transparent) 76%,transparent 96%);box-shadow:0 0 24px color-mix(in srgb,var(--brand-primary) 36%,transparent);pointer-events:none}
+    .home-pulse-chip{border:0;background:rgba(255,255,255,.045);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);backdrop-filter:blur(14px)}
+    .home-pulse-card{position:relative;overflow:hidden;min-height:22rem;background:linear-gradient(160deg,color-mix(in srgb,var(--pulse-accent) 8%,rgba(255,255,255,.035)) 0%,rgba(255,255,255,.022) 42%,rgba(255,255,255,.012) 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.065),0 18px 46px rgba(0,0,0,.18);transition:transform .2s ease,box-shadow .2s ease}
+    .home-pulse-card:hover{transform:translateY(-3px);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--pulse-accent) 18%,rgba(255,255,255,.07)),0 22px 54px color-mix(in srgb,var(--pulse-accent) 7%,rgba(0,0,0,.25))}
+    .home-pulse-card::before{content:"";position:absolute;right:-4.5rem;top:-4.5rem;width:11rem;height:11rem;border-radius:9999px;background:color-mix(in srgb,var(--pulse-accent) 18%,transparent);filter:blur(34px);pointer-events:none}
+    .home-pulse-card::after{content:"";position:absolute;left:1.25rem;right:1.25rem;top:0;height:1px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--pulse-accent) 35%,rgba(255,255,255,.25)),transparent);opacity:.7;pointer-events:none}
+    .home-pulse-card-chart{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.025),transparent)}
+    .home-pulse-card-chart::before{content:"";position:absolute;left:0;right:0;top:52%;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.055),transparent);pointer-events:none}
+    .home-pulse-metric{background:rgba(255,255,255,.025);box-shadow:inset 0 0 0 1px rgba(255,255,255,.045)}
+    .home-investment-card{position:relative;overflow:hidden;min-height:31rem;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+    .home-investment-card:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--investment-accent) 42%,hsl(var(--border)));box-shadow:0 22px 60px color-mix(in srgb,var(--investment-accent) 10%,transparent)}
+    .home-investment-card::before{content:"";position:absolute;right:-5rem;top:-5rem;width:13rem;height:13rem;border-radius:9999px;background:color-mix(in srgb,var(--investment-accent) 14%,transparent);filter:blur(18px);pointer-events:none}
+    .home-system-card{position:relative;overflow:hidden;min-height:29rem;background:linear-gradient(180deg,color-mix(in srgb,var(--system-accent) 6%,hsl(var(--card))) 0%,hsl(var(--card)) 40%,color-mix(in srgb,var(--system-accent) 3%,hsl(var(--card))) 100%);border:1px solid color-mix(in srgb,var(--system-accent) 10%,rgba(15,23,42,.06));box-shadow:0 18px 48px rgba(15,23,42,.08),inset 0 1px 0 rgba(255,255,255,.52);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease}
+    .dark .home-system-card{background:linear-gradient(180deg,rgba(255,255,255,.034),rgba(255,255,255,.016));border-color:rgba(255,255,255,.06);box-shadow:0 22px 60px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.04)}
+    .home-system-card:hover{transform:translateY(-4px);border-color:color-mix(in srgb,var(--system-accent) 22%,rgba(15,23,42,.08));box-shadow:0 24px 64px color-mix(in srgb,var(--system-accent) 9%,rgba(15,23,42,.10)),inset 0 1px 0 rgba(255,255,255,.56)}
+    .dark .home-system-card:hover{border-color:color-mix(in srgb,var(--system-accent) 24%,rgba(255,255,255,.10));box-shadow:0 26px 70px color-mix(in srgb,var(--system-accent) 10%,rgba(0,0,0,.45)),inset 0 1px 0 rgba(255,255,255,.05)}
+    .home-system-card::before{content:"";position:absolute;right:-4rem;top:-5rem;width:13rem;height:13rem;border-radius:9999px;background:color-mix(in srgb,var(--system-accent) 17%,transparent);filter:blur(28px);pointer-events:none}
+    .home-system-card::after{content:"";position:absolute;left:1.5rem;right:1.5rem;top:0;height:1px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--system-accent) 24%,rgba(255,255,255,.25)),transparent);opacity:.55;pointer-events:none}
+    .home-system-pill{border:0;background:color-mix(in srgb,var(--system-accent) 10%, transparent);color:color-mix(in srgb,var(--system-accent) 70%, hsl(var(--foreground)));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--system-accent) 14%, transparent)}
+    .dark .home-system-pill{background:color-mix(in srgb,var(--system-accent) 12%, rgba(255,255,255,.02));color:color-mix(in srgb,var(--system-accent) 56%, white);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--system-accent) 16%, transparent)}
+    .home-system-icon{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--system-accent) 14%, transparent);background:color-mix(in srgb,var(--system-accent) 12%, transparent);color:var(--system-accent)}
+    .dark .home-system-icon{background:color-mix(in srgb,var(--system-accent) 12%, rgba(255,255,255,.02));color:color-mix(in srgb,var(--system-accent) 72%, white)}
+    .home-system-step{display:flex;gap:.75rem;border:0;border-radius:1rem;padding:.9rem .95rem;background:color-mix(in srgb,var(--system-accent) 5.5%, transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--system-accent) 8%, transparent)}
+    .dark .home-system-step{background:color-mix(in srgb,var(--system-accent) 6%, rgba(255,255,255,.015));box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
+    .home-system-rule{background:color-mix(in srgb,var(--system-accent) 84%, white)}
+    .dark .home-system-rule{background:color-mix(in srgb,var(--system-accent) 64%, white)}
+    .home-system-footer{margin-top:1.25rem;border-radius:1rem;padding:.95rem 1rem;background:color-mix(in srgb,var(--system-accent) 4.5%, transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--system-accent) 8%, transparent)}
+    .dark .home-system-footer{background:rgba(255,255,255,.025);box-shadow:inset 0 0 0 1px rgba(255,255,255,.035)}
+    .home-accordion[open] summary .home-accordion-chevron{transform:rotate(180deg)}
+    .home-accordion summary::-webkit-details-marker{display:none}
+    .home-accordion summary{list-style:none}
+    .home-inventory{scrollbar-width:none;-ms-overflow-style:none}
+    .home-inventory::-webkit-scrollbar{display:none}
+    .home-inventory-card{min-width:min(86vw,360px)}
+    .home-inventory-image{background:linear-gradient(145deg,color-mix(in srgb,var(--brand-primary) 10%,#111827),#111827)}
+    @media (min-width:640px){.home-inventory-card{min-width:340px}}
+    @media (min-width:640px){.home-market-card{min-width:300px}}
+    @media (prefers-reduced-motion:reduce){.market-tape-track{animation:none}.home-hero-orb{animation:none}}
+</style>
+
+<section class="home-hero relative overflow-hidden border-b border-white/10 text-white">
+    <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+        <div class="absolute -left-20 top-10 h-80 w-80 rounded-full opacity-50" style="background:color-mix(in srgb,var(--brand-primary) 28%,transparent);filter:blur(120px)"></div>
+        <div class="absolute right-[6%] top-12 h-72 w-72 rounded-full opacity-30" style="background:color-mix(in srgb,var(--brand-primary) 20%,transparent);filter:blur(120px)"></div>
+        <div class="absolute bottom-[-9rem] left-[38%] h-72 w-72 rounded-full opacity-20" style="background:#2563eb;filter:blur(135px)"></div>
     </div>
 
-    <div class="relative z-10">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-        <div class="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
-          <div>
-            <h1 class="text-4xl font-semibold tracking-tight sm:text-5xl">
-              Invest. Trade. Drive.
-            </h1>
-            <p class="mt-4 max-w-xl text-base text-red-100 dark:text-red-200 sm:text-lg">
-              All-in-one platform for crypto wallet funding, automated investments, live stocks, and premium EV inventory.
-            </p>
-
-            <div class="mt-8 flex flex-col gap-3 sm:flex-row">
-              <a
-                href="{{ route('investments.index') }}"
-                class="inline-flex items-center rounded-md px-5 py-3 text-sm font-medium text-white shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
-                style="background-color: #C8102E;" onmouseover="this.style.backgroundColor='#A00D25'" onmouseout="this.style.backgroundColor='#C8102E'"
-              >
-                <i data-lucide="trending-up" class="mr-2 h-4 w-4" aria-hidden="true"></i>
-                Start Investing
-              </a>
-              <a
-                href="{{ route('stocks.index') }}"
-                class="inline-flex items-center rounded-md border border-white/20 px-5 py-3 text-sm font-medium text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              >
-                <i data-lucide="bar-chart-3" class="mr-2 h-4 w-4" aria-hidden="true"></i>
-                Explore Stocks
-              </a>
-              <a
-                href="{{ route('cars.browse') }}"
-                class="inline-flex items-center rounded-md border border-white/20 px-5 py-3 text-sm font-medium text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              >
-                <i data-lucide="car" class="mr-2 h-4 w-4" aria-hidden="true"></i>
-                View Inventory
-              </a>
+    <div class="relative mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[.86fr_1.14fr] lg:px-8 lg:py-24 xl:gap-16">
+        <div class="flex flex-col justify-center">
+            <div class="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-black/15 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[.16em] text-white/70 backdrop-blur">
+                <span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full opacity-35" style="background:var(--brand-primary)"></span><span class="relative inline-flex h-2 w-2 rounded-full" style="background:var(--brand-primary)"></span></span>
+                Market access · Intelligence · Automation
             </div>
 
-            <div class="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div class="rounded-lg border border-white/20 bg-white/5 p-4 shadow-lg backdrop-blur-sm">
-                <p class="text-xs text-red-300">Live Stocks</p>
-                <p class="mt-1 text-lg font-semibold text-white">Realtime</p>
-              </div>
-              <div class="rounded-lg border border-white/20 bg-white/5 p-4 shadow-lg backdrop-blur-sm">
-                <p class="text-xs text-red-300">Wallet</p>
-                <p class="mt-1 text-lg font-semibold text-white">Crypto</p>
-              </div>
-              <div class="rounded-lg border border-white/20 bg-white/5 p-4 shadow-lg backdrop-blur-sm">
-                <p class="text-xs text-red-300">EV Inventory</p>
-                <p class="mt-1 text-lg font-semibold text-white">Premium</p>
-              </div>
+            <p class="mt-8 text-xs font-semibold uppercase tracking-[.2em] text-white/60">{{ $company }}</p>
+            <h1 class="mt-3 max-w-3xl text-5xl font-semibold tracking-[-.06em] sm:text-6xl lg:text-[4.6rem] lg:leading-[.93]">{{ $tagline }}</h1>
+            <p class="mt-6 max-w-2xl text-base leading-7 text-white/65 sm:text-lg">{{ $description }}</p>
+
+            <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+                <a href="{{ $accountUrl }}" class="inline-flex h-12 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:brightness-110" style="background:var(--brand-primary);box-shadow:0 18px 44px color-mix(in srgb,var(--brand-primary) 24%,transparent)"><i data-lucide="arrow-up-right" class="h-4 w-4"></i>{{ auth()->check() ? 'Open workspace' : 'Create an account' }}</a>
+                <a href="#markets" class="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[.04] px-5 text-sm font-semibold text-white/90 backdrop-blur transition hover:bg-white/[.08]">Explore markets<i data-lucide="chevron-down" class="h-4 w-4"></i></a>
             </div>
-          </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <article class="rounded-2xl border border-white/20 bg-white/5 p-4 shadow-lg backdrop-blur-sm">
-              <h3 class="text-xs text-red-300">Investments</h3>
-              <p class="mt-2 text-2xl font-semibold text-white">Automated</p>
-              <p class="mt-1 text-sm text-red-200">Flexible plans, recurring contributions.</p>
-            </article>
-            <article class="rounded-2xl border border-white/20 bg-white/5 p-4 shadow-lg backdrop-blur-sm">
-              <h3 class="text-xs text-red-300">Stocks</h3>
-              <p class="mt-2 text-2xl font-semibold text-white">Realtime</p>
-              <p class="mt-1 text-sm text-red-200">Quotes, news, and watchlists.</p>
-            </article>
-            <article class="rounded-2xl border border-white/20 bg-white/5 p-4 shadow-lg backdrop-blur-sm">
-              <h3 class="text-xs text-red-300">Wallet</h3>
-              <p class="mt-2 text-2xl font-semibold text-white">Crypto</p>
-              <p class="mt-1 text-sm text-red-200">Deposit and withdraw easily.</p>
-            </article>
-            <article class="rounded-2xl border border-white/20 bg-white/5 p-4 shadow-lg backdrop-blur-sm">
-              <h3 class="text-xs text-red-300">Marketplace</h3>
-              <p class="mt-2 text-2xl font-semibold text-white">Tesla</p>
-              <p class="mt-1 text-sm text-red-200">Curated EV selection.</p>
-            </article>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="absolute bottom-0 left-0 right-0 translate-y-[1px]" aria-hidden="true">
-      <svg viewBox="0 0 1440 80" xmlns="http://www.w3.org/2000/svg">
-        <path fill="#0b0b0b" fill-opacity="1" d="M0,64L48,69.3C96,75,192,85,288,85.3C384,85,480,75,576,53.3C672,32,768,0,864,0C960,0,1056,32,1152,53.3C1248,75,1344,85,1392,90.7L1440,96L1440,160L1392,160C1344,160,1248,160,1152,160C1050,160,960,160,864,160C768,160,672,160,576,160C480,160,384,160,288,160C192,160,96,160,48,160L0,160Z"></path>
-      </svg>
-    </div>
-  </header>
-
-  <section class="bg-[#0b0b0b] text-white" aria-labelledby="quick-actions-heading">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-      <h2 id="quick-actions-heading" class="sr-only">Quick actions</h2>
-      <nav class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4" aria-label="Quick actions">
-        <a href="{{ route('wallet.index') }}" class="group rounded-xl border border-white/10 p-5 text-white shadow-sm transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b0b]">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-xs text-red-300">Wallet</p>
-              <p class="mt-1 text-sm font-medium">Fund or withdraw</p>
-            </div>
-            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition" style="" onmouseover="this.style.backgroundColor='#C8102E'" onmouseout="this.style.backgroundColor='rgba(255,255,255,0.1)'">
-              <i data-lucide="wallet" class="h-4 w-4" aria-hidden="true"></i>
-            </span>
-          </div>
-        </a>
-
-        <a href="{{ route('investments.index') }}" class="group rounded-xl border border-white/10 p-5 text-white shadow-sm transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b0b]">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-xs text-red-300">Investments</p>
-              <p class="mt-1 text-sm font-medium">Create a plan</p>
-            </div>
-            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition" onmouseover="this.style.backgroundColor='#C8102E'" onmouseout="this.style.backgroundColor='rgba(255,255,255,0.1)'">
-              <i data-lucide="trending-up" class="h-4 w-4" aria-hidden="true"></i>
-            </span>
-          </div>
-        </a>
-
-        <a href="{{ route('stocks.index') }}" class="group rounded-xl border border-white/10 p-5 text-white shadow-sm transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b0b]">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-xs text-red-300">Stocks</p>
-              <p class="mt-1 text-sm font-medium">Market overview</p>
-            </div>
-            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition" onmouseover="this.style.backgroundColor='#C8102E'" onmouseout="this.style.backgroundColor='rgba(255,255,255,0.1)'">
-              <i data-lucide="bar-chart-3" class="h-4 w-4" aria-hidden="true"></i>
-            </span>
-          </div>
-        </a>
-
-        <a href="{{ route('portfolio.index') }}" class="group rounded-xl border border-white/10 p-5 text-white shadow-sm transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b0b0b]">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-xs text-red-300">Portfolio</p>
-              <p class="mt-1 text-sm font-medium">Track performance</p>
-            </div>
-            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition" onmouseover="this.style.backgroundColor='#C8102E'" onmouseout="this.style.backgroundColor='rgba(255,255,255,0.1)'">
-              <i data-lucide="pie-chart" class="h-4 w-4" aria-hidden="true"></i>
-            </span>
-          </div>
-        </a>
-      </nav>
-    </div>
-  </section>
-
-  @if(!empty($featuredCars) && $featuredCars->count() > 0)
-    <section id="featured-cars" class="bg-red-50 dark:bg-dark-bg py-16" aria-labelledby="inventory-heading">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="mb-8 flex items-center justify-between">
-          <div>
-            <h2 id="inventory-heading" class="text-xl font-semibold text-black sm:text-2xl">Available Inventory</h2>
-            <p class="mt-1 text-sm text-red-600 dark:text-red-300">Explore a curated selection ready for delivery.</p>
-          </div>
-          <a href="{{ route('cars.browse') }}" class="text-sm font-medium text-black underline-offset-4 hover:underline">View all</a>
-        </div>
-
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3 lg:gap-8">
-          @foreach($featuredCars->take(6) as $car)
-            <article class="group cursor-pointer rounded-xl border border-red-200 dark:border-red-700 bg-card shadow-sm transition hover:shadow-md focus-within:ring-2 focus-within:ring-black/40">
-              <a href="{{ route('cars.show', $car->id) }}" class="block overflow-hidden rounded-t-xl">
-                <div class="relative aspect-[16/9]">
-                  @if($car->first_image)
-                    <img
-                      src="{{ str_starts_with($car->first_image, 'http') ? $car->first_image : asset('storage/' . $car->first_image) }}"
-                      alt="{{ $car->title }}"
-                      class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                      decoding="async"
-                      sizes="(min-width: 1280px) 384px, (min-width: 1024px) 50vw, 100vw"
-                    />
-                  @else
-                    <div class="flex h-full w-full items-center justify-center bg-red-100">
-                      <div class="text-center">
-                        <svg class="mx-auto mb-2 h-12 w-12 text-red-400 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                        </svg>
-                        <p class="text-sm text-red-500 dark:text-red-400">{{ $car->title }}</p>
-                      </div>
+            <div class="mt-10 grid max-w-2xl grid-cols-3 overflow-hidden rounded-2xl border border-white/10 bg-black/15 backdrop-blur">
+                @foreach([
+                    ['Market instruments', $platformStats['instruments'] ?? 0],
+                    ['Investment products', $platformStats['investments'] ?? 0],
+                    ['Automation + signals', ($platformStats['bots'] ?? 0) + ($platformStats['signals'] ?? 0)],
+                ] as [$label,$value])
+                    <div class="border-r border-white/10 p-4 last:border-r-0 sm:p-5">
+                        <p class="text-2xl font-semibold tabular-nums sm:text-3xl">{{ number_format($value) }}</p>
+                        <p class="mt-1 text-[8px] uppercase tracking-[.14em] text-white/45 sm:text-[9px]">{{ $label }}</p>
                     </div>
-                  @endif
-
-                  @if(empty($car->is_available) || !$car->is_available)
-                    <div class="absolute right-3 top-3 rounded-full bg-red-600 px-2.5 py-1 text-[11px] font-medium text-white">Sold Out</div>
-                  @endif
-                </div>
-              </a>
-
-              <div class="p-4">
-                <h3 class="mb-1 text-base font-medium text-black group-hover:text-black/80 sm:text-lg">
-                  <a href="{{ route('cars.show', $car->id) }}" class="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/40">
-                    {{ $car->title }}
-                  </a>
-                </h3>
-
-                <div class="mb-3 flex items-center gap-6 text-xs text-red-600 dark:text-red-400">
-                  <div>
-                    <span class="font-medium">{{ $car->engine_range ?? '410' }}mi</span>
-                    <span class="block text-[10px]">Range</span>
-                  </div>
-                  <div>
-                    <span class="font-medium">{{ $car->acceleration ?? '3.1' }}s</span>
-                    <span class="block text-[10px]">0-60 mph</span>
-                  </div>
-                  <div>
-                    <span class="font-medium">{{ $car->top_speed ?? '130' }}mph</span>
-                    <span class="block text-[10px]">Top Speed</span>
-                  </div>
-                </div>
-
-                <div class="flex items-center justify-between">
-                  <div>
-                    <p class="text-sm font-medium text-black">Starting at {{ $car->formatted_price }}*</p>
-                    <p class="text-xs text-red-500 dark:text-red-400">After Est. Gas Savings</p>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <a href="{{ route('cars.show', $car->id) }}" class="rounded border px-3 py-1.5 text-xs font-medium text-white transition focus-visible:outline-none focus-visible:ring-2" style="border-color: #C8102E; color: #C8102E;" onmouseover="this.style.backgroundColor='rgba(200,16,46,0.1)'" onmouseout="this.style.backgroundColor='transparent'">Learn</a>
-                    @if(!empty($car->is_available) && $car->is_available)
-                      <a href="{{ route('cars.show', $car->id) }}" class="rounded px-3 py-1.5 text-xs font-medium text-white transition focus-visible:outline-none focus-visible:ring-2" style="background-color: #C8102E;" onmouseover="this.style.backgroundColor='#A00D25'" onmouseout="this.style.backgroundColor='#C8102E'">Order</a>
-                    @endif
-                  </div>
-                </div>
-              </div>
-            </article>
-          @endforeach
-        </div>
-      </div>
-    </section>
-  @endif
-
-  <!-- Tesla-style Product Slider Section -->
-  <section class="bg-red-50 dark:bg-dark-bg py-16" aria-labelledby="products-heading">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 id="products-heading" class="sr-only">Featured Products</h2>
-      
-      <!-- Slider Container -->
-      <div class="relative group">
-        <!-- Slider Wrapper -->
-        <div class="overflow-hidden rounded-lg">
-          <div id="product-slider" class="flex transition-transform duration-700 ease-in-out">
-            
-            <!-- Slide 1: Solar Panels / Investment Plans -->
-            <div class="min-w-full flex-shrink-0">
-              <div class="relative h-[400px] sm:h-[450px] lg:h-[500px] overflow-hidden">
-                <!-- Background Image -->
-                <img src="https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=1600&q=80" 
-                     alt="Solar Panels" 
-                     class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(139, 10, 30, 0.9), rgba(200, 16, 46, 0.4), transparent);"></div>
-                
-                <!-- Content Overlay -->
-                <div class="absolute bottom-0 left-0 right-0 p-8 sm:p-10 lg:p-12 text-white">
-                  <h3 class="text-3xl sm:text-4xl font-semibold mb-3">Solar Panels</h3>
-                  <p class="text-base sm:text-lg mb-6 max-w-md">Use Solar Energy to Power Your Home and Charge Your Tesla</p>
-                  <div class="flex gap-4">
-                    <a href="{{ route('investments.index') }}" class="px-8 py-3 text-white text-sm font-medium rounded transition-colors" style="background-color: #C8102E;" onmouseover="this.style.backgroundColor='#A00D25'" onmouseout="this.style.backgroundColor='#C8102E'">
-                      Order Now
-                    </a>
-                    <a href="{{ route('investments.index') }}" class="px-8 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded border border-white/30 transition-colors">
-                      Learn More
-                    </a>
-                  </div>
-                </div>
-              </div>
+                @endforeach
             </div>
-
-            <!-- Slide 2: Powerwall / Stock Trading -->
-            <div class="min-w-full flex-shrink-0">
-              <div class="relative h-[400px] sm:h-[450px] lg:h-[500px] overflow-hidden">
-                <!-- Background Image -->
-                <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1600&q=80" 
-                     alt="Powerwall" 
-                     class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(139, 10, 30, 0.9), rgba(200, 16, 46, 0.4), transparent);"></div>
-                
-                <!-- Content Overlay -->
-                <div class="absolute bottom-0 left-0 right-0 p-8 sm:p-10 lg:p-12 text-white">
-                  <h3 class="text-3xl sm:text-4xl font-semibold mb-3">Powerwall</h3>
-                  <p class="text-base sm:text-lg mb-6 max-w-md">Keep Your Lights On During Outages</p>
-                  <div class="flex gap-4">
-                    <a href="{{ route('stocks.index') }}" class="px-8 py-3 text-white text-sm font-medium rounded transition-colors" style="background-color: #C8102E;" onmouseover="this.style.backgroundColor='#A00D25'" onmouseout="this.style.backgroundColor='#C8102E'">
-                      Order Now
-                    </a>
-                    <a href="{{ route('stocks.index') }}" class="px-8 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded border border-white/30 transition-colors">
-                      Learn More
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Slide 3: Model S / Crypto Wallet -->
-            <div class="min-w-full flex-shrink-0">
-              <div class="relative h-[400px] sm:h-[450px] lg:h-[500px] overflow-hidden">
-                <!-- Background Image -->
-                <img src="{{ asset('images/tesla-hero.jpg') }}" 
-                     alt="Tesla Model S" 
-                     class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(139, 10, 30, 0.9), rgba(200, 16, 46, 0.4), transparent);"></div>
-                
-                <!-- Content Overlay -->
-                <div class="absolute bottom-0 left-0 right-0 p-8 sm:p-10 lg:p-12 text-white">
-                  <h3 class="text-3xl sm:text-4xl font-semibold mb-3">Model S</h3>
-                  <p class="text-base sm:text-lg mb-6 max-w-md">Plaid - Beyond Ludicrous Performance</p>
-                  <div class="flex gap-4">
-                    <a href="{{ route('wallet.index') }}" class="px-8 py-3 text-white text-sm font-medium rounded transition-colors" style="background-color: #C8102E;" onmouseover="this.style.backgroundColor='#A00D25'" onmouseout="this.style.backgroundColor='#C8102E'">
-                      Order Now
-                    </a>
-                    <a href="{{ route('wallet.index') }}" class="px-8 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded border border-white/30 transition-colors">
-                      Learn More
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Slide 4: Model 3 / Investment Plans -->
-            <div class="min-w-full flex-shrink-0">
-              <div class="relative h-[400px] sm:h-[450px] lg:h-[500px] overflow-hidden">
-                <!-- Background Image -->
-                <img src="https://images.unsplash.com/photo-1560958089-b8a1929cea89?w=1600&q=80" 
-                     alt="Tesla Model 3" 
-                     class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(139, 10, 30, 0.9), rgba(200, 16, 46, 0.4), transparent);"></div>
-                
-                <!-- Content Overlay -->
-                <div class="absolute bottom-0 left-0 right-0 p-8 sm:p-10 lg:p-12 text-white">
-                  <h3 class="text-3xl sm:text-4xl font-semibold mb-3">Model 3</h3>
-                  <p class="text-base sm:text-lg mb-6 max-w-md">Quickest Acceleration - From 3.1 Seconds 0-60 mph</p>
-                  <div class="flex gap-4">
-                    <a href="{{ route('cars.browse') }}" class="px-8 py-3 text-white text-sm font-medium rounded transition-colors" style="background-color: #C8102E;" onmouseover="this.style.backgroundColor='#A00D25'" onmouseout="this.style.backgroundColor='#C8102E'">
-                      Order Now
-                    </a>
-                    <a href="{{ route('cars.browse') }}" class="px-8 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded border border-white/30 transition-colors">
-                      Learn More
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Slide 5: Model Y / Portfolio -->
-            <div class="min-w-full flex-shrink-0">
-              <div class="relative h-[400px] sm:h-[450px] lg:h-[500px] overflow-hidden">
-                <!-- Background Image -->
-                <img src="https://images.unsplash.com/photo-1617788138017-80ad40651399?w=1600&q=80" 
-                     alt="Tesla Model Y" 
-                     class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
-                <div class="absolute inset-0" style="background: linear-gradient(to top, rgba(139, 10, 30, 0.9), rgba(200, 16, 46, 0.4), transparent);"></div>
-                
-                <!-- Content Overlay -->
-                <div class="absolute bottom-0 left-0 right-0 p-8 sm:p-10 lg:p-12 text-white">
-                  <h3 class="text-3xl sm:text-4xl font-semibold mb-3">Model Y</h3>
-                  <p class="text-base sm:text-lg mb-6 max-w-md">Versatile Electric SUV for Every Adventure</p>
-                  <div class="flex gap-4">
-                    <a href="{{ route('portfolio.index') }}" class="px-8 py-3 text-white text-sm font-medium rounded transition-colors" style="background-color: #C8102E;" onmouseover="this.style.backgroundColor='#A00D25'" onmouseout="this.style.backgroundColor='#C8102E'">
-                      Order Now
-                    </a>
-                    <a href="{{ route('portfolio.index') }}" class="px-8 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded border border-white/30 transition-colors">
-                      Learn More
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
         </div>
 
-        <!-- Navigation Arrows with Icons - Inside -->
-        <button id="prev-slide" class="absolute left-4 sm:left-6 lg:left-8 top-1/2 -translate-y-1/2 z-20 rounded-full bg-white/80 hover:bg-white p-3 shadow-lg transition-all opacity-0 group-hover:opacity-100" aria-label="Previous slide">
-          <svg class="w-6 h-6 text-red-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
-          </svg>
-        </button>
-        <button id="next-slide" class="absolute right-4 sm:right-6 lg:right-8 top-1/2 -translate-y-1/2 z-20 rounded-full bg-white/80 hover:bg-white p-3 shadow-lg transition-all opacity-0 group-hover:opacity-100" aria-label="Next slide">
-          <svg class="w-6 h-6 text-red-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
-          </svg>
-        </button>
-      </div>
-
-      <!-- Dot Indicators - Below Slider -->
-      <div class="mt-6 flex justify-center gap-2.5">
-        <button class="slider-dot h-2 w-2 rounded-full bg-red-800 transition-all duration-300" data-slide="0" aria-label="Go to slide 1"></button>
-        <button class="slider-dot h-2 w-2 rounded-full bg-red-300 transition-all duration-300" data-slide="1" aria-label="Go to slide 2"></button>
-        <button class="slider-dot h-2 w-2 rounded-full bg-red-300 transition-all duration-300" data-slide="2" aria-label="Go to slide 3"></button>
-        <button class="slider-dot h-2 w-2 rounded-full bg-red-300 transition-all duration-300" data-slide="3" aria-label="Go to slide 4"></button>
-        <button class="slider-dot h-2 w-2 rounded-full bg-red-300 transition-all duration-300" data-slide="4" aria-label="Go to slide 5"></button>
-      </div>
-    </div>
-  </section>
-
-  @php
-    $hasStocks = isset($featuredStocks) && $featuredStocks->count() > 0;
-    $hasGainers = isset($gainers) && $gainers->count() > 0;
-    $hasLosers = isset($losers) && $losers->count() > 0;
-    $hasMostActive = isset($mostActive) && $mostActive->count() > 0;
-  @endphp
-
-  @if($hasStocks || $hasGainers || $hasLosers || $hasMostActive)
-    <section class="bg-[#0b0b0b] py-16 text-white" aria-labelledby="markets-heading">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="mb-8 flex items-center justify-between">
-          <div>
-            <h2 id="markets-heading" class="text-xl font-semibold sm:text-2xl">Stock Markets</h2>
-            <p class="mt-1 text-sm text-red-400 dark:text-red-300">Featured picks, top gainers, losers, and most active.</p>
-          </div>
-          <a href="{{ route('stocks.index') }}" class="text-sm font-medium text-white underline-offset-4 hover:underline">Open markets</a>
-        </div>
-
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div class="lg:col-span-1">
-            <div class="rounded-xl border border-white/10 from-white/5 to-white/0 bg-gradient-to-br p-4">
-              <div class="mb-3 flex items-center justify-between">
-                <h3 class="text-sm font-semibold">Featured</h3>
-                <a href="{{ route('stocks.index') }}" class="text-xs text-red-300 hover:text-white">See all</a>
-              </div>
-              <div class="space-y-3">
-                @forelse($featuredStocks ?? collect() as $s)
-                  <a href="{{ route('stocks.show', $s->id) }}" class="flex items-center justify-between rounded-lg p-3 transition hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
-                    <div class="min-w-0 flex items-center gap-3">
-                      @if(!empty($s->logo_url))
-                        <img src="{{ $s->logo_url }}" alt="{{ $s->symbol }} logo" class="h-6 w-6 rounded bg-white" loading="lazy" decoding="async" />
-                      @else
-                        <div class="flex h-6 w-6 items-center justify-center rounded bg-white/10 text-xs">{{ strtoupper(substr($s->symbol,0,1)) }}</div>
-                      @endif
-                      <div class="min-w-0">
-                        <p class="truncate text-sm font-medium">{{ $s->symbol }} <span class="font-normal text-red-400 dark:text-red-400">• {{ $s->company_name }}</span></p>
-                        <p class="text-xs text-red-400 dark:text-red-400">{{ $s->sector ?? '—' }}</p>
-                      </div>
+        <div class="flex items-center">
+            <div class="home-pulse-glow home-pulse-shell relative w-full overflow-hidden rounded-[2rem] border border-white/10 shadow-2xl backdrop-blur-xl">
+                <div class="relative flex flex-col gap-4 border-b border-white/10 px-5 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="max-w-xl">
+                        <div class="flex items-center gap-2">
+                            <span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-35"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span></span>
+                            <p class="text-[9px] font-semibold uppercase tracking-[.2em] text-white/48">Live market pulse</p>
+                        </div>
+                        <h2 class="mt-2 text-xl font-semibold tracking-[-.025em] sm:text-2xl">Three markets. Three current opportunities.</h2>
+                        <p class="mt-2 max-w-lg text-[11px] leading-5 text-white/42">A movement-led scan of the strongest current Stock, Forex and Crypto candidates using real stored market history.</p>
                     </div>
-                    <div class="text-right">
-                      <p class="text-sm font-semibold">{{ $s->formatted_current_price }}</p>
-                      <p class="text-xs {{ $s->change_color }}">{{ $s->formatted_change_amount }} ({{ $s->formatted_change_percentage }})</p>
+                    <div class="grid grid-cols-3 gap-2 lg:min-w-[19rem]">
+                        <div class="home-pulse-chip rounded-xl px-3 py-2.5"><p class="text-[7px] font-semibold uppercase tracking-[.13em] text-white/30">State</p><p class="mt-1 text-[10px] font-semibold text-emerald-300">Market ready</p></div>
+                        <div class="home-pulse-chip rounded-xl px-3 py-2.5"><p class="text-[7px] font-semibold uppercase tracking-[.13em] text-white/30">Universe</p><p class="mt-1 text-[10px] font-semibold text-white/85">{{ number_format($platformStats['instruments'] ?? 0) }} tracked</p></div>
+                        <div class="home-pulse-chip rounded-xl px-3 py-2.5"><p class="text-[7px] font-semibold uppercase tracking-[.13em] text-white/30">Coverage</p><p class="mt-1 text-[10px] font-semibold text-white/85">3 asset classes</p></div>
                     </div>
-                  </a>
-                @empty
-                  <p class="text-sm text-red-400">No featured stocks.</p>
-                @endforelse
-              </div>
-            </div>
-          </div>
+                </div>
 
-          <div class="lg:col-span-2 grid grid-cols-1 gap-6 md:grid-cols-3">
-            <div class="rounded-xl border border-white/10 from-white/5 to-white/0 bg-gradient-to-br p-4">
-              <h3 class="mb-3 text-sm font-semibold">Top Gainers</h3>
-              <div class="space-y-3">
-                @forelse($gainers ?? collect() as $s)
-                  <a href="{{ route('stocks.show', $s->id) }}" class="flex items-center justify-between rounded-lg p-3 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
-                    <div class="min-w-0 flex items-center gap-3">
-                      @if(!empty($s->logo_url))
-                        <img src="{{ $s->logo_url }}" alt="{{ $s->symbol }} logo" class="h-5 w-5 rounded bg-white" loading="lazy" decoding="async" />
-                      @else
-                        <div class="flex h-5 w-5 items-center justify-center rounded bg-white/10 text-[10px]">{{ strtoupper(substr($s->symbol,0,1)) }}</div>
-                      @endif
-                      <span class="truncate text-sm font-medium">{{ $s->symbol }}</span>
+                @if($heroMarkets->isNotEmpty())
+                    <div class="relative p-4 sm:p-5">
+                        <div class="grid gap-3 lg:grid-cols-3">
+                            @foreach($heroMarkets as $market)
+                                @php
+                                    $points = $sparklinePoints($market['quotes'] ?? [], 280, 92);
+                                    $pulseAccent = match($market['asset_class'] ?? '') {
+                                        'stock' => '#fb7185',
+                                        'forex' => '#38bdf8',
+                                        'crypto' => '#a78bfa',
+                                        default => '#fb7185',
+                                    };
+                                @endphp
+                                <article class="home-pulse-card group rounded-[1.45rem] p-4 sm:p-5" style="--pulse-accent:{{ $pulseAccent }}">
+                                    <div class="relative flex h-full flex-col">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <div class="flex flex-wrap items-center gap-2">
+                                                    <span class="rounded-full px-2 py-1 text-[7px] font-semibold uppercase tracking-[.14em]" style="background:color-mix(in srgb,var(--pulse-accent) 11%,transparent);color:color-mix(in srgb,var(--pulse-accent) 72%,white);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--pulse-accent) 16%,transparent)">{{ $market['opportunity_label'] ?? 'Movement candidate' }}</span>
+                                                    <span class="text-[7px] font-semibold uppercase tracking-[.14em] text-white/30">{{ $market['asset_label'] }}</span>
+                                                </div>
+                                                <h3 class="mt-4 truncate text-xl font-semibold tracking-[-.035em] sm:text-2xl">{{ $market['symbol'] }}</h3>
+                                                <p class="mt-1 truncate text-[9px] text-white/34">{{ $market['name'] }}</p>
+                                            </div>
+                                            <div class="shrink-0 text-right">
+                                                <p class="text-[7px] font-semibold uppercase tracking-[.13em] text-white/27">Current</p>
+                                                <p class="mt-1.5 text-base font-semibold tabular-nums sm:text-lg">{{ $market['price_display'] }}</p>
+                                                <p class="mt-1 text-[9px] font-semibold {{ $market['change'] >= 0 ? 'text-emerald-300' : 'text-red-300' }}">{{ $market['change'] >= 0 ? '+' : '' }}{{ number_format($market['change'],2) }}%</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="home-pulse-card-chart mt-5 h-28 overflow-hidden rounded-xl sm:h-32">
+                                            @if($points)
+                                                <svg viewBox="0 0 280 92" preserveAspectRatio="none" class="relative z-[1] h-full w-full" role="img" aria-label="{{ $market['symbol'] }} recent price movement">
+                                                    <defs>
+                                                        <linearGradient id="pulseFill{{ $loop->index }}" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="0%" stop-color="{{ $market['change'] >= 0 ? '#34d399' : '#fb7185' }}" stop-opacity=".2" />
+                                                            <stop offset="100%" stop-color="{{ $market['change'] >= 0 ? '#34d399' : '#fb7185' }}" stop-opacity="0" />
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <polygon points="0,92 {{ $points }} 280,92" fill="url(#pulseFill{{ $loop->index }})" />
+                                                    <polyline points="{{ $points }}" fill="none" stroke="{{ $market['change'] >= 0 ? '#34d399' : '#fb7185' }}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+                                                </svg>
+                                            @else
+                                                <div class="relative z-[1] flex h-full items-center justify-center text-[9px] text-white/28">Price history is building</div>
+                                            @endif
+                                        </div>
+
+                                        <div class="mt-4 grid grid-cols-3 gap-2">
+                                            <div class="home-pulse-metric rounded-xl px-3 py-2.5"><p class="text-[6px] uppercase tracking-[.12em] text-white/25">Previous</p><p class="mt-1.5 truncate text-[9px] font-semibold text-white/72">{{ $market['previous_display'] ?? '—' }}</p></div>
+                                            <div class="home-pulse-metric rounded-xl px-3 py-2.5"><p class="text-[6px] uppercase tracking-[.12em] text-white/25">Market</p><p class="mt-1.5 truncate text-[9px] font-semibold text-white/72">{{ $market['market_status_label'] ?? 'Available' }}</p></div>
+                                            <div class="home-pulse-metric rounded-xl px-3 py-2.5"><p class="text-[6px] uppercase tracking-[.12em] text-white/25">History</p><p class="mt-1.5 text-[9px] font-semibold text-white/72">{{ number_format(count($market['quotes'] ?? [])) }} pts</p></div>
+                                        </div>
+
+                                        <div class="mt-auto flex items-center justify-between pt-4 text-[8px] text-white/28">
+                                            <span>Movement-led scan</span>
+                                            <span class="inline-flex items-center gap-1.5 font-semibold" style="color:color-mix(in srgb,var(--pulse-accent) 70%,white)">{{ $market['asset_label'] }} <i data-lucide="activity" class="h-3 w-3"></i></span>
+                                        </div>
+                                    </div>
+                                </article>
+                            @endforeach
+                        </div>
+
+                        <div class="mt-3 flex flex-col gap-2 rounded-xl bg-black/15 px-3 py-3 text-[8px] text-white/30 sm:flex-row sm:items-center sm:justify-between">
+                            <span>Three strongest current movement candidates — one from each supported market class.</span>
+                            <span class="font-semibold text-white/45">Stored market history · no decorative data</span>
+                        </div>
                     </div>
-                    <span class="text-xs font-semibold text-green-400">{{ $s->formatted_change_percentage }}</span>
-                  </a>
-                @empty
-                  <p class="text-sm text-red-400">No data</p>
-                @endforelse
-              </div>
-            </div>
-
-            <div class="rounded-xl border border-white/10 from-white/5 to-white/0 bg-gradient-to-br p-4">
-              <h3 class="mb-3 text-sm font-semibold">Top Losers</h3>
-              <div class="space-y-3">
-                @forelse($losers ?? collect() as $s)
-                  <a href="{{ route('stocks.show', $s->id) }}" class="flex items-center justify-between rounded-lg p-3 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
-                    <div class="min-w-0 flex items-center gap-3">
-                      @if(!empty($s->logo_url))
-                        <img src="{{ $s->logo_url }}" alt="{{ $s->symbol }} logo" class="h-5 w-5 rounded bg-white" loading="lazy" decoding="async" />
-                      @else
-                        <div class="flex h-5 w-5 items-center justify-center rounded bg-white/10 text-[10px]">{{ strtoupper(substr($s->symbol,0,1)) }}</div>
-                      @endif
-                      <span class="truncate text-sm font-medium">{{ $s->symbol }}</span>
-                    </div>
-                    <span class="text-xs font-semibold text-red-400">{{ $s->formatted_change_percentage }}</span>
-                  </a>
-                @empty
-                  <p class="text-sm text-red-400">No data</p>
-                @endforelse
-              </div>
-            </div>
-
-            <div class="rounded-xl border border-white/10 from-white/5 to-white/0 bg-gradient-to-br p-4">
-              <h3 class="mb-3 text-sm font-semibold">Most Active</h3>
-              <div class="space-y-3">
-                @forelse($mostActive ?? collect() as $s)
-                  <a href="{{ route('stocks.show', $s->id) }}" class="flex items-center justify-between rounded-lg p-3 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
-                    <div class="min-w-0 flex items-center gap-3">
-                      @if(!empty($s->logo_url))
-                        <img src="{{ $s->logo_url }}" alt="{{ $s->symbol }} logo" class="h-5 w-5 rounded bg-white" loading="lazy" decoding="async" />
-                      @else
-                        <div class="flex h-5 w-5 items-center justify-center rounded bg-white/10 text-[10px]">{{ strtoupper(substr($s->symbol,0,1)) }}</div>
-                      @endif
-                      <span class="truncate text-sm font-medium">{{ $s->symbol }}</span>
-                    </div>
-                    <span class="text-xs text-red-400">Vol {{ $s->formatted_volume }}</span>
-                  </a>
-                @empty
-                  <p class="text-sm text-red-400">No data</p>
-                @endforelse
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  @endif
-
-  @isset($latestNews)
-    <section class="mt-12 bg-[#0B1220] py-16" aria-labelledby="news-heading">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="mb-8 flex items-center justify-between">
-          <div>
-            <h2 id="news-heading" class="text-xl font-semibold text-white sm:text-2xl">Market News</h2>
-            <p class="mt-1 text-sm text-red-400 dark:text-red-300">Latest headlines impacting your watchlist.</p>
-          </div>
-          <a href="{{ route('stocks.index') }}" class="text-sm font-medium text-white underline-offset-4 hover:underline">View stocks</a>
-        </div>
-
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          @forelse($latestNews as $news)
-            <a href="{{ $news->url ?? '#' }}" target="_blank" rel="noopener noreferrer" class="group rounded-xl border border-white/10 bg-white/5 p-4 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
-              <div class="flex items-start gap-3">
-                @if(!empty($news->image_url))
-                  <img src="{{ $news->image_url }}" alt="{{ $news->headline }}" class="h-16 w-16 flex-shrink-0 rounded object-cover" loading="lazy" decoding="async" />
                 @else
-                  <div class="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded bg-white/10">
-                    <i data-lucide="newspaper" class="h-5 w-5 text-white" aria-hidden="true"></i>
-                  </div>
+                    <div class="relative p-8 text-center text-sm text-white/45">Market instruments will appear here as the configured universe becomes available.</div>
                 @endif
-
-                <div class="min-w-0">
-                  <div class="flex items-center gap-2 text-[11px] text-red-300">
-                    @if(!empty($news->symbol))
-                      <span class="rounded bg-white/10 px-1.5 py-0.5 text-white">{{ $news->symbol }}</span>
-                    @endif
-                    @if(!empty($news->source))
-                      <span>{{ $news->source }}</span>
-                    @endif
-                    <span>•</span>
-                    <span>{{ $news->formatted_published_date }}</span>
-                  </div>
-
-                  <h3 class="mt-1 line-clamp-2 text-sm font-semibold text-white">{{ $news->headline }}</h3>
-
-                  @if(!empty($news->excerpt))
-                    <p class="mt-1 line-clamp-2 text-xs text-red-300">{{ $news->excerpt }}</p>
-                  @endif
-
-                  @if(!is_null($news->sentiment_score))
-                    <p class="mt-2 text-[11px] {{ $news->sentiment_color }}">Sentiment: {{ $news->sentiment_label }}</p>
-                  @endif
-                </div>
-              </div>
-            </a>
-          @empty
-            <p class="text-sm text-red-400">No news available yet.</p>
-          @endforelse
+            </div>
         </div>
-      </div>
-    </section>
-  @endisset
-  <section class="mt-12 py-16 text-white" style="background: linear-gradient(to bottom right, #8B0A1E, #C8102E, #8B0A1E);" aria-labelledby="cta-heading">
-    <div class="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-      <h2 id="cta-heading" class="text-2xl font-semibold">Ready to build your portfolio?</h2>
-      <p class="mt-2 text-red-300">Create an investment plan, follow stocks, and shop inventory in one place.</p>
-      <div class="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-        <a href="{{ route('register') }}" class="rounded-md px-6 py-3 text-sm font-medium text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60" style="background-color: white; color: #C8102E;" onmouseover="this.style.backgroundColor='#f5f5f5'" onmouseout="this.style.backgroundColor='white'">Get Started</a>
-        <a href="{{ route('login') }}" class="rounded-md border border-white/20 px-6 py-3 text-sm font-medium text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black">Sign In</a>
-      </div>
+
     </div>
-  </section>
-</div>
+</section>
+
+@if($marketTape->isNotEmpty())
+<section class="market-tape overflow-hidden border-b border-border bg-card/95" aria-label="Market tape">
+    <div class="flex items-stretch">
+        <div class="hidden shrink-0 items-center px-5 text-[9px] font-semibold uppercase tracking-[.16em] text-white sm:flex" style="background:var(--brand-primary)">Market tape</div>
+        <div class="min-w-0 flex-1 overflow-hidden">
+            <div class="market-tape-track">
+                @foreach([1,2] as $copy)
+                    <div class="flex shrink-0 items-center" aria-hidden="{{ $copy === 2 ? 'true' : 'false' }}">
+                        @foreach($marketTape as $market)
+                            <div class="flex min-w-max items-center gap-3 border-r border-border px-5 py-3">
+                                <span class="text-[9px] font-semibold uppercase tracking-[.12em] text-muted-foreground">{{ $market['asset_label'] }}</span>
+                                <span class="text-xs font-semibold">{{ $market['symbol'] }}</span>
+                                <span class="text-xs tabular-nums text-muted-foreground">{{ $market['price_display'] }}</span>
+                                <span class="text-[10px] font-semibold {{ $market['change'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $market['change'] >= 0 ? '+' : '' }}{{ number_format($market['change'],2) }}%</span>
+                            </div>
+                        @endforeach
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+</section>
+@endif
+
+<section id="markets" class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+    <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div class="max-w-2xl">
+            <p class="text-[10px] font-semibold uppercase tracking-[.18em]" style="color:var(--brand-primary)">Market universe</p>
+            <h2 class="mt-3 text-3xl font-semibold tracking-[-.04em] sm:text-4xl">One market window. Multiple asset classes.</h2>
+            <p class="mt-4 text-sm leading-7 text-muted-foreground">Move through stocks, currencies and digital assets without turning the homepage into another quote table.</p>
+        </div>
+        <div class="flex items-center gap-2"><button type="button" data-market-prev class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card hover:bg-muted" aria-label="Previous markets"><i data-lucide="arrow-left" class="h-4 w-4"></i></button><button type="button" data-market-next class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card hover:bg-muted" aria-label="Next markets"><i data-lucide="arrow-right" class="h-4 w-4"></i></button></div>
+    </div>
+
+    <div class="mt-7 flex flex-wrap gap-2" data-market-filters>
+        @foreach([['all','All markets'],['stock','Stocks'],['forex','Forex'],['crypto','Crypto']] as [$filter,$label])
+            <button type="button" data-market-filter="{{ $filter }}" class="rounded-full border border-border px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground transition hover:bg-muted" data-active="{{ $filter === 'all' ? 'true' : 'false' }}">{{ $label }}</button>
+        @endforeach
+    </div>
+
+    <div class="home-carousel mt-5 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2" data-market-carousel>
+        @forelse($marketShowcase as $market)
+            @php $marketPoints = $sparklinePoints($market['quotes'] ?? [], 280, 78); @endphp
+            <article class="home-market-card snap-start overflow-hidden rounded-2xl border border-border bg-card transition hover:-translate-y-0.5 hover:shadow-lg" data-market-card data-asset="{{ $market['asset_class'] }}">
+                <div class="p-5">
+                    <div class="flex items-start justify-between gap-4">
+                        <div><span class="rounded-full bg-muted px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[.14em] text-muted-foreground">{{ $market['asset_label'] }}</span><h3 class="mt-4 text-xl font-semibold">{{ $market['symbol'] }}</h3><p class="mt-1 line-clamp-1 text-xs text-muted-foreground">{{ $market['name'] }}</p></div>
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-background"><i data-lucide="{{ $market['icon'] }}" class="h-4 w-4"></i></div>
+                    </div>
+                    <div class="mt-6 flex items-end justify-between gap-4"><div><p class="text-[9px] uppercase tracking-[.12em] text-muted-foreground">Market price</p><p class="mt-1 text-2xl font-semibold tabular-nums">{{ $market['price_display'] }}</p></div><p class="rounded-full px-2.5 py-1 text-[10px] font-semibold {{ $market['change'] >= 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600' }}">{{ $market['change'] >= 0 ? '+' : '' }}{{ number_format($market['change'],2) }}%</p></div>
+
+                    <div class="mt-5 h-20 overflow-hidden rounded-xl border border-border/70 bg-background/55 px-2 py-2">
+                        @if($marketPoints)
+                            <svg viewBox="0 0 280 78" preserveAspectRatio="none" class="h-full w-full" role="img" aria-label="{{ $market['symbol'] }} recent price history">
+                                <polyline points="{{ $marketPoints }}" fill="none" stroke="{{ $market['change'] >= 0 ? '#059669' : '#e11d48' }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
+                            </svg>
+                        @else
+                            <div class="flex h-full items-center justify-center text-[9px] text-muted-foreground">Price history is building</div>
+                        @endif
+                    </div>
+
+                    <div class="mt-4 flex items-center justify-between border-t border-border pt-3">
+                        <div><p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Previous</p><p class="mt-1 text-[11px] font-semibold tabular-nums">{{ $market['previous_display'] ?? '—' }}</p></div>
+                        <div class="text-right"><p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">History</p><p class="mt-1 text-[11px] font-semibold">{{ number_format(count($market['quotes'] ?? [])) }} points</p></div>
+                    </div>
+                </div>
+                <div class="h-1 w-full" style="background:linear-gradient(90deg,var(--brand-primary),transparent)"></div>
+            </article>
+        @empty
+            <div class="w-full rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">No active market instruments are available yet.</div>
+        @endforelse
+    </div>
+    <div class="mt-5"><a href="{{ $marketUrl }}" class="inline-flex items-center gap-2 text-xs font-semibold hover:text-muted-foreground">Open full market universe <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i></a></div>
+</section>
+
+<section id="opportunities" class="border-y border-border bg-card/35">
+    <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+        <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div class="max-w-3xl">
+                <p class="text-[10px] font-semibold uppercase tracking-[.18em]" style="color:var(--brand-primary)">Private investment market</p>
+                <h2 class="mt-3 text-3xl font-semibold tracking-[-.04em] sm:text-4xl">Four investment categories. Better information before capital moves.</h2>
+                <p class="mt-4 text-sm leading-7 text-muted-foreground">Real Estate, Stocks, Forex and Crypto stay inside the private investment engine with their own pricing, risk, duration and projected-range authority.</p>
+            </div>
+            <a href="{{ $investmentUrl }}" class="inline-flex items-center gap-2 text-xs font-semibold transition hover:text-muted-foreground">Explore all investments <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i></a>
+        </div>
+
+        <div class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            @foreach($investmentCategories as $category)
+                @php
+                    $featured = $category['featured'];
+                    $categoryUrl = auth()->check() ? route($category['route']) : route('login');
+                    $move = $category['move'];
+                @endphp
+                <article class="home-investment-card group rounded-[1.75rem] border border-border bg-background" style="--investment-accent:{{ $category['accent'] }}">
+                    <div class="relative flex h-full flex-col p-5 sm:p-6">
+                        <div class="flex items-start justify-between gap-4">
+                            <span class="flex h-11 w-11 items-center justify-center rounded-2xl border" style="border-color:color-mix(in srgb,var(--investment-accent) 24%,transparent);background:color-mix(in srgb,var(--investment-accent) 11%,transparent);color:var(--investment-accent)"><i data-lucide="{{ $category['icon'] }}" class="h-5 w-5"></i></span>
+                            <span class="rounded-full border border-border bg-card px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[.12em] text-muted-foreground">{{ number_format($category['count']) }} {{ $category['count'] === 1 ? 'offering' : 'offerings' }}</span>
+                        </div>
+
+                        <p class="mt-6 text-[8px] font-semibold uppercase tracking-[.15em]" style="color:var(--investment-accent)">{{ $category['eyebrow'] }}</p>
+                        <h3 class="mt-2 text-2xl font-semibold tracking-[-.035em]">{{ $category['label'] }}</h3>
+                        <p class="mt-3 text-xs leading-6 text-muted-foreground">{{ $category['description'] }}</p>
+
+                        <div class="mt-5 rounded-2xl border border-border bg-card/70 p-4">
+                            @if($featured)
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0"><p class="text-[8px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Featured instrument</p><p class="mt-1.5 line-clamp-2 text-sm font-semibold">{{ $featured->name }}</p><p class="mt-1 text-[9px] text-muted-foreground">{{ $featured->symbol }}</p></div>
+                                    <div class="shrink-0 text-right"><p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Unit price</p><p class="mt-1.5 text-xs font-semibold tabular-nums">{{ $category['price_display'] }}</p>@if($move !== null)<p class="mt-1 text-[9px] font-semibold {{ $move >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $move >= 0 ? '+' : '' }}{{ number_format($move,2) }}%</p>@endif</div>
+                                </div>
+                            @else
+                                <div class="flex min-h-14 items-center gap-3"><span class="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-muted-foreground"><i data-lucide="clock-3" class="h-4 w-4"></i></span><div><p class="text-xs font-semibold">Category ready</p><p class="mt-1 text-[9px] text-muted-foreground">No public offering is currently listed.</p></div></div>
+                            @endif
+                        </div>
+
+                        <div class="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border">
+                            <div class="bg-card p-3"><p class="text-[7px] uppercase tracking-[.12em] text-muted-foreground">Minimum</p><p class="mt-1.5 text-xs font-semibold">{{ $category['minimum_display'] }}</p></div>
+                            <div class="bg-card p-3"><p class="text-[7px] uppercase tracking-[.12em] text-muted-foreground">Projected range</p><p class="mt-1.5 text-xs font-semibold">{{ $category['range_display'] }}</p></div>
+                            <div class="bg-card p-3"><p class="text-[7px] uppercase tracking-[.12em] text-muted-foreground">Duration</p><p class="mt-1.5 text-xs font-semibold">{{ $category['duration_display'] }}</p></div>
+                            <div class="bg-card p-3"><p class="text-[7px] uppercase tracking-[.12em] text-muted-foreground">Risk</p><p class="mt-1.5 text-xs font-semibold">{{ $category['risk_display'] }}</p></div>
+                        </div>
+
+                        <a href="{{ $categoryUrl }}" class="mt-auto inline-flex items-center justify-between gap-3 pt-6 text-xs font-semibold"><span>Explore {{ $category['label'] }}</span><span class="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card transition group-hover:translate-x-0.5" style="color:var(--investment-accent)"><i data-lucide="arrow-right" class="h-3.5 w-3.5"></i></span></a>
+                    </div>
+                </article>
+            @endforeach
+        </div>
+    </div>
+</section>
+
+<section id="systems" class="relative overflow-hidden bg-background">
+    <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+        <div class="absolute -left-24 top-8 h-72 w-72 rounded-full" style="background:color-mix(in srgb,var(--brand-primary) 10%,transparent);filter:blur(105px)"></div>
+        <div class="absolute right-0 top-10 h-72 w-72 rounded-full" style="background:rgba(139,92,246,.08);filter:blur(110px)"></div>
+        <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border/70 to-transparent"></div>
+    </div>
+    <div class="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+        <div class="grid gap-8 lg:grid-cols-[.8fr_1.2fr] lg:items-end">
+            <div>
+                <p class="text-[10px] font-semibold uppercase tracking-[.18em]" style="color:var(--brand-primary)">Trading systems</p>
+                <h2 class="mt-3 text-3xl font-semibold tracking-[-.045em] text-foreground sm:text-4xl">Professional automation, with each engine staying in its own lane.</h2>
+            </div>
+            <p class="max-w-2xl text-sm leading-7 text-muted-foreground lg:justify-self-end">Bot Trader, Copy Trader and Automated Signals are three different authorities. Each one has its own contract, execution path and lifecycle instead of being compressed into one vague “AI trading” promise.</p>
+        </div>
+
+        <div class="mt-8 grid gap-5 lg:grid-cols-3">
+            <article class="home-system-card group rounded-[1.8rem] p-6" style="--system-accent:#0ea5e9">
+                <div class="relative flex h-full flex-col">
+                    <div class="flex items-start justify-between gap-4"><span class="home-system-icon flex h-11 w-11 items-center justify-center rounded-2xl"><i data-lucide="bot" class="h-5 w-5"></i></span><span class="home-system-pill rounded-full px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[.12em]">{{ number_format($platformStats['bots'] ?? 0) }} active products</span></div>
+                    <p class="mt-7 text-[8px] font-semibold uppercase tracking-[.15em]" style="color:var(--system-accent)">Bot Trader</p>
+                    <h3 class="mt-2 text-2xl font-semibold tracking-[-.035em] text-foreground">Strategy rules become controlled broker execution.</h3>
+                    <p class="mt-3 text-sm leading-6 text-muted-foreground">Automated strategies operate through customer limits and the same multi-asset brokerage authority used by direct trading. The bot does not bypass execution controls.</p>
+                    <div class="mt-6 space-y-2.5">
+                        @foreach([['Strategy engine','Evaluates configured market rules'],['BrokerOrder','Creates the execution authority'],['Market router','Routes Stock · Forex · Crypto'],['Position lifecycle','Tracks the resulting exposure']] as [$step,$copy])
+                            <div class="home-system-step"><span class="home-system-rule mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"></span><div><p class="text-[10px] font-semibold text-foreground/90">{{ $step }}</p><p class="mt-1 text-[9px] leading-5 text-muted-foreground">{{ $copy }}</p></div></div>
+                        @endforeach
+                    </div>
+                    <div class="home-system-footer flex items-center justify-between"><span class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Asset classes in active products</span><strong class="text-sm text-foreground">{{ number_format($platformSystems['bot_asset_classes'] ?? 0) }}</strong></div>
+                    <a href="{{ $botUrl }}" class="mt-auto inline-flex items-center gap-2 pt-6 text-xs font-semibold text-foreground">Open Bot Trader <i data-lucide="arrow-up-right" class="h-3.5 w-3.5 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style="color:var(--system-accent)"></i></a>
+                </div>
+            </article>
+
+            <article class="home-system-card group rounded-[1.8rem] p-6" style="--system-accent:#f59e0b">
+                <div class="relative flex h-full flex-col">
+                    <div class="flex items-start justify-between gap-4"><span class="home-system-icon flex h-11 w-11 items-center justify-center rounded-2xl"><i data-lucide="users-round" class="h-5 w-5"></i></span><span class="home-system-pill rounded-full px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[.12em]">{{ number_format($platformSystems['copy_strategies'] ?? 0) }} public strategies</span></div>
+                    <p class="mt-7 text-[8px] font-semibold uppercase tracking-[.15em]" style="color:var(--system-accent)">Copy Trader</p>
+                    <h3 class="mt-2 text-2xl font-semibold tracking-[-.035em] text-foreground">Follow a strategy without surrendering allocation control.</h3>
+                    <p class="mt-3 text-sm leading-6 text-muted-foreground">Provider activity is replicated through a follower relationship with allocation, ratio and trade-size controls. Copied activity still enters the broker execution path.</p>
+                    <div class="mt-6 space-y-2.5">
+                        @foreach([['Provider strategy','Defines the source activity'],['Copy relationship','Owns follower allocation limits'],['Copy controls','Apply ratio and trade-size boundaries'],['Broker execution','Creates attributable follower positions']] as [$step,$copy])
+                            <div class="home-system-step"><span class="home-system-rule mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"></span><div><p class="text-[10px] font-semibold text-foreground/90">{{ $step }}</p><p class="mt-1 text-[9px] leading-5 text-muted-foreground">{{ $copy }}</p></div></div>
+                        @endforeach
+                    </div>
+                    <div class="home-system-footer flex items-center justify-between"><span class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Control model</span><strong class="text-xs text-foreground">Allocation based</strong></div>
+                    <a href="{{ $copyUrl }}" class="mt-auto inline-flex items-center gap-2 pt-6 text-xs font-semibold text-foreground">Open Copy Trader <i data-lucide="arrow-up-right" class="h-3.5 w-3.5 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style="color:var(--system-accent)"></i></a>
+                </div>
+            </article>
+
+            <article class="home-system-card group rounded-[1.8rem] p-6" style="--system-accent:#8b5cf6">
+                <div class="relative flex h-full flex-col">
+                    <div class="flex items-start justify-between gap-4"><span class="home-system-icon flex h-11 w-11 items-center justify-center rounded-2xl"><i data-lucide="radio-tower" class="h-5 w-5"></i></span><span class="home-system-pill rounded-full px-2.5 py-1 text-[8px] font-semibold uppercase tracking-[.12em]">{{ number_format($activeSignalTotal) }} active</span></div>
+                    <p class="mt-7 text-[8px] font-semibold uppercase tracking-[.15em]" style="color:var(--system-accent)">Automated Signals</p>
+                    <h3 class="mt-2 text-2xl font-semibold tracking-[-.035em] text-foreground">Analysis can evolve without pretending it executed a trade.</h3>
+                    <p class="mt-3 text-sm leading-6 text-muted-foreground">Signal intelligence has delivery and lifecycle authority of its own. A published signal may become active, adjusted, closed or stopped, while premium entry, stop and targets remain entitled customer data.</p>
+                    <div class="mt-6 space-y-2.5">
+                        @foreach([['Deterministic analysis','Builds the market thesis'],['SignalDelivery','Owns customer access'],['Lifecycle events','Track ready · active · adjusted · terminal'],['Execution boundary','No automatic Signal → Trade']] as [$step,$copy])
+                            <div class="home-system-step"><span class="home-system-rule mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"></span><div><p class="text-[10px] font-semibold text-foreground/90">{{ $step }}</p><p class="mt-1 text-[9px] leading-5 text-muted-foreground">{{ $copy }}</p></div></div>
+                        @endforeach
+                    </div>
+                    <div class="home-system-footer grid grid-cols-3 gap-2">
+                        @foreach($signalShowcase as $signal)
+                            <div><p class="text-[7px] uppercase tracking-[.11em] text-muted-foreground">{{ str_replace(' signal intelligence','',$signal['label']) }}</p><p class="mt-1 text-xs font-semibold text-foreground">{{ number_format($signal['count']) }}</p></div>
+                        @endforeach
+                    </div>
+                    <a href="{{ $signalUrl }}" class="mt-auto inline-flex items-center gap-2 pt-6 text-xs font-semibold text-foreground">Open Signals <i data-lucide="arrow-up-right" class="h-3.5 w-3.5 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" style="color:var(--system-accent)"></i></a>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+@if(($featuredInventory ?? collect())->isNotEmpty())
+<section id="inventory" class="overflow-hidden bg-background">
+    <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+        <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div class="max-w-3xl">
+                <p class="text-[10px] font-semibold uppercase tracking-[.18em]" style="color:var(--brand-primary)">Marketplace inventory</p>
+                <h2 class="mt-3 text-3xl font-semibold tracking-[-.04em] sm:text-4xl">Available inventory, presented as part of the wider financial marketplace.</h2>
+                <p class="mt-4 text-sm leading-7 text-muted-foreground">Browse currently available physical inventory without allowing commerce to overpower the platform's core markets, intelligence and investment experience.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" data-inventory-prev class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label="Previous inventory"><i data-lucide="arrow-left" class="h-4 w-4"></i></button>
+                <button type="button" data-inventory-next class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label="Next inventory"><i data-lucide="arrow-right" class="h-4 w-4"></i></button>
+            </div>
+        </div>
+
+        <div data-inventory-carousel class="home-inventory mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2">
+            @foreach($featuredInventory as $item)
+                <article class="home-inventory-card group snap-start overflow-hidden rounded-[1.75rem] border border-border bg-card">
+                    <a href="{{ route('cars.show', $item->id) }}" class="block">
+                        <div class="home-inventory-image relative aspect-[16/10] overflow-hidden">
+                            @if($item->first_image)
+                                <img src="{{ str_starts_with($item->first_image, 'http') ? $item->first_image : asset('storage/'.$item->first_image) }}"
+                                     alt="{{ $item->title }}"
+                                     class="h-full w-full object-cover transition duration-700 group-hover:scale-[1.035]"
+                                     loading="lazy" decoding="async">
+                            @else
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <div class="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-white/[.05] text-white/70 backdrop-blur">
+                                        <i data-lucide="package-open" class="h-7 w-7"></i>
+                                    </div>
+                                </div>
+                            @endif
+                            <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/70 to-transparent"></div>
+                            <span class="absolute left-4 top-4 rounded-full border border-white/15 bg-black/35 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[.14em] text-white/80 backdrop-blur">Available</span>
+                        </div>
+                        <div class="p-5">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="min-w-0">
+                                    <p class="text-[9px] font-semibold uppercase tracking-[.14em] text-muted-foreground">{{ trim(($item->make ?? '').' '.($item->model ?? '')) ?: 'Marketplace inventory' }}</p>
+                                    <h3 class="mt-2 line-clamp-2 text-xl font-semibold tracking-[-.03em]">{{ $item->title }}</h3>
+                                </div>
+                                <i data-lucide="arrow-up-right" class="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground"></i>
+                            </div>
+                            <div class="mt-5 flex items-center justify-between gap-4 border-t border-border pt-4">
+                                <div>
+                                    <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Listed price</p>
+                                    <p class="mt-1 text-base font-semibold">{{ $item->formatted_price }}</p>
+                                </div>
+                                @if($item->year)
+                                    <div class="text-right">
+                                        <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Year</p>
+                                        <p class="mt-1 text-sm font-semibold">{{ $item->year }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    </a>
+                </article>
+            @endforeach
+        </div>
+
+        <div class="mt-6">
+            <a href="{{ route('cars.browse') }}" class="inline-flex items-center gap-2 text-xs font-semibold transition hover:text-muted-foreground">Browse all inventory <i data-lucide="arrow-right" class="h-3.5 w-3.5"></i></a>
+        </div>
+    </div>
+</section>
+@endif
+
+<section id="calculator" class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+    <div class="grid gap-5 lg:grid-cols-[1.08fr_.92fr]">
+        <div class="overflow-hidden rounded-[1.75rem] border border-border bg-card">
+            <div class="relative overflow-hidden border-b border-border p-6 sm:p-8">
+                <div class="absolute -right-20 -top-24 h-56 w-56 rounded-full" style="background:color-mix(in srgb,var(--brand-primary) 12%,transparent);filter:blur(50px)"></div>
+                <div class="relative">
+                    <p class="text-[10px] font-semibold uppercase tracking-[.18em]" style="color:var(--brand-primary)">Investment calculator</p>
+                    <h2 class="mt-3 text-3xl font-semibold tracking-[-.04em]">See how time and consistency can compound.</h2>
+                    <p class="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">Adjust the assumptions yourself. The result is an educational projection, not a promise of performance.</p>
+                </div>
+            </div>
+
+            <div class="p-6 sm:p-8" data-investment-calculator>
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <label class="block"><span class="text-[9px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Initial investment</span><div class="mt-2 flex h-11 items-center rounded-xl border border-border bg-background px-3"><span class="mr-2 text-xs text-muted-foreground">$</span><input data-calc-principal type="number" min="0" step="100" value="5000" class="w-full bg-transparent text-sm font-semibold outline-none"></div></label>
+                    <label class="block"><span class="text-[9px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Monthly contribution</span><div class="mt-2 flex h-11 items-center rounded-xl border border-border bg-background px-3"><span class="mr-2 text-xs text-muted-foreground">$</span><input data-calc-monthly type="number" min="0" step="50" value="250" class="w-full bg-transparent text-sm font-semibold outline-none"></div></label>
+                    <label class="block"><span class="text-[9px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Time horizon</span><div class="mt-2 flex h-11 items-center rounded-xl border border-border bg-background px-3"><input data-calc-years type="number" min="1" max="50" step="1" value="5" class="w-full bg-transparent text-sm font-semibold outline-none"><span class="ml-2 text-xs text-muted-foreground">years</span></div></label>
+                    <label class="block"><span class="text-[9px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Assumed annual return</span><div class="mt-2 flex h-11 items-center rounded-xl border border-border bg-background px-3"><input data-calc-rate type="number" min="0" max="100" step="0.1" value="8" class="w-full bg-transparent text-sm font-semibold outline-none"><span class="ml-2 text-xs text-muted-foreground">%</span></div></label>
+                </div>
+
+                <div class="mt-6 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-3">
+                    <div class="bg-background p-4"><p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Projected value</p><p data-calc-value class="mt-2 text-xl font-semibold tabular-nums">$0.00</p></div>
+                    <div class="bg-background p-4"><p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Contributions</p><p data-calc-contributions class="mt-2 text-xl font-semibold tabular-nums">$0.00</p></div>
+                    <div class="bg-background p-4"><p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Estimated growth</p><p data-calc-growth class="mt-2 text-xl font-semibold tabular-nums text-emerald-600">$0.00</p></div>
+                </div>
+                <p class="mt-4 text-[10px] leading-5 text-muted-foreground">This calculator is based only on the assumptions entered above. It is not a forecast, quote, recommendation or guarantee of investment performance.</p>
+            </div>
+        </div>
+
+        <div id="platform" class="overflow-hidden rounded-[1.75rem] border border-border bg-card">
+            <div class="border-b border-border p-6 sm:p-8">
+                <p class="text-[10px] font-semibold uppercase tracking-[.18em]" style="color:var(--brand-primary)">Built for financial operations</p>
+                <h2 class="mt-3 text-3xl font-semibold tracking-[-.04em]">One interface. Specialist engines underneath.</h2>
+                <p class="mt-3 text-sm leading-7 text-muted-foreground">Open the areas below to see how the platform keeps customer experience coherent while preserving domain authority.</p>
+            </div>
+
+            <div class="divide-y divide-border">
+                @foreach([
+                    ['Markets & execution','Stocks, Forex and Crypto share one market registry while execution routes remain asset-aware and auditable.','candlestick-chart'],
+                    ['Intelligence & automation','Signal analysis, trading bots and copy trading expose intelligence and automation without collapsing their ownership rules.','radio-tower'],
+                    ['Portfolio & investments','Liquid-market positions and private investment holdings remain separate accounting domains inside one customer portfolio.','briefcase-business'],
+                    ['Access & operations','Memberships govern commercial access while administration, communication and financial controls remain independent authorities.','sliders-horizontal'],
+                ] as $index => [$title,$copy,$icon])
+                    <details class="home-accordion group" {{ $index === 0 ? 'open' : '' }}>
+                        <summary class="flex cursor-pointer items-center justify-between gap-4 px-6 py-5 sm:px-8">
+                            <span class="flex min-w-0 items-center gap-3"><span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-muted"><i data-lucide="{{ $icon }}" class="h-4 w-4"></i></span><span class="text-sm font-semibold">{{ $title }}</span></span>
+                            <i data-lucide="chevron-down" class="home-accordion-chevron h-4 w-4 shrink-0 text-muted-foreground transition-transform"></i>
+                        </summary>
+                        <div class="px-6 pb-5 pl-[4.5rem] text-xs leading-6 text-muted-foreground sm:px-8 sm:pb-6 sm:pl-[5rem]">{{ $copy }}</div>
+                    </details>
+                @endforeach
+            </div>
+        </div>
+    </div>
+</section>
+
+@if($latestNews->isNotEmpty())
+<section class="border-y border-border bg-card/35">
+    <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div class="flex items-end justify-between gap-6"><div><p class="text-[10px] font-semibold uppercase tracking-[.18em]" style="color:var(--brand-primary)">Market context</p><h2 class="mt-2 text-2xl font-semibold">Latest market coverage</h2></div><i data-lucide="newspaper" class="h-5 w-5 text-muted-foreground"></i></div>
+        <div class="mt-6 grid gap-4 md:grid-cols-3">
+            @foreach($latestNews->take(3) as $news)
+                <article class="group rounded-2xl border border-border bg-background p-5 transition hover:-translate-y-0.5 hover:shadow-lg"><p class="text-[9px] font-semibold uppercase tracking-[.14em] text-muted-foreground">{{ $news->symbol ?? 'Market' }}</p><h3 class="mt-3 line-clamp-2 text-sm font-semibold leading-6">{{ $news->headline ?? $news->title }}</h3><p class="mt-3 line-clamp-3 text-xs leading-5 text-muted-foreground">{{ $news->summary }}</p><div class="mt-5 flex items-center gap-2 text-[10px] font-semibold text-muted-foreground">Market context <i data-lucide="arrow-up-right" class="h-3 w-3 transition group-hover:translate-x-0.5"></i></div></article>
+            @endforeach
+        </div>
+    </div>
+</section>
+@endif
+
+<section class="relative overflow-hidden text-white" style="background:linear-gradient(115deg,color-mix(in srgb,var(--brand-primary) 92%,#000),color-mix(in srgb,var(--brand-primary) 58%,#111827))">
+    <div class="pointer-events-none absolute -right-24 -top-32 h-80 w-80 rounded-full border border-white/10 bg-white/[.04]"></div>
+    <div class="relative mx-auto flex max-w-7xl flex-col gap-6 px-4 py-12 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
+        <div><p class="text-[10px] font-semibold uppercase tracking-[.18em] text-white/55">Financial workspace</p><h2 class="mt-2 max-w-3xl text-3xl font-semibold tracking-[-.04em]">Move from discovery to controlled financial action.</h2><p class="mt-3 max-w-2xl text-sm leading-6 text-white/65">Markets, intelligence, automation, portfolio tools and investment products remain one account away.</p></div>
+        <a href="{{ $accountUrl }}" class="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/15 px-5 text-sm font-semibold shadow-lg transition hover:-translate-y-0.5 hover:bg-black/85" style="background:#0b0f16;color:#ffffff !important;box-shadow:0 18px 42px rgba(0,0,0,.22)"><span style="color:#ffffff">{{ auth()->check() ? 'Go to workspace' : 'Get started' }}</span><i data-lucide="arrow-right" class="h-4 w-4" style="color:#ffffff"></i></a>
+    </div>
+</section>
 
 @push('scripts')
 <script>
-  // Product Slider Functionality
-  (function() {
-    const slider = document.getElementById('product-slider');
-    const prevBtn = document.getElementById('prev-slide');
-    const nextBtn = document.getElementById('next-slide');
-    const dots = document.querySelectorAll('.slider-dot');
-    
-    if (!slider || !prevBtn || !nextBtn || !dots.length) {
-      console.error('Slider elements not found');
-      return;
-    }
+(() => {
+    const carousel = document.querySelector('[data-market-carousel]');
+    const cards = () => Array.from(carousel?.querySelectorAll('[data-market-card]:not([hidden])') || []);
+    const step = (direction) => {
+        if (!carousel) return;
+        const card = cards()[0];
+        if (!card) return;
+        carousel.scrollBy({ left: direction * (card.getBoundingClientRect().width + 12), behavior: 'smooth' });
+    };
+    document.querySelector('[data-market-prev]')?.addEventListener('click', () => step(-1));
+    document.querySelector('[data-market-next]')?.addEventListener('click', () => step(1));
 
-    let currentSlide = 0;
-    const totalSlides = 5;
-    let autoPlayInterval;
-
-    function goToSlide(slideIndex) {
-      currentSlide = slideIndex;
-      const offset = -slideIndex * 100;
-      slider.style.transform = `translateX(${offset}%)`;
-      
-      // Update dots
-      dots.forEach((dot, index) => {
-        if (index === slideIndex) {
-          dot.classList.remove('bg-red-300', 'w-2');
-          dot.classList.add('bg-red-800', 'w-8');
-        } else {
-          dot.classList.remove('bg-red-800', 'w-8');
-          dot.classList.add('bg-red-300', 'w-2');
-        }
-      });
-    }
-
-    function nextSlide() {
-      currentSlide = (currentSlide + 1) % totalSlides;
-      goToSlide(currentSlide);
-    }
-
-    function prevSlide() {
-      currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
-      goToSlide(currentSlide);
-    }
-
-    // Event listeners
-    prevBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      prevSlide();
-      resetAutoPlay();
+    document.querySelectorAll('[data-market-filter]').forEach(button => {
+        button.addEventListener('click', () => {
+            const filter = button.dataset.marketFilter;
+            document.querySelectorAll('[data-market-filter]').forEach(item => {
+                const active = item === button;
+                item.dataset.active = active ? 'true' : 'false';
+                item.style.background = active ? 'var(--brand-primary)' : '';
+                item.style.borderColor = active ? 'var(--brand-primary)' : '';
+                item.style.color = active ? '#fff' : '';
+            });
+            document.querySelectorAll('[data-market-card]').forEach(card => card.hidden = filter !== 'all' && card.dataset.asset !== filter);
+            carousel?.scrollTo({ left: 0, behavior: 'smooth' });
+        });
     });
 
-    nextBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      nextSlide();
-      resetAutoPlay();
-    });
-
-    dots.forEach((dot, index) => {
-      dot.addEventListener('click', function(e) {
-        e.preventDefault();
-        goToSlide(index);
-        resetAutoPlay();
-      });
-    });
-
-    // Auto-play functionality
-    function startAutoPlay() {
-      autoPlayInterval = setInterval(nextSlide, 6000);
+    const firstFilter = document.querySelector('[data-market-filter="all"]');
+    if (firstFilter) {
+        firstFilter.style.background = 'var(--brand-primary)';
+        firstFilter.style.borderColor = 'var(--brand-primary)';
+        firstFilter.style.color = '#fff';
     }
 
-    function stopAutoPlay() {
-      if (autoPlayInterval) {
-        clearInterval(autoPlayInterval);
-      }
+    let marketTimer = null;
+    const startMarketRotation = () => {
+        if (!carousel || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        clearInterval(marketTimer);
+        marketTimer = setInterval(() => {
+            const visible = cards();
+            if (visible.length < 2) return;
+            const max = carousel.scrollWidth - carousel.clientWidth - 8;
+            if (carousel.scrollLeft >= max) carousel.scrollTo({ left: 0, behavior: 'smooth' });
+            else step(1);
+        }, 4500);
+    };
+    carousel?.addEventListener('mouseenter', () => clearInterval(marketTimer));
+    carousel?.addEventListener('mouseleave', startMarketRotation);
+    startMarketRotation();
+
+    const inventoryCarousel = document.querySelector('[data-inventory-carousel]');
+    const inventoryStep = (direction) => {
+        if (!inventoryCarousel) return;
+        const card = inventoryCarousel.querySelector('.home-inventory-card');
+        if (!card) return;
+        inventoryCarousel.scrollBy({ left: direction * (card.getBoundingClientRect().width + 16), behavior: 'smooth' });
+    };
+    document.querySelector('[data-inventory-prev]')?.addEventListener('click', () => inventoryStep(-1));
+    document.querySelector('[data-inventory-next]')?.addEventListener('click', () => inventoryStep(1));
+
+    const calculator = document.querySelector('[data-investment-calculator]');
+    if (calculator) {
+        const principal = calculator.querySelector('[data-calc-principal]');
+        const monthly = calculator.querySelector('[data-calc-monthly]');
+        const years = calculator.querySelector('[data-calc-years]');
+        const rate = calculator.querySelector('[data-calc-rate]');
+        const value = calculator.querySelector('[data-calc-value]');
+        const contributions = calculator.querySelector('[data-calc-contributions]');
+        const growth = calculator.querySelector('[data-calc-growth]');
+        const money = new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+        const calculate = () => {
+            const p = Math.max(0, Number(principal.value) || 0);
+            const m = Math.max(0, Number(monthly.value) || 0);
+            const y = Math.min(50, Math.max(1, Number(years.value) || 1));
+            const annual = Math.max(0, Number(rate.value) || 0) / 100;
+            const months = Math.round(y * 12);
+            const monthlyRate = annual / 12;
+            const principalFuture = p * Math.pow(1 + monthlyRate, months);
+            const recurringFuture = monthlyRate > 0 ? m * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) : m * months;
+            const projected = principalFuture + recurringFuture;
+            const contributed = p + (m * months);
+            value.textContent = money.format(projected);
+            contributions.textContent = money.format(contributed);
+            growth.textContent = money.format(Math.max(0, projected - contributed));
+        };
+        [principal, monthly, years, rate].forEach(input => input?.addEventListener('input', calculate));
+        calculate();
     }
-
-    function resetAutoPlay() {
-      stopAutoPlay();
-      startAutoPlay();
-    }
-
-    // Keyboard navigation
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'ArrowLeft') {
-        prevSlide();
-        resetAutoPlay();
-      } else if (e.key === 'ArrowRight') {
-        nextSlide();
-        resetAutoPlay();
-      }
-    });
-
-    // Touch/swipe support
-    let touchStartX = 0;
-    let touchEndX = 0;
-
-    slider.addEventListener('touchstart', function(e) {
-      touchStartX = e.changedTouches[0].screenX;
-      stopAutoPlay();
-    });
-
-    slider.addEventListener('touchend', function(e) {
-      touchEndX = e.changedTouches[0].screenX;
-      handleSwipe();
-      resetAutoPlay();
-    });
-
-    function handleSwipe() {
-      const swipeThreshold = 50;
-      if (touchEndX < touchStartX - swipeThreshold) {
-        nextSlide();
-      }
-      if (touchEndX > touchStartX + swipeThreshold) {
-        prevSlide();
-      }
-    }
-
-    // Pause auto-play on hover
-    const sliderSection = slider.closest('section');
-    if (sliderSection) {
-      sliderSection.addEventListener('mouseenter', stopAutoPlay);
-      sliderSection.addEventListener('mouseleave', startAutoPlay);
-    }
-
-    // Initialize
-    goToSlide(0);
-    startAutoPlay();
-
-    console.log('Slider initialized with', totalSlides, 'slides');
-  })();
+})();
 </script>
 @endpush
-
 @endsection

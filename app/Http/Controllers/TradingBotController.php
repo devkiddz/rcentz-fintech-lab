@@ -251,6 +251,12 @@ class TradingBotController extends Controller
             ->whereHas('subscription', fn ($q) => $q->where('user_id', Auth::id()))
             ->latest()->paginate(40);
 
+        $executions->getCollection()->each(function (TradingBotExecution $execution) use ($performance) {
+            $execution->performance_mark = $execution->status === 'completed'
+                ? $performance->executionMark($execution)
+                : null;
+        });
+
         $stockSymbols = $botCards
             ->where('asset_class', 'stock')
             ->pluck('symbol')->filter()->unique()->values();

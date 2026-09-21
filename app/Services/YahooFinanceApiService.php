@@ -242,6 +242,10 @@ class YahooFinanceApiService
      */
     public function getHistoricalData(string $symbol, string $interval = '1d', int $limit = 30): ?array
     {
+        if (!$this->isAvailable()) {
+            return null;
+        }
+
         if (!$this->checkRateLimit()) {
             Log::warning("Rate limit exceeded for Yahoo Finance historical data API call");
             return null;
@@ -268,9 +272,8 @@ class YahooFinanceApiService
                 }
             }
 
-            Log::error("Failed to fetch historical data for {$symbol}", [
+            Log::warning("Yahoo Finance historical data unavailable for {$symbol}", [
                 'status' => $response->status(),
-                'response' => $response->body()
             ]);
 
             return null;

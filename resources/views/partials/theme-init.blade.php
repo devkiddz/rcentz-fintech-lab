@@ -1,21 +1,14 @@
+@php
+    $resolvedThemeScope = in_array($themeScope ?? null, ['public', 'customer', 'admin'], true)
+        ? $themeScope
+        : 'public';
+@endphp
 <script>
     (() => {
-        const path = window.location.pathname;
-
-        let scope = 'public';
-
-        if (path === '/admin' || path.startsWith('/admin/')) {
-            scope = 'admin';
-        } else {
-            // All non-admin authenticated/customer routes share the customer theme.
-            // Impersonation does not change this because the browser is on a customer route.
-            scope = 'customer';
-        }
-
+        const scope = @json($resolvedThemeScope);
         const scopedKey = `rcentz_theme:${scope}`;
 
-        // Backward compatibility:
-        // migrate the old single "theme" value once into the current scope.
+        // Backward compatibility: migrate the old single theme value once into this shell.
         let savedTheme = localStorage.getItem(scopedKey);
         const legacyTheme = localStorage.getItem('theme');
 

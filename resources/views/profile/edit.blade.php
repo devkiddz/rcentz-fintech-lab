@@ -1,344 +1,196 @@
 <x-user-layout>
-    <x-slot name="header">
-        Profile Settings
-    </x-slot>
+    <x-slot name="header">Account Profile</x-slot>
 
-    <div class="ui-page max-w-6xl">
-        <!-- Enhanced Header -->
-        <div class="bg-gradient-to-br from-tesla-600 via-tesla-700 to-tesla-800 dark:from-tesla-700 dark:via-tesla-800 dark:to-tesla-900 rounded-2xl p-6 mb-6 text-white relative overflow-hidden">
-            <!-- Background Pattern -->
-            <div class="absolute inset-0 opacity-10">
-                <div class="absolute top-0 right-0 w-48 h-48 bg-card rounded-full -translate-y-24 translate-x-24"></div>
-                <div class="absolute bottom-0 left-0 w-24 h-24 bg-card rounded-full translate-y-12 -translate-x-12"></div>
+    @php
+        $kyc = $user->kyc;
+        $primaryMembership = $activeMemberships->first() ?? $membershipStatuses->first();
+        $membershipCount = $activeMemberships->count();
+        $accountActive = $user->isAccountActive();
+        $emailVerified = (bool) $user->email_verified_at;
+        $kycLabel = $kyc?->status_label ?? 'Not submitted';
+    @endphp
+
+    <div class="ui-page max-w-[1360px]">
+        @if(session('status') === 'profile-updated')
+            <div class="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-xs font-medium text-emerald-600">Profile updated successfully.</div>
+        @endif
+        @if(session('status') === 'password-updated')
+            <div class="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-xs font-medium text-emerald-600">Password updated successfully.</div>
+        @endif
+
+        <section class="ui-panel overflow-hidden">
+            <div class="relative p-5 sm:p-6 lg:p-7">
+                <div class="pointer-events-none absolute -right-20 -top-24 h-64 w-64 rounded-full bg-red-500/[.07] blur-3xl"></div>
+                <div class="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                    <div class="flex min-w-0 items-center gap-4 sm:gap-5">
+                        <div class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-border bg-muted text-2xl font-semibold shadow-sm sm:h-24 sm:w-24">
+                            @if($user->profile_image)
+                                <img src="{{ asset('storage/'.$user->profile_image) }}" alt="{{ $user->name }}" class="h-full w-full object-cover">
+                            @else
+                                <span>{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                            @endif
+                        </div>
+                        <div class="min-w-0">
+                            <p class="ui-kicker">Customer account</p>
+                            <h1 class="mt-1 truncate text-2xl font-semibold tracking-tight sm:text-3xl">{{ $user->name }}</h1>
+                            <p class="mt-1 truncate text-sm text-muted-foreground">{{ $user->email }}</p>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <span class="rounded-full border px-2.5 py-1 text-[10px] font-semibold {{ $accountActive ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600' : 'border-red-500/20 bg-red-500/10 text-red-600' }}">{{ $accountActive ? 'Account active' : ucfirst($user->account_status ?? 'Restricted') }}</span>
+                                <span class="rounded-full border px-2.5 py-1 text-[10px] font-semibold {{ $emailVerified ? 'border-sky-500/20 bg-sky-500/10 text-sky-600' : 'border-amber-500/20 bg-amber-500/10 text-amber-600' }}">{{ $emailVerified ? 'Email verified' : 'Email verification pending' }}</span>
+                                <span class="rounded-full border border-border bg-muted/40 px-2.5 py-1 text-[10px] font-semibold text-muted-foreground">{{ strtoupper($user->currency ?? 'USD') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{{ route('profile.kyc') }}" class="ui-btn ui-btn-secondary"><i data-lucide="shield-check" class="h-4 w-4"></i>KYC</a>
+                        <a href="{{ route('memberships.index') }}" class="ui-btn ui-btn-primary"><i data-lucide="badge-check" class="h-4 w-4"></i>Membership</a>
+                    </div>
+                </div>
             </div>
-            
-            <div class="relative z-10">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                    <div class="mb-4 lg:mb-0 lg:flex-1">
-                        <h1 class="text-xl font-light mb-1">Profile Settings</h1>
-                        <p class="text-tesla-100 dark:text-gray-300 text-sm">Manage your account information and preferences</p>
+
+            <div class="grid border-t border-border sm:grid-cols-2 lg:grid-cols-4">
+                @foreach([
+                    ['Account', $accountActive ? 'Active' : ucfirst($user->account_status ?? 'Restricted'), 'circle-user-round'],
+                    ['KYC', $kycLabel, 'shield-check'],
+                    ['Memberships', $membershipCount ? $membershipCount.' active' : 'None active', 'badge-check'],
+                    ['Member since', $user->created_at?->format('M Y') ?? '—', 'calendar-days'],
+                ] as [$label,$value,$icon])
+                    <div class="border-t border-border p-4 first:border-t-0 sm:border-l sm:border-t-0 sm:first:border-l-0 lg:p-5">
+                        <div class="flex items-center gap-2 text-muted-foreground"><i data-lucide="{{ $icon }}" class="h-4 w-4"></i><span class="text-[9px] font-semibold uppercase tracking-[.14em]">{{ $label }}</span></div>
+                        <p class="mt-2 text-sm font-semibold">{{ $value }}</p>
                     </div>
-                    
-                    <!-- Profile Image Preview -->
-                    <div class="bg-card bg-opacity-15 backdrop-blur-xl rounded-xl p-4 border border-white border-opacity-20 shadow-xl lg:w-64">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-xs text-tesla-100 dark:text-gray-300 mb-1">Profile Image</p>
-                                <div class="w-16 h-16 bg-gradient-to-br from-tesla-400 to-tesla-600 rounded-xl flex items-center justify-center">
-                                    @if(auth()->user()->profile_image)
-                                        <img src="{{ asset('storage/' . auth()->user()->profile_image) }}" alt="{{ auth()->user()->name }}" class="w-16 h-16 rounded-xl object-cover">
-                                    @else
-                                        <span class="text-white font-medium text-lg">{{ substr(auth()->user()->name, 0, 1) }}</span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="w-10 h-10 flex items-center justify-center">
-                                <i data-lucide="user" class="w-5 h-5 text-white"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                @endforeach
             </div>
-        </div>
+        </section>
 
-        <!-- Profile Form -->
-        <div class="ui-panel p-5 sm:p-6">
-            <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
-                @csrf
-                @method('patch')
+        <div class="mt-5 grid gap-5 xl:grid-cols-[1.35fr_.65fr]">
+            <div class="space-y-5">
+                <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="ui-panel p-5 sm:p-6">
+                    @csrf
+                    @method('patch')
 
-                <!-- Personal Information -->
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="text-lg font-light text-foreground mb-1">Personal Information</h3>
-                            <p class="text-xs text-muted-foreground dark:text-gray-300">Update your basic account details</p>
-                        </div>
-                        <div class="w-8 h-8 flex items-center justify-center">
-                            <i data-lucide="user" class="w-4 h-4 text-tesla-600"></i>
-                        </div>
+                    <div class="flex items-start justify-between gap-4 border-b border-border pb-4">
+                        <div><p class="ui-kicker">Identity</p><h2 class="mt-1 text-lg font-semibold">Personal information</h2><p class="mt-1 text-xs text-muted-foreground">Keep your customer identity and account preferences current.</p></div>
+                        <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-muted"><i data-lucide="user-round" class="h-4 w-4"></i></span>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-foreground mb-2">Full Name</label>
-                            <input type="text" 
-                                   id="name" 
-                                   name="name" 
-                                   value="{{ old('name', $user->name) }}" 
-                                   class="w-full px-4 py-3 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
-                                   required>
-                            @error('name')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="email" class="block text-sm font-medium text-foreground mb-2">Email Address</label>
-                            <input type="email" 
-                                   id="email" 
-                                   name="email" 
-                                   value="{{ old('email', $user->email) }}" 
-                                   class="w-full px-4 py-3 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
-                                   required>
-                            @error('email')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
+                    <div class="mt-5 grid gap-4 md:grid-cols-2">
+                        <div><label for="name" class="ui-label">Full name</label><input id="name" name="name" value="{{ old('name',$user->name) }}" class="ui-input mt-1 w-full" required>@error('name')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                        <div><label for="email" class="ui-label">Email address</label><input id="email" type="email" name="email" value="{{ old('email',$user->email) }}" class="ui-input mt-1 w-full" required>@error('email')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                        <div><label for="country" class="ui-label">Country</label><select id="country" name="country" class="ui-input mt-1 w-full"><option value="">Select country</option></select>@error('country')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                        <div><label for="currency" class="ui-label">Preferred currency</label><select id="currency" name="currency" class="ui-input mt-1 w-full">
+                            @foreach(['USD'=>'US Dollar','EUR'=>'Euro','GBP'=>'British Pound','JPY'=>'Japanese Yen','AUD'=>'Australian Dollar','CAD'=>'Canadian Dollar','CHF'=>'Swiss Franc','CNY'=>'Chinese Yuan','INR'=>'Indian Rupee','NGN'=>'Nigerian Naira','ZAR'=>'South African Rand','SGD'=>'Singapore Dollar','HKD'=>'Hong Kong Dollar','NZD'=>'New Zealand Dollar','AED'=>'UAE Dirham'] as $code=>$label)
+                                <option value="{{ $code }}" @selected(old('currency',$user->currency)===$code)>{{ $code }} · {{ $label }}</option>
+                            @endforeach
+                        </select>@error('currency')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="country" class="block text-sm font-medium text-foreground mb-2">Country</label>
-                            <select id="country" 
-                                    name="country" 
-                                    class="w-full px-4 py-3 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
-                                <option value="">Select Country</option>
-                            </select>
-                            @error('country')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="currency" class="block text-sm font-medium text-foreground mb-2">Preferred Currency</label>
-                            <select id="currency" 
-                                    name="currency" 
-                                    class="w-full px-4 py-3 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
-                                <option value="USD" {{ old('currency', $user->currency) == 'USD' ? 'selected' : '' }}>USD - US Dollar ($)</option>
-                                <option value="EUR" {{ old('currency', $user->currency) == 'EUR' ? 'selected' : '' }}>EUR - Euro (€)</option>
-                                <option value="GBP" {{ old('currency', $user->currency) == 'GBP' ? 'selected' : '' }}>GBP - British Pound (£)</option>
-                                <option value="JPY" {{ old('currency', $user->currency) == 'JPY' ? 'selected' : '' }}>JPY - Japanese Yen (¥)</option>
-                                <option value="AUD" {{ old('currency', $user->currency) == 'AUD' ? 'selected' : '' }}>AUD - Australian Dollar (A$)</option>
-                                <option value="CAD" {{ old('currency', $user->currency) == 'CAD' ? 'selected' : '' }}>CAD - Canadian Dollar (C$)</option>
-                                <option value="CHF" {{ old('currency', $user->currency) == 'CHF' ? 'selected' : '' }}>CHF - Swiss Franc (CHF)</option>
-                                <option value="CNY" {{ old('currency', $user->currency) == 'CNY' ? 'selected' : '' }}>CNY - Chinese Yuan (¥)</option>
-                                <option value="INR" {{ old('currency', $user->currency) == 'INR' ? 'selected' : '' }}>INR - Indian Rupee (₹)</option>
-                                <option value="KRW" {{ old('currency', $user->currency) == 'KRW' ? 'selected' : '' }}>KRW - South Korean Won (₩)</option>
-                                <option value="MXN" {{ old('currency', $user->currency) == 'MXN' ? 'selected' : '' }}>MXN - Mexican Peso ($)</option>
-                                <option value="BRL" {{ old('currency', $user->currency) == 'BRL' ? 'selected' : '' }}>BRL - Brazilian Real (R$)</option>
-                                <option value="ZAR" {{ old('currency', $user->currency) == 'ZAR' ? 'selected' : '' }}>ZAR - South African Rand (R)</option>
-                                <option value="RUB" {{ old('currency', $user->currency) == 'RUB' ? 'selected' : '' }}>RUB - Russian Ruble (₽)</option>
-                                <option value="SEK" {{ old('currency', $user->currency) == 'SEK' ? 'selected' : '' }}>SEK - Swedish Krona (kr)</option>
-                                <option value="NOK" {{ old('currency', $user->currency) == 'NOK' ? 'selected' : '' }}>NOK - Norwegian Krone (kr)</option>
-                                <option value="DKK" {{ old('currency', $user->currency) == 'DKK' ? 'selected' : '' }}>DKK - Danish Krone (kr)</option>
-                                <option value="SGD" {{ old('currency', $user->currency) == 'SGD' ? 'selected' : '' }}>SGD - Singapore Dollar (S$)</option>
-                                <option value="HKD" {{ old('currency', $user->currency) == 'HKD' ? 'selected' : '' }}>HKD - Hong Kong Dollar (HK$)</option>
-                                <option value="NZD" {{ old('currency', $user->currency) == 'NZD' ? 'selected' : '' }}>NZD - New Zealand Dollar (NZ$)</option>
-                                <option value="TRY" {{ old('currency', $user->currency) == 'TRY' ? 'selected' : '' }}>TRY - Turkish Lira (₺)</option>
-                                <option value="PLN" {{ old('currency', $user->currency) == 'PLN' ? 'selected' : '' }}>PLN - Polish Zloty (zł)</option>
-                                <option value="THB" {{ old('currency', $user->currency) == 'THB' ? 'selected' : '' }}>THB - Thai Baht (฿)</option>
-                                <option value="IDR" {{ old('currency', $user->currency) == 'IDR' ? 'selected' : '' }}>IDR - Indonesian Rupiah (Rp)</option>
-                                <option value="MYR" {{ old('currency', $user->currency) == 'MYR' ? 'selected' : '' }}>MYR - Malaysian Ringgit (RM)</option>
-                                <option value="PHP" {{ old('currency', $user->currency) == 'PHP' ? 'selected' : '' }}>PHP - Philippine Peso (₱)</option>
-                                <option value="CZK" {{ old('currency', $user->currency) == 'CZK' ? 'selected' : '' }}>CZK - Czech Koruna (Kč)</option>
-                                <option value="ILS" {{ old('currency', $user->currency) == 'ILS' ? 'selected' : '' }}>ILS - Israeli Shekel (₪)</option>
-                                <option value="CLP" {{ old('currency', $user->currency) == 'CLP' ? 'selected' : '' }}>CLP - Chilean Peso ($)</option>
-                                <option value="AED" {{ old('currency', $user->currency) == 'AED' ? 'selected' : '' }}>AED - UAE Dirham (د.إ)</option>
-                            </select>
-                            @error('currency')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Profile Image -->
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="text-lg font-light text-foreground mb-1">Profile Image</h3>
-                            <p class="text-xs text-muted-foreground dark:text-gray-300">Upload a new profile picture</p>
-                        </div>
-                        <div class="w-8 h-8 flex items-center justify-center">
-                            <i data-lucide="image" class="w-4 h-4 text-purple-600"></i>
-                        </div>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div>
-                            <label for="profile_image" class="block text-sm font-medium text-foreground mb-2">Profile Image</label>
-                            <div class="flex items-center space-x-4">
-                                <div class="w-20 h-20 bg-gradient-to-br from-tesla-400 to-tesla-600 rounded-xl flex items-center justify-center overflow-hidden">
-                                    @if(auth()->user()->profile_image)
-                                        <img id="image-preview" src="{{ asset('storage/' . auth()->user()->profile_image) }}" alt="{{ auth()->user()->name }}" class="w-20 h-20 object-cover">
-                                    @else
-                                        <span id="image-preview-text" class="text-white font-medium text-xl">{{ substr(auth()->user()->name, 0, 1) }}</span>
-                                    @endif
-                                </div>
-                                <div class="flex-1">
-                                    <input type="file" 
-                                           id="profile_image" 
-                                           name="profile_image" 
-                                           accept="image/*"
-                                           class="w-full px-4 py-3 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200"
-                                           onchange="previewImage(this)">
-                                    <p class="text-xs text-muted-foreground dark:text-gray-300 mt-1">JPG, PNG or GIF. Max 2MB.</p>
-                                    @error('profile_image')
-                                        <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                                    @enderror
-                                </div>
+                    <div class="mt-5 rounded-2xl border border-border bg-muted/15 p-4">
+                        <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+                            <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background text-lg font-semibold">
+                                @if($user->profile_image)<img id="image-preview" src="{{ asset('storage/'.$user->profile_image) }}" alt="{{ $user->name }}" class="h-full w-full object-cover">@else<span id="image-preview-text">{{ strtoupper(substr($user->name,0,1)) }}</span>@endif
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Security Settings -->
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 class="text-lg font-light text-foreground mb-1">Security Settings</h3>
-                            <p class="text-xs text-muted-foreground dark:text-gray-300">Update your password</p>
-                        </div>
-                        <div class="w-8 h-8 flex items-center justify-center">
-                            <i data-lucide="shield" class="w-4 h-4 text-green-600"></i>
+                            <div class="min-w-0 flex-1"><label for="profile_image" class="ui-label">Profile image</label><input id="profile_image" type="file" name="profile_image" accept="image/*" class="ui-input mt-1 w-full" onchange="previewProfileImage(this)"><p class="mt-1 text-[10px] text-muted-foreground">JPG, PNG or GIF · maximum 2 MB.</p>@error('profile_image')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label for="current_password" class="block text-sm font-medium text-foreground mb-2">Current Password</label>
-                            <input type="password" 
-                                   id="current_password" 
-                                   name="current_password" 
-                                   class="w-full px-4 py-3 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
-                            @error('current_password')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="password" class="block text-sm font-medium text-foreground mb-2">New Password</label>
-                            <input type="password" 
-                                   id="password" 
-                                   name="password" 
-                                   class="w-full px-4 py-3 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
-                            @error('password')
-                                <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
-                            @enderror
-                        </div>
+                    <div class="mt-5 flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+                        <p class="text-[10px] text-muted-foreground">Last profile update {{ $user->updated_at?->format('M j, Y · H:i') }}</p>
+                        <button class="ui-btn ui-btn-primary justify-center"><i data-lucide="save" class="h-4 w-4"></i>Save profile</button>
                     </div>
+                </form>
 
-                    <div>
-                        <label for="password_confirmation" class="block text-sm font-medium text-foreground mb-2">Confirm New Password</label>
-                        <input type="password" 
-                               id="password_confirmation" 
-                               name="password_confirmation" 
-                               class="w-full px-4 py-3 border border-border dark:text-white rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent transition-colors duration-200">
+                <section class="ui-panel p-5 sm:p-6">
+                    <div class="flex items-start justify-between gap-4 border-b border-border pb-4">
+                        <div><p class="ui-kicker">Access</p><h2 class="mt-1 text-lg font-semibold">Memberships</h2><p class="mt-1 text-xs text-muted-foreground">Commercial access attached to your customer account.</p></div>
+                        <a href="{{ route('memberships.index') }}" class="ui-btn ui-btn-secondary !h-8"><i data-lucide="settings" class="h-3.5 w-3.5"></i>Manage</a>
                     </div>
-                </div>
-
-                <!-- Memberships -->
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between gap-4">
-                        <div><h3 class="text-lg font-light text-foreground mb-1">Memberships</h3><p class="text-xs text-muted-foreground">Membership status and account access attached to this profile.</p></div>
-                        <div class="w-8 h-8 flex items-center justify-center"><i data-lucide="badge-check" class="w-4 h-4"></i></div>
-                    </div>
-                    <div class="space-y-2 rounded-xl border border-border bg-muted/20 p-4">
+                    <div class="mt-4 space-y-2">
                         @forelse($membershipStatuses as $membership)
                             @php
                                 $membershipType = $membership->plan?->type;
                                 $membershipDisplayStatus = $membership->status === 'active' && ! $membership->is_active ? 'expired' : $membership->status;
                             @endphp
-                            <div class="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 sm:flex-row sm:items-center sm:justify-between">
-                                <div>
-                                    <div class="flex flex-wrap items-center gap-2"><h4 class="font-semibold text-foreground">{{ $membershipType?->name ?? 'Membership' }}</h4><span class="rounded-full bg-muted px-2 py-0.5 text-[9px] font-semibold uppercase text-muted-foreground">{{ $membershipDisplayStatus }}</span></div>
-                                    <p class="mt-1 text-sm text-muted-foreground">{{ $membership->plan?->name ?? 'Plan unavailable' }}{{ $membership->is_active && $membership->ends_at ? ' · active until '.$membership->ends_at->format('M j, Y') : '' }}</p>
-                                </div>
-                                @if($membershipType)<a href="{{ route('memberships.show', $membershipType) }}" class="ui-btn ui-btn-secondary ui-btn-sm"><i data-lucide="settings" class="h-4 w-4"></i>Manage</a>@endif
+                            <div class="flex flex-col gap-3 rounded-xl border border-border bg-muted/15 p-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div><div class="flex flex-wrap items-center gap-2"><p class="text-sm font-semibold">{{ $membershipType?->name ?? 'Membership' }}</p><span class="rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase {{ $membership->is_active ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground' }}">{{ $membershipDisplayStatus }}</span></div><p class="mt-1 text-xs text-muted-foreground">{{ $membership->plan?->name ?? 'Plan unavailable' }}@if($membership->is_active && $membership->ends_at) · until {{ $membership->ends_at->format('M j, Y') }}@endif</p></div>
+                                <span class="text-[10px] text-muted-foreground">{{ $membership->is_active ? $membership->plan?->entitlements?->where('enabled',true)->count().' privileges' : 'Inactive' }}</span>
                             </div>
                         @empty
-                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p class="text-sm text-muted-foreground">No membership history is attached to this account yet.</p><a href="{{ route('memberships.index') }}" class="ui-btn ui-btn-secondary"><i data-lucide="arrow-right" class="h-4 w-4"></i>View memberships</a></div>
+                            <div class="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">No membership history is attached to this account yet.</div>
                         @endforelse
                     </div>
-                </div>
+                </section>
+            </div>
 
-                <!-- Submit Button -->
-                <div class="flex items-center justify-between pt-6 border-t border-border">
-                    <div>
-                        <p class="text-sm text-muted-foreground">Last updated: {{ $user->updated_at->format('M j, Y g:i A') }}</p>
+            <aside class="space-y-5">
+                <section class="ui-panel p-5">
+                    <p class="ui-kicker">Verification</p><h2 class="mt-1 text-base font-semibold">Identity status</h2>
+                    <div class="mt-4 rounded-xl border border-border bg-muted/15 p-4"><div class="flex items-center justify-between gap-3"><div><p class="text-xs font-semibold">KYC verification</p><p class="mt-1 text-[10px] text-muted-foreground">{{ $kyc ? $kycLabel : 'Submit identity documents to complete verification.' }}</p></div><span class="flex h-9 w-9 items-center justify-center rounded-xl {{ $kyc?->isApproved() ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground' }}"><i data-lucide="shield-check" class="h-4 w-4"></i></span></div><a href="{{ route('profile.kyc') }}" class="ui-btn ui-btn-secondary mt-4 w-full justify-center">Open KYC</a></div>
+                </section>
+
+                <form method="POST" action="{{ route('password.update') }}" class="ui-panel p-5">
+                    @csrf
+                    @method('put')
+                    <p class="ui-kicker">Security</p><h2 class="mt-1 text-base font-semibold">Change password</h2><p class="mt-1 text-xs text-muted-foreground">Password changes use the dedicated authenticated security authority.</p>
+                    <div class="mt-4 space-y-3">
+                        <div><label class="ui-label" for="current_password">Current password</label><input class="ui-input mt-1 w-full" id="current_password" name="current_password" type="password" autocomplete="current-password">@error('current_password','updatePassword')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                        <div><label class="ui-label" for="password">New password</label><input class="ui-input mt-1 w-full" id="password" name="password" type="password" autocomplete="new-password">@error('password','updatePassword')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror</div>
+                        <div><label class="ui-label" for="password_confirmation">Confirm password</label><input class="ui-input mt-1 w-full" id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password"></div>
                     </div>
-                    <button type="submit" 
-                            class="px-6 py-3 bg-foreground text-background font-medium rounded-lg hover:opacity-90 transition-colors duration-200 flex items-center">
-                        <i data-lucide="save" class="w-4 h-4 mr-2"></i>
-                        Save Changes
-                    </button>
-                </div>
-            </form>
+                    <button class="ui-btn ui-btn-secondary mt-4 w-full justify-center"><i data-lucide="key-round" class="h-4 w-4"></i>Update password</button>
+                </form>
+
+                <section class="ui-panel border-red-500/15 p-5">
+                    <p class="ui-kicker text-red-600">Danger zone</p><h2 class="mt-1 text-base font-semibold">Delete account</h2><p class="mt-1 text-xs leading-5 text-muted-foreground">Permanently removes your customer account. Your current password is required.</p>
+                    <form method="POST" action="{{ route('profile.destroy') }}" class="mt-4" onsubmit="return confirm('Permanently delete this account? This action cannot be undone.');">
+                        @csrf
+                        @method('delete')
+                        <label class="ui-label" for="delete_password">Current password</label>
+                        <input id="delete_password" name="password" type="password" class="ui-input mt-1 w-full" autocomplete="current-password">
+                        @error('password','userDeletion')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
+                        <button class="ui-btn mt-3 w-full justify-center border border-red-500/25 bg-red-500/10 text-red-600 hover:bg-red-500/15"><i data-lucide="trash-2" class="h-4 w-4"></i>Delete account</button>
+                    </form>
+                </section>
+            </aside>
         </div>
     </div>
 
     <script>
-        function previewImage(input) {
-            const preview = document.getElementById('image-preview');
-            const previewText = document.getElementById('image-preview-text');
-            
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    if (preview) {
-                        preview.src = e.target.result;
-                    } else {
-                        // Create new image element
-                        const img = document.createElement('img');
-                        img.id = 'image-preview';
-                        img.src = e.target.result;
-                        img.className = 'w-20 h-20 object-cover';
-                        img.alt = 'Profile preview';
-                        
-                        // Replace text with image
-                        if (previewText) {
-                            previewText.parentNode.replaceChild(img, previewText);
-                        }
-                    }
+        function previewProfileImage(input) {
+            if (!input.files || !input.files[0]) return;
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const holder = document.getElementById('image-preview');
+                const text = document.getElementById('image-preview-text');
+                if (holder) {
+                    holder.src = event.target.result;
+                    return;
                 }
-                
-                reader.readAsDataURL(input.files[0]);
-            }
+                if (text) {
+                    const image = document.createElement('img');
+                    image.id = 'image-preview';
+                    image.src = event.target.result;
+                    image.alt = 'Profile preview';
+                    image.className = 'h-full w-full object-cover';
+                    text.parentNode.replaceChild(image, text);
+                }
+            };
+            reader.readAsDataURL(input.files[0]);
         }
 
-        function confirmDelete() {
-            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-                // Submit delete form
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '{{ route("profile.destroy") }}';
-                
-                const csrfToken = document.createElement('input');
-                csrfToken.type = 'hidden';
-                csrfToken.name = '_token';
-                csrfToken.value = '{{ csrf_token() }}';
-                
-                const methodField = document.createElement('input');
-                methodField.type = 'hidden';
-                methodField.name = '_method';
-                methodField.value = 'DELETE';
-                
-                form.appendChild(csrfToken);
-                form.appendChild(methodField);
-                document.body.appendChild(form);
-                form.submit();
-            }
-        }
-
-        // Load countries from JSON file
         fetch('/countries.json')
-            .then(response => response.json())
-            .then(countries => {
-                const countrySelect = document.getElementById('country');
-                const currentCountry = '{{ old("country", $user->country) }}';
-                
-                countries.forEach(country => {
+            .then(function (response) { return response.json(); })
+            .then(function (countries) {
+                const select = document.getElementById('country');
+                const current = @json(old('country', $user->country));
+                countries.forEach(function (country) {
                     const option = document.createElement('option');
                     option.value = country.code;
                     option.textContent = country.name;
-                    if (country.code === currentCountry) {
-                        option.selected = true;
-                    }
-                    countrySelect.appendChild(option);
+                    if (country.code === current) option.selected = true;
+                    select.appendChild(option);
                 });
             })
-            .catch(error => console.error('Error loading countries:', error));
+            .catch(function () {});
     </script>
 </x-user-layout>

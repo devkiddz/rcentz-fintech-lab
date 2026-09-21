@@ -145,7 +145,7 @@
                             $replyVisible = $message->replyTo && ! $message->replyTo->deleted_for_everyone_at;
                             $replyText = $replyVisible ? ($message->replyTo->body ?: 'Attachment') : null;
                         @endphp
-                        <div id="message-{{ $message->id }}" class="rcentz-message-row flex {{ $mine ? 'justify-end' : 'justify-start' }}">
+                        <div id="message-{{ $message->id }}" data-message-mine="{{ $mine ? '1' : '0' }}" class="rcentz-message-row flex {{ $mine ? 'justify-end' : 'justify-start' }}">
                             <div class="relative max-w-[88%] sm:max-w-[76%]">
                                 <div class="rounded-2xl px-3.5 py-2.5 shadow-sm {{ $mine ? 'rounded-br-md bg-red-500/[.10] ring-1 ring-red-500/15' : 'rounded-bl-md bg-background ring-1 ring-border' }}">
                                     @if($replyVisible)
@@ -1087,7 +1087,7 @@
         root.querySelectorAll('.rcentz-message-row, [id^="message-"]').forEach((row) => {
             if (!row.classList.contains('rcentz-message-row')) return;
             const tools = row.querySelector('.rcentz-message-tools');
-            const mine = !!tools?.classList.contains('rcentz-message-tools-left');
+            const mine = row.dataset.messageMine === '1';
             row.classList.toggle('rcentz-telegram-outgoing', mine);
             row.classList.toggle('rcentz-telegram-incoming', !mine);
         });
@@ -1354,6 +1354,80 @@
     enhanceMessages(document);
 })();
 </script>
+
+
+{{-- RCENTZ_MS9_R3_CONVERSATION_SIDE_LAYOUT_REPAIR --}}
+<style id="rcentz-ms9-r3-conversation-side-layout-repair">
+    /*
+     * R9 moved message controls into the row as a direct flex child and gave
+     * that tool rail width:100%. In a horizontal flex row that consumes the
+     * line and visually pins the bubble left even when the message is owned
+     * by the current viewer. Ownership itself is authoritative via R2's
+     * data-message-mine marker; this block only repairs physical layout.
+     */
+    .rcentz-message-row[data-message-mine="1"],
+    .rcentz-message-row.rcentz-telegram-outgoing {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-end !important;
+        justify-content: flex-start !important;
+        width: 100% !important;
+    }
+
+    .rcentz-message-row[data-message-mine="0"],
+    .rcentz-message-row.rcentz-telegram-incoming {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: flex-start !important;
+        width: 100% !important;
+    }
+
+    .rcentz-message-row[data-message-mine="1"] > div:first-child,
+    .rcentz-message-row.rcentz-telegram-outgoing > div:first-child {
+        align-self: flex-end !important;
+        margin-left: auto !important;
+        margin-right: 0 !important;
+    }
+
+    .rcentz-message-row[data-message-mine="0"] > div:first-child,
+    .rcentz-message-row.rcentz-telegram-incoming > div:first-child {
+        align-self: flex-start !important;
+        margin-left: 0 !important;
+        margin-right: auto !important;
+    }
+
+    [data-rcentz-message-row="r9"][data-message-mine="1"] > .rcentz-message-tools,
+    [data-rcentz-message-row="r9"].rcentz-telegram-outgoing > .rcentz-message-tools,
+    .rcentz-message-row[data-message-mine="1"] > .rcentz-message-tools.rcentz-r9-tools,
+    .rcentz-message-row.rcentz-telegram-outgoing > .rcentz-message-tools.rcentz-r9-tools {
+        align-self: flex-end !important;
+        justify-content: flex-end !important;
+        width: auto !important;
+        max-width: min(82%, 46rem) !important;
+        margin: .3rem 0 0 auto !important;
+    }
+
+    [data-rcentz-message-row="r9"][data-message-mine="0"] > .rcentz-message-tools,
+    [data-rcentz-message-row="r9"].rcentz-telegram-incoming > .rcentz-message-tools,
+    .rcentz-message-row[data-message-mine="0"] > .rcentz-message-tools.rcentz-r9-tools,
+    .rcentz-message-row.rcentz-telegram-incoming > .rcentz-message-tools.rcentz-r9-tools {
+        align-self: flex-start !important;
+        justify-content: flex-start !important;
+        width: auto !important;
+        max-width: min(82%, 46rem) !important;
+        margin: .3rem auto 0 0 !important;
+    }
+
+    @media (max-width: 767px) {
+        [data-rcentz-message-row="r9"] > .rcentz-message-tools,
+        .rcentz-message-tools.rcentz-r9-tools {
+            max-width: 88% !important;
+        }
+    }
+</style>
+{{-- /RCENTZ_MS9_R3_CONVERSATION_SIDE_LAYOUT_REPAIR --}}
+
 {{-- /RCENTZ_MS7_R12_ASYNC_TELEGRAM_CHAT --}}
 
 </x-user-layout>

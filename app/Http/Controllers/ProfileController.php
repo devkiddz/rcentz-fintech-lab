@@ -19,6 +19,7 @@ class ProfileController extends Controller
     public function edit(Request $request, MembershipAccessService $membershipAccess): View
     {
         $user = $request->user();
+        $user->loadMissing('kyc');
 
         return view('profile.edit', [
             'user' => $user,

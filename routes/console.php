@@ -4,7 +4,6 @@ use App\Services\StockTradePlanService;
 use App\Services\Legacy\LegacyStockExecutionEngine;
 use App\Services\MarketSessionService;
 use App\Jobs\CleanupOldDataJob;
-use App\Jobs\FetchStockHistoryJob;
 use App\Jobs\ProcessStockNewsJob;
 use App\Jobs\UpdateStockQuotesJob;
 use App\Services\BotSubscriptionLifecycleService;
@@ -32,11 +31,6 @@ Schedule::call(fn () => app(ControlledMarketEngine::class)->tickIfDue())
     ->name('controlled-market:tick')
     ->everyFiveSeconds()
     ->when(fn () => app(MarketPriceRouter::class)->activeMarketplace() === 'controlled')
-    ->withoutOverlapping()
-    ->onOneServer();
-
-Schedule::job(new FetchStockHistoryJob())
-    ->hourly()
     ->withoutOverlapping()
     ->onOneServer();
 
