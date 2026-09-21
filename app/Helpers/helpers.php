@@ -378,3 +378,20 @@ if (!function_exists('locale_direction')) {
         return app(\App\Services\LocalizationService::class)->direction($locale);
     }
 }
+
+if (!function_exists('financial_term')) {
+    function financial_term(string $key, array $replace = [], ?string $locale = null): string
+    {
+        return app(\App\Services\FinancialTerminologyService::class)->term($key, $replace, $locale);
+    }
+}
+
+if (!function_exists('localize_status')) {
+    function localize_status(?string $status): string
+    {
+        if (!$status) return '';
+        $normalized = strtolower(trim(str_replace([' ', '-'], '_', $status)));
+        $fallback = ucwords(str_replace('_', ' ', $normalized));
+        return localize('ui.common.'.$normalized, $fallback);
+    }
+}

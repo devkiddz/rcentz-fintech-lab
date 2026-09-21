@@ -12,7 +12,7 @@
 
             <div class="min-w-0">
                 <div class="flex min-w-0 items-center gap-2">
-                    <span class="hidden shrink-0 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground sm:inline">Workspace</span>
+                    <span class="hidden shrink-0 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground sm:inline">{{ localize('ui.common.workspace', 'Workspace') }}</span>
                     <span class="hidden h-1 w-1 rounded-full bg-muted-foreground/35 sm:block"></span>
                     <div class="truncate text-sm font-semibold tracking-tight text-foreground sm:text-base">{{ isset($header) ? $header : site_name() }}</div>
                 </div>
@@ -24,15 +24,15 @@
             @if(auth()->user()->isAdmin() && !app('impersonate')->isImpersonating())
                 <a href="{{ route('admin.dashboard') }}" class="hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-[10px] font-semibold sm:inline-flex" style="background:color-mix(in srgb,var(--brand-primary) 8%,transparent);color:color-mix(in srgb,var(--brand-primary) 82%,hsl(var(--foreground)))">
                     <i data-lucide="shield-check" class="h-3.5 w-3.5"></i>
-                    <span>Admin</span>
+                    <span>{{ localize('ui.common.admin', 'Admin') }}</span>
                 </a>
             @endif
 
             @if(app('impersonate')->isImpersonating())
                 <a href="{{ route('impersonate.leave') }}" class="shell-impersonation-pill" title="Return to administrator account">
                     <i data-lucide="log-out" class="h-3.5 w-3.5"></i>
-                    <span class="hidden sm:inline">Stop impersonating</span>
-                    <span class="sm:hidden">Exit</span>
+                    <span class="hidden sm:inline">{{ localize('ui.common.stop_impersonating', 'Stop impersonating') }}</span>
+                    <span class="sm:hidden">{{ localize('ui.common.exit', 'Exit') }}</span>
                 </a>
             @endif
 
@@ -56,10 +56,10 @@
                 >
                     <div class="flex items-center justify-between gap-4 px-4 py-3.5">
                         <div>
-                            <h3 class="text-sm font-semibold text-foreground">Notifications</h3>
-                            <p class="mt-0.5 text-[10px] text-muted-foreground" data-notification-summary>Recent account activity</p>
+                            <h3 class="text-sm font-semibold text-foreground">{{ localize('ui.nav.notifications', 'Notifications') }}</h3>
+                            <p class="mt-0.5 text-[10px] text-muted-foreground" data-notification-summary>{{ localize('ui.common.recent_account_activity', 'Recent account activity') }}</p>
                         </div>
-                        <button type="button" class="text-[10px] font-semibold text-muted-foreground transition hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40" data-notification-mark-all disabled>Mark all read</button>
+                        <button type="button" class="text-[10px] font-semibold text-muted-foreground transition hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40" data-notification-mark-all disabled>{{ localize('ui.common.mark_all_read', 'Mark all read') }}</button>
                     </div>
 
                     <div class="max-h-80 overflow-y-auto border-y border-border/50" data-notification-list>
@@ -67,13 +67,13 @@
                             <div class="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-muted/60">
                                 <i data-lucide="loader-2" class="h-4 w-4 animate-spin text-muted-foreground"></i>
                             </div>
-                            <p class="text-xs text-muted-foreground">Loading notifications...</p>
+                            <p class="text-xs text-muted-foreground">{{ localize('ui.common.loading_notifications', 'Loading notifications...') }}</p>
                         </div>
                     </div>
 
                     <div class="flex items-center justify-between gap-3 px-4 py-3">
-                        <span class="text-[9px] text-muted-foreground">Account alerts and activity</span>
-                        <a href="{{ route('notifications.index') }}" class="text-[10px] font-semibold text-foreground transition hover:text-primary">View all</a>
+                        <span class="text-[9px] text-muted-foreground">{{ localize('ui.common.account_alerts_activity', 'Account alerts and activity') }}</span>
+                        <a href="{{ route('notifications.index') }}" class="text-[10px] font-semibold text-foreground transition hover:text-primary">{{ localize('ui.common.view_all', 'View all') }}</a>
                     </div>
                 </div>
             </div>

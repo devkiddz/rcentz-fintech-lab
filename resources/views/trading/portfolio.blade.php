@@ -1,22 +1,22 @@
 <x-user-layout>
-<x-slot name="header">Stock Portfolio</x-slot>
+<x-slot name="header">{{ localize('ui.trading.stock_portfolio', 'Stock Portfolio') }}</x-slot>
 
 <div class="ui-page max-w-[1440px]">
     <section class="ui-page-header">
         <div>
-            <p class="ui-kicker text-[10px]">Trading · Portfolio</p>
-            <h1 class="ui-heading !text-2xl">Stock Portfolio</h1>
-            <p class="ui-lead !text-[13px]">Your current holdings, contracts and executions.</p>
+            <p class="ui-kicker text-[10px]">{{ localize('ui.trading.portfolio', 'Trading · Portfolio') }}</p>
+            <h1 class="ui-heading !text-2xl">{{ localize('ui.trading.stock_portfolio', 'Stock Portfolio') }}</h1>
+            <p class="ui-lead !text-[13px]">{{ localize('ui.trading.portfolio_copy', 'Your current holdings, contracts and executions.') }}</p>
         </div>
-        <div class="flex gap-2"><a href="{{ route('trading.positions.index') }}" class="ui-btn ui-btn-secondary"><i data-lucide="route" class="h-4 w-4"></i> Positions</a><a href="{{ route('stocks.index') }}" class="ui-btn ui-btn-primary"><i data-lucide="plus" class="h-4 w-4"></i> Browse Stocks</a></div>
+        <div class="flex gap-2"><a href="{{ route('trading.positions.index') }}" class="ui-btn ui-btn-secondary"><i data-lucide="route" class="h-4 w-4"></i> {{ localize('ui.nav.positions', 'Positions') }}</a><a href="{{ route('stocks.index') }}" class="ui-btn ui-btn-primary"><i data-lucide="plus" class="h-4 w-4"></i> {{ localize('ui.trading.browse_stocks', 'Browse Stocks') }}</a></div>
     </section>
 
     <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         @foreach([
-            ['Total Value',currency_symbol().number_format($totalCurrentValue,2),'wallet-cards'],
-            ['Invested Capital',currency_symbol().number_format($totalInvested,2),'landmark'],
-            ['Open P/L',($totalGainLoss>=0?'+':'').currency_symbol().number_format($totalGainLoss,2),'trending-up'],
-            ['Holdings',$holdings->count(),'layers-3'],
+            [financial_term('portfolio_value'),currency_symbol().number_format($totalCurrentValue,2),'wallet-cards'],
+            [financial_term('invested_capital'),currency_symbol().number_format($totalInvested,2),'landmark'],
+            [financial_term('unrealized_pnl'),($totalGainLoss>=0?'+':'').currency_symbol().number_format($totalGainLoss,2),'trending-up'],
+            [localize('ui.trading.holdings', 'Holdings'),$holdings->count(),'layers-3'],
         ] as [$label,$value,$icon])
             <div class="ui-panel p-3.5">
                 <div class="flex items-center justify-between">
@@ -85,7 +85,7 @@
     <section class="ui-panel mt-5 overflow-hidden">
         <div class="border-b border-border px-4 py-3">
             <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Positions</p>
-            <h2 class="mt-1 text-sm font-semibold">Your Holdings</h2>
+            <h2 class="mt-1 text-sm font-semibold">{{ localize('ui.trading.your_holdings', 'Your Holdings') }}</h2>
         </div>
 
         @if($holdings->count())
@@ -93,13 +93,13 @@
                 <table class="w-full min-w-[900px]">
                     <thead class="bg-muted/20">
                         <tr class="text-left text-[9px] uppercase tracking-[.11em] text-muted-foreground">
-                            <th class="px-4 py-3 font-medium">Stock</th>
-                            <th class="px-4 py-3 font-medium">Shares</th>
-                            <th class="px-4 py-3 font-medium">Avg. Entry</th>
-                            <th class="px-4 py-3 font-medium">Current</th>
-                            <th class="px-4 py-3 font-medium">Value</th>
-                            <th class="px-4 py-3 font-medium">Open P/L</th>
-                            <th class="px-4 py-3 text-right font-medium">Actions</th>
+                            <th class="px-4 py-3 font-medium">{{ localize('ui.trading.stock', 'Stock') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ localize('ui.trading.shares', 'Shares') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ financial_term('average_entry') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ localize('ui.trading.current', 'Current') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ localize('ui.trading.value', 'Value') }}</th>
+                            <th class="px-4 py-3 font-medium">{{ financial_term('unrealized_pnl') }}</th>
+                            <th class="px-4 py-3 text-right font-medium">{{ localize('ui.trading.actions', 'Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-border">
@@ -111,14 +111,14 @@
                                 <td class="px-4 py-3 text-xs tabular-nums">{{ currency_symbol() }}{{ number_format((float)($holding->market_price ?? $holding->stock->current_price),2) }}</td>
                                 <td class="px-4 py-3 text-xs font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format((float)$holding->current_value,2) }}</td>
                                 <td class="px-4 py-3"><p class="text-xs font-semibold {{ $holding->unrealized_gain_loss>=0?'text-emerald-600':'text-red-600' }}">{{ $holding->unrealized_gain_loss>=0?'+':'' }}{{ currency_symbol() }}{{ number_format((float)$holding->unrealized_gain_loss,2) }}</p><p class="text-[9px] {{ $holding->unrealized_gain_loss_percentage>=0?'text-emerald-600':'text-red-600' }}">{{ number_format((float)$holding->unrealized_gain_loss_percentage,2) }}%</p></td>
-                                <td class="px-4 py-3"><div class="flex justify-end gap-2"><a href="{{ route('trading.buy',$holding->stock) }}" class="ui-btn ui-btn-secondary !h-8 !px-3 !text-[10px]">Buy More</a><a href="{{ route('trading.sell',$holding->stock) }}" class="ui-btn ui-btn-primary !h-8 !px-3 !text-[10px]">Sell</a></div></td>
+                                <td class="px-4 py-3"><div class="flex justify-end gap-2"><a href="{{ route('trading.buy',$holding->stock) }}" class="ui-btn ui-btn-secondary !h-8 !px-3 !text-[10px]">{{ localize('ui.trading.buy_more', 'Buy More') }}</a><a href="{{ route('trading.sell',$holding->stock) }}" class="ui-btn ui-btn-primary !h-8 !px-3 !text-[10px]">{{ financial_term('sell') }}</a></div></td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
         @else
-            <div class="p-10 text-center"><p class="text-sm font-medium">No holdings yet</p><p class="mt-1 text-xs text-muted-foreground">Buy your first stock to start building this portfolio.</p></div>
+            <div class="p-10 text-center"><p class="text-sm font-medium">{{ localize('ui.trading.no_holdings', 'No holdings yet') }}</p><p class="mt-1 text-xs text-muted-foreground">{{ localize('ui.trading.no_holdings_copy', 'Buy your first stock to start building this portfolio.') }}</p></div>
         @endif
     </section>
 
@@ -126,7 +126,7 @@
     <section class="ui-panel mt-5 overflow-hidden">
         <div class="border-b border-border px-4 py-3">
             <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">History</p>
-            <h2 class="mt-1 text-sm font-semibold">Recent Transactions</h2>
+            <h2 class="mt-1 text-sm font-semibold">{{ localize('ui.trading.recent_transactions', 'Recent Transactions') }}</h2>
         </div>
         <div class="divide-y divide-border">
             @foreach($recentTransactions as $transaction)

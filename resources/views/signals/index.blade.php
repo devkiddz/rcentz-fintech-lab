@@ -1,13 +1,13 @@
 <x-user-layout>
-    <x-slot name="header">Signals</x-slot>
+    <x-slot name="header">{{ localize('ui.nav.signals', 'Signals') }}</x-slot>
 
     <div class="mx-auto max-w-7xl space-y-4">
         <section class="ui-panel overflow-hidden">
             <div class="flex flex-col gap-4 px-5 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                    <p class="ui-kicker">Signal intelligence</p>
-                    <h1 class="mt-1 text-xl font-semibold text-foreground">Your current Signals</h1>
-                    <p class="mt-1 max-w-2xl text-sm text-muted-foreground">Only Signals actually delivered to your account appear here. Published Signals are waiting for entry; Active Signals have entered their market lifecycle.</p>
+                    <p class="ui-kicker">{{ localize('ui.signals.signal_intelligence', 'Signal intelligence') }}</p>
+                    <h1 class="mt-1 text-xl font-semibold text-foreground">{{ localize('ui.signals.your_current', 'Your current Signals') }}</h1>
+                    <p class="mt-1 max-w-2xl text-sm text-muted-foreground">{{ localize('ui.signals.delivery_copy', 'Only Signals actually delivered to your account appear here. Published Signals are waiting for entry; Active Signals have entered their market lifecycle.') }}</p>
                 </div>
                 @include('signals._nav')
             </div>
@@ -15,10 +15,10 @@
 
         <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             @foreach([
-                ['Current', $summary['current'], 'radio-tower'],
-                ['Active now', $summary['active'], 'activity'],
-                ['Waiting entry', $summary['waiting'], 'clock-3'],
-                ['Unread deliveries', $summary['unread_deliveries'], 'mail'],
+                [localize('ui.common.current', 'Current'), $summary['current'], 'radio-tower'],
+                [localize('ui.common.active_now', 'Active now'), $summary['active'], 'activity'],
+                [localize('ui.common.waiting_entry', 'Waiting entry'), $summary['waiting'], 'clock-3'],
+                [localize('ui.common.unread_deliveries', 'Unread deliveries'), $summary['unread_deliveries'], 'mail'],
             ] as [$label,$value,$icon])
                 <article class="ui-metric-card">
                     <div class="ui-metric-icon"><i data-lucide="{{ $icon }}" class="h-5 w-5"></i></div>
@@ -31,8 +31,8 @@
             <section class="ui-panel">
                 <div class="ui-empty-state py-16">
                     <div class="ui-empty-icon"><i data-lucide="radio-tower" class="h-5 w-5"></i></div>
-                    <h2 class="font-medium text-foreground">No current Signals</h2>
-                    <p class="mt-1 max-w-md text-sm text-muted-foreground">When a Signal is distributed to your account, it will appear here together with its entry, stop and targets.</p>
+                    <h2 class="font-medium text-foreground">{{ localize('ui.signals.no_current', 'No current Signals') }}</h2>
+                    <p class="mt-1 max-w-md text-sm text-muted-foreground">{{ localize('ui.signals.no_current_copy', 'When a Signal is distributed to your account, it will appear here together with its entry, stop and targets.') }}</p>
                 </div>
             </section>
         @else
@@ -54,14 +54,14 @@
                                 </div>
                                 <p class="mt-1 truncate text-xs text-muted-foreground">{{ $signal?->instrument_name }} · {{ strtoupper((string)$signal->marketplace) }} · {{ strtoupper((string)$signal->timeframe) }}</p>
                             </div>
-                            @if(!$delivery->read_at)<span class="rounded-full bg-primary/10 px-2 py-1 text-[9px] font-semibold uppercase tracking-[.1em] text-primary">New</span>@endif
+                            @if(!$delivery->read_at)<span class="rounded-full bg-primary/10 px-2 py-1 text-[9px] font-semibold uppercase tracking-[.1em] text-primary">{{ localize('ui.common.new', 'New') }}</span>@endif
                         </div>
 
                         <div class="grid grid-cols-2 gap-px bg-border/70">
-                            <div class="bg-background p-4"><p class="ui-label">Entry zone</p><p class="mt-1.5 text-sm font-semibold tabular-nums">{{ number_format((float)$signal->entry_min,$precision) }} – {{ number_format((float)$signal->entry_max,$precision) }}</p></div>
-                            <div class="bg-background p-4"><p class="ui-label">Stop loss</p><p class="mt-1.5 text-sm font-semibold tabular-nums">{{ number_format((float)$signal->stop_loss,$precision) }}</p></div>
-                            <div class="bg-background p-4"><p class="ui-label">Strength</p><p class="mt-1.5 text-sm font-semibold">{{ str_replace('_',' ', strtoupper((string)$signal->strength)) }}</p></div>
-                            <div class="bg-background p-4"><p class="ui-label">Confluence</p><p class="mt-1.5 text-sm font-semibold tabular-nums">{{ number_format((float)$signal->confluence_score,2) }}%</p></div>
+                            <div class="bg-background p-4"><p class="ui-label">{{ localize('ui.signals.entry_zone', 'Entry zone') }}</p><p class="mt-1.5 text-sm font-semibold tabular-nums">{{ number_format((float)$signal->entry_min,$precision) }} – {{ number_format((float)$signal->entry_max,$precision) }}</p></div>
+                            <div class="bg-background p-4"><p class="ui-label">{{ financial_term('stop_loss') }}</p><p class="mt-1.5 text-sm font-semibold tabular-nums">{{ number_format((float)$signal->stop_loss,$precision) }}</p></div>
+                            <div class="bg-background p-4"><p class="ui-label">{{ localize('ui.common.strength', 'Strength') }}</p><p class="mt-1.5 text-sm font-semibold">{{ str_replace('_',' ', strtoupper((string)$signal->strength)) }}</p></div>
+                            <div class="bg-background p-4"><p class="ui-label">{{ financial_term('confluence') }}</p><p class="mt-1.5 text-sm font-semibold tabular-nums">{{ number_format((float)$signal->confluence_score,2) }}%</p></div>
                         </div>
 
                         <div class="flex items-center justify-between gap-3 px-5 py-4">

@@ -3,6 +3,16 @@
 return [
     'default' => 'en',
     'fallback' => 'en',
+    'bundle_files' => [
+        'localization_core.php',
+        'localization_financial.php',
+        'localization_interface_r2.php',
+        'localization_money_operations_r2b.php',
+        'localization_trading_signals_r2c.php',
+        'localization_investments_bots_copy_r2d.php',
+        'localization_final_surfaces_rtl_r2e.php',
+    ],
+    'protected_groups' => ['finance'],
     'major_locales' => ['en','fr','es','pt','ar','zh-CN','de'],
     'languages' => [
         'en' => [

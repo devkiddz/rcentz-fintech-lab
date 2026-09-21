@@ -1,36 +1,36 @@
 <x-user-layout>
-    <x-slot name="header">Add Money</x-slot>
+    <x-slot name="header">{{ localize('ui.nav.add_money', 'Add Money') }}</x-slot>
 
     @php($accountWallet = auth()->user()->wallet)
 
     <div class="money-page">
         <section class="money-page-header">
             <div>
-                <p class="ui-kicker">Money</p>
-                <h1 class="money-page-title">Add money</h1>
-                <p class="money-page-copy">Add funds to your account. Deposits remain pending until verification and only then become available to spend.</p>
+                <p class="ui-kicker">{{ localize('ui.money.money', 'Money') }}</p>
+                <h1 class="money-page-title">{{ localize('ui.money.add_money', 'Add money') }}</h1>
+                <p class="money-page-copy">{{ localize('ui.money.add_funds_copy', 'Add funds to your account. Deposits remain pending until verification and only then become available to spend.') }}</p>
             </div>
             <div class="ui-header-actions">
                 <a href="{{ route('money.activity') }}" class="ui-btn ui-btn-secondary">
-                    <i data-lucide="history" class="h-4 w-4"></i> History
+                    <i data-lucide="history" class="h-4 w-4"></i> {{ localize('ui.nav.history', 'History') }}
                 </a>
                 <a href="{{ route('money.index') }}" class="ui-btn ui-btn-secondary">
-                    <i data-lucide="wallet" class="h-4 w-4"></i> Wallet
+                    <i data-lucide="wallet" class="h-4 w-4"></i> {{ localize('ui.money.wallet', 'Wallet') }}
                 </a>
             </div>
         </section>
 
         <section class="money-balance-strip">
             <div class="money-balance-card">
-                <span>Available balance</span>
+                <span>{{ financial_term('available_balance') }}</span>
                 <strong>{{ format_currency($accountWallet?->available_balance ?? $accountWallet?->balance ?? 0) }}</strong>
             </div>
             <div class="money-balance-card">
-                <span>Wallet balance</span>
+                <span>{{ financial_term('wallet_balance') }}</span>
                 <strong>{{ format_currency($accountWallet?->balance ?? 0) }}</strong>
             </div>
             <div class="money-balance-card">
-                <span>Reserved</span>
+                <span>{{ financial_term('reserved_balance') }}</span>
                 <strong>{{ format_currency($accountWallet?->reserved_balance ?? 0) }}</strong>
             </div>
         </section>
@@ -39,8 +39,8 @@
             <section class="money-form-card">
                 <div class="money-card-head">
                     <div>
-                        <h2>Deposit request</h2>
-                        <p>Choose an amount and a funding method.</p>
+                        <h2>{{ localize('ui.money.deposit_request', 'Deposit request') }}</h2>
+                        <p>{{ localize('ui.money.choose_amount_method', 'Choose an amount and a funding method.') }}</p>
                     </div>
                     <div class="ui-metric-icon"><i data-lucide="circle-plus" class="h-4 w-4"></i></div>
                 </div>
@@ -56,7 +56,7 @@
                         @csrf
 
                         <div>
-                            <label for="amount" class="ui-label">Deposit amount</label>
+                            <label for="amount" class="ui-label">{{ localize('ui.money.deposit_amount', 'Deposit amount') }}</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{{ currency_symbol() }}</span>
                                 <input id="amount" name="amount" type="number" step="0.01" min="1" max="100000" value="{{ old('amount') }}" class="ui-input pl-8" placeholder="0.00" required>
@@ -65,7 +65,7 @@
                         </div>
 
                         <div>
-                            <label class="ui-label">Funding method</label>
+                            <label class="ui-label">{{ localize('ui.money.funding_method', 'Funding method') }}</label>
                             <div class="money-method-list">
                                 @forelse($paymentMethods->where('allow_deposit', true) as $method)
                                     <label class="money-method">
@@ -79,12 +79,12 @@
                                         </div>
                                         <div class="min-w-0 flex-1">
                                             <p class="text-sm font-medium text-foreground">{{ $method->name }}</p>
-                                            <p class="mt-0.5 text-xs text-muted-foreground">{{ $method->description ?: 'Deposit method' }}</p>
+                                            <p class="mt-0.5 text-xs text-muted-foreground">{{ $method->description ?: localize('ui.money.deposit_method', 'Deposit method') }}</p>
                                         </div>
                                         <i data-lucide="chevron-right" class="h-4 w-4 text-muted-foreground"></i>
                                     </label>
                                 @empty
-                                    <div class="money-note">No active deposit method is currently available.</div>
+                                    <div class="money-note">{{ localize('ui.money.no_deposit_method', 'No active deposit method is currently available.') }}</div>
                                 @endforelse
                             </div>
                             @error('payment_method_id')<p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>@enderror
@@ -92,11 +92,11 @@
 
                         <div class="money-note flex gap-2.5">
                             <i data-lucide="shield-check" class="mt-0.5 h-4 w-4 shrink-0 text-foreground"></i>
-                            <p>Your balance will not increase until this deposit is verified and completed.</p>
+                            <p>{{ localize('ui.money.deposit_pending_notice', 'Your balance will not increase until this deposit is verified and completed.') }}</p>
                         </div>
 
                         <button type="submit" class="ui-btn ui-btn-primary w-full sm:w-auto">
-                            Submit deposit
+                            {{ localize('ui.money.submit_deposit', 'Submit deposit') }}
                             <i data-lucide="arrow-right" class="h-4 w-4"></i>
                         </button>
                     </form>
@@ -106,16 +106,16 @@
             <aside class="money-summary-card">
                 <div class="money-card-head">
                     <div>
-                        <h2>Deposit summary</h2>
-                        <p>Review what will happen after submission.</p>
+                        <h2>{{ localize('ui.money.deposit_summary', 'Deposit summary') }}</h2>
+                        <p>{{ localize('ui.money.review_after_submission', 'Review what will happen after submission.') }}</p>
                     </div>
                 </div>
                 <div class="money-card-body">
-                    <div class="money-summary-row"><span>Deposit amount</span><strong id="deposit-amount">{{ currency_symbol() }}0.00</strong></div>
-                    <div class="money-summary-row"><span>Processing fee</span><strong id="processing-fee">{{ currency_symbol() }}0.00</strong></div>
-                    <div class="money-summary-row money-summary-total"><span>Total submitted</span><strong id="total-amount">{{ currency_symbol() }}0.00</strong></div>
+                    <div class="money-summary-row"><span>{{ localize('ui.money.deposit_amount', 'Deposit amount') }}</span><strong id="deposit-amount">{{ currency_symbol() }}0.00</strong></div>
+                    <div class="money-summary-row"><span>{{ financial_term('processing_fee') }}</span><strong id="processing-fee">{{ currency_symbol() }}0.00</strong></div>
+                    <div class="money-summary-row money-summary-total"><span>{{ localize('ui.money.total_submitted', 'Total submitted') }}</span><strong id="total-amount">{{ currency_symbol() }}0.00</strong></div>
                     <div class="mt-5 money-note">
-                        <strong class="mb-1 block text-foreground">Status flow</strong>
+                        <strong class="mb-1 block text-foreground">{{ localize('ui.money.status_flow', 'Status flow') }}</strong>
                         Pending → Verified → Credited → Completed
                     </div>
                 </div>

@@ -94,7 +94,7 @@
                     data-sidebar-mobile-toggle
                     aria-controls="sidebar"
                     aria-expanded="false"
-                    aria-label="Close admin navigation"
+                    aria-label="{{ localize('ui.r2e.admin.menu', 'Menu') }}"
                     class="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden">
                 <i data-lucide="x" class="h-4 w-4"></i>
             </button>
@@ -106,7 +106,7 @@
             </div>
             <div class="sidebar-profile-copy min-w-0">
                 <p class="truncate text-xs font-semibold">{{ Auth::user()->name }}</p>
-                <p class="truncate text-[10px] text-muted-foreground">Administrator · Platform Control</p>
+                <p class="truncate text-[10px] text-muted-foreground">{{ localize('ui.r2e.admin.platform_control', 'Administrator · Platform Control') }}</p>
             </div>
         </div>
 
@@ -116,10 +116,10 @@
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit"
-                        title="Sign out"
+                        title="{{ localize('ui.r2e.admin.sign_out', 'Sign out') }}"
                         class="sidebar-utility flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[12px] font-medium text-red-600 hover:bg-red-500/10">
                     <i data-lucide="log-out" class="h-4 w-4 shrink-0"></i>
-                    <span class="sidebar-label">Sign out</span>
+                    <span class="sidebar-label">{{ localize('ui.r2e.admin.sign_out', 'Sign out') }}</span>
                 </button>
             </form>
         </div>
@@ -141,22 +141,22 @@
         <div class="mx-auto grid max-w-lg grid-cols-5 items-end">
             <a href="{{ route('admin.dashboard') }}"
                class="flex flex-col items-center gap-1 py-1 text-[10px] {{ request()->routeIs('admin.dashboard') ? 'text-foreground' : 'text-muted-foreground' }}">
-                <i data-lucide="home" class="h-5 w-5"></i><span>Home</span>
+                <i data-lucide="home" class="h-5 w-5"></i><span>{{ localize('ui.r2e.admin.home', 'Home') }}</span>
             </a>
 
             <a href="{{ route('admin.trading.index') }}"
                class="flex flex-col items-center gap-1 py-1 text-[10px] {{ request()->routeIs('admin.trading.*','admin.stocks.*') ? 'text-foreground' : 'text-muted-foreground' }}">
-                <i data-lucide="candlestick-chart" class="h-5 w-5"></i><span>Trading</span>
+                <i data-lucide="candlestick-chart" class="h-5 w-5"></i><span>{{ localize('ui.r2d.common.trading', 'Trading') }}</span>
             </a>
 
             <a href="{{ route('admin.users.index') }}"
                class="flex flex-col items-center gap-1 py-1 text-[10px] {{ request()->routeIs('admin.users.*') ? 'text-foreground' : 'text-muted-foreground' }}">
-                <i data-lucide="users" class="h-5 w-5"></i><span>Users</span>
+                <i data-lucide="users" class="h-5 w-5"></i><span>{{ localize('ui.r2e.admin.users', 'Users') }}</span>
             </a>
 
             <a href="{{ route('admin.wallet-transactions.index') }}"
                class="flex flex-col items-center gap-1 py-1 text-[10px] {{ request()->routeIs('admin.wallet-transactions.*') ? 'text-foreground' : 'text-muted-foreground' }}">
-                <i data-lucide="wallet-cards" class="h-5 w-5"></i><span>Transactions</span>
+                <i data-lucide="wallet-cards" class="h-5 w-5"></i><span>{{ localize('ui.r2d.common.transactions', 'Transactions') }}</span>
             </a>
 
             <button type="button"
@@ -165,7 +165,7 @@
                     aria-controls="sidebar"
                     aria-expanded="false"
                     class="flex flex-col items-center gap-1 py-1 text-[10px] text-muted-foreground">
-                <i data-lucide="menu" class="h-5 w-5"></i><span>Menu</span>
+                <i data-lucide="menu" class="h-5 w-5"></i><span>{{ localize('ui.r2e.admin.menu', 'Menu') }}</span>
             </button>
         </div>
     </nav>

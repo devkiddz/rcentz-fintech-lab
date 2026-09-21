@@ -78,7 +78,7 @@
                         <i data-lucide="sun" class="hidden h-4 w-4 dark:block"></i><i data-lucide="moon" class="h-4 w-4 dark:hidden"></i>
                     </button>
                     @auth
-                        <a href="{{ $dashboardUrl }}" class="hidden h-9 items-center gap-2 rounded-xl px-3.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 sm:inline-flex" style="background:var(--brand-primary)"><i data-lucide="layout-dashboard" class="h-3.5 w-3.5"></i>Workspace</a>
+                        <a href="{{ $dashboardUrl }}" class="hidden h-9 items-center gap-2 rounded-xl px-3.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 sm:inline-flex" style="background:var(--brand-primary)"><i data-lucide="layout-dashboard" class="h-3.5 w-3.5"></i>{{ localize('ui.nav.workspace', 'Workspace') }}</a>
                     @else
                         <a href="{{ route('login') }}" class="hidden h-9 items-center px-2.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground sm:inline-flex">{{ localize('ui.nav.sign_in', 'Sign in') }}</a>
                         @if(Route::has('register'))<a href="{{ route('register') }}" class="hidden h-9 items-center rounded-xl px-3.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 sm:inline-flex" style="background:var(--brand-primary)">{{ localize('ui.nav.create_account', 'Create account') }}</a>@endif
@@ -94,7 +94,7 @@
                     <a href="{{ route('home') }}#systems" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="bot" class="h-4 w-4 text-muted-foreground"></i>{{ localize('ui.nav.automation', 'Automation') }}</a>
                     <a href="{{ route('cars.browse') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="shopping-bag" class="h-4 w-4 text-muted-foreground"></i>{{ localize('ui.nav.inventory', 'Inventory') }}</a>
                     <a href="{{ route('about') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="building-2" class="h-4 w-4 text-muted-foreground"></i>{{ localize('ui.nav.company', 'Company') }}</a>
-                    <a href="{{ $dashboardUrl }}" class="mt-1 flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-white" style="background:var(--brand-primary)"><i data-lucide="{{ auth()->check() ? 'layout-dashboard' : 'log-in' }}" class="h-4 w-4"></i>{{ auth()->check() ? 'Open workspace' : 'Sign in' }}</a>
+                    <a href="{{ $dashboardUrl }}" class="mt-1 flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-white" style="background:var(--brand-primary)"><i data-lucide="{{ auth()->check() ? 'layout-dashboard' : 'log-in' }}" class="h-4 w-4"></i>{{ auth()->check() ? localize('ui.common.open_workspace', 'Open workspace') : localize('ui.nav.sign_in', 'Sign in') }}</a>
                 </div>
             </div>
         </div>
@@ -126,42 +126,42 @@
                         <p class="mt-5 max-w-md text-base font-semibold leading-7 text-white/82">{{ setting('site_tagline', 'Markets, intelligence and financial control.') }}</p>
                         <p class="mt-2 max-w-md text-sm leading-6 text-white/45">{{ setting('site_description', 'Modern financial markets, intelligence and investment access.') }}</p>
                         <div class="mt-6 flex flex-wrap gap-2.5">
-                            <a href="{{ $dashboardUrl }}" class="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-xs font-semibold text-white transition hover:brightness-110" style="background:var(--brand-primary)"><i data-lucide="layout-dashboard" class="h-4 w-4"></i>{{ auth()->check() ? 'Open workspace' : 'Client access' }}</a>
-                            <a href="{{ route('contact') }}" class="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[.035] px-4 text-xs font-semibold text-white/75 transition hover:bg-white/[.07] hover:text-white"><i data-lucide="headphones" class="h-4 w-4"></i>Contact support</a>
+                            <a href="{{ $dashboardUrl }}" class="inline-flex h-10 items-center gap-2 rounded-xl px-4 text-xs font-semibold text-white transition hover:brightness-110" style="background:var(--brand-primary)"><i data-lucide="layout-dashboard" class="h-4 w-4"></i>{{ auth()->check() ? localize('ui.common.open_workspace', 'Open workspace') : localize('ui.common.client_access', 'Client access') }}</a>
+                            <a href="{{ route('contact') }}" class="inline-flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[.035] px-4 text-xs font-semibold text-white/75 transition hover:bg-white/[.07] hover:text-white"><i data-lucide="headphones" class="h-4 w-4"></i>{{ localize('ui.common.contact_support', 'Contact support') }}</a>
                         </div>
                     </div>
 
                     <div>
-                        <p class="public-footer-label">Explore</p>
+                        <p class="public-footer-label">{{ localize('ui.common.explore', 'Explore') }}</p>
                         <div class="public-footer-links">
                             <a href="{{ route('home') }}#markets" class="public-footer-link">{{ localize('ui.nav.markets', 'Markets') }}</a>
-                            <a href="{{ route('home') }}#opportunities" class="public-footer-link">Opportunities</a>
+                            <a href="{{ route('home') }}#opportunities" class="public-footer-link">{{ localize('ui.common.opportunities', 'Opportunities') }}</a>
                             <a href="{{ route('cars.browse') }}" class="public-footer-link">{{ localize('ui.nav.inventory', 'Inventory') }}</a>
-                            <a href="{{ route('home') }}#calculator" class="public-footer-link">Investment calculator</a>
+                            <a href="{{ route('home') }}#calculator" class="public-footer-link">{{ localize('ui.common.investment_calculator', 'Investment calculator') }}</a>
                         </div>
                     </div>
 
                     <div>
-                        <p class="public-footer-label">Company</p>
+                        <p class="public-footer-label">{{ localize('ui.nav.company', 'Company') }}</p>
                         <div class="public-footer-links">
-                            <a href="{{ route('about') }}" class="public-footer-link">About</a>
-                            <a href="{{ route('contact') }}" class="public-footer-link">Contact</a>
-                            <a href="{{ route('help-center') }}" class="public-footer-link">Help center</a>
-                            <a href="{{ route('privacy') }}" class="public-footer-link">Privacy</a>
+                            <a href="{{ route('about') }}" class="public-footer-link">{{ localize('ui.common.about', 'About') }}</a>
+                            <a href="{{ route('contact') }}" class="public-footer-link">{{ localize('ui.nav.contact', 'Contact') }}</a>
+                            <a href="{{ route('help-center') }}" class="public-footer-link">{{ localize('ui.common.help_center', 'Help center') }}</a>
+                            <a href="{{ route('privacy') }}" class="public-footer-link">{{ localize('ui.nav.privacy', 'Privacy') }}</a>
                         </div>
                     </div>
 
                     <div class="public-footer-support">
-                        <p class="public-footer-label">Support & legal</p>
+                        <p class="public-footer-label">{{ localize('ui.common.support_legal', 'Support & legal') }}</p>
                         <div class="public-footer-links">
                             @if($hasPublicSupportEmail)
                                 <a href="mailto:{{ $footerEmail }}" class="public-footer-link inline-flex items-center gap-2"><i data-lucide="mail" class="h-3.5 w-3.5"></i>{{ $footerEmail }}</a>
                             @else
-                                <a href="{{ route('contact') }}" class="public-footer-link inline-flex items-center gap-2"><i data-lucide="mail" class="h-3.5 w-3.5"></i>Contact support</a>
+                                <a href="{{ route('contact') }}" class="public-footer-link inline-flex items-center gap-2"><i data-lucide="mail" class="h-3.5 w-3.5"></i>{{ localize('ui.common.contact_support', 'Contact support') }}</a>
                             @endif
                             @if(site_phone())<a href="tel:{{ site_phone() }}" class="public-footer-link inline-flex items-center gap-2"><i data-lucide="phone" class="h-3.5 w-3.5"></i>{{ site_phone() }}</a>@endif
-                            <a href="{{ route('terms') }}" class="public-footer-link">Terms of service</a>
-                            <a href="{{ route('privacy') }}" class="public-footer-link">Privacy & legal</a>
+                            <a href="{{ route('terms') }}" class="public-footer-link">{{ localize('ui.common.terms_service', 'Terms of service') }}</a>
+                            <a href="{{ route('privacy') }}" class="public-footer-link">{{ localize('ui.common.privacy_legal', 'Privacy & legal') }}</a>
                         </div>
                     </div>
                 </div>

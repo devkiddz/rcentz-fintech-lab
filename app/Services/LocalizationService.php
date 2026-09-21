@@ -131,7 +131,7 @@ class LocalizationService
             throw new \RuntimeException('Localization tables are not available. Run migrations first.');
         }
 
-        $bundle = require database_path('seeders/data/localization_core.php');
+        $bundle = $this->bundledCatalogue();
         $languages = config('localization.languages', []);
         $majors = config('localization.major_locales', ['en']);
         $languageCount = 0;
@@ -213,6 +213,36 @@ class LocalizationService
     {
         $nextVersion = ((int) Cache::get('localization:version', 1)) + 1;
         Cache::forever('localization:version', $nextVersion);
+    }
+
+    private function bundledCatalogue(): array
+    {
+        $catalogue = ['source' => [], 'translations' => []];
+        $files = config('localization.bundle_files', ['localization_core.php']);
+
+        foreach ($files as $file) {
+            $path = database_path('seeders/data/'.basename((string) $file));
+            if (! is_file($path)) {
+                throw new \RuntimeException('Localization bundle not found: '.basename((string) $file));
+            }
+
+            $bundle = require $path;
+            foreach (($bundle['source'] ?? []) as $identity => $sourceText) {
+                if (array_key_exists($identity, $catalogue['source']) && $catalogue['source'][$identity] !== $sourceText) {
+                    throw new \RuntimeException('Conflicting localization source identity: '.$identity);
+                }
+                $catalogue['source'][$identity] = $sourceText;
+            }
+
+            foreach (($bundle['translations'] ?? []) as $locale => $translations) {
+                $catalogue['translations'][$locale] = array_merge(
+                    $catalogue['translations'][$locale] ?? [],
+                    $translations
+                );
+            }
+        }
+
+        return $catalogue;
     }
 
     private function splitIdentity(string $identity): array

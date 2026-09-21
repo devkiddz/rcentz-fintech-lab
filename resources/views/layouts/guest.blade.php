@@ -26,15 +26,15 @@
                 @endif
             </a>
             <div class="flex items-center gap-2">
-                <a href="{{ route('about') }}" class="hidden rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground md:block">Company</a>
-                <a href="{{ route('help-center') }}" class="hidden rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground md:block">Support</a>
+                <a href="{{ route('about') }}" class="hidden rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground md:block">{{ localize('ui.nav.company', 'Company') }}</a>
+                <a href="{{ route('help-center') }}" class="hidden rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground md:block">{{ localize('ui.common.support', 'Support') }}</a>
                 @auth
-                    <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('dashboard') }}" class="hidden rounded-lg px-3 py-2 text-xs font-semibold sm:block">Open account</a>
+                    <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('dashboard') }}" class="hidden rounded-lg px-3 py-2 text-xs font-semibold sm:block">{{ localize('ui.common.open_account', 'Open account') }}</a>
                 @else
-                    <a href="{{ route('login') }}" class="hidden rounded-lg px-3 py-2 text-xs font-semibold sm:block">Sign in</a>
+                    <a href="{{ route('login') }}" class="hidden rounded-lg px-3 py-2 text-xs font-semibold sm:block">{{ localize('ui.nav.sign_in', 'Sign in') }}</a>
                 @endauth
                 @include('partials.language-switcher')
-                <button type="button" data-theme-toggle onclick="window.AxausTheme.toggle()" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label="Toggle theme"><i data-lucide="sun" class="hidden h-4 w-4 dark:block"></i><i data-lucide="moon" class="h-4 w-4 dark:hidden"></i></button>
+                <button type="button" data-theme-toggle onclick="window.AxausTheme.toggle()" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label="{{ localize('ui.common.theme', 'Toggle theme') }}"><i data-lucide="sun" class="hidden h-4 w-4 dark:block"></i><i data-lucide="moon" class="h-4 w-4 dark:hidden"></i></button>
             </div>
         </div>
     </nav>
@@ -46,7 +46,7 @@
     <footer class="border-t border-border bg-card/60">
         <div class="mx-auto flex w-full max-w-7xl flex-col items-center justify-between gap-3 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:px-6 lg:px-8">
             <p>{{ setting('footer_text', '© '.date('Y').' '.setting('legal_company_name', setting('company_name', site_name())).'. All rights reserved.') }}</p>
-            <div class="flex items-center gap-5"><a href="{{ route('privacy') }}" class="hover:text-foreground">Privacy</a><a href="{{ route('terms') }}" class="hover:text-foreground">Terms</a><a href="{{ route('contact') }}" class="hover:text-foreground">Contact</a></div>
+            <div class="flex items-center gap-5"><a href="{{ route('privacy') }}" class="hover:text-foreground">{{ localize('ui.nav.privacy', 'Privacy') }}</a><a href="{{ route('terms') }}" class="hover:text-foreground">{{ localize('ui.nav.terms', 'Terms') }}</a><a href="{{ route('contact') }}" class="hover:text-foreground">{{ localize('ui.nav.contact', 'Contact') }}</a></div>
         </div>
     </footer>
 </div>

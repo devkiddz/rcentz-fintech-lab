@@ -8,6 +8,24 @@
         display: none;
     }
 
+    /* MS10 R2E: direction-aware shell geometry. */
+    html[dir="rtl"] #sidebar { left: auto !important; right: 0 !important; }
+    html[dir="rtl"] #sidebar.-translate-x-full { transform: translateX(100%) !important; }
+    html[dir="rtl"] #sidebar.translate-x-0 { transform: translateX(0) !important; }
+    html[dir="rtl"] #workspace-main { margin-left: 0 !important; }
+    html[dir="rtl"] #sidebar .sidebar-subnav { margin-left: 0 !important; padding-left: 0 !important; border-left: 0 !important; margin-right: .8rem !important; padding-right: 1rem !important; border-right: 1px solid hsl(var(--border) / .7) !important; }
+    html[dir="rtl"] #sidebar .sidebar-subnav::before { left: auto !important; right: .14rem !important; }
+    html[dir="rtl"] .text-left { text-align: right !important; }
+    html[dir="rtl"] .text-right { text-align: left !important; }
+    html[dir="rtl"] [data-language-switcher] { direction: rtl; }
+    html[dir="rtl"] [data-language-switcher] [dir="ltr"] { direction: ltr; }
+
+    @media (min-width: 1024px) {
+        html[dir="rtl"] #workspace-main { margin-right: 18rem !important; }
+        html[dir="rtl"] body.sidebar-collapsed #workspace-main { margin-right: 5.25rem !important; margin-left: 0 !important; }
+    }
+
+
     @media (min-width: 1024px) {
         #sidebar,
         #workspace-main {

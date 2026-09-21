@@ -95,9 +95,9 @@
                 <p class="truncate text-xs font-semibold">{{ auth()->user()->name }}</p>
                 <p class="truncate text-[10px] text-muted-foreground">{{ auth()->user()->email }}</p>
                 @if(auth()->user()->isAdmin())
-                    <p class="mt-1 inline-flex items-center rounded-full bg-red-500/10 px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[.12em] text-red-600 dark:text-red-400">Customer Audit Mode</p>
+                    <p class="mt-1 inline-flex items-center rounded-full bg-red-500/10 px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[.12em] text-red-600 dark:text-red-400">{{ localize('ui.common.customer_audit_mode', 'Customer Audit Mode') }}</p>
                 @else
-                    <p class="mt-1 text-[9px] font-medium text-muted-foreground">Customer account</p>
+                    <p class="mt-1 text-[9px] font-medium text-muted-foreground">{{ localize('ui.common.customer_account', 'Customer account') }}</p>
                 @endif
             </div>
         </div>
@@ -110,7 +110,7 @@
                 <button type="submit"
                         class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[12px] font-medium text-red-600 hover:bg-red-500/10">
                     <i data-lucide="log-out" class="h-4 w-4 shrink-0"></i>
-                    <span class="sidebar-label">Sign out</span>
+                    <span class="sidebar-label">{{ localize('ui.common.sign_out', 'Sign out') }}</span>
                 </button>
             </form>
         </div>
@@ -132,27 +132,27 @@
         <div class="mx-auto grid max-w-lg grid-cols-5 items-end">
             <a href="{{ route('dashboard') }}"
                class="flex flex-col items-center gap-1 py-1 text-[10px] {{ request()->routeIs('dashboard') ? 'text-foreground' : 'text-muted-foreground' }}">
-                <i data-lucide="home" class="h-5 w-5"></i><span>Home</span>
+                <i data-lucide="home" class="h-5 w-5"></i><span>{{ localize('ui.nav.home', 'Home') }}</span>
             </a>
 
             <a href="{{ route('stocks.index') }}"
                class="flex flex-col items-center gap-1 py-1 text-[10px] {{ request()->routeIs('stocks.*') ? 'text-foreground' : 'text-muted-foreground' }}">
-                <i data-lucide="activity" class="h-5 w-5"></i><span>Markets</span>
+                <i data-lucide="activity" class="h-5 w-5"></i><span>{{ localize('ui.nav.markets', 'Markets') }}</span>
             </a>
 
             <a href="{{ route('trading.positions.index') }}"
                class="flex flex-col items-center gap-1 py-1 text-[10px] {{ request()->routeIs('trading.positions.*') ? 'text-foreground' : 'text-muted-foreground' }}">
-                <i data-lucide="target" class="h-5 w-5"></i><span>Positions</span>
+                <i data-lucide="target" class="h-5 w-5"></i><span>{{ localize('ui.nav.positions', 'Positions') }}</span>
             </a>
 
             <a href="{{ route('money.index') }}"
                class="flex flex-col items-center gap-1 py-1 text-[10px] {{ request()->routeIs('money.*','wallet.*') ? 'text-foreground' : 'text-muted-foreground' }}">
-                <i data-lucide="wallet" class="h-5 w-5"></i><span>Money</span>
+                <i data-lucide="wallet" class="h-5 w-5"></i><span>{{ localize('ui.nav.money', 'Money') }}</span>
             </a>
 
             <button type="button" onclick="openSidebar()"
                     class="flex flex-col items-center gap-1 py-1 text-[10px] text-muted-foreground">
-                <i data-lucide="menu" class="h-5 w-5"></i><span>Menu</span>
+                <i data-lucide="menu" class="h-5 w-5"></i><span>{{ localize('ui.nav.menu', 'Menu') }}</span>
             </button>
         </div>
     </nav>

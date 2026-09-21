@@ -1,13 +1,13 @@
 <x-user-layout>
-<x-slot name="header">AI Trading Bots</x-slot>
+<x-slot name="header">{{ localize('ui.r2d.bots.ai_trading_bots', 'AI Trading Bots') }}</x-slot>
 <div class="ui-page max-w-[1440px]">
 <section class="ui-page-header">
     <div>
-        <p class="ui-kicker text-[10px]">AI Trading Bots</p>
-        <h1 class="ui-heading !text-xl">Bot Marketplace</h1>
-        <p class="ui-lead !text-[13px]">Admin-curated automation with live market context, transparent limits and performance.</p>
+        <p class="ui-kicker text-[10px]">{{ localize('ui.r2d.bots.ai_trading_bots', 'AI Trading Bots') }}</p>
+        <h1 class="ui-heading !text-xl">{{ localize('ui.r2d.bots.marketplace', 'Bot Marketplace') }}</h1>
+        <p class="ui-lead !text-[13px]">{{ localize('ui.r2d.bots.marketplace_lead', 'Admin-curated automation with live market context, transparent limits and performance.') }}</p>
     </div>
-    <a href="{{ route('ai-bots.my-bots') }}" class="ui-btn ui-btn-secondary"><i data-lucide="bot" class="h-4 w-4"></i> My Bots</a>
+    <a href="{{ route('ai-bots.my-bots') }}" class="ui-btn ui-btn-secondary"><i data-lucide="bot" class="h-4 w-4"></i> {{ localize('ui.r2d.bots.my_bots', 'My Bots') }}</a>
 </section>
 
 <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -22,7 +22,7 @@
         <div class="p-4">
             @if($m['is_manual_performance'])
                 <div class="mb-2 inline-flex items-center gap-1.5 rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-violet-600">
-                    <i data-lucide="sparkles" class="h-3 w-3"></i>{{ $m['performance_label'] ?: 'Manual Performance' }}
+                    <i data-lucide="sparkles" class="h-3 w-3"></i>{{ $m['performance_label'] ?: localize('ui.r2d.bots.manual_performance', 'Manual Performance') }}
                 </div>
             @endif
 
@@ -43,7 +43,7 @@
         <div class="border-y border-border/70 bg-muted/10">
             <div class="flex items-center justify-between px-3.5 pt-3">
                 <div>
-                    <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Live price</p>
+                    <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">{{ localize('ui.r2d.bots.live_price', 'Live price') }}</p>
                     <p class="mt-1 text-sm font-semibold">{{ $market['current_display'] ?? '—' }}</p>
                 </div>
                 <span class="text-[10px] font-semibold {{ (float)($market['change_percentage'] ?? 0) >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
@@ -56,7 +56,7 @@
                 @else
                     <div class="absolute inset-0 flex items-center justify-center px-3 pb-2">
                         <div class="text-center">
-                            <p class="text-[10px] font-medium text-foreground">Building live price history</p>
+                            <p class="text-[10px] font-medium text-foreground">{{ localize('ui.r2d.bots.building_history', 'Building live price history') }}</p>
                             <p class="mt-1 text-[9px] text-muted-foreground">Waiting for authoritative {{ strtoupper($market['asset_class'] ?? 'market') }} price history.</p>
                         </div>
                     </div>
@@ -67,37 +67,37 @@
         <div class="p-4">
             <div class="grid grid-cols-4 gap-2">
                 <div class="rounded-lg border border-border bg-muted/10 p-2">
-                    <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">P/L</p>
+                    <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">{{ localize('ui.r2d.common.pnl', 'P/L') }}</p>
                     <p class="mt-1 text-[12px] font-semibold {{ $m['profit_loss']>0?'text-emerald-600':'' }}">{{ $m['profit_loss']>0?'+':'' }}{{ format_currency($m['profit_loss']) }}</p>
                 </div>
                 <div class="rounded-lg border border-border bg-muted/10 p-2">
-                    <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Return</p>
+                    <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">{{ localize('ui.r2d.common.return', 'Return') }}</p>
                     <p class="mt-1 text-[12px] font-semibold text-sky-600">{{ $m['return_percent']>0?'+':'' }}{{ number_format($m['return_percent'],2) }}%</p>
                 </div>
                 <div class="rounded-lg border border-border bg-muted/10 p-2">
-                    <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Trades</p>
+                    <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">{{ localize('ui.r2d.bots.trades', 'Trades') }}</p>
                     <p class="mt-1 text-[12px] font-semibold">{{ $m['completed_count'] }}</p>
                 </div>
                 <div class="rounded-lg border border-border bg-muted/10 p-2">
-                    <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">Subs</p>
+                    <p class="text-[8px] uppercase tracking-[.12em] text-muted-foreground">{{ localize('ui.r2d.bots.subscribers', 'Subs') }}</p>
                     <p class="mt-1 text-[12px] font-semibold">{{ $product->subscriber_count }}</p>
                 </div>
             </div>
 
             <div class="mt-3 flex items-end justify-between border-t border-border pt-3 text-xs">
                 <div>
-                    <span class="text-muted-foreground">Subscription</span>
-                    <p class="mt-1 font-semibold">{{ $product->price>0?format_currency($product->price):'Free' }}</p>
+                    <span class="text-muted-foreground">{{ localize('ui.r2d.bots.subscription', 'Subscription') }}</span>
+                    <p class="mt-1 font-semibold">{{ $product->price>0?format_currency($product->price):localize('ui.r2d.bots.free', 'Free') }}</p>
                 </div>
                 <div class="text-right">
-                    <span class="text-muted-foreground">Minimum Balance</span>
+                    <span class="text-muted-foreground">{{ localize('ui.r2d.bots.minimum_balance', 'Minimum Balance') }}</span>
                     <p class="mt-1 font-semibold">{{ format_currency($product->minimum_balance) }}</p>
                 </div>
             </div>
         </div>
     </a>
 @empty
-    <div class="ui-panel p-8 md:col-span-2 xl:col-span-3 text-center text-sm text-muted-foreground">No bot products available.</div>
+    <div class="ui-panel p-8 md:col-span-2 xl:col-span-3 text-center text-sm text-muted-foreground">{{ localize('ui.r2d.bots.no_products', 'No bot products available.') }}</div>
 @endforelse
 </div>
 </div>

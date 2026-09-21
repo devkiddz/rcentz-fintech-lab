@@ -14,6 +14,19 @@
 
     @include('admin.settings.partials.flash')
 
+    <section class="ui-panel mb-4 overflow-hidden">
+        <div class="grid gap-px bg-border sm:grid-cols-[1fr_auto]">
+            <div class="bg-background p-5">
+                <p class="ui-kicker">Protected terminology</p>
+                <h2 class="mt-1 text-base font-semibold">Financial glossary authority</h2>
+                <p class="mt-1 max-w-3xl text-xs leading-5 text-muted-foreground">Trading, wallet, signal and investment surfaces resolve sensitive financial terms from one canonical glossary so the same concept is translated consistently everywhere.</p>
+            </div>
+            <div class="flex min-w-40 items-center justify-center bg-background p-5 text-center">
+                <div><p class="text-2xl font-semibold tabular-nums">{{ app(\App\Services\FinancialTerminologyService::class)->count() }}</p><p class="mt-1 text-[9px] font-semibold uppercase tracking-[.12em] text-muted-foreground">protected terms</p></div>
+            </div>
+        </div>
+    </section>
+
     <form method="POST" action="{{ route('admin.settings.localization.update') }}" class="ui-panel overflow-hidden">
         @csrf
         @method('patch')

@@ -1,9 +1,9 @@
 <x-user-layout>
-<x-slot name="header">My AI Bots</x-slot>
+<x-slot name="header">{{ localize('ui.r2d.bots.my_header', 'My AI Bots') }}</x-slot>
 <div class="ui-page max-w-[1440px]">
 <section class="ui-page-header">
-    <div><p class="ui-kicker text-[10px]">AI Trading Bots</p><h1 class="ui-heading !text-xl">My Bots</h1><p class="ui-lead !text-[13px]">Subscribed automation, runtime controls and live execution performance.</p></div>
-    <div class="flex flex-wrap gap-2"><a class="ui-btn ui-btn-secondary" href="{{ route('ai-bots.performance') }}"><i data-lucide="activity" class="h-4 w-4"></i> History</a><a class="ui-btn ui-btn-secondary" href="{{ route('ai-bots.marketplace') }}"><i data-lucide="store" class="h-4 w-4"></i> Marketplace</a></div>
+    <div><p class="ui-kicker text-[10px]">{{ localize('ui.r2d.bots.ai_trading_bots', 'AI Trading Bots') }}</p><h1 class="ui-heading !text-xl">{{ localize('ui.r2d.bots.my_bots', 'My Bots') }}</h1><p class="ui-lead !text-[13px]">{{ localize('ui.r2d.bots.my_lead', 'Subscribed automation, runtime controls and live execution performance.') }}</p></div>
+    <div class="flex flex-wrap gap-2"><a class="ui-btn ui-btn-secondary" href="{{ route('ai-bots.performance') }}"><i data-lucide="activity" class="h-4 w-4"></i> {{ localize('ui.r2d.common.history', 'History') }}</a><a class="ui-btn ui-btn-secondary" href="{{ route('ai-bots.marketplace') }}"><i data-lucide="store" class="h-4 w-4"></i> {{ localize('ui.r2d.common.marketplace', 'Marketplace') }}</a></div>
 </section>
 <div class="grid gap-4 xl:grid-cols-2">
 @forelse($subscriptions as $subscription)
@@ -20,20 +20,20 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
             <div class="flex flex-wrap items-center gap-2">
                 <span class="inline-flex items-center gap-1 rounded-full border border-sky-500/20 bg-sky-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-sky-600"><i data-lucide="candlestick-chart" class="h-3.5 w-3.5"></i>{{ $chart['symbol'] ?? $product->marketInstrument?->display_symbol ?? $product->stock?->symbol ?? '—' }}</span>
                 <span class="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"><i data-lucide="cpu" class="h-3.5 w-3.5"></i>{{ strtoupper(str_replace('_',' ',$product->strategy)) }}</span>
-                <span class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold {{ $bot?->status==='active'?'border border-emerald-500/20 bg-emerald-500/10 text-emerald-600':'border border-border bg-muted text-muted-foreground' }}">@if($bot?->status==='active')<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>@else<i data-lucide="pause" class="h-3 w-3"></i>@endif{{ $bot?->status==='active'?'Running':'Paused' }}</span>
+                <span class="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-semibold {{ $bot?->status==='active'?'border border-emerald-500/20 bg-emerald-500/10 text-emerald-600':'border border-border bg-muted text-muted-foreground' }}">@if($bot?->status==='active')<span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>@else<i data-lucide="pause" class="h-3 w-3"></i>@endif{{ $bot?->status==='active' ? localize('ui.r2d.bots.running', 'Running') : localize('ui.r2d.bots.paused', 'Paused') }}</span>
             </div>
-            <h2 class="mt-2 text-[13px] font-semibold">{{ $product->name }}</h2><p class="mt-0.5 text-[10px] text-muted-foreground">Subscription {{ ucfirst($subscription->status) }}</p>
+            <h2 class="mt-2 text-[13px] font-semibold">{{ $product->name }}</h2><p class="mt-0.5 text-[10px] text-muted-foreground">{{ localize('ui.r2d.bots.subscription_status', 'Subscription :status', ['status' => ucfirst($subscription->status)]) }}</p>
         </div>
         <details class="relative shrink-0">
             <summary class="list-none cursor-pointer rounded-lg border border-border bg-background p-2 text-muted-foreground transition hover:bg-muted hover:text-foreground">
                 <i data-lucide="more-vertical" class="h-4 w-4"></i>
             </summary>
             <div class="absolute right-0 z-40 mt-2 w-48 rounded-xl border border-border bg-background p-1.5 shadow-xl">
-                <a href="{{ route('ai-bots.configure',$subscription) }}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-muted"><i data-lucide="sliders-horizontal" class="h-3.5 w-3.5"></i> Configure</a>
-                <form method="POST" action="{{ route('ai-bots.toggle',$subscription) }}">@csrf<button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-muted"><i data-lucide="{{ $bot?->status==='active'?'pause':'play' }}" class="h-3.5 w-3.5"></i>{{ $bot?->status==='active'?'Pause Bot':'Activate Bot' }}</button></form>
-                <form method="POST" action="{{ route('ai-bots.run',$subscription) }}">@csrf<button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-muted"><i data-lucide="zap" class="h-3.5 w-3.5"></i> Run Now</button></form>
-                <button type="button" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-muted" onclick="document.getElementById('allocation-dialog-{{ $subscription->id }}').showModal()"><i data-lucide="wallet-cards" class="h-3.5 w-3.5"></i> Allocation Details</button>
-                <a href="{{ route('ai-bots.performance') }}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-muted"><i data-lucide="history" class="h-3.5 w-3.5"></i> Performance</a>
+                <a href="{{ route('ai-bots.configure',$subscription) }}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-muted"><i data-lucide="sliders-horizontal" class="h-3.5 w-3.5"></i> {{ localize('ui.r2d.bots.configure', 'Configure') }}</a>
+                <form method="POST" action="{{ route('ai-bots.toggle',$subscription) }}">@csrf<button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-muted"><i data-lucide="{{ $bot?->status==='active'?'pause':'play' }}" class="h-3.5 w-3.5"></i>{{ $bot?->status==='active' ? localize('ui.r2d.bots.pause', 'Pause Bot') : localize('ui.r2d.bots.activate', 'Activate Bot') }}</button></form>
+                <form method="POST" action="{{ route('ai-bots.run',$subscription) }}">@csrf<button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-muted"><i data-lucide="zap" class="h-3.5 w-3.5"></i> {{ localize('ui.r2d.bots.run_now', 'Run Now') }}</button></form>
+                <button type="button" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-muted" onclick="document.getElementById('allocation-dialog-{{ $subscription->id }}').showModal()"><i data-lucide="wallet-cards" class="h-3.5 w-3.5"></i> {{ localize('ui.r2d.bots.allocation_details', 'Allocation Details') }}</button>
+                <a href="{{ route('ai-bots.performance') }}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-muted"><i data-lucide="history" class="h-3.5 w-3.5"></i> {{ localize('ui.r2d.common.performance', 'Performance') }}</a>
             </div>
         </details>
     </div>
@@ -43,7 +43,7 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
             <div>
                 <div class="flex items-center gap-2">
                     <i data-lucide="chart-no-axes-combined" class="h-4 w-4 text-sky-500"></i>
-                    <p class="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Price action</p>
+                    <p class="text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">{{ localize('ui.r2d.bots.price_action', 'Price action') }}</p>
                     <span class="inline-flex items-center gap-1 text-[10px] text-emerald-600">
                         <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                         Live feed
@@ -60,18 +60,18 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
                         {{ $dayMove >= 0 ? '+' : '' }}{{ number_format($dayMove, 2) }}%
                     </span>
                     @if($chart['average_entry'])
-                        <span class="text-[10px] text-muted-foreground">Avg. entry {{ format_currency($chart['average_entry']) }}</span>
+                        <span class="text-[10px] text-muted-foreground">{{ localize('ui.r2d.bots.avg_entry', 'Avg. entry') }} {{ format_currency($chart['average_entry']) }}</span>
                     @endif
                 </div>
             </div>
 
             <div class="flex flex-wrap items-center gap-3 text-[10px] text-muted-foreground">
-                <span class="inline-flex items-center gap-1.5"><span class="h-0.5 w-4 rounded-full bg-sky-500"></span> Market price</span>
+                <span class="inline-flex items-center gap-1.5"><span class="h-0.5 w-4 rounded-full bg-sky-500"></span> {{ financial_term('market_price') }}</span>
                 @if($chart['average_entry'])
-                    <span class="inline-flex items-center gap-1.5"><span class="h-0.5 w-4 border-t border-dashed border-amber-500"></span> Avg. entry</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="h-0.5 w-4 border-t border-dashed border-amber-500"></span> {{ localize('ui.r2d.bots.avg_entry', 'Avg. entry') }}</span>
                 @endif
-                <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-500"></span> Bot buy</span>
-                <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-red-500"></span> Bot sell</span>
+                <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-500"></span> {{ localize('ui.r2d.bots.bot_buy', 'Bot buy') }}</span>
+                <span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-red-500"></span> {{ localize('ui.r2d.bots.bot_sell', 'Bot sell') }}</span>
             </div>
         </div>
 
@@ -87,7 +87,7 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
             >
                 <span class="inline-flex items-center gap-1.5">
                     <i data-lucide="chart-spline" class="h-3.5 w-3.5"></i>
-                    Performance
+                    {{ localize('ui.r2d.common.performance', 'Performance') }}
                 </span>
             </button>
 
@@ -99,7 +99,7 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
             >
                 <span class="inline-flex items-center gap-1.5">
                     <i data-lucide="gauge" class="h-3.5 w-3.5"></i>
-                    Runtime
+                    {{ localize('ui.r2d.bots.runtime', 'Runtime') }}
                 </span>
             </button>
         </div>
@@ -109,7 +109,7 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
                 @if($m['is_manual_performance'])
                     <div class="mb-2 inline-flex items-center gap-1.5 rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-violet-600">
                         <i data-lucide="sparkles" class="h-3 w-3"></i>
-                        {{ $m['performance_label'] ?: 'Manual Performance' }}
+                        {{ $m['performance_label'] ?: localize('ui.r2d.bots.manual_performance', 'Manual Performance') }}
                     </div>
                 @endif
 
@@ -117,7 +117,7 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
                     <div class="rounded-lg border {{ $m['profit_loss']>0?'border-emerald-500/20 bg-emerald-500/5':($m['profit_loss']<0?'border-red-500/20 bg-red-500/5':'border-border bg-background/50') }} p-2.5">
                         <div class="flex items-center gap-1.5 text-[9px] uppercase tracking-[.12em] text-muted-foreground">
                             <i data-lucide="wallet-minimal" class="h-3.5 w-3.5 text-emerald-500"></i>
-                            {{ $m['is_manual_performance']?'P/L':'Current P/L' }}
+                            {{ $m['is_manual_performance'] ? localize('ui.r2d.common.pnl', 'P/L') : localize('ui.r2d.bots.current_pnl', 'Current P/L') }}
                         </div>
                         <p class="mt-1.5 text-[15px] font-semibold {{ $m['profit_loss']>0?'text-emerald-600':($m['profit_loss']<0?'text-red-600':'') }}">
                             {{ $m['profit_loss']>0?'+':'' }}{{ format_currency($m['profit_loss']) }}
@@ -127,7 +127,7 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
                     <div class="rounded-lg border border-sky-500/20 bg-sky-500/5 p-2.5">
                         <div class="flex items-center gap-1.5 text-[9px] uppercase tracking-[.12em] text-muted-foreground">
                             <i data-lucide="trending-up" class="h-3.5 w-3.5 text-sky-500"></i>
-                            {{ $m['is_manual_performance']?'Return':'Current Return' }}
+                            {{ $m['is_manual_performance'] ? localize('ui.r2d.common.return', 'Return') : localize('ui.r2d.bots.current_return', 'Current Return') }}
                         </div>
                         <p class="mt-1.5 text-[15px] font-semibold text-sky-600">
                             {{ $m['return_percent']>0?'+':'' }}{{ number_format($m['return_percent'],2) }}%
@@ -137,7 +137,7 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
 
                 <div class="mt-3">
                     <div class="flex items-center justify-between gap-3 text-[10px]">
-                        <span class="text-muted-foreground">Trading activity</span>
+                        <span class="text-muted-foreground">{{ localize('ui.r2d.bots.trading_activity', 'Trading activity') }}</span>
                         <span class="font-medium">{{ $completed }} executions · {{ number_format($m['win_rate'],1) }}%</span>
                     </div>
 
@@ -150,9 +150,9 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
                     </div>
 
                     <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
-                        <span><b class="text-emerald-600">{{ $wins }}</b> positive</span>
-                        <span><b class="text-red-600">{{ $losses }}</b> negative</span>
-                        <span><b class="text-foreground">{{ $neutral }}</b> neutral</span>
+                        <span><b class="text-emerald-600">{{ $wins }}</b> {{ localize('ui.r2d.common.positive', 'Positive') }}</span>
+                        <span><b class="text-red-600">{{ $losses }}</b> {{ localize('ui.r2d.common.negative', 'Negative') }}</span>
+                        <span><b class="text-foreground">{{ $neutral }}</b> {{ localize('ui.r2d.bots.neutral', 'neutral') }}</span>
                     </div>
                 </div>
             </div>
@@ -162,7 +162,7 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
                     <div class="rounded-lg border border-border bg-background/50 p-2.5">
                         <div class="flex items-center gap-1.5 text-[9px] uppercase tracking-[.12em] text-muted-foreground">
                             <i data-lucide="coins" class="h-3.5 w-3.5"></i>
-                            Per Trade
+                            {{ localize('ui.r2d.bots.per_trade', 'Per Trade') }}
                         </div>
                         <p class="mt-1.5 text-[13px] font-semibold">{{ format_currency($bot?->amount_per_trade??0) }}</p>
                     </div>
@@ -170,7 +170,7 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
                     <div class="rounded-lg border border-border bg-background/50 p-2.5">
                         <div class="flex items-center gap-1.5 text-[9px] uppercase tracking-[.12em] text-muted-foreground">
                             <i data-lucide="rows-4" class="h-3.5 w-3.5"></i>
-                            Daily Limit
+                            {{ localize('ui.r2d.bots.daily_limit', 'Daily Limit') }}
                         </div>
                         <p class="mt-1.5 text-[13px] font-semibold">{{ $bot?->max_daily_trades??0 }}</p>
                     </div>
@@ -178,17 +178,17 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
                     <div class="rounded-lg border border-border bg-background/50 p-2.5">
                         <div class="flex items-center gap-1.5 text-[9px] uppercase tracking-[.12em] text-muted-foreground">
                             <i data-lucide="clock-3" class="h-3.5 w-3.5"></i>
-                            Next Run
+                            {{ localize('ui.r2d.bots.next_run', 'Next Run') }}
                         </div>
                         <p class="mt-1.5 text-[13px] font-semibold">
-                            {{ !$bot?->next_run_at ? '—' : ($bot->next_run_at->isPast() && $bot?->status === 'active' ? 'Due now' : $bot->next_run_at->format('M d · H:i')) }}
+                            {{ !$bot?->next_run_at ? '—' : ($bot->next_run_at->isPast() && $bot?->status === 'active' ? localize('ui.r2d.bots.due_now', 'Due now') : $bot->next_run_at->format('M d · H:i')) }}
                         </p>
                     </div>
                 </div>
 
                 <div class="mt-2 flex items-center justify-between rounded-lg border border-border bg-background/35 px-3 py-2 text-[10px]">
                     <span class="text-muted-foreground">
-                        {{ $product->strategy==='dca' ? 'Run interval' : 'Check interval' }}
+                        {{ $product->strategy==='dca' ? localize('ui.r2d.bots.run_interval', 'Run interval') : localize('ui.r2d.bots.check_interval', 'Check interval') }}
                     </span>
                     <span class="font-medium">{{ $bot?->interval_minutes??0 }} min</span>
                 </div>
@@ -199,23 +199,23 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
     <dialog id="allocation-dialog-{{ $subscription->id }}" class="w-[min(92vw,440px)] rounded-2xl border border-border bg-background p-0 text-foreground shadow-2xl backdrop:bg-black/60">
         <div class="border-b border-border px-4 py-3">
             <div class="flex items-start justify-between gap-3">
-                <div><p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Bot allocation</p><h3 class="mt-1 text-sm font-semibold">{{ $product->name }}</h3></div>
+                <div><p class="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{{ localize('ui.r2d.bots.bot_allocation', 'Bot allocation') }}</p><h3 class="mt-1 text-sm font-semibold">{{ $product->name }}</h3></div>
                 <button type="button" class="rounded-lg border border-border p-2 text-muted-foreground hover:bg-muted hover:text-foreground" onclick="document.getElementById('allocation-dialog-{{ $subscription->id }}').close()"><i data-lucide="x" class="h-4 w-4"></i></button>
             </div>
         </div>
         <div class="space-y-3 p-4">
             <div class="grid grid-cols-2 gap-2">
-                <div class="rounded-xl border border-border bg-muted/20 p-3"><p class="text-[9px] uppercase tracking-[0.12em] text-muted-foreground">Allocation Cap</p><p class="mt-1.5 text-sm font-semibold">{{ $allocation>0?format_currency($allocation):'Open' }}</p></div>
-                <div class="rounded-xl border border-border bg-muted/20 p-3"><p class="text-[9px] uppercase tracking-[0.12em] text-muted-foreground">Deployed</p><p class="mt-1.5 text-sm font-semibold">{{ format_currency($spent) }}</p></div>
-                <div class="rounded-xl border border-border bg-muted/20 p-3"><p class="text-[9px] uppercase tracking-[0.12em] text-muted-foreground">Available Capacity</p><p class="mt-1.5 text-sm font-semibold">{{ $allocation>0?format_currency(max(0,$allocation-$spent)):'—' }}</p></div>
-                <div class="rounded-xl border border-border bg-muted/20 p-3"><p class="text-[9px] uppercase tracking-[0.12em] text-muted-foreground">Used</p><p class="mt-1.5 text-sm font-semibold">{{ number_format($allocationPct,1) }}%</p></div>
+                <div class="rounded-xl border border-border bg-muted/20 p-3"><p class="text-[9px] uppercase tracking-[0.12em] text-muted-foreground">{{ localize('ui.r2d.bots.allocation_cap', 'Allocation Cap') }}</p><p class="mt-1.5 text-sm font-semibold">{{ $allocation>0?format_currency($allocation):'Open' }}</p></div>
+                <div class="rounded-xl border border-border bg-muted/20 p-3"><p class="text-[9px] uppercase tracking-[0.12em] text-muted-foreground">{{ localize('ui.r2d.bots.deployed', 'Deployed') }}</p><p class="mt-1.5 text-sm font-semibold">{{ format_currency($spent) }}</p></div>
+                <div class="rounded-xl border border-border bg-muted/20 p-3"><p class="text-[9px] uppercase tracking-[0.12em] text-muted-foreground">{{ localize('ui.r2d.bots.available_capacity', 'Available Capacity') }}</p><p class="mt-1.5 text-sm font-semibold">{{ $allocation>0?format_currency(max(0,$allocation-$spent)):'—' }}</p></div>
+                <div class="rounded-xl border border-border bg-muted/20 p-3"><p class="text-[9px] uppercase tracking-[0.12em] text-muted-foreground">{{ localize('ui.r2d.common.used', 'Used') }}</p><p class="mt-1.5 text-sm font-semibold">{{ number_format($allocationPct,1) }}%</p></div>
             </div>
-            <div><div class="flex justify-between text-[10px]"><span class="text-muted-foreground">Allocation used</span><span class="font-medium">{{ number_format($allocationPct,1) }}%</span></div><div class="mt-2 h-2 overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-sky-500" style="width:{{ $allocationPct }}%"></div></div></div>
+            <div><div class="flex justify-between text-[10px]"><span class="text-muted-foreground">{{ localize('ui.r2d.bots.allocation_used', 'Allocation used') }}</span><span class="font-medium">{{ number_format($allocationPct,1) }}%</span></div><div class="mt-2 h-2 overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-sky-500" style="width:{{ $allocationPct }}%"></div></div></div>
         </div>
     </dialog>
 </div>
 </article>
-@empty<div class="ui-panel p-8 text-center text-sm text-muted-foreground">No subscribed bots yet.</div>@endforelse
+@empty<div class="ui-panel p-8 text-center text-sm text-muted-foreground">{{ localize('ui.r2d.bots.no_subscribed', 'No subscribed bots yet.') }}</div>@endforelse
 </div></div>
 
 @once

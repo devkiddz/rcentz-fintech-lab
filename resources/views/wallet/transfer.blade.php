@@ -1,11 +1,11 @@
 <x-user-layout>
-    <x-slot name="header">Send Money</x-slot>
+    <x-slot name="header">{{ localize('ui.money.transfer.header', 'Send Money') }}</x-slot>
 
     <div class="money-page space-y-5 sm:space-y-6">
         <section class="wallet-shell-card">
             <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <p class="text-sm font-medium text-muted-foreground">Available balance</p>
+                    <p class="text-sm font-medium text-muted-foreground">{{ localize('ui.money.available_balance', 'Available balance') }}</p>
                     <div class="mt-1 flex items-end gap-2">
                         <h1 class="text-3xl font-semibold tracking-tight text-foreground">{{ format_currency($wallet->available_balance) }}</h1>
                         <span class="pb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ $wallet->currency }}</span>
@@ -14,11 +14,11 @@
                 <div class="flex flex-wrap gap-2 self-start sm:self-auto">
                     <a href="{{ route('money.activity') }}" class="ui-button-secondary">
                         <i data-lucide="history" class="h-4 w-4"></i>
-                        History
+                        {{ localize('ui.nav.history', 'History') }}
                     </a>
                     <a href="{{ route('money.index') }}" class="ui-button-secondary">
                     <i data-lucide="arrow-left" class="h-4 w-4"></i>
-                        Money overview
+                        {{ localize('ui.money.overview', 'Money overview') }}
                     </a>
                 </div>
             </div>
@@ -31,8 +31,8 @@
                         <i data-lucide="arrow-right-left" class="h-4 w-4"></i>
                     </div>
                     <div>
-                        <h2 class="text-base font-semibold tracking-tight text-foreground">Send funds</h2>
-                        <p class="mt-0.5 text-xs text-muted-foreground">Transfer to another customer account.</p>
+                        <h2 class="text-base font-semibold tracking-tight text-foreground">{{ localize('ui.money.transfer.send_funds', 'Send funds') }}</h2>
+                        <p class="mt-0.5 text-xs text-muted-foreground">{{ localize('ui.money.transfer.lead', 'Transfer to another customer account.') }}</p>
                     </div>
                 </div>
 
@@ -46,13 +46,13 @@
                     <form method="POST" action="{{ route('money.send.submit') }}" class="space-y-5">
                         @csrf
                         <div>
-                            <label class="ui-label" for="recipient">Recipient email</label>
+                            <label class="ui-label" for="recipient">{{ localize('ui.money.transfer.recipient_email', 'Recipient email') }}</label>
                             <input class="ui-input" id="recipient" name="recipient" type="email" value="{{ old('recipient') }}" placeholder="customer@example.com" required>
                             @error('recipient')<p class="mt-1.5 text-xs text-red-500">{{ $message }}</p>@enderror
                         </div>
 
                         <div>
-                            <label class="ui-label" for="amount">Amount</label>
+                            <label class="ui-label" for="amount">{{ localize('ui.money.amount', 'Amount') }}</label>
                             <div class="relative">
                                 <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
                                 <input class="ui-input pl-8" id="amount" name="amount" type="number" min="1" max="100000" step="0.01" value="{{ old('amount') }}" placeholder="250.00" required>
@@ -61,18 +61,18 @@
                         </div>
 
                         <div>
-                            <label class="ui-label" for="note">Note <span class="font-normal text-muted-foreground">(optional)</span></label>
-                            <textarea class="ui-input min-h-24 resize-none" id="note" name="note" maxlength="255" placeholder="What is this transfer for?">{{ old('note') }}</textarea>
+                            <label class="ui-label" for="note">{{ localize('ui.common.note', 'Note') }} <span class="font-normal text-muted-foreground">{{ localize('ui.common.optional', '(optional)') }}</span></label>
+                            <textarea class="ui-input min-h-24 resize-none" id="note" name="note" maxlength="255" placeholder="{{ localize('ui.money.transfer.note_placeholder', 'What is this transfer for?') }}">{{ old('note') }}</textarea>
                         </div>
 
                         <div class="flex items-start gap-2.5 rounded-lg border border-border bg-muted/30 p-3 text-xs leading-5 text-muted-foreground">
                             <i data-lucide="shield-check" class="mt-0.5 h-4 w-4 shrink-0 text-foreground"></i>
-                            <p>Transfers use your available balance and appear in account activity immediately after completion.</p>
+                            <p>{{ localize('ui.money.transfer.notice', 'Transfers use your available balance and appear in account activity immediately after completion.') }}</p>
                         </div>
 
                         <div class="flex justify-end border-t border-border pt-5">
                             <button class="ui-button-primary w-full sm:w-auto" type="submit">
-                                Send funds
+                                {{ localize('ui.money.transfer.send_funds', 'Send funds') }}
                                 <i data-lucide="arrow-right" class="h-4 w-4"></i>
                             </button>
                         </div>
@@ -83,10 +83,10 @@
             <section class="ui-panel overflow-hidden shadow-none">
                 <div class="flex items-center justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
                     <div>
-                        <h2 class="text-base font-semibold tracking-tight text-foreground">Recent transfers</h2>
-                        <p class="mt-0.5 text-xs text-muted-foreground">Incoming and outgoing transfers.</p>
+                        <h2 class="text-base font-semibold tracking-tight text-foreground">{{ localize('ui.money.transfer.recent', 'Recent transfers') }}</h2>
+                        <p class="mt-0.5 text-xs text-muted-foreground">{{ localize('ui.money.transfer.recent_help', 'Incoming and outgoing transfers.') }}</p>
                     </div>
-                    <a href="{{ route('money.activity') }}" class="ui-button-secondary !h-8 !px-2.5 !py-0 text-xs">View all</a>
+                    <a href="{{ route('money.activity') }}" class="ui-button-secondary !h-8 !px-2.5 !py-0 text-xs">{{ localize('ui.common.view_all', 'View all') }}</a>
                 </div>
 
                 <div>
@@ -101,7 +101,7 @@
                                     {{ $outgoing ? $transfer->recipient->name : $transfer->sender->name }}
                                 </div>
                                 <div class="mt-0.5 truncate text-xs text-muted-foreground">
-                                    {{ $outgoing ? 'Sent to ' . $transfer->recipient->email : 'Received from ' . $transfer->sender->email }}
+                                    {{ $outgoing ? localize('ui.money.transfer.sent_to', 'Sent to :email', ['email' => $transfer->recipient->email]) : localize('ui.money.transfer.received_from', 'Received from :email', ['email' => $transfer->sender->email]) }}
                                 </div>
                             </div>
                             <div class="shrink-0 text-right">
@@ -117,8 +117,8 @@
                                 <i data-lucide="arrow-right-left" class="h-4 w-4"></i>
                             </div>
                             <div>
-                                <h3 class="font-medium text-foreground">No transfers yet</h3>
-                                <p class="mt-1 text-xs text-muted-foreground">Your transfer history will appear here.</p>
+                                <h3 class="font-medium text-foreground">{{ localize('ui.money.transfer.none', 'No transfers yet') }}</h3>
+                                <p class="mt-1 text-xs text-muted-foreground">{{ localize('ui.money.transfer.none_help', 'Your transfer history will appear here.') }}</p>
                             </div>
                         </div>
                     @endforelse

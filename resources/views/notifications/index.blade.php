@@ -1,19 +1,19 @@
 <x-user-layout>
     <x-slot name="header">
-        Notifications
+        {{ localize('ui.r2e.notifications.header', 'Notifications') }}
     </x-slot>
 
     <div class="mx-auto max-w-5xl space-y-4">
         <section class="ui-panel overflow-hidden">
             <div class="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div>
-                    <p class="ui-kicker">Notification center</p>
-                    <h1 class="mt-1 text-xl font-semibold text-foreground">Account notifications</h1>
+                    <p class="ui-kicker">{{ localize('ui.r2e.notifications.center', 'Notification center') }}</p>
+                    <h1 class="mt-1 text-xl font-semibold text-foreground">{{ localize('ui.r2e.notifications.account', 'Account notifications') }}</h1>
                     <p class="mt-1 text-sm text-muted-foreground">
                         @if($unreadCount > 0)
-                            {{ $unreadCount }} unread notification{{ $unreadCount === 1 ? '' : 's' }}.
+                            {{ $unreadCount }} {{ $unreadCount === 1 ? localize('ui.r2e.notifications.unread_one', 'unread notification') : localize('ui.r2e.notifications.unread_many', 'unread notifications') }}.
                         @else
-                            You're all caught up.
+                            {{ localize('ui.r2e.notifications.caught_up', "You're all caught up.") }}
                         @endif
                     </p>
                 </div>
@@ -25,7 +25,7 @@
                         class="ui-btn ui-btn-secondary self-start sm:self-auto"
                     >
                         <i data-lucide="check-check" class="h-4 w-4"></i>
-                        Mark all read
+                        {{ localize('ui.r2e.notifications.mark_all', 'Mark all read') }}
                     </button>
                 @endif
             </div>
@@ -50,7 +50,7 @@
                                     <div class="flex flex-wrap items-center gap-2">
                                         <h2 class="text-sm font-semibold text-foreground">{{ $notification->title }}</h2>
                                         @if(!$notification->is_read)
-                                            <span class="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[.1em] text-primary">New</span>
+                                            <span class="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[.1em] text-primary">{{ localize('ui.r2e.notifications.new', 'New') }}</span>
                                         @endif
                                         <span class="inline-flex items-center rounded-full border border-border bg-muted/20 px-2 py-0.5 text-[9px] font-medium text-muted-foreground">{{ $typeLabel }}</span>
                                     </div>
@@ -62,7 +62,7 @@
                                 <div class="flex shrink-0 items-center gap-1.5">
                                     @if($actionUrl)
                                         <a href="{{ $actionUrl }}" class="ui-btn ui-btn-ghost ui-btn-sm">
-                                            Open
+                                            {{ localize('ui.r2e.notifications.open', 'Open') }}
                                             <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
                                         </a>
                                     @endif
@@ -72,8 +72,8 @@
                                             type="button"
                                             onclick="window.CustomerNotifications.markAsRead({{ $notification->id }}, {reload: true})"
                                             class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                                            title="Mark as read"
-                                            aria-label="Mark notification as read"
+                                            title="{{ localize('ui.r2e.notifications.mark_read', 'Mark notification as read') }}"
+                                            aria-label="{{ localize('ui.r2e.notifications.mark_read', 'Mark notification as read') }}"
                                         >
                                             <i data-lucide="check" class="h-3.5 w-3.5"></i>
                                         </button>
@@ -83,8 +83,8 @@
                                         type="button"
                                         onclick="window.CustomerNotifications.deleteNotification({{ $notification->id }}, {reload: true, confirmDelete: true})"
                                         class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:border-red-500/30 hover:bg-red-500/5 hover:text-red-600"
-                                        title="Delete notification"
-                                        aria-label="Delete notification"
+                                        title="{{ localize('ui.r2e.notifications.delete', 'Delete notification') }}"
+                                        aria-label="{{ localize('ui.r2e.notifications.delete', 'Delete notification') }}"
                                     >
                                         <i data-lucide="trash-2" class="h-3.5 w-3.5"></i>
                                     </button>
@@ -96,8 +96,8 @@
             @empty
                 <div class="ui-empty-state py-14">
                     <div class="ui-empty-icon"><i data-lucide="bell-off" class="h-5 w-5"></i></div>
-                    <h2 class="font-medium text-foreground">No notifications yet</h2>
-                    <p class="mt-1 max-w-sm text-sm text-muted-foreground">Account alerts, Signal deliveries and other activity will appear here.</p>
+                    <h2 class="font-medium text-foreground">{{ localize('ui.r2e.notifications.empty', 'No notifications yet') }}</h2>
+                    <p class="mt-1 max-w-sm text-sm text-muted-foreground">{{ localize('ui.r2e.notifications.empty_help', 'Account alerts, Signal deliveries and other activity will appear here.') }}</p>
                 </div>
             @endforelse
         </section>

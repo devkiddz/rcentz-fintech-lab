@@ -1,5 +1,5 @@
 <x-user-layout>
-<x-slot name="header">Portfolio Intelligence</x-slot>
+<x-slot name="header">{{ localize('ui.r2d.portfolio.intelligence', 'Portfolio Intelligence') }}</x-slot>
 
 @php
     $money = fn ($value) => currency_symbol().number_format(abs((float) $value), 2);
@@ -10,17 +10,17 @@
     <section class="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:p-6">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-                <p class="text-[10px] font-semibold uppercase tracking-[.16em] text-red-600">V5.29.3 · Portfolio Intelligence</p>
-                <h1 class="mt-2 text-2xl font-semibold text-zinc-950 dark:text-white">My Portfolio</h1>
+                <p class="text-[10px] font-semibold uppercase tracking-[.16em] text-red-600">{{ localize('ui.r2d.portfolio.intelligence', 'Portfolio Intelligence') }}</p>
+                <h1 class="mt-2 text-2xl font-semibold text-zinc-950 dark:text-white">{{ localize('ui.r2d.portfolio.my_portfolio', 'My Portfolio') }}</h1>
                 <p class="mt-2 max-w-2xl text-sm leading-6 text-zinc-500">
-                    Private Investment performance is calculated from the Investment Engine only. Trading, Copy Trading and Bot Trading remain separate engines and will join the universal portfolio shell without sharing financial logic.
+                    {{ localize('ui.r2d.portfolio.lead', 'Review private investments alongside Trading, Copy Trading and Bot Trading without mixing the financial records of each engine.') }}
                 </p>
             </div>
 
             <div class="flex flex-wrap gap-2 text-xs">
-                <a href="{{ route('account.investments') }}" class="rounded-full border border-zinc-200 px-3 py-2 font-medium dark:border-zinc-800">Investment account</a>
-                <a href="{{ route('account.investments.transactions') }}" class="rounded-full border border-zinc-200 px-3 py-2 font-medium dark:border-zinc-800">Transactions</a>
-                <a href="{{ route('account.investments.performance') }}" class="rounded-full border border-zinc-200 px-3 py-2 font-medium dark:border-zinc-800">Performance</a>
+                <a href="{{ route('account.investments') }}" class="rounded-full border border-zinc-200 px-3 py-2 font-medium dark:border-zinc-800">{{ localize('ui.r2d.common.investment_account', 'Investment account') }}</a>
+                <a href="{{ route('account.investments.transactions') }}" class="rounded-full border border-zinc-200 px-3 py-2 font-medium dark:border-zinc-800">{{ localize('ui.r2d.common.transactions', 'Transactions') }}</a>
+                <a href="{{ route('account.investments.performance') }}" class="rounded-full border border-zinc-200 px-3 py-2 font-medium dark:border-zinc-800">{{ localize('ui.r2d.common.performance', 'Performance') }}</a>
             </div>
         </div>
 
@@ -31,46 +31,46 @@
         @else
             <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <div class="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-zinc-400">Current value</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-zinc-400">{{ localize('ui.r2d.common.current_value', 'Current value') }}</p>
                     <p class="mt-2 text-xl font-semibold">{{ currency_symbol() }}{{ number_format($summary['current_value'], 2) }}</p>
-                    <p class="mt-1 text-xs text-zinc-500">{{ $summary['active_holdings'] }} active holding{{ $summary['active_holdings'] === 1 ? '' : 's' }}</p>
+                    <p class="mt-1 text-xs text-zinc-500">{{ $summary['active_holdings'] }} {{ $summary['active_holdings'] === 1 ? 'active holding' : 'active holdings' }}</p>
                 </div>
                 <div class="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-zinc-400">Capital at work</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-zinc-400">{{ localize('ui.r2d.common.capital_at_work', 'Capital at work') }}</p>
                     <p class="mt-2 text-xl font-semibold">{{ currency_symbol() }}{{ number_format($summary['capital_at_work'], 2) }}</p>
-                    <p class="mt-1 text-xs text-zinc-500">Remaining cost basis</p>
+                    <p class="mt-1 text-xs text-zinc-500">{{ localize('ui.r2d.portfolio.remaining_cost_basis', 'Remaining cost basis') }}</p>
                 </div>
                 <div class="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-zinc-400">Net performance</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-zinc-400">{{ localize('ui.r2d.common.net_performance', 'Net performance') }}</p>
                     <p class="mt-2 text-xl font-semibold {{ $summary['net_performance'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
                         {{ $signedMoney($summary['net_performance']) }}
                     </p>
                     <p class="mt-1 text-xs {{ $summary['return_percent'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
-                        {{ $summary['return_percent'] >= 0 ? '+' : '' }}{{ number_format($summary['return_percent'], 2) }}% of total subscribed capital
+                        {{ $summary['return_percent'] >= 0 ? '+' : '' }}{{ number_format($summary['return_percent'], 2) }}% {{ localize('ui.r2d.portfolio.of_subscribed_capital', 'of total subscribed capital') }}
                     </p>
                 </div>
                 <div class="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
-                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-zinc-400">Available wallet</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-zinc-400">{{ localize('ui.r2d.common.available_wallet', 'Available wallet') }}</p>
                     <p class="mt-2 text-xl font-semibold">{{ currency_symbol() }}{{ number_format($summary['available_wallet'], 2) }}</p>
-                    <p class="mt-1 text-xs text-zinc-500">Outside invested capital</p>
+                    <p class="mt-1 text-xs text-zinc-500">{{ localize('ui.r2d.portfolio.outside_invested_capital', 'Outside invested capital') }}</p>
                 </div>
             </div>
 
             <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div class="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500">Unrealized P/L</p>
+                    <p class="text-xs text-zinc-500">{{ financial_term('unrealized_pnl') }}</p>
                     <p class="mt-1 font-semibold {{ $summary['unrealized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($summary['unrealized_profit_loss']) }}</p>
                 </div>
                 <div class="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500">Realized P/L</p>
+                    <p class="text-xs text-zinc-500">{{ financial_term('realized_pnl') }}</p>
                     <p class="mt-1 font-semibold {{ $summary['realized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($summary['realized_profit_loss']) }}</p>
                 </div>
                 <div class="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500">Distributions</p>
+                    <p class="text-xs text-zinc-500">{{ localize('ui.r2d.common.distributions', 'Distributions') }}</p>
                     <p class="mt-1 font-semibold text-emerald-600">+{{ $money($summary['distributions']) }}</p>
                 </div>
                 <div class="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500">Deductions</p>
+                    <p class="text-xs text-zinc-500">{{ localize('ui.r2d.common.deductions', 'Deductions') }}</p>
                     <p class="mt-1 font-semibold text-red-600">-{{ $money($summary['deductions']) }}</p>
                 </div>
             </div>
@@ -82,15 +82,15 @@
             <section class="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
                 <div class="flex items-end justify-between gap-3">
                     <div>
-                        <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-red-600">Private Investments</p>
-                        <h2 class="mt-1 text-lg font-semibold">Individual performance</h2>
+                        <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-red-600">{{ localize('ui.r2d.common.private_investments', 'Private Investments') }}</p>
+                        <h2 class="mt-1 text-lg font-semibold">{{ localize('ui.r2d.portfolio.individual_performance', 'Individual performance') }}</h2>
                     </div>
-                    <span class="text-xs text-zinc-500">{{ $positions->count() }} tracked</span>
+                    <span class="text-xs text-zinc-500">{{ localize('ui.r2d.portfolio.tracked_count', ':count tracked', ['count' => $positions->count()]) }}</span>
                 </div>
 
                 @if($positions->isEmpty())
                     <div class="mt-5 rounded-2xl border border-dashed border-zinc-300 p-8 text-center text-sm text-zinc-500 dark:border-zinc-800">
-                        No Private Investment history yet. Subscribe to an investment and its capital, valuation and lifecycle movements will accumulate here.
+                        {{ localize('ui.r2d.portfolio.no_private_history', 'No Private Investment history yet. Subscribe to an investment and its capital, valuation and lifecycle movements will accumulate here.') }}
                     </div>
                 @else
                     <div class="mt-5 grid gap-4">
@@ -112,7 +112,7 @@
                                         </p>
                                     </div>
                                     <div class="text-left sm:text-right">
-                                        <p class="text-xs text-zinc-500">Net performance</p>
+                                        <p class="text-xs text-zinc-500">{{ localize('ui.r2d.common.net_performance', 'Net performance') }}</p>
                                         <p class="mt-1 text-lg font-semibold {{ $position['net_performance'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
                                             {{ $signedMoney($position['net_performance']) }}
                                         </p>
@@ -124,33 +124,33 @@
 
                                 <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
                                     <div>
-                                        <p class="text-[10px] uppercase tracking-wide text-zinc-400">Capital at work</p>
+                                        <p class="text-[10px] uppercase tracking-wide text-zinc-400">{{ localize('ui.r2d.common.capital_at_work', 'Capital at work') }}</p>
                                         <p class="mt-1 text-sm font-semibold">{{ currency_symbol() }}{{ number_format($position['capital_at_work'], 2) }}</p>
                                     </div>
                                     <div>
-                                        <p class="text-[10px] uppercase tracking-wide text-zinc-400">Current value</p>
+                                        <p class="text-[10px] uppercase tracking-wide text-zinc-400">{{ localize('ui.r2d.common.current_value', 'Current value') }}</p>
                                         <p class="mt-1 text-sm font-semibold">{{ currency_symbol() }}{{ number_format($position['current_value'], 2) }}</p>
                                     </div>
                                     <div>
-                                        <p class="text-[10px] uppercase tracking-wide text-zinc-400">Unrealized P/L</p>
+                                        <p class="text-[10px] uppercase tracking-wide text-zinc-400">{{ financial_term('unrealized_pnl') }}</p>
                                         <p class="mt-1 text-sm font-semibold {{ $position['unrealized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($position['unrealized_profit_loss']) }}</p>
                                     </div>
                                     <div>
-                                        <p class="text-[10px] uppercase tracking-wide text-zinc-400">Realized P/L</p>
+                                        <p class="text-[10px] uppercase tracking-wide text-zinc-400">{{ financial_term('realized_pnl') }}</p>
                                         <p class="mt-1 text-sm font-semibold {{ $position['realized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($position['realized_profit_loss']) }}</p>
                                     </div>
                                 </div>
 
                                 <div class="mt-4 grid grid-cols-2 gap-2 rounded-2xl bg-zinc-50 p-3 text-xs dark:bg-zinc-900 sm:grid-cols-4">
-                                    <div><span class="text-zinc-500">Subscribed</span><p class="mt-1 font-semibold">{{ currency_symbol() }}{{ number_format($position['total_subscribed'], 2) }}</p></div>
-                                    <div><span class="text-zinc-500">Distributions</span><p class="mt-1 font-semibold text-emerald-600">+{{ $money($position['distributions']) }}</p></div>
-                                    <div><span class="text-zinc-500">Deductions</span><p class="mt-1 font-semibold text-red-600">-{{ $money($position['deductions']) }}</p></div>
-                                    <div><span class="text-zinc-500">Fees paid</span><p class="mt-1 font-semibold">{{ currency_symbol() }}{{ number_format($position['fees_paid'], 2) }}</p></div>
+                                    <div><span class="text-zinc-500">{{ localize('ui.r2d.common.subscribed', 'Subscribed') }}</span><p class="mt-1 font-semibold">{{ currency_symbol() }}{{ number_format($position['total_subscribed'], 2) }}</p></div>
+                                    <div><span class="text-zinc-500">{{ localize('ui.r2d.common.distributions', 'Distributions') }}</span><p class="mt-1 font-semibold text-emerald-600">+{{ $money($position['distributions']) }}</p></div>
+                                    <div><span class="text-zinc-500">{{ localize('ui.r2d.common.deductions', 'Deductions') }}</span><p class="mt-1 font-semibold text-red-600">-{{ $money($position['deductions']) }}</p></div>
+                                    <div><span class="text-zinc-500">{{ localize('ui.r2d.common.fees_paid', 'Fees paid') }}</span><p class="mt-1 font-semibold">{{ currency_symbol() }}{{ number_format($position['fees_paid'], 2) }}</p></div>
                                 </div>
 
                                 @if($position['recent_activity']->isNotEmpty())
                                     <div class="mt-4 border-t border-zinc-100 pt-3 dark:border-zinc-900">
-                                        <p class="text-[10px] font-semibold uppercase tracking-[.12em] text-zinc-400">Latest movements</p>
+                                        <p class="text-[10px] font-semibold uppercase tracking-[.12em] text-zinc-400">{{ localize('ui.r2d.common.latest_movements', 'Latest movements') }}</p>
                                         <div class="mt-2 grid gap-2">
                                             @foreach($position['recent_activity']->take(3) as $transaction)
                                                 @php
@@ -181,11 +181,11 @@
 
             <aside class="space-y-5">
                 <section class="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-red-600">Why did my portfolio move?</p>
-                    <h2 class="mt-1 text-lg font-semibold">Recent activity</h2>
+                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-red-600">{{ localize('ui.r2d.portfolio.why_moved', 'Why did my portfolio move?') }}</p>
+                    <h2 class="mt-1 text-lg font-semibold">{{ localize('ui.r2d.common.recent_activity', 'Recent activity') }}</h2>
 
                     @if($activity->isEmpty())
-                        <p class="mt-4 text-sm text-zinc-500">No investment activity yet.</p>
+                        <p class="mt-4 text-sm text-zinc-500">{{ localize('ui.r2d.portfolio.no_investment_activity', 'No investment activity yet.') }}</p>
                     @else
                         <div class="mt-4 grid gap-3">
                             @foreach($activity as $transaction)
@@ -214,15 +214,15 @@
                 </section>
 
                 <section class="rounded-3xl border border-dashed border-zinc-300 p-5 dark:border-zinc-800">
-                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-zinc-400">Universal portfolio shell</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-zinc-400">{{ localize('ui.r2d.portfolio.sources', 'Portfolio sources') }}</p>
                     <div class="mt-3 space-y-2 text-sm">
-                        <div class="flex items-center justify-between"><span>Private Investments</span><span class="font-semibold text-emerald-600">Connected</span></div>
-                        <div class="flex items-center justify-between"><span>Trading</span><span class="font-semibold text-emerald-600">Connected</span></div>
-                        <div class="flex items-center justify-between"><span>Copy Trading</span><span class="font-semibold text-emerald-600">Connected</span></div>
-                        <div class="flex items-center justify-between"><span>Bot Trading</span><span class="font-semibold text-emerald-600">Connected</span></div>
+                        <div class="flex items-center justify-between"><span>Private Investments</span><span class="font-semibold text-emerald-600">{{ localize('ui.r2d.common.connected', 'Connected') }}</span></div>
+                        <div class="flex items-center justify-between"><span>Trading</span><span class="font-semibold text-emerald-600">{{ localize('ui.r2d.common.connected', 'Connected') }}</span></div>
+                        <div class="flex items-center justify-between"><span>Copy Trading</span><span class="font-semibold text-emerald-600">{{ localize('ui.r2d.common.connected', 'Connected') }}</span></div>
+                        <div class="flex items-center justify-between"><span>Bot Trading</span><span class="font-semibold text-emerald-600">{{ localize('ui.r2d.common.connected', 'Connected') }}</span></div>
                     </div>
                     <p class="mt-4 text-xs leading-5 text-zinc-500">
-                        Track your investments and trading performance in one place.
+                        {{ localize('ui.r2d.portfolio.sources_help', 'Track your investments and trading performance in one place.') }}
                     </p>
                 </section>
             </aside>
@@ -231,28 +231,28 @@
         <section class="mt-5 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-red-600">Trading</p>
-                    <h2 class="mt-1 text-lg font-semibold">Trading Performance</h2>
-                    <p class="mt-1 text-xs text-zinc-500">Only positions opened directly by the customer are included here.</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-red-600">{{ localize('ui.r2d.common.trading', 'Trading') }}</p>
+                    <h2 class="mt-1 text-lg font-semibold">{{ localize('ui.r2d.portfolio.trading_performance', 'Trading Performance') }}</h2>
+                    <p class="mt-1 text-xs text-zinc-500">{{ localize('ui.r2d.portfolio.direct_positions_help', 'Only positions opened directly by the customer are included here.') }}</p>
                 </div>
                 <div class="text-xs text-zinc-500">{{ $manualTrading['summary']['positions'] }} position{{ $manualTrading['summary']['positions'] === 1 ? '' : 's' }}</div>
             </div>
 
             <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div class="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500">Capital traded</p>
+                    <p class="text-xs text-zinc-500">{{ localize('ui.r2d.common.capital_traded', 'Capital traded') }}</p>
                     <p class="mt-1 font-semibold">{{ currency_symbol() }}{{ number_format($manualTrading['summary']['capital_traded'], 2) }}</p>
                 </div>
                 <div class="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500">Realized P/L</p>
+                    <p class="text-xs text-zinc-500">{{ financial_term('realized_pnl') }}</p>
                     <p class="mt-1 font-semibold {{ $manualTrading['summary']['realized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($manualTrading['summary']['realized_profit_loss']) }}</p>
                 </div>
                 <div class="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500">Unrealized P/L</p>
+                    <p class="text-xs text-zinc-500">{{ financial_term('unrealized_pnl') }}</p>
                     <p class="mt-1 font-semibold {{ $manualTrading['summary']['unrealized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($manualTrading['summary']['unrealized_profit_loss']) }}</p>
                 </div>
                 <div class="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500">Net P/L</p>
+                    <p class="text-xs text-zinc-500">{{ localize('ui.r2d.common.net_pnl', 'Net P/L') }}</p>
                     <p class="mt-1 font-semibold {{ $manualTrading['summary']['net_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($manualTrading['summary']['net_profit_loss']) }}</p>
                     <p class="mt-1 text-[10px] {{ $manualTrading['summary']['return_percent'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $manualTrading['summary']['return_percent'] >= 0 ? '+' : '' }}{{ number_format($manualTrading['summary']['return_percent'], 2) }}%</p>
                 </div>
@@ -268,7 +268,7 @@
 
             @if($manualTrading['positions']->isEmpty())
                 <div class="mt-5 rounded-2xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500 dark:border-zinc-800">
-                    No Trading positions yet.
+                    {{ localize('ui.r2d.portfolio.no_trading_positions', 'No Trading positions yet.') }}
                 </div>
             @else
                 <div class="mt-5 grid gap-3">
@@ -291,7 +291,7 @@
                                     </p>
                                 </div>
                                 <div class="text-left sm:text-right">
-                                    <p class="text-xs text-zinc-500">Net P/L</p>
+                                    <p class="text-xs text-zinc-500">{{ localize('ui.r2d.common.net_pnl', 'Net P/L') }}</p>
                                     <p class="mt-1 text-lg font-semibold {{ $item['net_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($item['net_profit_loss']) }}</p>
                                     <p class="text-xs {{ $item['return_percent'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $item['return_percent'] >= 0 ? '+' : '' }}{{ number_format($item['return_percent'], 2) }}%</p>
                                 </div>
@@ -300,8 +300,8 @@
                             <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
                                 <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">Initial capital</p><p class="mt-1 text-sm font-semibold">{{ currency_symbol() }}{{ number_format($item['initial_capital'], 2) }}</p></div>
                                 <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">Open capital</p><p class="mt-1 text-sm font-semibold">{{ currency_symbol() }}{{ number_format($item['open_capital'], 2) }}</p></div>
-                                <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">Realized P/L</p><p class="mt-1 text-sm font-semibold {{ $item['realized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($item['realized_profit_loss']) }}</p></div>
-                                <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">Unrealized P/L</p><p class="mt-1 text-sm font-semibold {{ $item['unrealized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($item['unrealized_profit_loss']) }}</p></div>
+                                <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">{{ financial_term('realized_pnl') }}</p><p class="mt-1 text-sm font-semibold {{ $item['realized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($item['realized_profit_loss']) }}</p></div>
+                                <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">{{ financial_term('unrealized_pnl') }}</p><p class="mt-1 text-sm font-semibold {{ $item['unrealized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($item['unrealized_profit_loss']) }}</p></div>
                             </div>
                         </article>
                     @endforeach
@@ -310,7 +310,7 @@
 
             @if($manualTrading['activity']->isNotEmpty())
                 <div class="mt-5 border-t border-zinc-100 pt-4 dark:border-zinc-900">
-                    <p class="text-[10px] font-semibold uppercase tracking-[.12em] text-zinc-400">Recent Trading Activity</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[.12em] text-zinc-400">{{ localize('ui.r2d.portfolio.recent_trading_activity', 'Recent Trading Activity') }}</p>
                     <div class="mt-3 grid gap-2">
                         @foreach($manualTrading['activity']->take(6) as $event)
                             <div class="flex items-center justify-between gap-3 text-xs">
@@ -334,29 +334,29 @@
         <section class="mt-5 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-red-600">Copy Trading</p>
-                    <h2 class="mt-1 text-lg font-semibold">Copied strategy performance</h2>
-                    <p class="mt-1 text-xs text-zinc-500">Only positions marked by the Copy Trading engine are included here.</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-red-600">{{ localize('ui.r2d.common.copy_trading', 'Copy Trading') }}</p>
+                    <h2 class="mt-1 text-lg font-semibold">{{ localize('ui.r2d.portfolio.copied_performance', 'Copied strategy performance') }}</h2>
+                    <p class="mt-1 text-xs text-zinc-500">{{ localize('ui.r2d.portfolio.copy_positions_help', 'Only positions marked by the Copy Trading engine are included here.') }}</p>
                 </div>
                 <div class="text-xs text-zinc-500">{{ $copyTrading['summary']['strategies'] }} strateg{{ $copyTrading['summary']['strategies'] === 1 ? 'y' : 'ies' }}</div>
             </div>
 
             <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div class="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500">Allocation limit</p>
+                    <p class="text-xs text-zinc-500">{{ localize('ui.r2d.portfolio.allocation_limit', 'Allocation limit') }}</p>
                     <p class="mt-1 font-semibold">{{ currency_symbol() }}{{ number_format($copyTrading['summary']['allocation_limit'], 2) }}</p>
                 </div>
                 <div class="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500">Used allocation</p>
+                    <p class="text-xs text-zinc-500">{{ localize('ui.r2d.portfolio.used_allocation', 'Used allocation') }}</p>
                     <p class="mt-1 font-semibold">{{ currency_symbol() }}{{ number_format($copyTrading['summary']['used_allocation'], 2) }}</p>
                     <p class="mt-1 text-[10px] text-zinc-400">Remaining {{ currency_symbol() }}{{ number_format($copyTrading['summary']['remaining_allocation'], 2) }}</p>
                 </div>
                 <div class="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500">Realized P/L</p>
+                    <p class="text-xs text-zinc-500">{{ financial_term('realized_pnl') }}</p>
                     <p class="mt-1 font-semibold {{ $copyTrading['summary']['realized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($copyTrading['summary']['realized_profit_loss']) }}</p>
                 </div>
                 <div class="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500">Net P/L</p>
+                    <p class="text-xs text-zinc-500">{{ localize('ui.r2d.common.net_pnl', 'Net P/L') }}</p>
                     <p class="mt-1 font-semibold {{ $copyTrading['summary']['net_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($copyTrading['summary']['net_profit_loss']) }}</p>
                     <p class="mt-1 text-[10px] {{ $copyTrading['summary']['return_percent'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $copyTrading['summary']['return_percent'] >= 0 ? '+' : '' }}{{ number_format($copyTrading['summary']['return_percent'], 2) }}%</p>
                 </div>
@@ -372,7 +372,7 @@
 
             @if($copyTrading['positions']->isEmpty())
                 <div class="mt-5 rounded-2xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500 dark:border-zinc-800">
-                    No Copy Trading positions yet.
+                    {{ localize('ui.r2d.portfolio.no_copy_positions', 'No Copy Trading positions yet.') }}
                 </div>
             @else
                 <div class="mt-5 grid gap-3">
@@ -401,16 +401,16 @@
                                     </p>
                                 </div>
                                 <div class="text-left sm:text-right">
-                                    <p class="text-xs text-zinc-500">Net P/L</p>
+                                    <p class="text-xs text-zinc-500">{{ localize('ui.r2d.common.net_pnl', 'Net P/L') }}</p>
                                     <p class="mt-1 text-lg font-semibold {{ $item['net_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($item['net_profit_loss']) }}</p>
                                     <p class="text-xs {{ $item['return_percent'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $item['return_percent'] >= 0 ? '+' : '' }}{{ number_format($item['return_percent'], 2) }}%</p>
                                 </div>
                             </div>
 
                             <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                                <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">Capital traded</p><p class="mt-1 text-sm font-semibold">{{ currency_symbol() }}{{ number_format($item['initial_capital'], 2) }}</p></div>
-                                <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">Realized P/L</p><p class="mt-1 text-sm font-semibold {{ $item['realized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($item['realized_profit_loss']) }}</p></div>
-                                <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">Unrealized P/L</p><p class="mt-1 text-sm font-semibold {{ $item['unrealized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($item['unrealized_profit_loss']) }}</p></div>
+                                <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">{{ localize('ui.r2d.common.capital_traded', 'Capital traded') }}</p><p class="mt-1 text-sm font-semibold">{{ currency_symbol() }}{{ number_format($item['initial_capital'], 2) }}</p></div>
+                                <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">{{ financial_term('realized_pnl') }}</p><p class="mt-1 text-sm font-semibold {{ $item['realized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($item['realized_profit_loss']) }}</p></div>
+                                <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">{{ financial_term('unrealized_pnl') }}</p><p class="mt-1 text-sm font-semibold {{ $item['unrealized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($item['unrealized_profit_loss']) }}</p></div>
                                 <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">Copy contract</p><p class="mt-1 text-sm font-semibold capitalize">{{ $relationship?->contract_state ?? 'historical' }}</p></div>
                             </div>
                         </article>
@@ -422,35 +422,35 @@
         <section class="mt-5 rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-red-600">Bot Trading</p>
-                    <h2 class="mt-1 text-lg font-semibold">Automated strategy performance</h2>
-                    <p class="mt-1 text-xs text-zinc-500">Bot-owned positions and executions remain isolated from Trading and Copy Trading.</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[.14em] text-red-600">{{ localize('ui.r2d.common.bot_trading', 'Bot Trading') }}</p>
+                    <h2 class="mt-1 text-lg font-semibold">{{ localize('ui.r2d.portfolio.automated_performance', 'Automated strategy performance') }}</h2>
+                    <p class="mt-1 text-xs text-zinc-500">{{ localize('ui.r2d.portfolio.bot_positions_help', 'Bot-owned positions and executions remain isolated from Trading and Copy Trading.') }}</p>
                 </div>
                 <div class="text-xs text-zinc-500">{{ $botTrading['summary']['bots'] }} bot{{ $botTrading['summary']['bots'] === 1 ? '' : 's' }}</div>
             </div>
 
             <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div class="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500">Capital traded</p>
+                    <p class="text-xs text-zinc-500">{{ localize('ui.r2d.common.capital_traded', 'Capital traded') }}</p>
                     <p class="mt-1 font-semibold">{{ currency_symbol() }}{{ number_format($botTrading['summary']['capital_traded'], 2) }}</p>
                 </div>
                 <div class="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500">Realized P/L</p>
+                    <p class="text-xs text-zinc-500">{{ financial_term('realized_pnl') }}</p>
                     <p class="mt-1 font-semibold {{ $botTrading['summary']['realized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($botTrading['summary']['realized_profit_loss']) }}</p>
                 </div>
                 <div class="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500">Unrealized P/L</p>
+                    <p class="text-xs text-zinc-500">{{ financial_term('unrealized_pnl') }}</p>
                     <p class="mt-1 font-semibold {{ $botTrading['summary']['unrealized_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($botTrading['summary']['unrealized_profit_loss']) }}</p>
                 </div>
                 <div class="rounded-2xl bg-zinc-50 p-4 dark:bg-zinc-900">
-                    <p class="text-xs text-zinc-500">Net P/L</p>
+                    <p class="text-xs text-zinc-500">{{ localize('ui.r2d.common.net_pnl', 'Net P/L') }}</p>
                     <p class="mt-1 font-semibold {{ $botTrading['summary']['net_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($botTrading['summary']['net_profit_loss']) }}</p>
                     <p class="mt-1 text-[10px] {{ $botTrading['summary']['return_percent'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $botTrading['summary']['return_percent'] >= 0 ? '+' : '' }}{{ number_format($botTrading['summary']['return_percent'], 2) }}%</p>
                 </div>
             </div>
 
             <div class="mt-3 flex flex-wrap gap-2 text-xs">
-                <span class="rounded-full border border-zinc-200 px-3 py-1.5 dark:border-zinc-800">Active bots {{ $botTrading['summary']['active_bots'] }}</span>
+                <span class="rounded-full border border-zinc-200 px-3 py-1.5 dark:border-zinc-800">{{ localize('ui.r2d.portfolio.active_bots', 'Active bots') }} {{ $botTrading['summary']['active_bots'] }}</span>
                 <span class="rounded-full border border-zinc-200 px-3 py-1.5 dark:border-zinc-800">Positions {{ $botTrading['summary']['positions'] }}</span>
                 <span class="rounded-full border border-zinc-200 px-3 py-1.5 dark:border-zinc-800">Open {{ $botTrading['summary']['open_positions'] }}</span>
                 <span class="rounded-full border border-zinc-200 px-3 py-1.5 dark:border-zinc-800">Closed {{ $botTrading['summary']['closed_positions'] }}</span>
@@ -461,7 +461,7 @@
 
             @if($botTrading['bots']->isEmpty())
                 <div class="mt-5 rounded-2xl border border-dashed border-zinc-300 p-6 text-center text-sm text-zinc-500 dark:border-zinc-800">
-                    No Bot Trading configurations yet.
+                    {{ localize('ui.r2d.portfolio.no_bot_configs', 'No Bot Trading configurations yet.') }}
                 </div>
             @else
                 <div class="mt-5 grid gap-3">
@@ -493,14 +493,14 @@
                                     </p>
                                 </div>
                                 <div class="text-left sm:text-right">
-                                    <p class="text-xs text-zinc-500">Net P/L</p>
+                                    <p class="text-xs text-zinc-500">{{ localize('ui.r2d.common.net_pnl', 'Net P/L') }}</p>
                                     <p class="mt-1 text-lg font-semibold {{ $item['net_profit_loss'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $signedMoney($item['net_profit_loss']) }}</p>
                                     <p class="text-xs {{ $item['return_percent'] >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $item['return_percent'] >= 0 ? '+' : '' }}{{ number_format($item['return_percent'], 2) }}%</p>
                                 </div>
                             </div>
 
                             <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                                <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">Capital traded</p><p class="mt-1 text-sm font-semibold">{{ currency_symbol() }}{{ number_format($item['capital_traded'], 2) }}</p></div>
+                                <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">{{ localize('ui.r2d.common.capital_traded', 'Capital traded') }}</p><p class="mt-1 text-sm font-semibold">{{ currency_symbol() }}{{ number_format($item['capital_traded'], 2) }}</p></div>
                                 <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">Open capital</p><p class="mt-1 text-sm font-semibold">{{ currency_symbol() }}{{ number_format($item['open_capital'], 2) }}</p></div>
                                 <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">Positions</p><p class="mt-1 text-sm font-semibold">{{ $item['positions']->count() }}</p></div>
                                 <div><p class="text-[10px] uppercase tracking-wide text-zinc-400">Executions</p><p class="mt-1 text-sm font-semibold">{{ $item['executions']->count() }}</p></div>
@@ -522,7 +522,7 @@
 
             @if($botTrading['activity']->isNotEmpty())
                 <div class="mt-5 border-t border-zinc-100 pt-4 dark:border-zinc-900">
-                    <p class="text-[10px] font-semibold uppercase tracking-[.12em] text-zinc-400">Recent Bot Activity</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[.12em] text-zinc-400">{{ localize('ui.r2d.portfolio.recent_bot_activity', 'Recent Bot Activity') }}</p>
                     <div class="mt-3 grid gap-2">
                         @foreach($botTrading['activity']->take(6) as $execution)
                             <div class="flex items-center justify-between gap-3 text-xs">
