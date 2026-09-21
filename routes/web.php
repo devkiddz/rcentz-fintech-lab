@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\FrontendController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\UserDashboardController;
@@ -60,6 +61,7 @@ Route::get('/impersonate-leave', [\Lab404\Impersonate\Controllers\ImpersonateCon
 
 // Frontend Routes
 Route::get('/', [FrontendController::class, 'index'])->name('home');
+Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update');
 
 // CSRF Token Refresh Route
 Route::get('/refresh-csrf', function() {
@@ -690,6 +692,8 @@ Route::middleware(['auth', 'admin'])
         // Core settings domains
         Route::patch('/general', [AdminSettingController::class, 'updateGeneral'])->name('general.update');
         Route::patch('/appearance', [AdminSettingController::class, 'updateAppearance'])->name('appearance.update');
+        Route::patch('/localization', [AdminSettingController::class, 'updateLocalization'])->name('localization.update');
+        Route::post('/localization/sync', [AdminSettingController::class, 'syncLocalization'])->name('localization.sync');
         Route::patch('/security', [AdminSettingController::class, 'updateSecurity'])->name('security.update');
 
         // Specialized settings domains keep their own storage/service boundaries.

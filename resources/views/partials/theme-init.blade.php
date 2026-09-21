@@ -6,10 +6,11 @@
 <script>
     (() => {
         const scope = @json($resolvedThemeScope);
-        const scopedKey = `rcentz_theme:${scope}`;
+        const scopedKey = `platform_theme:${scope}`;
+        const previousScopedKey = `rcentz_theme:${scope}`;
 
         // Backward compatibility: migrate the old single theme value once into this shell.
-        let savedTheme = localStorage.getItem(scopedKey);
+        let savedTheme = localStorage.getItem(scopedKey) || localStorage.getItem(previousScopedKey);
         const legacyTheme = localStorage.getItem('theme');
 
         if (!savedTheme && legacyTheme) {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ locale_direction() }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -49,8 +49,10 @@
 @php
     $configuredBrandPrimary = (string) setting('brand_primary_color', '#c8102e');
     $brandPrimary = preg_match('/^#[0-9a-fA-F]{6}$/', $configuredBrandPrimary) ? $configuredBrandPrimary : '#c8102e';
+    $configuredBrandSecondary = (string) setting('brand_secondary_color', '#7c3aed');
+    $brandSecondary = preg_match('/^#[0-9a-fA-F]{6}$/', $configuredBrandSecondary) ? $configuredBrandSecondary : '#7c3aed';
 @endphp
-<body class="customer-workspace bg-background text-foreground font-sans antialiased" data-theme-scope="customer" style="--brand-primary: {{ $brandPrimary }}">
+<body class="customer-workspace bg-background text-foreground font-sans antialiased" data-theme-scope="customer" style="--brand-primary: {{ $brandPrimary }}; --brand-secondary: {{ $brandSecondary }}">
 <div class="min-h-screen">
     <div id="sidebar-overlay"
          class="fixed inset-0 z-[60] hidden bg-black/60 backdrop-blur-[1px] lg:hidden"

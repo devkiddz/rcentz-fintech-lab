@@ -363,3 +363,18 @@ if (!function_exists('is_maintenance_mode')) {
         return AppHelper::isMaintenanceMode();
     }
 }
+
+
+if (!function_exists('localize')) {
+    function localize(string $key, string $fallback, array $replace = []): string
+    {
+        return app(\App\Services\LocalizationService::class)->text($key, $fallback, $replace);
+    }
+}
+
+if (!function_exists('locale_direction')) {
+    function locale_direction(?string $locale = null): string
+    {
+        return app(\App\Services\LocalizationService::class)->direction($locale);
+    }
+}

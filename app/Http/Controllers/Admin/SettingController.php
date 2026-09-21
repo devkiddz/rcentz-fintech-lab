@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\MarketEnvironment;
+use App\Models\Language;
+use App\Services\LocalizationService;
 use App\Models\Setting;
 use App\Models\StockHolding;
 use App\Models\TradePosition;
@@ -23,10 +25,11 @@ class SettingController extends Controller
         Request $request,
         MailConfigurationService $mailConfiguration,
         LiveMarketHealthService $marketHealthService,
-        StockDataService $stockData
+        StockDataService $stockData,
+        LocalizationService $localization
     ) {
         $section = (string) $request->query('section', 'overview');
-        $allowed = ['overview', 'general', 'appearance', 'market', 'trading', 'security', 'mail', 'integrations', 'system'];
+        $allowed = ['overview', 'general', 'appearance', 'localization', 'market', 'trading', 'security', 'mail', 'integrations', 'system'];
 
         if (! in_array($section, $allowed, true)) {
             $section = 'overview';
@@ -35,6 +38,7 @@ class SettingController extends Controller
         return match ($section) {
             'general' => $this->general(),
             'appearance' => $this->appearance(),
+            'localization' => $this->localization($localization),
             'market' => $this->market($marketHealthService, $stockData),
             'trading' => $this->trading(),
             'security' => $this->security(),
@@ -80,6 +84,50 @@ class SettingController extends Controller
             'Appearance Settings',
             'Brand assets and public presentation settings.'
         );
+    }
+
+    private function localization(LocalizationService $localization)
+    {
+        return $this->settingsView('admin.settings.localization', [
+            'activeSettingsSection' => 'localization',
+            'languages' => $localization->statusRows(),
+            'defaultLocale' => $localization->defaultCode(),
+        ]);
+    }
+
+    public function updateLocalization(Request $request, LocalizationService $localization)
+    {
+        $codes = array_keys(config('localization.languages', []));
+        $data = $request->validate([
+            'enabled_locales' => ['required', 'array', 'min:1'],
+            'enabled_locales.*' => ['required', 'string', \Illuminate\Validation\Rule::in($codes)],
+            'default_locale' => ['required', 'string', \Illuminate\Validation\Rule::in($codes)],
+        ]);
+
+        if (! in_array($data['default_locale'], $data['enabled_locales'], true)) {
+            return back()->with('error', 'The default language must also be enabled.');
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($data) {
+            Language::query()->update(['is_enabled' => false, 'is_default' => false]);
+            Language::query()->whereIn('code', $data['enabled_locales'])->update(['is_enabled' => true]);
+            Language::query()->where('code', $data['default_locale'])->update(['is_enabled' => true, 'is_default' => true]);
+            Setting::set('default_locale', $data['default_locale']);
+        });
+
+        $localization->clearCache();
+        return redirect()->route('admin.settings.index', ['section' => 'localization'])->with('success', 'Localization settings updated.');
+    }
+
+    public function syncLocalization(LocalizationService $localization)
+    {
+        try {
+            $result = $localization->syncBundledPacks();
+            return redirect()->route('admin.settings.index', ['section' => 'localization'])
+                ->with('success', 'Bundled language packs synchronized: '.$result['languages'].' languages, '.$result['translations'].' catalogue rows.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Localization sync failed: '.$e->getMessage());
+        }
     }
 
     public function security()
@@ -226,10 +274,10 @@ class SettingController extends Controller
             $mailConfiguration->apply();
 
             Mail::raw(
-                'This is a Rcentz administration mail-delivery test. If you received it, the saved mail configuration can deliver application email.',
+                'This is a platform administration mail-delivery test. If you received it, the saved mail configuration can deliver application email.',
                 function ($message) use ($data) {
                     $message->to($data['test_email'])
-                        ->subject('Rcentz mail delivery test');
+                        ->subject('Platform mail delivery test');
                 }
             );
 

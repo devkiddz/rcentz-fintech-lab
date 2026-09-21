@@ -61,6 +61,7 @@
                 <i data-lucide="settings" class="h-4 w-4"></i>
             </a>
 
+            @include('partials.language-switcher')
             @include('partials.shell.theme-toggle')
 
             <a href="{{ route('admin.profile.edit') }}" class="ml-0.5 hidden items-center gap-2.5 rounded-xl bg-muted/55 px-2 py-1.5 transition hover:bg-muted sm:flex" title="Admin profile">

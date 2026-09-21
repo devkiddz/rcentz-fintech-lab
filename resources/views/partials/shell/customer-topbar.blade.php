@@ -78,6 +78,7 @@
                 </div>
             </div>
 
+            @include('partials.language-switcher')
             @include('partials.shell.theme-toggle')
 
             <a href="{{ route('profile.edit') }}" class="hidden items-center gap-2 rounded-xl bg-muted/55 px-2 py-1.5 transition hover:bg-muted sm:flex" title="Account profile">

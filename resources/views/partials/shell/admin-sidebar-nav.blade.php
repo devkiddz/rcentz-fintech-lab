@@ -158,7 +158,7 @@
                 <summary class="{{ $childBase }} cursor-pointer justify-between text-muted-foreground hover:text-foreground">
                     <span class="flex items-center gap-3">
                         <i data-lucide="flask-conical" class="h-4 w-4"></i>
-                        <span>Legacy Lab</span>
+                        <span>Legacy Records</span>
                     </span>
                     <i data-lucide="chevron-down" class="h-3.5 w-3.5 transition-transform group-open/legacy:rotate-180"></i>
                 </summary>
@@ -319,6 +319,7 @@
             <a href="{{ route('admin.settings.index', ['section' => 'overview']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.settings.*') && request()->query('section', 'overview') === 'overview' ? $childActive : $childIdle }}"><i data-lucide="layout-dashboard" class="h-4 w-4"></i><span>Overview</span></a>
             <a href="{{ route('admin.settings.index', ['section' => 'general']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.settings.*') && request()->query('section') === 'general' ? $childActive : $childIdle }}"><i data-lucide="settings-2" class="h-4 w-4"></i><span>General</span></a>
             <a href="{{ route('admin.settings.index', ['section' => 'appearance']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.settings.*') && request()->query('section') === 'appearance' ? $childActive : $childIdle }}"><i data-lucide="palette" class="h-4 w-4"></i><span>Appearance</span></a>
+            <a href="{{ route('admin.settings.index', ['section' => 'localization']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.settings.*') && request()->query('section') === 'localization' ? $childActive : $childIdle }}"><i data-lucide="languages" class="h-4 w-4"></i><span>Localization</span></a>
             <a href="{{ route('admin.settings.index', ['section' => 'market']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.settings.*') && request()->query('section') === 'market' ? $childActive : $childIdle }}"><i data-lucide="chart-candlestick" class="h-4 w-4"></i><span>Market</span></a>
             <a href="{{ route('admin.settings.index', ['section' => 'trading']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.settings.*') && request()->query('section') === 'trading' ? $childActive : $childIdle }}"><i data-lucide="chart-no-axes-combined" class="h-4 w-4"></i><span>Trading</span></a>
             <a href="{{ route('admin.settings.index', ['section' => 'security']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.settings.*') && request()->query('section') === 'security' ? $childActive : $childIdle }}"><i data-lucide="shield-check" class="h-4 w-4"></i><span>Security</span></a>

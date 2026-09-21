@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ locale_direction() }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -39,8 +39,10 @@
 @php
     $configuredBrandPrimary = (string) setting('brand_primary_color', '#c8102e');
     $brandPrimary = preg_match('/^#[0-9a-fA-F]{6}$/', $configuredBrandPrimary) ? $configuredBrandPrimary : '#c8102e';
+    $configuredBrandSecondary = (string) setting('brand_secondary_color', '#7c3aed');
+    $brandSecondary = preg_match('/^#[0-9a-fA-F]{6}$/', $configuredBrandSecondary) ? $configuredBrandSecondary : '#7c3aed';
 @endphp
-<body class="bg-background font-sans text-foreground antialiased" style="--brand-primary: {{ $brandPrimary }}">
+<body class="bg-background font-sans text-foreground antialiased" style="--brand-primary: {{ $brandPrimary }}; --brand-secondary: {{ $brandSecondary }}">
     @php
         $brandInitial = strtoupper(substr(trim(site_name()), 0, 1)) ?: 'F';
         $dashboardUrl = auth()->check() ? (auth()->user()->isAdmin() ? route('admin.dashboard') : route('dashboard')) : route('login');
@@ -63,22 +65,23 @@
                 </a>
 
                 <nav class="public-nav-links hidden items-center gap-0.5 rounded-xl p-1 md:flex" aria-label="Primary navigation">
-                    <a href="{{ route('home') }}#markets" class="public-nav-link">Markets</a>
-                    <a href="{{ route('home') }}#opportunities" class="public-nav-link">Investments</a>
-                    <a href="{{ route('home') }}#systems" class="public-nav-link">Automation</a>
-                    <a href="{{ route('cars.browse') }}" class="public-nav-link {{ request()->routeIs('cars.*') ? 'bg-background text-foreground shadow-sm' : '' }}">Inventory</a>
-                    <a href="{{ route('about') }}" class="public-nav-link {{ request()->routeIs('about') ? 'bg-background text-foreground shadow-sm' : '' }}">Company</a>
+                    <a href="{{ route('home') }}#markets" class="public-nav-link">{{ localize('ui.nav.markets', 'Markets') }}</a>
+                    <a href="{{ route('home') }}#opportunities" class="public-nav-link">{{ localize('ui.nav.investments', 'Investments') }}</a>
+                    <a href="{{ route('home') }}#systems" class="public-nav-link">{{ localize('ui.nav.automation', 'Automation') }}</a>
+                    <a href="{{ route('cars.browse') }}" class="public-nav-link {{ request()->routeIs('cars.*') ? 'bg-background text-foreground shadow-sm' : '' }}">{{ localize('ui.nav.inventory', 'Inventory') }}</a>
+                    <a href="{{ route('about') }}" class="public-nav-link {{ request()->routeIs('about') ? 'bg-background text-foreground shadow-sm' : '' }}">{{ localize('ui.nav.company', 'Company') }}</a>
                 </nav>
 
                 <div class="flex shrink-0 items-center gap-1.5 sm:gap-2">
+                    @include('partials.language-switcher')
                     <button type="button" data-theme-toggle onclick="window.AxausTheme.toggle()" class="public-nav-icon" aria-label="Toggle theme" title="Toggle theme">
                         <i data-lucide="sun" class="hidden h-4 w-4 dark:block"></i><i data-lucide="moon" class="h-4 w-4 dark:hidden"></i>
                     </button>
                     @auth
                         <a href="{{ $dashboardUrl }}" class="hidden h-9 items-center gap-2 rounded-xl px-3.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 sm:inline-flex" style="background:var(--brand-primary)"><i data-lucide="layout-dashboard" class="h-3.5 w-3.5"></i>Workspace</a>
                     @else
-                        <a href="{{ route('login') }}" class="hidden h-9 items-center px-2.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground sm:inline-flex">Sign in</a>
-                        @if(Route::has('register'))<a href="{{ route('register') }}" class="hidden h-9 items-center rounded-xl px-3.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 sm:inline-flex" style="background:var(--brand-primary)">Create account</a>@endif
+                        <a href="{{ route('login') }}" class="hidden h-9 items-center px-2.5 text-xs font-semibold text-muted-foreground transition hover:text-foreground sm:inline-flex">{{ localize('ui.nav.sign_in', 'Sign in') }}</a>
+                        @if(Route::has('register'))<a href="{{ route('register') }}" class="hidden h-9 items-center rounded-xl px-3.5 text-xs font-semibold text-white shadow-sm transition hover:brightness-110 sm:inline-flex" style="background:var(--brand-primary)">{{ localize('ui.nav.create_account', 'Create account') }}</a>@endif
                     @endauth
                     <button id="public-menu-button" type="button" class="public-nav-icon md:hidden" aria-label="Open navigation" aria-controls="public-mobile-menu" aria-expanded="false"><i data-lucide="menu" class="h-4 w-4"></i></button>
                 </div>
@@ -86,11 +89,11 @@
 
             <div id="public-mobile-menu" class="public-mobile-nav mt-2 hidden rounded-2xl p-2 md:hidden">
                 <div class="grid gap-1">
-                    <a href="{{ route('home') }}#markets" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="chart-candlestick" class="h-4 w-4 text-muted-foreground"></i>Markets</a>
-                    <a href="{{ route('home') }}#opportunities" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="gem" class="h-4 w-4 text-muted-foreground"></i>Investments</a>
-                    <a href="{{ route('home') }}#systems" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="bot" class="h-4 w-4 text-muted-foreground"></i>Automation</a>
-                    <a href="{{ route('cars.browse') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="shopping-bag" class="h-4 w-4 text-muted-foreground"></i>Inventory</a>
-                    <a href="{{ route('about') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="building-2" class="h-4 w-4 text-muted-foreground"></i>Company</a>
+                    <a href="{{ route('home') }}#markets" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="chart-candlestick" class="h-4 w-4 text-muted-foreground"></i>{{ localize('ui.nav.markets', 'Markets') }}</a>
+                    <a href="{{ route('home') }}#opportunities" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="gem" class="h-4 w-4 text-muted-foreground"></i>{{ localize('ui.nav.investments', 'Investments') }}</a>
+                    <a href="{{ route('home') }}#systems" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="bot" class="h-4 w-4 text-muted-foreground"></i>{{ localize('ui.nav.automation', 'Automation') }}</a>
+                    <a href="{{ route('cars.browse') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="shopping-bag" class="h-4 w-4 text-muted-foreground"></i>{{ localize('ui.nav.inventory', 'Inventory') }}</a>
+                    <a href="{{ route('about') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="building-2" class="h-4 w-4 text-muted-foreground"></i>{{ localize('ui.nav.company', 'Company') }}</a>
                     <a href="{{ $dashboardUrl }}" class="mt-1 flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-white" style="background:var(--brand-primary)"><i data-lucide="{{ auth()->check() ? 'layout-dashboard' : 'log-in' }}" class="h-4 w-4"></i>{{ auth()->check() ? 'Open workspace' : 'Sign in' }}</a>
                 </div>
             </div>
@@ -131,9 +134,9 @@
                     <div>
                         <p class="public-footer-label">Explore</p>
                         <div class="public-footer-links">
-                            <a href="{{ route('home') }}#markets" class="public-footer-link">Markets</a>
+                            <a href="{{ route('home') }}#markets" class="public-footer-link">{{ localize('ui.nav.markets', 'Markets') }}</a>
                             <a href="{{ route('home') }}#opportunities" class="public-footer-link">Opportunities</a>
-                            <a href="{{ route('cars.browse') }}" class="public-footer-link">Inventory</a>
+                            <a href="{{ route('cars.browse') }}" class="public-footer-link">{{ localize('ui.nav.inventory', 'Inventory') }}</a>
                             <a href="{{ route('home') }}#calculator" class="public-footer-link">Investment calculator</a>
                         </div>
                     </div>

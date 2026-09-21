@@ -4,7 +4,7 @@ return [
     'groups' => [
         'core' => [
             'label' => 'Core',
-            'sections' => ['overview', 'general', 'appearance'],
+            'sections' => ['overview', 'general', 'appearance', 'localization'],
         ],
         'markets' => [
             'label' => 'Markets & Trading',
@@ -47,6 +47,14 @@ return [
             'icon' => 'palette',
             'route' => 'admin.settings.index',
             'section' => 'appearance',
+            'available' => true,
+        ],
+        'localization' => [
+            'label' => 'Localization',
+            'description' => 'Languages, default locale, RTL direction and translation coverage.',
+            'icon' => 'languages',
+            'route' => 'admin.settings.index',
+            'section' => 'localization',
             'available' => true,
         ],
         'market' => [

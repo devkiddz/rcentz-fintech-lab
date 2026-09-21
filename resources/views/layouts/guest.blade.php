@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="{{ locale_direction() }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -33,6 +33,7 @@
                 @else
                     <a href="{{ route('login') }}" class="hidden rounded-lg px-3 py-2 text-xs font-semibold sm:block">Sign in</a>
                 @endauth
+                @include('partials.language-switcher')
                 <button type="button" data-theme-toggle onclick="window.AxausTheme.toggle()" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground" aria-label="Toggle theme"><i data-lucide="sun" class="hidden h-4 w-4 dark:block"></i><i data-lucide="moon" class="h-4 w-4 dark:hidden"></i></button>
             </div>
         </div>
