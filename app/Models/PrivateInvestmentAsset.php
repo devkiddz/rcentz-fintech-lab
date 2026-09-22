@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class PrivateInvestmentAsset extends Model
 {
     protected $fillable = [
-        'instrument_id','asset_type','name','description','acquisition_value','current_valuation',
+        'instrument_id','market_instrument_id','asset_type','name','description','acquisition_value','current_valuation',
         'ownership_percentage','status','acquired_at','effective_at','notes',
     ];
 
@@ -20,5 +20,10 @@ class PrivateInvestmentAsset extends Model
     public function instrument(): BelongsTo
     {
         return $this->belongsTo(PrivateInvestmentInstrument::class, 'instrument_id');
+    }
+
+    public function marketInstrument(): BelongsTo
+    {
+        return $this->belongsTo(MarketInstrument::class, 'market_instrument_id');
     }
 }

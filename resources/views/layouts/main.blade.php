@@ -137,7 +137,7 @@
                             <a href="{{ route('home') }}#markets" class="public-footer-link">{{ localize('ui.nav.markets', 'Markets') }}</a>
                             <a href="{{ route('home') }}#opportunities" class="public-footer-link">{{ localize('ui.common.opportunities', 'Opportunities') }}</a>
                             <a href="{{ route('cars.browse') }}" class="public-footer-link">{{ localize('ui.nav.inventory', 'Inventory') }}</a>
-                            <a href="{{ route('home') }}#calculator" class="public-footer-link">{{ localize('ui.common.investment_calculator', 'Investment calculator') }}</a>
+                            <a href="{{ route('home') }}#systems" class="public-footer-link">{{ localize('ui.nav.automation', 'Automation') }}</a>
                         </div>
                     </div>
 

@@ -1,16 +1,17 @@
 @php
     $routeNames = $admin
-        ? ['index' => 'admin.instruments.index', 'stock' => 'admin.instruments.stocks', 'forex' => 'admin.instruments.forex', 'crypto' => 'admin.instruments.crypto']
-        : ['index' => 'instruments.index', 'stock' => 'instruments.stocks', 'forex' => 'instruments.forex', 'crypto' => 'instruments.crypto'];
+        ? ['index' => 'admin.instruments.index', 'stock' => 'admin.instruments.stocks', 'forex' => 'admin.instruments.forex', 'commodity' => 'admin.instruments.commodities', 'crypto' => 'admin.instruments.crypto']
+        : ['index' => 'instruments.index', 'stock' => 'instruments.stocks', 'forex' => 'instruments.forex', 'commodity' => 'instruments.commodities', 'crypto' => 'instruments.crypto'];
 
     $tabs = [
         [null, 'Overview', 'layout-grid'],
         ['stock', 'Stocks', 'chart-no-axes-combined'],
         ['forex', 'Forex', 'arrow-left-right'],
+        ['commodity', 'Commodities', 'gem'],
         ['crypto', 'Crypto', 'bitcoin'],
     ];
 
-    // Product order is intentional: Stocks → Forex → Crypto.
+    // Product order is intentional: Stocks → Forex → Commodities → Crypto.
     // Do not alphabetically sort these groups; the customer market surface
     // follows the platform's liquid-instrument hierarchy.
     $groups = $scope
@@ -18,11 +19,12 @@
         : collect([
             'stock' => $instruments->where('asset_class', 'stock')->values(),
             'forex' => $instruments->where('asset_class', 'forex')->values(),
+            'commodity' => $instruments->where('asset_class', 'commodity')->values(),
             'crypto' => $instruments->where('asset_class', 'crypto')->values(),
         ])->filter(fn ($group) => $group->isNotEmpty());
 
-    $groupLabels = ['stock' => 'Stocks', 'forex' => 'Forex', 'crypto' => 'Crypto'];
-    $groupIcons = ['stock' => 'chart-no-axes-combined', 'forex' => 'arrow-left-right', 'crypto' => 'bitcoin'];
+    $groupLabels = ['stock' => 'Stocks', 'forex' => 'Forex', 'commodity' => 'Commodities', 'crypto' => 'Crypto'];
+    $groupIcons = ['stock' => 'chart-no-axes-combined', 'forex' => 'arrow-left-right', 'commodity' => 'gem', 'crypto' => 'bitcoin'];
 
     $formatPrice = function ($instrument, $price) {
         if ($price === null) return '—';
@@ -61,12 +63,13 @@
         @endforeach
     </div>
 
-    <section class="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
+    <section class="mt-5 grid grid-cols-2 gap-3 md:grid-cols-6">
         @foreach([
             ['Total',$counts['total'],'layers-3'],
             ['Active',$counts['active'],'activity'],
             ['Stocks',$counts['stock'],'chart-no-axes-combined'],
             ['Forex',$counts['forex'],'arrow-left-right'],
+            ['Commodities',$counts['commodity'],'gem'],
             ['Crypto',$counts['crypto'],'bitcoin'],
         ] as [$label,$value,$icon])
             <div class="ui-panel p-4">
@@ -105,6 +108,7 @@
                                     : ($admin ? route('admin.instruments.show',$instrument) : route('instruments.show',$instrument)),
                                 'forex' => $admin ? route('admin.instruments.forex.show',['symbol'=>$instrument->symbol]) : route('instruments.forex.show',['symbol'=>$instrument->symbol]),
                                 'crypto' => $admin ? route('admin.instruments.crypto.show',['symbol'=>$instrument->symbol]) : route('instruments.crypto.show',['symbol'=>$instrument->symbol]),
+                                'commodity' => $admin ? route('admin.instruments.commodities.show',['symbol'=>$instrument->symbol]) : route('instruments.commodities.show',['symbol'=>$instrument->symbol]),
                                 default => $admin ? route('admin.instruments.show',$instrument) : route('instruments.show',$instrument),
                             };
                             $current = $instrument->runtime_price;
@@ -133,7 +137,11 @@
                             <div><p class="text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Market</p><p class="mt-1 text-[12px] font-semibold">{{ $instrument->market ?: 'Global' }}</p><p class="mt-0.5 text-[9px] text-muted-foreground">{{ $instrument->base_asset ?: '—' }}{{ $instrument->quote_asset ? ' / '.$instrument->quote_asset : '' }}</p></div>
                             <div><p class="text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Trading</p><p class="mt-1 text-[11px] font-semibold {{ $ready?'text-emerald-600':'text-amber-600' }}">{{ $ready ? 'READY' : 'UNAVAILABLE' }}</p><p class="mt-0.5 truncate text-[9px] text-muted-foreground">{{ $ready ? 'Order routing available' : ($instrument->runtime_execution_reason ?: 'Execution adapter unavailable') }}</p></div>
                             <div class="flex flex-wrap gap-2 lg:justify-end">
-                                <a href="{{ $viewRoute }}" class="ui-btn ui-btn-secondary ui-btn-sm whitespace-nowrap">View Asset</a>
+                                @if($viewRoute)
+                                    <a href="{{ $viewRoute }}" class="ui-btn ui-btn-secondary ui-btn-sm whitespace-nowrap">View Asset</a>
+                                @else
+                                    <span class="ui-btn ui-btn-secondary ui-btn-sm cursor-default whitespace-nowrap">Market data</span>
+                                @endif
                                 @if(!$admin && $ready)
                                     <a href="{{ route('broker.workstation',['assetClass'=>$instrument->asset_class,'symbol'=>$instrument->symbol]) }}" class="ui-btn ui-btn-ghost ui-btn-sm whitespace-nowrap">Trade<i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i></a>
                                 @endif

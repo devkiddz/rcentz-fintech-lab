@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CommodityInstrument;
 use App\Models\CryptoPair;
 use App\Models\ForexPair;
 use App\Models\MarketEnvironment;
@@ -48,7 +49,7 @@ final class MarketPriceRouter
         return $marketplace;
     }
 
-    public function instrument(MarketInstrument|Stock|ForexPair|CryptoPair $asset): MarketInstrument
+    public function instrument(MarketInstrument|Stock|ForexPair|CryptoPair|CommodityInstrument $asset): MarketInstrument
     {
         if ($asset instanceof MarketInstrument) {
             return $asset;
@@ -79,7 +80,7 @@ final class MarketPriceRouter
         return $parent;
     }
 
-    public function price(MarketInstrument|Stock|ForexPair|CryptoPair $asset, ?string $marketplace = null): float
+    public function price(MarketInstrument|Stock|ForexPair|CryptoPair|CommodityInstrument $asset, ?string $marketplace = null): float
     {
         $marketplace = $this->normalizeMarketplace($marketplace ?: $this->activeMarketplace());
         $instrument = $this->instrument($asset);
@@ -120,7 +121,7 @@ final class MarketPriceRouter
         return $this->normalizeMarketplace($marketplace ?: $this->activeMarketplace()) === 'live';
     }
 
-    public function requiresRegularSessionFor(MarketInstrument|Stock|ForexPair|CryptoPair $asset, ?string $marketplace = null): bool
+    public function requiresRegularSessionFor(MarketInstrument|Stock|ForexPair|CryptoPair|CommodityInstrument $asset, ?string $marketplace = null): bool
     {
         if ($this->normalizeMarketplace($marketplace ?: $this->activeMarketplace()) !== 'live') {
             return false;

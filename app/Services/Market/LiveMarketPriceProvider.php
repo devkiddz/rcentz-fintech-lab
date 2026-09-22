@@ -81,6 +81,26 @@ final class LiveMarketPriceProvider implements MarketPriceProvider
             return $price;
         }
 
+        if ($instrument->isCommodity()) {
+            $commodity = $instrument->canonicalCommodityInstrument;
+
+            if (! $commodity) {
+                throw new RuntimeException('Commodity adapter is missing for '.$instrument->display_symbol.'.');
+            }
+
+            if (! (bool) $commodity->external_feed_enabled) {
+                throw new RuntimeException('External commodity feed is disabled for '.$instrument->display_symbol.'.');
+            }
+
+            $price = (float) ($commodity->current_price ?? 0);
+
+            if ($price <= 0) {
+                throw new RuntimeException('External commodity price is unavailable for '.$instrument->display_symbol.'.');
+            }
+
+            return $price;
+        }
+
         throw new RuntimeException('No Live price adapter exists for '.$instrument->asset_class.' '.$instrument->display_symbol.'.');
     }
 }

@@ -117,6 +117,11 @@ class PrivateInvestmentMarketController extends Controller
         return $this->categoryListing($request, 'bonds', 'Bonds & Fixed Income');
     }
 
+    public function hedges(Request $request)
+    {
+        return $this->categoryListing($request, 'hedge_assets', 'Hedge Assets');
+    }
+
     public function account()
     {
         $isAdmin = auth()->user()->isAdmin();
@@ -399,6 +404,7 @@ class PrivateInvestmentMarketController extends Controller
             'cryptocurrency' => redirect()->route('investments.crypto'),
             'real_estate' => redirect()->route('investments.real-estate'),
             'bonds', 'fixed_income' => redirect()->route('investments.bonds'),
+            'hedge_assets' => redirect()->route('investments.hedges'),
             default => redirect()->route('investments.index'),
         };
     }
@@ -457,6 +463,7 @@ class PrivateInvestmentMarketController extends Controller
             'stock_market' => 'stock_market',
             'forex' => 'forex',
             'cryptocurrency' => 'cryptocurrency',
+            'hedge_assets' => 'hedge_assets',
         ];
 
         abort_unless(isset($mapping[$type]), 404);

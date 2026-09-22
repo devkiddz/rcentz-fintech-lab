@@ -12,6 +12,7 @@ class MarketInstrument extends Model
     public const ASSET_STOCK = 'stock';
     public const ASSET_FOREX = 'forex';
     public const ASSET_CRYPTO = 'crypto';
+    public const ASSET_COMMODITY = 'commodity';
 
     protected $fillable = [
         'symbol',
@@ -67,6 +68,11 @@ class MarketInstrument extends Model
         return $this->hasOne(CryptoPair::class, 'market_instrument_id');
     }
 
+    public function canonicalCommodityInstrument()
+    {
+        return $this->hasOne(CommodityInstrument::class, 'market_instrument_id');
+    }
+
     public function controlledMarketInstrument()
     {
         return $this->hasOne(ControlledMarketInstrument::class, 'market_instrument_id');
@@ -120,5 +126,10 @@ class MarketInstrument extends Model
     public function isCrypto(): bool
     {
         return $this->asset_class === self::ASSET_CRYPTO;
+    }
+
+    public function isCommodity(): bool
+    {
+        return $this->asset_class === self::ASSET_COMMODITY;
     }
 }

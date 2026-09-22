@@ -7,6 +7,7 @@
         ['Cryptocurrency','investments.crypto','coins','Digital asset baskets with internal valuation','cryptocurrency'],
         ['Real Estate','investments.real-estate','house','Property-backed private investment instruments','real_estate'],
         ['Bonds & Fixed Income','investments.bonds','landmark','Income-oriented private notes and pools','bonds'],
+        [localize('ui.r3.investments.hedge_assets', 'Hedge Assets'),'investments.hedges','shield-check',localize('ui.r3.investments.hedge_copy', 'Market-linked hedge allocations focused on diversification and capital preservation.'),'hedge_assets'],
     ];
 @endphp
 
@@ -76,7 +77,7 @@
                                     <div class="flex items-center gap-2">
                                         <span class="text-xs font-semibold text-white">{{ $tapeInstrument->symbol }}</span>
                                         <span class="rounded-full bg-white/[.06] px-1.5 py-0.5 text-[8px] font-medium uppercase tracking-[.08em] text-zinc-400">
-                                            {{ str_replace(['stock_market','cryptocurrency','real_estate','bonds'], ['Stocks','Crypto','Real Estate','Bonds'], $tapeInstrument->category) }}
+                                            {{ str_replace(['stock_market','cryptocurrency','real_estate','bonds','hedge_assets'], ['Stocks','Crypto','Real Estate','Bonds',localize('ui.r3.investments.hedge_summary', 'Hedge')], $tapeInstrument->category) }}
                                         </span>
                                     </div>
                                     <p class="mt-1 max-w-[120px] truncate text-[9px] text-zinc-500">{{ $tapeInstrument->name }}</p>
@@ -117,7 +118,7 @@
         </section>
     @endif
 
-    <section class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+    <section class="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         @foreach($categoryCards as [$label,$routeName,$icon,$copy,$categoryKey])
             <a href="{{ route($routeName) }}" class="group rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 dark:border-zinc-800 dark:bg-zinc-950">
                 <div class="flex items-center justify-between">
@@ -216,6 +217,7 @@
                         ['Crypto', 'cryptocurrency', 'investments.crypto'],
                         ['Real Estate', 'real_estate', 'investments.real-estate'],
                         ['Bonds', 'bonds', 'investments.bonds'],
+                        [localize('ui.r3.investments.hedge_assets', 'Hedge Assets'), 'hedge_assets', 'investments.hedges'],
                     ];
                     $summaryTotal = collect($summaryCounts)->sum(
                         fn ($item) => (int) ($categoryStats[$item[1]] ?? \App\Models\PrivateInvestmentInstrument::where('category', $item[1])->where('is_visible', true)->count())

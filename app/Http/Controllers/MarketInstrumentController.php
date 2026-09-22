@@ -9,10 +9,11 @@ use App\Services\MarketPriceRouter;
 
 class MarketInstrumentController extends Controller
 {
-    public function index(MarketInstrumentCatalogService $catalog) { return $this->render($catalog, null, 'Market Instruments', 'Stocks, Forex and Crypto registered with the market intelligence layer.'); }
+    public function index(MarketInstrumentCatalogService $catalog) { return $this->render($catalog, null, 'Market Instruments', 'Stocks, Forex, Commodities and Crypto registered with the market intelligence layer.'); }
     public function stocks(MarketInstrumentCatalogService $catalog) { return $this->render($catalog, 'stock', 'Stock Instruments', 'Listed stocks connected to the shared MarketInstrument runtime.'); }
     public function forex(MarketInstrumentCatalogService $catalog) { return $this->render($catalog, 'forex', 'Forex Instruments', 'Registered currency pairs connected to the shared market runtime.'); }
     public function crypto(MarketInstrumentCatalogService $catalog) { return $this->render($catalog, 'crypto', 'Crypto Instruments', '24/7 crypto markets connected to the shared MarketInstrument runtime when their real feed is ready.'); }
+    public function commodities(MarketInstrumentCatalogService $catalog) { return $this->render($catalog, 'commodity', 'Commodity Instruments', 'Commodity market identities connected to the shared MarketInstrument data and analysis runtime.'); }
 
     /**
      * Compatibility endpoint for the former /instruments/{id} detail URL.
@@ -38,6 +39,10 @@ class MarketInstrumentController extends Controller
             return redirect()->route('instruments.crypto.show', ['symbol' => $instrument->symbol]);
         }
 
+        if ($instrument->isCommodity()) {
+            return redirect()->route('instruments.commodities.show', ['symbol' => $instrument->symbol]);
+        }
+
         return redirect()->route('instruments.index');
     }
 
@@ -55,6 +60,14 @@ class MarketInstrumentController extends Controller
         MarketPriceRouter $prices
     ) {
         return $this->showAsset('crypto', $symbol, $analysisService, $prices);
+    }
+
+    public function showCommodity(
+        string $symbol,
+        MarketInstrumentAnalysisService $analysisService,
+        MarketPriceRouter $prices
+    ) {
+        return $this->showAsset('commodity', $symbol, $analysisService, $prices);
     }
 
     private function showAsset(
@@ -75,6 +88,7 @@ class MarketInstrumentController extends Controller
             'canonicalStock',
             'canonicalForexPair',
             'canonicalCryptoPair',
+            'canonicalCommodityInstrument',
             'controlledMarketInstrument',
         ]);
 

@@ -21,6 +21,8 @@ class CoreDataSeeder extends Seeder
             InvestmentPlanSeeder::class,
             StockSeeder::class,
             CurrencyRatesSeeder::class,
+            CommodityInstrumentSeeder::class,
+            GoldHedgeInvestmentSeeder::class,
         ]);
     }
 }

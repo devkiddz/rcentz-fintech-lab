@@ -14,6 +14,7 @@ class MarketInstrumentController extends Controller
     public function stocks(MarketInstrumentCatalogService $catalog) { return $this->render($catalog, 'stock', 'Stock Instruments', 'Listed stocks connected to the shared MarketInstrument runtime while rich Stock detail and execution remain available per asset.'); }
     public function forex(MarketInstrumentCatalogService $catalog) { return $this->render($catalog, 'forex', 'Forex Instruments', 'Registered FX pairs connected to the shared market runtime.'); }
     public function crypto(MarketInstrumentCatalogService $catalog) { return $this->render($catalog, 'crypto', 'Crypto Instruments', '24/7 crypto markets connected to the shared MarketInstrument runtime when their real feed is ready.'); }
+    public function commodities(MarketInstrumentCatalogService $catalog) { return $this->render($catalog, 'commodity', 'Commodity Instruments', 'Commodity market identities connected to the shared MarketInstrument data and analysis runtime.'); }
 
     /**
      * Compatibility endpoint for the former /admin/instruments/{id} detail URL.
@@ -38,6 +39,10 @@ class MarketInstrumentController extends Controller
             return redirect()->route('admin.instruments.crypto.show', ['symbol' => $instrument->symbol]);
         }
 
+        if ($instrument->isCommodity()) {
+            return redirect()->route('admin.instruments.commodities.show', ['symbol' => $instrument->symbol]);
+        }
+
         return redirect()->route('admin.instruments.index');
     }
 
@@ -57,6 +62,14 @@ class MarketInstrumentController extends Controller
         return $this->showAsset('crypto', $symbol, $analysisService, $prices);
     }
 
+    public function showCommodity(
+        string $symbol,
+        MarketInstrumentAnalysisService $analysisService,
+        MarketPriceRouter $prices
+    ) {
+        return $this->showAsset('commodity', $symbol, $analysisService, $prices);
+    }
+
     private function showAsset(
         string $assetClass,
         string $symbol,
@@ -74,6 +87,7 @@ class MarketInstrumentController extends Controller
             'canonicalStock',
             'canonicalForexPair',
             'canonicalCryptoPair',
+            'canonicalCommodityInstrument',
             'controlledMarketInstrument',
         ]);
 

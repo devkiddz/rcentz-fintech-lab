@@ -126,6 +126,8 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.act
         Route::get('/forex/{symbol}', [\App\Http\Controllers\MarketInstrumentController::class, 'showForex'])->where('symbol', '[A-Za-z0-9.\\-]+')->name('forex.show');
         Route::get('/crypto', [\App\Http\Controllers\MarketInstrumentController::class, 'crypto'])->name('crypto');
         Route::get('/crypto/{symbol}', [\App\Http\Controllers\MarketInstrumentController::class, 'showCrypto'])->where('symbol', '[A-Za-z0-9.\\-]+')->name('crypto.show');
+        Route::get('/commodities', [\App\Http\Controllers\MarketInstrumentController::class, 'commodities'])->name('commodities');
+        Route::get('/commodities/{symbol}', [\App\Http\Controllers\MarketInstrumentController::class, 'showCommodity'])->where('symbol', '[A-Za-z0-9.\\-]+')->name('commodities.show');
         Route::get('/{instrument}', [\App\Http\Controllers\MarketInstrumentController::class, 'show'])->name('show');
     });
 
@@ -246,6 +248,7 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.act
     Route::get('/investments/crypto', [PrivateInvestmentMarketController::class, 'crypto'])->name('investments.crypto');
     Route::get('/investments/real-estate', [PrivateInvestmentMarketController::class, 'realEstate'])->name('investments.real-estate');
     Route::get('/investments/bonds', [PrivateInvestmentMarketController::class, 'bonds'])->name('investments.bonds');
+    Route::get('/investments/hedges', [PrivateInvestmentMarketController::class, 'hedges'])->name('investments.hedges');
     Route::get('/account/investments', [PrivateInvestmentMarketController::class, 'account'])->middleware('account.owner')->name('account.investments');
     Route::get('/account/investments/portfolio', [PrivateInvestmentMarketController::class, 'portfolio'])->middleware('account.owner')->name('account.investments.portfolio');
     Route::get('/account/investments/performance', [PrivateInvestmentMarketController::class, 'performance'])->middleware('account.owner')->name('account.investments.performance');
@@ -427,6 +430,8 @@ Route::middleware(['auth', 'admin'])
             Route::get('/forex/{symbol}', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'showForex'])->where('symbol', '[A-Za-z0-9.\\-]+')->name('forex.show');
             Route::get('/crypto', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'crypto'])->name('crypto');
             Route::get('/crypto/{symbol}', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'showCrypto'])->where('symbol', '[A-Za-z0-9.\\-]+')->name('crypto.show');
+            Route::get('/commodities', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'commodities'])->name('commodities');
+            Route::get('/commodities/{symbol}', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'showCommodity'])->where('symbol', '[A-Za-z0-9.\\-]+')->name('commodities.show');
             Route::get('/{instrument}', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'show'])->name('show');
         });
 

@@ -2,12 +2,15 @@
     $isStock = $instrument->asset_class === 'stock';
     $isForex = $instrument->asset_class === 'forex';
     $isCrypto = $instrument->asset_class === 'crypto';
+    $isCommodity = $instrument->asset_class === 'commodity';
 
     $source = $isStock
         ? ($instrument->canonicalStock ?: $instrument->stock)
         : ($isForex
             ? ($instrument->canonicalForexPair ?: $instrument->forexPair)
-            : ($isCrypto ? $instrument->canonicalCryptoPair : null));
+            : ($isCrypto
+                ? $instrument->canonicalCryptoPair
+                : ($isCommodity ? $instrument->canonicalCommodityInstrument : null)));
 
     $updated = $source?->last_updated ?? $instrument->updated_at;
     $precision = max(0, min(8, (int)$instrument->price_precision));
@@ -33,6 +36,7 @@
         'stock' => $admin ? route('admin.instruments.stocks') : route('instruments.stocks'),
         'forex' => $admin ? route('admin.instruments.forex') : route('instruments.forex'),
         'crypto' => $admin ? route('admin.instruments.crypto') : route('instruments.crypto'),
+        'commodity' => $admin ? route('admin.instruments.commodities') : route('instruments.commodities'),
         default => $admin ? route('admin.instruments.index') : route('instruments.index'),
     };
 @endphp

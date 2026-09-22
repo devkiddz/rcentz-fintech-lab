@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\BotProduct;
+use App\Models\CommodityPricePoint;
 use App\Models\CryptoCandle;
 use App\Models\ForexCandle;
 use App\Models\MarketInstrument;
@@ -38,7 +39,7 @@ final class BotMarketContextService
 
     public function forInstrument(MarketInstrument $instrument, int $limit = 48): array
     {
-        $instrument->loadMissing(['canonicalStock', 'canonicalForexPair', 'canonicalCryptoPair', 'stock', 'forexPair']);
+        $instrument->loadMissing(['canonicalStock', 'canonicalForexPair', 'canonicalCryptoPair', 'canonicalCommodityInstrument', 'stock', 'forexPair']);
 
         $marketplace = $this->prices->activeMarketplace();
         $assetClass = strtolower((string) $instrument->asset_class);
@@ -85,7 +86,7 @@ final class BotMarketContextService
      */
     public function priceSeries(MarketInstrument $instrument, int $limit = 48): array
     {
-        $instrument->loadMissing(['canonicalStock', 'canonicalForexPair', 'canonicalCryptoPair', 'stock', 'forexPair']);
+        $instrument->loadMissing(['canonicalStock', 'canonicalForexPair', 'canonicalCryptoPair', 'canonicalCommodityInstrument', 'stock', 'forexPair']);
 
         return $limit > 0 ? $this->series($instrument, $limit) : [];
     }
@@ -132,6 +133,20 @@ final class BotMarketContextService
                 'open' => (float) ($latest?->open ?? 0),
                 'high' => (float) ($latest?->high ?? 0),
                 'low' => (float) ($latest?->low ?? 0),
+            ];
+        }
+
+        if ($instrument->isCommodity()) {
+            $commodity = $instrument->canonicalCommodityInstrument;
+            $price = (float) ($commodity?->current_price ?? 0);
+            $previous = (float) ($commodity?->previous_close ?? 0);
+
+            return [
+                'current' => $price,
+                'previous_close' => $previous,
+                'open' => 0.0,
+                'high' => 0.0,
+                'low' => 0.0,
             ];
         }
 
@@ -214,6 +229,25 @@ final class BotMarketContextService
                 ])->all();
         }
 
+        if ($instrument->isCommodity()) {
+            $commodity = $instrument->canonicalCommodityInstrument;
+            if (! $commodity) return [];
+
+            return CommodityPricePoint::query()
+                ->where('commodity_instrument_id', $commodity->id)
+                ->where('interval', '1d')
+                ->orderByDesc('timestamp')
+                ->limit($limit)
+                ->get(['price','timestamp'])
+                ->sortBy('timestamp')
+                ->values()
+                ->map(fn ($point) => [
+                    'price' => (float) $point->price,
+                    'time' => optional($point->timestamp)->toIso8601String(),
+                    'label' => optional($point->timestamp)?->format('M d'),
+                ])->all();
+        }
+
         $pair = $instrument->canonicalCryptoPair;
         if (! $pair) return [];
 
@@ -247,6 +281,10 @@ final class BotMarketContextService
 
         if ($instrument->isForex()) {
             return $this->forexSessions->isMarketOpen() ? 'open' : 'closed';
+        }
+
+        if ($instrument->isCommodity()) {
+            return 'global_spot';
         }
 
         return $this->stockSessions->status();

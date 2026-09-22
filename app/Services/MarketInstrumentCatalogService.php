@@ -20,6 +20,7 @@ class MarketInstrumentCatalogService
             'canonicalStock',
             'canonicalForexPair',
             'canonicalCryptoPair',
+            'canonicalCommodityInstrument',
             'controlledMarketInstrument',
         ]);
         $countQuery = MarketInstrument::query();
@@ -73,6 +74,7 @@ class MarketInstrumentCatalogService
             'stock' => (int) ($rawCounts['stock'] ?? 0),
             'forex' => (int) ($rawCounts['forex'] ?? 0),
             'crypto' => (int) ($rawCounts['crypto'] ?? 0),
+            'commodity' => (int) ($rawCounts['commodity'] ?? 0),
         ];
 
         return compact('instruments', 'counts', 'marketplace');
@@ -98,6 +100,11 @@ class MarketInstrumentCatalogService
         if ($instrument->isCrypto()) {
             $pair = $instrument->canonicalCryptoPair;
             return $pair ? (float) ($pair->previous_close ?: $pair->current_rate) : null;
+        }
+
+        if ($instrument->isCommodity()) {
+            $commodity = $instrument->canonicalCommodityInstrument;
+            return $commodity ? (float) ($commodity->previous_close ?: $commodity->current_price) : null;
         }
 
         return null;

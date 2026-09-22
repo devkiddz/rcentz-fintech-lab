@@ -13,7 +13,8 @@ final class MarketInstrumentAnalysisService
         private MarketPriceRouter $prices,
         private StockAnalysisService $stocks,
         private ForexMarketDataService $forex,
-        private CryptoMarketDataService $crypto
+        private CryptoMarketDataService $crypto,
+        private CommodityMarketDataService $commodities
     ) {}
 
     public function forInstrument(MarketInstrument $instrument, ?string $marketplace = null): array
@@ -25,6 +26,7 @@ final class MarketInstrumentAnalysisService
             'canonicalStock',
             'canonicalForexPair',
             'canonicalCryptoPair',
+            'canonicalCommodityInstrument',
             'controlledMarketInstrument',
         ]);
 
@@ -69,6 +71,20 @@ final class MarketInstrumentAnalysisService
             $analysis['source'] = $analysis['analysis_source'] ?? 'crypto_daily_history';
             $analysis['series'] = $analysis['timeframes']['1d'] ?? [];
             $analysis['previous_close'] = (float) ($pair->previous_close ?: ($analysis['current_price'] ?? 0));
+
+            return $this->decorate($instrument, 'live', $analysis);
+        }
+
+        if ($instrument->isCommodity()) {
+            $commodity = $instrument->canonicalCommodityInstrument;
+            if (! $commodity) {
+                throw new RuntimeException('Commodity adapter is missing for '.$instrument->display_symbol.'.');
+            }
+
+            $analysis = $this->commodities->context($commodity);
+            $analysis['source'] = $analysis['analysis_source'] ?? 'commodity_market_history';
+            $analysis['series'] = $analysis['series'] ?? ($analysis['timeframes']['1d'] ?? []);
+            $analysis['previous_close'] = (float) ($commodity->previous_close ?: ($analysis['current_price'] ?? 0));
 
             return $this->decorate($instrument, 'live', $analysis);
         }

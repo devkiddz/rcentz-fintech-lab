@@ -29,6 +29,14 @@ class SignalGenerationService
             return $this->outcome('skipped', $instrument, null, 'Instrument is inactive.');
         }
 
+        if (! in_array($instrument->asset_class, [
+            MarketInstrument::ASSET_STOCK,
+            MarketInstrument::ASSET_FOREX,
+            MarketInstrument::ASSET_CRYPTO,
+        ], true)) {
+            return $this->outcome('skipped', $instrument, null, 'Signal runtime is not enabled for this asset class.');
+        }
+
         if ($instrument->isCrypto() && data_get($instrument->metadata, 'signal_runtime_state') !== 'ready_only') {
             return $this->outcome('skipped', $instrument, null, 'Crypto Signal runtime is not enabled for this instrument.');
         }

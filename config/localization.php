@@ -11,6 +11,8 @@ return [
         'localization_trading_signals_r2c.php',
         'localization_investments_bots_copy_r2d.php',
         'localization_final_surfaces_rtl_r2e.php',
+        'localization_homepage_r3.php',
+        'localization_investment_hedges_r3.php',
     ],
     'protected_groups' => ['finance'],
     'major_locales' => ['en','fr','es','pt','ar','zh-CN','de'],
