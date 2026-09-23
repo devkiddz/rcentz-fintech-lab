@@ -11,6 +11,7 @@ use App\Models\PrivateInvestmentPrice;
 use App\Models\PrivateInvestmentTransaction;
 use App\Models\Setting;
 use App\Services\PrivateInvestmentValuationService;
+use App\Services\PrivateInvestmentReserveService;
 use App\Services\PrivateInvestmentLifecycleService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -114,7 +115,10 @@ class PrivateInvestmentAdminController extends Controller
         return redirect()->route('admin.investments.control.show',$instrument)->with('success','Investment instrument created.');
     }
 
-    public function show(PrivateInvestmentInstrument $instrument)
+    public function show(
+        PrivateInvestmentInstrument $instrument,
+        PrivateInvestmentReserveService $reserves
+    )
     {
         $instrument->load([
             'assets'=>fn($q)=>$q->latest('created_at'),
@@ -129,7 +133,12 @@ class PrivateInvestmentAdminController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.private-investments.show', compact('instrument', 'customers'));
+        $reserveSummary = $reserves->summary($instrument);
+
+        return view(
+            'admin.private-investments.show',
+            compact('instrument', 'customers', 'reserveSummary')
+        );
     }
 
     public function updateInstrument(Request $request, PrivateInvestmentInstrument $instrument)
@@ -149,8 +158,6 @@ class PrivateInvestmentAdminController extends Controller
             'projected_return_max_percent'=>'required|numeric|min:0|max:100|gte:projected_return_min_percent',
             'subscription_fee_percent'=>'required|numeric|min:0|max:100',
             'redemption_fee_percent'=>'required|numeric|min:0|max:100',
-            'unit_supply'=>'required|numeric|min:0',
-            'available_units'=>'required|numeric|min:0',
         ]);
 
         $instrument->update([

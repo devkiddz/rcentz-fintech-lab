@@ -4,6 +4,30 @@
 @if(session('success'))<div class="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-xs text-emerald-600">{{ session('success') }}</div>@endif
 @if($errors->any())<div class="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-xs text-red-600">{{ $errors->first() }}</div>@endif
 
+<section class="ui-panel mb-4 p-5">
+<div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+    <div>
+        <p class="ui-kicker">Reserve authority</p>
+        <h2 class="mt-1 text-lg font-semibold">Backing & Capacity</h2>
+        <p class="mt-1 max-w-2xl text-[10px] leading-4 text-muted-foreground">Reserve value is the authority for how many customer units can be supported. Unsold catalogue supply cannot create reserve backing.</p>
+    </div>
+    <div class="rounded-full border border-border px-3 py-1 text-[10px] font-semibold {{ $reserveSummary['customer_fully_backed'] ? 'text-emerald-600' : 'text-red-600' }}">
+        {{ $reserveSummary['customer_fully_backed'] ? 'CUSTOMER EXPOSURE BACKED' : 'BACKING DEFICIT' }}
+    </div>
+</div>
+<div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+    <div class="rounded-xl border border-border p-3"><p class="text-[9px] uppercase tracking-[.1em] text-muted-foreground">Reserve Value</p><p class="mt-1 text-sm font-semibold">{{ currency_symbol() }}{{ number_format((float)$reserveSummary['reserve_value'],2) }}</p></div>
+    <div class="rounded-xl border border-border p-3"><p class="text-[9px] uppercase tracking-[.1em] text-muted-foreground">Customer Exposure</p><p class="mt-1 text-sm font-semibold">{{ currency_symbol() }}{{ number_format((float)$reserveSummary['customer_liability'],2) }}</p></div>
+    <div class="rounded-xl border border-border p-3"><p class="text-[9px] uppercase tracking-[.1em] text-muted-foreground">Outstanding Units</p><p class="mt-1 text-sm font-semibold">{{ number_format((float)$reserveSummary['customer_units'],6) }}</p></div>
+    <div class="rounded-xl border border-border p-3"><p class="text-[9px] uppercase tracking-[.1em] text-muted-foreground">Backed Capacity</p><p class="mt-1 text-sm font-semibold">{{ number_format((float)$reserveSummary['backed_unit_capacity'],6) }}</p></div>
+    <div class="rounded-xl border border-border p-3"><p class="text-[9px] uppercase tracking-[.1em] text-muted-foreground">Sellable Now</p><p class="mt-1 text-sm font-semibold">{{ number_format((float)$reserveSummary['sellable_units'],6) }}</p></div>
+    <div class="rounded-xl border border-border p-3"><p class="text-[9px] uppercase tracking-[.1em] text-muted-foreground">Customer Coverage</p><p class="mt-1 text-sm font-semibold">{{ number_format((float)$reserveSummary['customer_coverage_percent'],2) }}%</p></div>
+</div>
+@if(!$reserveSummary['listed_fully_backed'])
+<p class="mt-3 text-[10px] leading-4 text-amber-600">Catalogue supply is not yet normalized to reserve capacity. R4B baseline normalization is required before reserve authority is sealed.</p>
+@endif
+</section>
+
 <section class="grid gap-4 xl:grid-cols-[1fr_1fr]">
 <div class="ui-panel p-5"><p class="ui-kicker">Instrument settings</p>
 <form method="POST" action="{{ route('admin.investments.control.instruments.update',$instrument) }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf @method('PATCH')
@@ -20,8 +44,8 @@
 <div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Projected Maximum Return / Cycle (%)</label><input class="ui-input w-full" type="number" step="0.0001" min="0" max="100" name="projected_return_max_percent" value="{{ $instrument->projected_return_max_percent }}" required></div>
 <div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Subscription Fee (%)</label><input class="ui-input w-full" type="number" step="0.0001" min="0" max="100" name="subscription_fee_percent" value="{{ $instrument->subscription_fee_percent }}" required></div>
 <div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Redemption Fee (%)</label><input class="ui-input w-full" type="number" step="0.0001" min="0" max="100" name="redemption_fee_percent" value="{{ $instrument->redemption_fee_percent }}" required></div>
-<div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Total Unit Supply</label><input class="ui-input w-full" type="number" step="0.000001" min="0" name="unit_supply" value="{{ $instrument->unit_supply }}" required></div>
-<div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Available Units</label><input class="ui-input w-full" type="number" step="0.000001" name="available_units" value="{{ $instrument->available_units }}" required></div>
+<div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Reserve-Managed Unit Supply</label><div class="ui-input flex w-full items-center">{{ number_format((float)$instrument->unit_supply,6) }}</div><p class="mt-1 text-[9px] text-muted-foreground">Controlled by reserve authority, not manual instrument settings.</p></div>
+<div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Reserve-Managed Available Units</label><div class="ui-input flex w-full items-center">{{ number_format((float)$instrument->available_units,6) }}</div><p class="mt-1 text-[9px] text-muted-foreground">Cannot exceed reserve-backed capacity after outstanding holdings.</p></div>
 <div class="sm:col-span-2"><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Description</label><textarea class="ui-input w-full" name="description" rows="3">{{ $instrument->description }}</textarea></div>
 <label class="inline-flex items-center gap-2 text-xs"><input type="checkbox" name="is_featured" value="1" @checked($instrument->is_featured)><span>Feature on marketplace</span></label>
 <label class="inline-flex items-center gap-2 text-xs"><input type="checkbox" name="is_visible" value="1" @checked($instrument->is_visible)><span>Visible to customers</span></label>

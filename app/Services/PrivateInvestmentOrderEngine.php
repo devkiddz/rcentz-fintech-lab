@@ -16,6 +16,10 @@ use RuntimeException;
 
 class PrivateInvestmentOrderEngine
 {
+    public function __construct(
+        private readonly PrivateInvestmentReserveService $reserves
+    ) {}
+
     public function subscribe(
         User $user,
         PrivateInvestmentInstrument $instrument,
@@ -83,6 +87,11 @@ class PrivateInvestmentOrderEngine
             if ($units <= 0) {
                 throw ValidationException::withMessages(['amount' => 'Subscription amount is too small for the current price.']);
             }
+
+            $this->reserves->assertSubscriptionCapacity(
+                $instrument,
+                $units
+            );
 
             if ($units > (float) $instrument->available_units + 0.000001) {
                 throw ValidationException::withMessages(['amount' => 'Not enough investment units are currently available.']);
