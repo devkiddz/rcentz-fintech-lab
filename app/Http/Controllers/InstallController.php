@@ -138,12 +138,12 @@ class InstallController extends Controller
 
             return redirect()->route('adminlogin.login')->with(
                 'status',
-                'Installation complete. Administrator access is ready. Practice accounts: demo1@'.$demoDomain.', demo2@'.$demoDomain.' and demo3@'.$demoDomain.'. They use the demonstration password selected during installation.'
+                'Installation complete. Administrator access is ready. Practice accounts: amara.okafor@'.$demoDomain.', daniel.brooks@'.$demoDomain.' and sofia.martinez@'.$demoDomain.'. They use the practice password selected during installation.'
             );
         } catch (Throwable $exception) {
             report($exception);
 
-            return back()->withErrors(['install' => $exception->getMessage()])
+            return back()->withErrors(['install' => 'Installation could not be completed. Review the application logs for technical details.'])
                 ->withInput($request->except(['db_password', 'admin_password', 'admin_password_confirmation', 'demo_password', 'demo_password_confirmation']));
         }
     }
