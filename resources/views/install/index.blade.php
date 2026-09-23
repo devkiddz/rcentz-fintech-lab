@@ -82,6 +82,16 @@
                     </div>
                 </div>
 
+                <div class="section">
+                    <div class="section-title"><span class="step">6</span> Practice accounts</div>
+                    <div class="fields">
+                        <div class="full"><div class="note" style="margin-top:0">Three ordinary customer accounts will be created from the company name: Demo One, Demo Two and Demo Three. They use the real customer experience with controlled balances, KYC states, holdings and activity so the installed platform can be explored immediately.</div></div>
+                        <div><label for="demo_password">Practice account password</label><input id="demo_password" type="password" name="demo_password" minlength="10" required autocomplete="new-password"></div>
+                        <div><label for="demo_password_confirmation">Confirm practice password</label><input id="demo_password_confirmation" type="password" name="demo_password_confirmation" minlength="10" required autocomplete="new-password"></div>
+                        <div class="full"><div class="hint">The generated addresses use the reserved .test domain, for example demo1@your-company.test. The same password is used by all three practice accounts and can be changed later from administration.</div></div>
+                    </div>
+                </div>
+
                 <button class="submit" type="submit" @disabled(!$allRequirementsMet)>Install platform</button>
             </form>
         </main>

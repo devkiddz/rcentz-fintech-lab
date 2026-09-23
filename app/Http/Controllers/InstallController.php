@@ -7,6 +7,7 @@ use App\Models\Setting;
 use App\Models\User;
 use App\Services\LocalizationService;
 use Database\Seeders\CoreDataSeeder;
+use Database\Seeders\InstallationDemoSeeder;
 use Database\Seeders\LocalizationSeeder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Throwable;
@@ -74,6 +76,7 @@ class InstallController extends Controller
             'admin_name' => ['required', 'string', 'max:120'],
             'admin_email' => ['required', 'email', 'max:255'],
             'admin_password' => ['required', 'string', 'min:10', 'confirmed'],
+            'demo_password' => ['required', 'string', 'min:10', 'confirmed'],
         ]);
 
         if (! in_array($validated['default_locale'], $validated['enabled_locales'], true)) {
@@ -111,6 +114,11 @@ class InstallController extends Controller
                 ]
             );
 
+
+            config(['bootstrap.installation_demo.password' => $validated['demo_password']]);
+            Artisan::call('db:seed', ['--class' => InstallationDemoSeeder::class, '--force' => true]);
+
+            $demoDomain = (Str::slug($validated['company_name']) ?: 'platform').'.test';
             try {
                 Artisan::call('storage:link');
             } catch (Throwable $ignored) {
@@ -130,13 +138,13 @@ class InstallController extends Controller
 
             return redirect()->route('adminlogin.login')->with(
                 'status',
-                'Installation complete. Sign in with the administrator account you just created.'
+                'Installation complete. Administrator access is ready. Practice accounts: demo1@'.$demoDomain.', demo2@'.$demoDomain.' and demo3@'.$demoDomain.'. They use the demonstration password selected during installation.'
             );
         } catch (Throwable $exception) {
             report($exception);
 
             return back()->withErrors(['install' => $exception->getMessage()])
-                ->withInput($request->except(['db_password', 'admin_password', 'admin_password_confirmation']));
+                ->withInput($request->except(['db_password', 'admin_password', 'admin_password_confirmation', 'demo_password', 'demo_password_confirmation']));
         }
     }
 

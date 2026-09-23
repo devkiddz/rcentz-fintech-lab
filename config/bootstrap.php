@@ -23,6 +23,12 @@ return [
         'password' => env('BOOTSTRAP_DEMO_PASSWORD'),
     ],
 
+    'installation_demo' => [
+        // Set at runtime by the browser installer. An environment value is
+        // supported only for intentional command-line demonstration seeding.
+        'password' => env('INSTALLATION_DEMO_PASSWORD'),
+    ],
+
     'live_test' => [
         'admin_name' => env('LIVE_TEST_ADMIN_NAME', 'Tesla Drives Test Admin'),
         'admin_email' => env('LIVE_TEST_ADMIN_EMAIL', 'admin@tesladrives.test'),
