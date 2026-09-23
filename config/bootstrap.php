@@ -30,9 +30,9 @@ return [
     ],
 
     'live_test' => [
-        'admin_name' => env('LIVE_TEST_ADMIN_NAME', 'Tesla Drives Test Admin'),
-        'admin_email' => env('LIVE_TEST_ADMIN_EMAIL', 'admin@tesladrives.test'),
-        'admin_password' => env('LIVE_TEST_ADMIN_PASSWORD', 'TeslaAdmin@2026!'),
-        'user_password' => env('LIVE_TEST_USER_PASSWORD', 'TestUser@2026!'),
+        'admin_name' => env('LIVE_TEST_ADMIN_NAME', 'Test Administrator'),
+        'admin_email' => env('LIVE_TEST_ADMIN_EMAIL'),
+        'admin_password' => env('LIVE_TEST_ADMIN_PASSWORD'),
+        'user_password' => env('LIVE_TEST_USER_PASSWORD'),
     ],
 ];

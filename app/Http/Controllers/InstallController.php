@@ -86,6 +86,21 @@ class InstallController extends Controller
         try {
             $this->configureDatabase($validated);
             DB::connection('mysql')->getPdo();
+
+            if (! $this->databaseIsEmpty($validated['db_database'])) {
+                return back()
+                    ->withErrors([
+                        'db_database' => 'The selected database is not empty. Choose a new empty database for installation.',
+                    ])
+                    ->withInput($request->except([
+                        'db_password',
+                        'admin_password',
+                        'admin_password_confirmation',
+                        'demo_password',
+                        'demo_password_confirmation',
+                    ]));
+            }
+
             $this->writeEnvironment($validated);
 
             Artisan::call('config:clear');
@@ -122,7 +137,7 @@ class InstallController extends Controller
             try {
                 Artisan::call('storage:link');
             } catch (Throwable $ignored) {
-                // Existing public storage links are harmless during an intentional reinstall.
+                // An existing public storage link is harmless during installation.
             }
 
             File::put($this->lockPath(), json_encode([
@@ -196,6 +211,18 @@ class InstallController extends Controller
         DB::reconnect('mysql');
     }
 
+    private function databaseIsEmpty(string $database): bool
+    {
+        $result = DB::connection('mysql')->selectOne(
+            "SELECT COUNT(*) AS aggregate
+             FROM information_schema.tables
+             WHERE table_schema = ?
+               AND table_type = 'BASE TABLE'",
+            [$database]
+        );
+
+        return (int) ($result->aggregate ?? 0) === 0;
+    }
     private function writeEnvironment(array $values): void
     {
         $envPath = base_path('.env');
