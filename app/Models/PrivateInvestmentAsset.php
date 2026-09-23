@@ -9,11 +9,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class PrivateInvestmentAsset extends Model
 {
     public const VALUATION_MANUAL = 'manual';
+    public const VALUATION_PRIVATE = 'private';
     public const VALUATION_MARKET_LINKED = 'market_linked';
 
     protected $fillable = [
         'instrument_id',
         'market_instrument_id',
+        'private_market_reference_id',
         'valuation_mode',
         'is_reserve_backing',
         'reserve_quantity',
@@ -62,6 +64,14 @@ class PrivateInvestmentAsset extends Model
         );
     }
 
+    public function privateMarketReference(): BelongsTo
+    {
+        return $this->belongsTo(
+            PrivateMarketReference::class,
+            'private_market_reference_id'
+        );
+    }
+
     public function reserveEvents(): HasMany
     {
         return $this->hasMany(
@@ -74,5 +84,11 @@ class PrivateInvestmentAsset extends Model
     {
         return $this->valuation_mode === self::VALUATION_MARKET_LINKED
             && $this->market_instrument_id !== null;
+    }
+
+    public function isPrivateLinked(): bool
+    {
+        return $this->valuation_mode === self::VALUATION_PRIVATE
+            && $this->private_market_reference_id !== null;
     }
 }

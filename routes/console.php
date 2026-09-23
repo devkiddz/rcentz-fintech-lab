@@ -118,6 +118,26 @@ Schedule::command('market-positions:process')
 
 /*
 |--------------------------------------------------------------------------
+| Commodity history + reserve-backed NAV synchronization
+|--------------------------------------------------------------------------
+| Public commodity history is refreshed first. Private market-linked reserve
+| products then revalue from that persisted authority and rebuild eligible NAV
+| history. These schedules do nothing while the scheduler process is stopped.
+*/
+Schedule::command('commodities:refresh-market --all')
+    ->dailyAt('00:30')
+    ->timezone('UTC')
+    ->withoutOverlapping()
+    ->onOneServer();
+
+Schedule::command('private-investments:sync-market-reserves --history')
+    ->dailyAt('00:50')
+    ->timezone('UTC')
+    ->withoutOverlapping()
+    ->onOneServer();
+
+/*
+|--------------------------------------------------------------------------
 | Signals S5 autonomous runtime
 |--------------------------------------------------------------------------
 | Lifecycle monitoring runs independently every minute. The autonomy runner

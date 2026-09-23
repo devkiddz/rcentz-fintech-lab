@@ -27,18 +27,23 @@
     <div class="sidebar-section-label px-3 pt-4 pb-1 text-[9px] font-semibold uppercase tracking-[.16em] text-muted-foreground">{{ localize('ui.r2e.admin.markets_intelligence', 'Markets & Intelligence') }}</div>
 
     <details class="sidebar-group group rounded-xl"
-             data-nav-group="admin-instruments"
+             data-nav-group="admin-markets"
              {{ request()->routeIs('admin.instruments.*','admin.stocks.*') ? 'open' : '' }}>
-        <summary title="{{ localize('ui.r2e.admin.instruments', 'Instruments') }}"
+        <summary title="Markets"
                  class="{{ $parentBase }} justify-between {{ request()->routeIs('admin.instruments.*','admin.stocks.*') ? $parentActive : $parentIdle }}">
-            <span class="flex min-w-0 items-center gap-3"><i data-lucide="chart-candlestick" class="h-4 w-4 shrink-0"></i><span class="sidebar-label truncate">{{ localize('ui.r2e.admin.instruments', 'Instruments') }}</span></span>
+            <span class="flex min-w-0 items-center gap-3">
+                <i data-lucide="chart-candlestick" class="h-4 w-4 shrink-0"></i>
+                <span class="sidebar-label truncate">Markets</span>
+            </span>
             <i data-lucide="chevron-down" class="sidebar-chevron h-4 w-4 transition-transform group-open:rotate-180"></i>
         </summary>
         <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
-            <a href="{{ route('admin.instruments.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.instruments.index') ? $childActive : $childIdle }}"><i data-lucide="layout-grid" class="h-4 w-4"></i><span>{{ localize('ui.r2e.admin.overview', 'Overview') }}</span></a>
-            <a href="{{ route('admin.instruments.stocks') }}" class="{{ $childBase }} {{ request()->routeIs('admin.instruments.stocks','admin.instruments.stocks.*','admin.stocks.*') ? $childActive : $childIdle }}"><i data-lucide="chart-no-axes-combined" class="h-4 w-4"></i><span>{{ localize('ui.r2e.admin.stocks', 'Stocks') }}</span></a>
-            <a href="{{ route('admin.instruments.forex') }}" class="{{ $childBase }} {{ request()->routeIs('admin.instruments.forex','admin.instruments.forex.*') ? $childActive : $childIdle }}"><i data-lucide="arrow-left-right" class="h-4 w-4"></i><span>{{ localize('ui.r2e.admin.forex', 'Forex') }}</span></a>
-            <a href="{{ route('admin.instruments.crypto') }}" class="{{ $childBase }} {{ request()->routeIs('admin.instruments.crypto','admin.instruments.crypto.*') ? $childActive : $childIdle }}"><i data-lucide="bitcoin" class="h-4 w-4"></i><span>{{ localize('ui.r2e.admin.crypto', 'Crypto') }}</span></a>
+            <p class="px-3 pt-1 text-[8px] font-semibold uppercase tracking-[.14em] text-muted-foreground">Instruments</p>
+            <a href="{{ route('admin.instruments.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.instruments.index') ? $childActive : $childIdle }}"><i data-lucide="layout-grid" class="h-4 w-4"></i><span>All Instruments</span></a>
+            <a href="{{ route('admin.instruments.stocks') }}" class="{{ $childBase }} {{ request()->routeIs('admin.instruments.stocks','admin.instruments.stocks.*','admin.stocks.*') ? $childActive : $childIdle }}"><i data-lucide="chart-no-axes-combined" class="h-4 w-4"></i><span>Stocks</span></a>
+            <a href="{{ route('admin.instruments.forex') }}" class="{{ $childBase }} {{ request()->routeIs('admin.instruments.forex','admin.instruments.forex.*') ? $childActive : $childIdle }}"><i data-lucide="arrow-left-right" class="h-4 w-4"></i><span>Forex</span></a>
+            <a href="{{ route('admin.instruments.crypto') }}" class="{{ $childBase }} {{ request()->routeIs('admin.instruments.crypto','admin.instruments.crypto.*') ? $childActive : $childIdle }}"><i data-lucide="bitcoin" class="h-4 w-4"></i><span>Crypto</span></a>
+            <a href="{{ route('admin.instruments.commodities') }}" class="{{ $childBase }} {{ request()->routeIs('admin.instruments.commodities','admin.instruments.commodities.*') ? $childActive : $childIdle }}"><i data-lucide="gem" class="h-4 w-4"></i><span>Commodities</span></a>
         </div>
     </details>
 
@@ -65,22 +70,24 @@
     <details class="sidebar-group group rounded-xl"
              data-nav-group="admin-trading"
              {{ request()->routeIs('admin.trading.*','admin.stocks.*') ? 'open' : '' }}>
-        <summary title="{{ localize('ui.r2e.admin.trading_command', 'Trading Command') }}"
+        <summary title="Trading"
                  class="{{ $parentBase }} justify-between {{ request()->routeIs('admin.trading.*','admin.stocks.*') ? $parentActive : $parentIdle }}">
             <span class="flex min-w-0 items-center gap-3">
                 <i data-lucide="candlestick-chart" class="h-4 w-4 shrink-0"></i>
-                <span class="sidebar-label truncate">{{ localize('ui.r2e.admin.trading_command', 'Trading Command') }}</span>
+                <span class="sidebar-label truncate">Trading</span>
             </span>
             <i data-lucide="chevron-down" class="sidebar-chevron h-4 w-4 transition-transform group-open:rotate-180"></i>
         </summary>
         <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
-            <a href="{{ route('admin.trading.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.trading.index') ? $childActive : $childIdle }}"><i data-lucide="gauge" class="h-4 w-4"></i><span>{{ localize('ui.r2e.admin.trading_overview', 'Trading Overview') }}</span></a>
-            <a href="{{ route('admin.trading.manual') }}" class="{{ $childBase }} {{ request()->routeIs('admin.trading.manual') ? $childActive : $childIdle }}"><i data-lucide="candlestick-chart" class="h-4 w-4"></i><span>{{ localize('ui.r2e.admin.trading_desk', 'Trading Desk') }}</span></a>
-
-            <a href="{{ route('admin.trading.positions') }}" class="{{ $childBase }} {{ request()->routeIs('admin.trading.positions') ? $childActive : $childIdle }}"><i data-lucide="target" class="h-4 w-4"></i><span>{{ localize('ui.r2e.admin.open_positions', 'Open Positions') }}</span></a>
-            <a href="{{ route('admin.stocks.holdings.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.stocks.holdings.*') ? $childActive : $childIdle }}"><i data-lucide="briefcase-business" class="h-4 w-4"></i><span>{{ localize('ui.r2e.admin.stock_holdings', 'Stock Holdings') }}</span></a>
-            <a href="{{ route('admin.stocks.transactions.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.stocks.transactions.*') ? $childActive : $childIdle }}"><i data-lucide="receipt-text" class="h-4 w-4"></i><span>{{ localize('ui.r2d.common.transactions', 'Transactions') }}</span></a>
-            <a href="{{ route('admin.trading.history') }}" class="{{ $childBase }} {{ request()->routeIs('admin.trading.history') ? $childActive : $childIdle }}"><i data-lucide="history" class="h-4 w-4"></i><span>{{ localize('ui.r2e.admin.trade_history', 'Trade History') }}</span></a>
+            <p class="px-3 pt-1 text-[8px] font-semibold uppercase tracking-[.14em] text-muted-foreground">Instruments</p>
+            <a href="{{ route('admin.trading.instruments.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.trading.instruments.*') ? $childActive : $childIdle }}"><i data-lucide="list-tree" class="h-4 w-4"></i><span>Tradable Instruments</span></a>
+            <p class="px-3 pt-2 text-[8px] font-semibold uppercase tracking-[.14em] text-muted-foreground">Execution</p>
+            <a href="{{ route('admin.trading.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.trading.index') ? $childActive : $childIdle }}"><i data-lucide="gauge" class="h-4 w-4"></i><span>Trading Overview</span></a>
+            <a href="{{ route('admin.trading.manual') }}" class="{{ $childBase }} {{ request()->routeIs('admin.trading.manual') ? $childActive : $childIdle }}"><i data-lucide="candlestick-chart" class="h-4 w-4"></i><span>Trading Desk</span></a>
+            <a href="{{ route('admin.trading.positions') }}" class="{{ $childBase }} {{ request()->routeIs('admin.trading.positions','admin.trading.positions.show') ? $childActive : $childIdle }}"><i data-lucide="target" class="h-4 w-4"></i><span>Open Positions</span></a>
+            <a href="{{ route('admin.stocks.holdings.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.stocks.holdings.*') ? $childActive : $childIdle }}"><i data-lucide="briefcase-business" class="h-4 w-4"></i><span>Holdings</span></a>
+            <a href="{{ route('admin.stocks.transactions.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.stocks.transactions.*') ? $childActive : $childIdle }}"><i data-lucide="receipt-text" class="h-4 w-4"></i><span>Transactions</span></a>
+            <a href="{{ route('admin.trading.history') }}" class="{{ $childBase }} {{ request()->routeIs('admin.trading.history') ? $childActive : $childIdle }}"><i data-lucide="history" class="h-4 w-4"></i><span>Trade History</span></a>
         </div>
     </details>
 
@@ -126,56 +133,41 @@
     <details class="sidebar-group group rounded-xl"
              data-nav-group="admin-investments"
              {{ request()->routeIs('admin.investments.*') ? 'open' : '' }}>
-        <summary title="{{ localize('ui.r2d.common.investments', 'Investments') }}"
+        <summary title="Investments"
                  class="{{ $parentBase }} justify-between {{ request()->routeIs('admin.investments.*') ? $parentActive : $parentIdle }}">
             <span class="flex min-w-0 items-center gap-3">
                 <i data-lucide="gem" class="h-4 w-4 shrink-0"></i>
-                <span class="sidebar-label truncate">{{ localize('ui.r2d.common.investments', 'Investments') }}</span>
+                <span class="sidebar-label truncate">Investments</span>
             </span>
             <i data-lucide="chevron-down" class="sidebar-chevron h-4 w-4 transition-transform group-open:rotate-180"></i>
         </summary>
-
         <div class="sidebar-subnav ml-5 mt-1.5 space-y-1 border-l border-border/70 pl-4">
-            <a href="{{ route('admin.investments.control.index') }}"
-               class="{{ $childBase }} {{ request()->routeIs('admin.investments.control.*') ? $childActive : $childIdle }}">
-                <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
-                <span>{{ localize('ui.r2e.admin.investment_control', 'Investment Control') }}</span>
-            </a>
-
-            <a href="{{ route('investments.index') }}" class="{{ $childBase }}">
-                <i data-lucide="eye" class="h-4 w-4"></i>
-                <span>{{ localize('ui.r2e.admin.customer_market', 'Customer Market') }}</span>
-            </a>
-
-            <p class="px-3 pt-2 text-[8px] font-semibold uppercase tracking-[.14em] text-muted-foreground">{{ localize('ui.r2e.admin.market_products', 'Market Products') }}</p>
-            <a href="{{ route('admin.investments.control.index', ['category' => 'stock_market']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.control.index') && request()->query('category') === 'stock_market' ? $childActive : $childIdle }}"><i data-lucide="chart-no-axes-combined" class="h-4 w-4"></i><span>{{ localize('ui.r2e.admin.stocks', 'Stocks') }}</span></a>
-            <a href="{{ route('admin.investments.control.index', ['category' => 'forex']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.control.index') && request()->query('category') === 'forex' ? $childActive : $childIdle }}"><i data-lucide="landmark" class="h-4 w-4"></i><span>{{ localize('ui.r2e.admin.forex', 'Forex') }}</span></a>
-            <a href="{{ route('admin.investments.control.index', ['category' => 'cryptocurrency']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.control.index') && request()->query('category') === 'cryptocurrency' ? $childActive : $childIdle }}"><i data-lucide="bitcoin" class="h-4 w-4"></i><span>{{ localize('ui.r2e.admin.crypto', 'Crypto') }}</span></a>
-            <a href="{{ route('admin.investments.control.index', ['category' => 'real_estate']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.control.index') && request()->query('category') === 'real_estate' ? $childActive : $childIdle }}"><i data-lucide="house" class="h-4 w-4"></i><span>{{ localize('ui.r2e.admin.real_estate', 'Real Estate') }}</span></a>
-            <a href="{{ route('admin.investments.control.index', ['category' => 'bonds']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.control.index') && request()->query('category') === 'bonds' ? $childActive : $childIdle }}"><i data-lucide="landmark" class="h-4 w-4"></i><span>{{ localize('ui.r2e.admin.bonds_fixed', 'Bonds & Fixed Income') }}</span></a>
-
+            <details class="group/investment-instruments rounded-lg" {{ request()->routeIs('admin.investments.control.*','admin.investments.instruments.*') ? 'open' : '' }}>
+                <summary class="{{ $childBase }} cursor-pointer justify-between {{ request()->routeIs('admin.investments.control.*','admin.investments.instruments.*') ? $childActive : $childIdle }}">
+                    <span class="flex items-center gap-3"><i data-lucide="boxes" class="h-4 w-4"></i><span>Instruments</span></span>
+                    <i data-lucide="chevron-down" class="h-3.5 w-3.5 transition-transform group-open/investment-instruments:rotate-180"></i>
+                </summary>
+                <div class="mt-1 space-y-1 pl-5">
+                    <a href="{{ route('admin.investments.control.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.control.*') ? $childActive : $childIdle }}"><i data-lucide="layers-3" class="h-3.5 w-3.5"></i><span>Investment Products</span></a>
+                    <a href="{{ route('admin.investments.instruments.base-assets.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.instruments.base-assets.*') ? $childActive : $childIdle }}"><i data-lucide="database-zap" class="h-3.5 w-3.5"></i><span>Base Assets / References</span></a>
+                </div>
+            </details>
+            <a href="{{ route('investments.index') }}" class="{{ $childBase }}"><i data-lucide="eye" class="h-4 w-4"></i><span>Customer Market</span></a>
+            <p class="px-3 pt-2 text-[8px] font-semibold uppercase tracking-[.14em] text-muted-foreground">Product Views</p>
+            <a href="{{ route('admin.investments.control.index', ['category' => 'stock_market']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.control.index') && request()->query('category') === 'stock_market' ? $childActive : $childIdle }}"><i data-lucide="chart-no-axes-combined" class="h-4 w-4"></i><span>Stocks</span></a>
+            <a href="{{ route('admin.investments.control.index', ['category' => 'forex']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.control.index') && request()->query('category') === 'forex' ? $childActive : $childIdle }}"><i data-lucide="landmark" class="h-4 w-4"></i><span>Forex</span></a>
+            <a href="{{ route('admin.investments.control.index', ['category' => 'cryptocurrency']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.control.index') && request()->query('category') === 'cryptocurrency' ? $childActive : $childIdle }}"><i data-lucide="bitcoin" class="h-4 w-4"></i><span>Crypto</span></a>
+            <a href="{{ route('admin.investments.control.index', ['category' => 'real_estate']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.control.index') && request()->query('category') === 'real_estate' ? $childActive : $childIdle }}"><i data-lucide="house" class="h-4 w-4"></i><span>Real Estate</span></a>
+            <a href="{{ route('admin.investments.control.index', ['category' => 'bonds']) }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.control.index') && request()->query('category') === 'bonds' ? $childActive : $childIdle }}"><i data-lucide="landmark" class="h-4 w-4"></i><span>Bonds & Fixed Income</span></a>
             <details class="group/legacy rounded-lg">
                 <summary class="{{ $childBase }} cursor-pointer justify-between text-muted-foreground hover:text-foreground">
-                    <span class="flex items-center gap-3">
-                        <i data-lucide="flask-conical" class="h-4 w-4"></i>
-                        <span>{{ localize('ui.r2e.admin.legacy_records', 'Legacy Records') }}</span>
-                    </span>
+                    <span class="flex items-center gap-3"><i data-lucide="flask-conical" class="h-4 w-4"></i><span>Legacy Records</span></span>
                     <i data-lucide="chevron-down" class="h-3.5 w-3.5 transition-transform group-open/legacy:rotate-180"></i>
                 </summary>
-
                 <div class="mt-1 space-y-1 pl-5">
-                    <a href="{{ route('admin.investments.holdings.index') }}"
-                       class="{{ $childBase }} {{ request()->routeIs('admin.investments.holdings.*') ? $childActive : $childIdle }}">
-                        <i data-lucide="archive" class="h-3.5 w-3.5"></i><span>{{ localize('ui.r2e.admin.old_holdings', 'Old Holdings') }}</span>
-                    </a>
-                    <a href="{{ route('admin.investments.transactions.index') }}"
-                       class="{{ $childBase }} {{ request()->routeIs('admin.investments.transactions.*') ? $childActive : $childIdle }}">
-                        <i data-lucide="receipt" class="h-3.5 w-3.5"></i><span>{{ localize('ui.r2e.admin.old_transactions', 'Old Transactions') }}</span>
-                    </a>
-                    <a href="{{ route('admin.investments.plans.index') }}"
-                       class="{{ $childBase }} {{ request()->routeIs('admin.investments.plans.*','admin.investments.nav-updates.*','admin.investments.automatic-nav-updates.*') ? $childActive : $childIdle }}">
-                        <i data-lucide="layers-3" class="h-3.5 w-3.5"></i><span>{{ localize('ui.r2e.admin.nav_plans', 'NAV Plans') }}</span>
-                    </a>
+                    <a href="{{ route('admin.investments.holdings.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.holdings.*') ? $childActive : $childIdle }}"><i data-lucide="archive" class="h-3.5 w-3.5"></i><span>Old Holdings</span></a>
+                    <a href="{{ route('admin.investments.transactions.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.transactions.*') ? $childActive : $childIdle }}"><i data-lucide="receipt" class="h-3.5 w-3.5"></i><span>Old Transactions</span></a>
+                    <a href="{{ route('admin.investments.plans.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.plans.*','admin.investments.nav-updates.*','admin.investments.automatic-nav-updates.*') ? $childActive : $childIdle }}"><i data-lucide="layers-3" class="h-3.5 w-3.5"></i><span>NAV Plans</span></a>
                 </div>
             </details>
         </div>

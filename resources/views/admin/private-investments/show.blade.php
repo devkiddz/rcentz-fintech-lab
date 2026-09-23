@@ -1,6 +1,6 @@
 <x-admin-layout>
 <div class="ui-page max-w-[1500px]">
-<section class="ui-page-header"><div><p class="ui-kicker">Admin · Investments · {{ $instrument->symbol }}</p><h1 class="ui-heading">{{ $instrument->name }}</h1><p class="ui-lead">{{ ucwords(str_replace('_',' ',$instrument->category)) }} · Current price {{ currency_symbol() }}{{ number_format((float)$instrument->current_price,2) }}</p></div><div class="flex gap-2"><a href="{{ route('admin.investments.control.index') }}" class="ui-btn ui-btn-secondary">Back</a><a href="{{ route('investments.show',$instrument->slug) }}" class="ui-btn ui-btn-secondary">Customer View</a></div></section>
+<section class="ui-page-header"><div><p class="ui-kicker">Admin · Investments · {{ $instrument->symbol }}</p><h1 class="ui-heading">{{ $instrument->name }}</h1><p class="ui-lead">{{ ucwords(str_replace('_',' ',$instrument->category)) }} · Current price {{ currency_symbol() }}{{ number_format((float)$instrument->current_price,2) }}</p></div><div class="flex gap-2"><a href="{{ route('admin.investments.control.index') }}" class="ui-btn ui-btn-secondary">Back</a><a href="{{ route('admin.investments.control.preview',$instrument) }}" class="ui-btn ui-btn-secondary">Preview Asset</a></div></section>
 @if(session('success'))<div class="mb-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-xs text-emerald-600">{{ session('success') }}</div>@endif
 @if($errors->any())<div class="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-xs text-red-600">{{ $errors->first() }}</div>@endif
 
@@ -28,11 +28,41 @@
 @endif
 </section>
 
+<section class="ui-panel mb-4 p-4" data-r4c-reference-authority>
+    @php
+        $instrument->loadMissing(['assets.marketInstrument', 'assets.privateMarketReference']);
+
+    $referenceCandidates = $instrument->assets
+            ->filter(fn ($asset) => $asset->status === 'active' && (bool) $asset->is_reserve_backing)
+            ->values();
+    @endphp
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+            <p class="ui-kicker">Market reference source</p>
+            <h2 class="mt-1 text-sm font-semibold">Select the one reference shown beneath the investment chart</h2>
+            <p class="mt-1 max-w-3xl text-[10px] leading-4 text-muted-foreground">All active reserve assets still contribute to backing. This selection only controls the single price reference customers and administrators see beside the chart.</p>
+        </div>
+        <form method="POST" action="{{ route('admin.investments.control.reference.update',$instrument) }}" class="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+            @csrf
+            @method('PATCH')
+            <select class="ui-input min-w-[260px]" name="reference_asset_id" required @disabled($referenceCandidates->isEmpty())>
+                <option value="">Select reference asset</option>
+                @foreach($referenceCandidates as $asset)
+                    <option value="{{ $asset->id }}" @selected((int)$instrument->reference_asset_id === (int)$asset->id)>
+                        {{ $asset->name }}{{ $asset->marketInstrument ? ' · '.$asset->marketInstrument->display_symbol : ($asset->privateMarketReference ? ' · '.$asset->privateMarketReference->symbol : ' · LEGACY') }}
+                    </option>
+                @endforeach
+            </select>
+            <button class="ui-btn ui-btn-primary whitespace-nowrap" @disabled($referenceCandidates->isEmpty())>Set Reference</button>
+        </form>
+    </div>
+</section>
+
 <section class="grid gap-4 xl:grid-cols-[1fr_1fr]">
 <div class="ui-panel p-5"><p class="ui-kicker">Instrument settings</p>
 <form method="POST" action="{{ route('admin.investments.control.instruments.update',$instrument) }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf @method('PATCH')
 <div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Instrument Name</label><input class="ui-input w-full" name="name" value="{{ $instrument->name }}" required></div>
-<div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Asset Class</label><select class="ui-input w-full" name="category">@foreach(['stock_market','cryptocurrency','real_estate','bonds'] as $c)<option value="{{ $c }}" @selected($instrument->category===$c)>{{ ucwords(str_replace('_',' ',$c)) }}</option>@endforeach</select></div>
+<div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Asset Class</label><select class="ui-input w-full" name="category">@foreach(['stock_market','forex','cryptocurrency','real_estate','bonds','hedge_assets'] as $c)<option value="{{ $c }}" @selected($instrument->category===$c)>{{ ucwords(str_replace('_',' ',$c)) }}</option>@endforeach</select></div>
 <div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Risk Level</label><select class="ui-input w-full" name="risk_level">@foreach(['low','medium','high','very_high'] as $r)<option @selected($instrument->risk_level===$r)>{{ $r }}</option>@endforeach</select></div>
 <div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Minimum Investment</label><input class="ui-input w-full" type="number" step="0.01" name="minimum_investment" value="{{ $instrument->minimum_investment }}" required></div>
 <div><label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Maximum Investment</label><input class="ui-input w-full" type="number" step="0.01" name="maximum_investment" value="{{ $instrument->maximum_investment }}"></div>
@@ -51,7 +81,8 @@
 <label class="inline-flex items-center gap-2 text-xs"><input type="checkbox" name="is_visible" value="1" @checked($instrument->is_visible)><span>Visible to customers</span></label>
 <button class="ui-btn ui-btn-primary sm:col-span-2">Save Instrument</button>
 </form>
-<form method="POST" action="{{ route('admin.investments.control.instruments.toggle',$instrument) }}" class="mt-3">@csrf @method('PATCH')<button class="ui-btn ui-btn-secondary">{{ $instrument->status==='active'?'Pause Instrument':'Resume Instrument' }}</button></form>
+<form method="POST" action="{{ route('admin.investments.control.instruments.toggle',$instrument) }}" class="mt-3">@csrf @method('PATCH')<button class="ui-btn ui-btn-secondary">{{ $instrument->status==='active'?'Pause Instrument':'Activate from Reserve' }}</button></form>
+<p class="mt-2 text-[9px] leading-4 text-muted-foreground">Activation revalidates reserve value, customer exposure and reserve-authorized supply. A zero or under-backed reserve cannot be activated.</p>
 </div>
 
 <div class="ui-panel p-5"><p class="ui-kicker">Valuation authority</p><h2 class="mt-1 text-lg font-semibold">Apply approved event</h2>
@@ -180,18 +211,105 @@
 </section>
 
 <section class="mt-4 grid gap-4 xl:grid-cols-[1fr_1fr]">
-<div class="ui-panel p-5"><p class="ui-kicker">Underlying composition</p><h2 class="mt-1 text-lg font-semibold">Assets</h2>
+<div class="ui-panel p-5">
+<div class="flex items-start justify-between gap-4">
+    <div><p class="ui-kicker">Reserve management</p><h2 class="mt-1 text-lg font-semibold">Backing Assets</h2><p class="mt-1 text-[10px] leading-4 text-muted-foreground">Reserve quantity × authoritative unit price establishes backing value. Capacity is synchronized automatically; catalogue supply is never typed manually.</p></div>
+    <span class="rounded-full border border-border px-2.5 py-1 text-[9px] font-semibold">{{ $reserveSummary['reserve_assets'] }} ACTIVE RESERVE{{ $reserveSummary['reserve_assets'] === 1 ? '' : 'S' }}</span>
+</div>
+
+@php
+    $privateMarketReferences = \App\Models\PrivateMarketReference::query()
+        ->where('status', 'active')
+        ->orderBy('name')
+        ->get();
+@endphp
 <form method="POST" action="{{ route('admin.investments.control.assets.store',$instrument) }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf
-<div><label class="ui-label">Asset Type</label><input class="ui-input mt-1 w-full" name="asset_type" placeholder="e.g. residential_property" required></div>
-<div><label class="ui-label">Asset Name</label><input class="ui-input mt-1 w-full" name="name" placeholder="Asset name" required></div>
-<div><label class="ui-label">Acquisition Value</label><input class="ui-input mt-1 w-full" type="number" step="0.01" min="0" name="acquisition_value" placeholder="Original acquisition value" required></div>
-<div><label class="ui-label">Current Valuation</label><input class="ui-input mt-1 w-full" type="number" step="0.01" min="0" name="current_valuation" placeholder="Current internal valuation" required></div>
-<div><label class="ui-label">Portfolio Weight (%)</label><input class="ui-input mt-1 w-full" type="number" step="0.0001" min="0" max="100" name="ownership_percentage" placeholder="Weight %" required></div>
-<div><label class="ui-label">Asset Description</label><textarea class="ui-input mt-1 w-full" name="description" rows="2" placeholder="What this asset contributes"></textarea></div>
-<div class="sm:col-span-2"><label class="ui-label">Internal Notes</label><textarea class="ui-input mt-1 w-full" name="notes" rows="2" placeholder="Optional operational notes"></textarea></div>
-<button class="ui-btn ui-btn-primary sm:col-span-2">Add Asset</button>
+    <div class="sm:col-span-2">
+        <label class="ui-label">Base Reference Asset</label>
+        <select class="ui-input mt-1 w-full" name="reference_authority" required>
+            <option value="">Select the asset's reference...</option>
+            <optgroup label="Public Market — automatic pricing">
+                @foreach($marketInstruments as $market)
+                    <option value="public:{{ $market->id }}">{{ strtoupper($market->asset_class) }} · {{ $market->symbol }} · {{ $market->name }}</option>
+                @endforeach
+            </optgroup>
+            <optgroup label="Private Market — RCENTZ maintained">
+                @foreach($privateMarketReferences as $privateReference)
+                    <option value="private:{{ $privateReference->id }}">{{ $privateReference->symbol }} · {{ $privateReference->name }}@if($privateReference->location) · {{ $privateReference->location }}@endif</option>
+                @endforeach
+            </optgroup>
+        </select>
+        <p class="mt-1 text-[9px] leading-4 text-muted-foreground">Public references supply price automatically from the market registry. Private references are created in RCENTZ first, then selected here. The reserve asset never invents its own market price.</p>
+    </div>
+    <div><label class="ui-label">Asset Type</label><input class="ui-input mt-1 w-full" name="asset_type" placeholder="e.g. allocated_gold, property, private_equity" required></div>
+    <div><label class="ui-label">Reserve Asset Name</label><input class="ui-input mt-1 w-full" name="name" placeholder="e.g. Lekki Serviced Apartments" required></div>
+    <div><label class="ui-label">Reserve Quantity</label><input class="ui-input mt-1 w-full" type="number" step="0.00000001" min="0.00000001" name="reserve_quantity" placeholder="Actual quantity held" required></div>
+    <div><label class="ui-label">Reserve Unit</label><input class="ui-input mt-1 w-full" name="reserve_unit" maxlength="32" placeholder="e.g. property, oz, shares" required></div>
+    <div class="sm:col-span-2"><label class="ui-label">Acquisition Unit Price</label><input class="ui-input mt-1 w-full" type="number" step="0.00000001" min="0" name="acquisition_unit_price" placeholder="Optional acquisition cost per reserve unit"></div>
+    <div class="sm:col-span-2"><label class="ui-label">Asset Description</label><textarea class="ui-input mt-1 w-full" name="description" rows="2" placeholder="What this reserve represents"></textarea></div>
+    <div class="sm:col-span-2"><label class="ui-label">Audit Notes</label><textarea class="ui-input mt-1 w-full" name="notes" rows="2" placeholder="Optional internal reserve notes"></textarea></div>
+    <button class="ui-btn ui-btn-primary sm:col-span-2">Add Reserve Asset</button>
 </form>
-<div class="mt-4 space-y-2">@foreach($instrument->assets as $asset)<div class="rounded-xl border border-border p-3"><div class="flex justify-between gap-3"><div><p class="text-xs font-semibold">{{ $asset->name }}</p><p class="text-[9px] text-muted-foreground">{{ $asset->asset_type }} · {{ $asset->status }}</p></div><div class="text-right"><p class="text-xs font-semibold">{{ currency_symbol() }}{{ number_format((float)$asset->current_valuation,0) }}</p>@if($asset->status==='active')<form method="POST" action="{{ route('admin.investments.control.assets.destroy',[$instrument,$asset]) }}">@csrf @method('DELETE')<button class="mt-1 text-[9px] text-red-600">Remove</button></form>@endif</div></div></div>@endforeach</div>
+
+<div class="mt-5 space-y-3">
+@foreach($instrument->assets as $asset)
+<div class="rounded-xl border border-border p-3">
+    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div><p class="text-xs font-semibold">{{ $asset->name }}</p><p class="mt-1 text-[9px] text-muted-foreground">{{ strtoupper(str_replace('_',' ',$asset->valuation_mode ?? 'manual')) }} · {{ number_format((float)$asset->reserve_quantity,8) }} {{ $asset->reserve_unit ?: 'units' }} @if($asset->marketInstrument) · {{ $asset->marketInstrument->symbol }} @elseif($asset->privateMarketReference) · {{ $asset->privateMarketReference->symbol }} @else · LEGACY @endif · {{ $asset->status }}</p></div>
+        <div class="text-right"><p class="text-xs font-semibold">{{ currency_symbol() }}{{ number_format((float)$asset->current_valuation,2) }}</p><p class="text-[9px] text-muted-foreground">{{ number_format((float)$asset->ownership_percentage,2) }}% of active reserve</p></div>
+    </div>
+
+    @if($asset->status==='active')
+    @php
+    $assetAuthorityValue = $asset->private_market_reference_id
+        ? 'private:'.$asset->private_market_reference_id
+        : ($asset->market_instrument_id ? 'public:'.$asset->market_instrument_id : 'legacy');
+@endphp
+<form method="POST" action="{{ route('admin.investments.control.assets.update',[$instrument,$asset]) }}" class="mt-3 grid gap-2 border-t border-border pt-3 sm:grid-cols-2">@csrf @method('PATCH')
+    <div class="sm:col-span-2">
+        <label class="ui-label">Base Reference Asset</label>
+        <select class="ui-input mt-1 w-full" name="reference_authority" required>
+            @if($assetAuthorityValue === 'legacy')
+                <option value="legacy" selected>Legacy manual reserve — select a reference when ready</option>
+            @endif
+            <optgroup label="Public Market — automatic pricing">
+                @foreach($marketInstruments as $market)
+                    <option value="public:{{ $market->id }}" @selected($assetAuthorityValue === 'public:'.$market->id)>{{ strtoupper($market->asset_class) }} · {{ $market->symbol }} · {{ $market->name }}</option>
+                @endforeach
+            </optgroup>
+            <optgroup label="Private Market — RCENTZ maintained">
+                @foreach($privateMarketReferences as $privateReference)
+                    <option value="private:{{ $privateReference->id }}" @selected($assetAuthorityValue === 'private:'.$privateReference->id)>{{ $privateReference->symbol }} · {{ $privateReference->name }}@if($privateReference->location) · {{ $privateReference->location }}@endif</option>
+                @endforeach
+            </optgroup>
+        </select>
+    </div>
+    <div><label class="ui-label">Asset Type</label><input class="ui-input mt-1 w-full" name="asset_type" value="{{ $asset->asset_type }}" required></div>
+    <div><label class="ui-label">Name</label><input class="ui-input mt-1 w-full" name="name" value="{{ $asset->name }}" required></div>
+    <div><label class="ui-label">Reserve Quantity</label><input class="ui-input mt-1 w-full" type="number" step="0.00000001" min="0.00000001" name="reserve_quantity" value="{{ $asset->reserve_quantity }}" required></div>
+    <div><label class="ui-label">Reserve Unit</label><input class="ui-input mt-1 w-full" name="reserve_unit" maxlength="32" value="{{ $asset->reserve_unit }}" required></div>
+    <div><label class="ui-label">Acquisition Unit Price</label><input class="ui-input mt-1 w-full" type="number" step="0.00000001" min="0" name="acquisition_unit_price" value="{{ $asset->acquisition_unit_price }}"></div>
+    <div><label class="ui-label">Applied Reference Price</label><div class="mt-1 rounded-xl border border-border bg-muted/20 px-3 py-2.5 text-xs font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format((float)$asset->current_unit_price,2) }}</div><p class="mt-1 text-[9px] text-muted-foreground">Read-only here. Change the public/private reference authority to change the source; update a Private Reference from its own registry.</p></div>
+    <div class="sm:col-span-2"><label class="ui-label">Description</label><textarea class="ui-input mt-1 w-full" name="description" rows="2">{{ $asset->description }}</textarea></div>
+    <div class="sm:col-span-2"><label class="ui-label">Audit Notes</label><textarea class="ui-input mt-1 w-full" name="notes" rows="2">{{ $asset->notes }}</textarea></div>
+    <button class="ui-btn ui-btn-secondary sm:col-span-2">Update Reserve & Recalculate Capacity</button>
+</form>
+    <form method="POST" action="{{ route('admin.investments.control.assets.destroy',[$instrument,$asset]) }}" class="mt-2" onsubmit="return confirm('Remove this reserve asset? The operation is blocked automatically if customer holdings would become under-backed.')">@csrf @method('DELETE')<button class="text-[9px] font-semibold text-red-600">Remove Reserve Asset</button></form>
+    @endif
+</div>
+@endforeach
+</div>
+
+<div class="mt-5 border-t border-border pt-4">
+    <div class="flex items-center justify-between"><div><p class="ui-kicker">Reserve audit</p><h3 class="mt-1 text-sm font-semibold">Latest Authority Events</h3></div><span class="text-[9px] text-muted-foreground">Immutable operational trail</span></div>
+    <div class="mt-3 space-y-2">
+    @forelse($instrument->reserveEvents->take(10) as $event)
+        <div class="rounded-lg border border-border p-2.5"><div class="flex justify-between gap-3"><div><p class="text-[10px] font-semibold">{{ ucwords(str_replace('_',' ',$event->action)) }}</p><p class="mt-0.5 text-[9px] text-muted-foreground">{{ $event->reason }}</p></div><p class="shrink-0 text-[9px] text-muted-foreground">{{ optional($event->effective_at)->format('M j, H:i') }}</p></div></div>
+    @empty
+        <p class="text-[10px] text-muted-foreground">No reserve authority events recorded yet.</p>
+    @endforelse
+    </div>
+</div>
 </div>
 
 <div class="ui-panel p-5">

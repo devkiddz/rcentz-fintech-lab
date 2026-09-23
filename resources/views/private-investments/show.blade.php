@@ -7,10 +7,19 @@
 @endphp
 
 <div class="mx-auto max-w-[1280px] space-y-5 px-3 py-5 sm:px-5 lg:px-6">
-    <div class="flex items-center gap-2 text-xs">
-        <a href="{{ route('investments.index') }}" class="text-zinc-500 hover:text-red-600">Investments</a>
-        <span class="text-zinc-300">/</span>
-        <span class="font-medium text-zinc-800 dark:text-zinc-200">{{ $instrument->symbol }}</span>
+    <div class="flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex items-center gap-2">
+            <a href="{{ route('investments.index') }}" class="text-zinc-500 hover:text-red-600">Investments</a>
+            <span class="text-zinc-300">/</span>
+            <span class="font-medium text-zinc-800 dark:text-zinc-200">{{ $instrument->symbol }}</span>
+        </div>
+        @if(auth()->user()->isAdmin())
+            <a href="{{ route('admin.investments.control.show',$instrument) }}"
+               class="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[10px] font-semibold text-zinc-700 shadow-sm transition hover:border-red-200 hover:text-red-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:border-red-950 dark:hover:text-red-400">
+                <i data-lucide="settings-2" class="h-3.5 w-3.5"></i>
+                Manage Investment
+            </a>
+        @endif
     </div>
 
     <section class="rounded-3xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 md:p-7">
@@ -38,7 +47,8 @@
 
     <div class="grid gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(340px,.65fr)] xl:items-stretch">
         <div class="min-w-0">
-            @include('private-investments.partials.chart', ['instrument'=>$instrument,'analysis'=>$analysis])
+            @include('private-investments.partials.chart', ['instrument'=>$instrument,'analysis'=>$analysis,'attachReference'=>true])
+            @include('private-investments.partials.market-reference', ['instrument'=>$instrument,'admin'=>false])
         </div>
         <div class="min-h-[470px]">
             @include('private-investments.partials.subscription-controls')

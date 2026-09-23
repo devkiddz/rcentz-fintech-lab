@@ -169,7 +169,11 @@
             <div class="grid gap-4 md:grid-cols-2">
                 @forelse($instruments as $instrument)
                     @php $change=(float)$instrument->change_percent; @endphp
-                    <a href="{{ route('investments.show',$instrument->slug) }}" class="group rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950">
+                    <article class="group relative rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-red-200 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-950">
+                        <a href="{{ route('investments.show',$instrument->slug) }}"
+                           class="absolute inset-0 z-0 rounded-2xl"
+                           aria-label="View {{ $instrument->name }}"></a>
+                        <div class="pointer-events-none relative z-10">
                         <div class="flex items-start justify-between gap-4">
                             <div><span class="rounded-full bg-red-50 px-2 py-1 text-[9px] font-semibold uppercase text-red-600 dark:bg-red-950/30">{{ $instrument->symbol }}</span><h3 class="mt-3 text-sm font-semibold group-hover:text-red-600">{{ $instrument->name }}</h3><p class="mt-1 text-[10px] text-zinc-500">{{ ucwords(str_replace('_',' ',$instrument->category)) }} · {{ ucwords(str_replace('_',' ',$instrument->risk_level)) }} risk</p></div>
                             <i data-lucide="arrow-up-right" class="h-4 w-4 text-zinc-400 group-hover:text-red-600"></i>
@@ -187,7 +191,17 @@
                             <div><p class="text-[9px] text-zinc-400">{{ localize('ui.r2d.investments.move', 'Move') }}</p><p class="mt-1 text-sm font-semibold {{ $change >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $change >= 0 ? '+' : '' }}{{ number_format($change,2) }}%</p></div>
                             <div class="text-right"><p class="text-[9px] text-zinc-400">{{ localize('ui.r2d.investments.minimum', 'Minimum') }}</p><p class="mt-1 text-sm font-semibold">{{ currency_symbol() }}{{ number_format((float)$instrument->minimum_investment,0) }}</p></div>
                         </div>
-                    </a>
+                        @if(auth()->user()->isAdmin())
+                            <div class="mt-4 flex justify-end border-t border-zinc-100 pt-3 dark:border-zinc-900">
+                                <a href="{{ route('admin.investments.control.show',$instrument) }}"
+                                   class="pointer-events-auto inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-[9px] font-semibold text-zinc-700 transition hover:border-red-200 hover:text-red-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:border-red-950 dark:hover:text-red-400">
+                                    <i data-lucide="settings-2" class="h-3 w-3"></i>
+                                    Manage Investment
+                                </a>
+                            </div>
+                        @endif
+                        </div>
+                    </article>
                 @empty
                     <div class="col-span-full rounded-2xl border border-dashed border-zinc-300 bg-white p-10 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950">{{ localize('ui.r2d.investments.no_match', 'No investment instruments match this view.') }}</div>
                 @endforelse

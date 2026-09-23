@@ -5,9 +5,10 @@
     $changePercent = $previous > 0 ? ($change / $previous) * 100 : 0;
     $defaultFrame = $analysis['default_timeframe'] ?? '1m';
     $frames = ['1w'=>'1W','1m'=>'1M','3m'=>'3M','all'=>'ALL'];
+    $attachReference = (bool) ($attachReference ?? false);
 @endphp
 
-<section class="flex min-h-[470px] flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+<section class="flex min-h-[470px] flex-col overflow-hidden {{ $attachReference ? 'rounded-t-2xl rounded-b-none' : 'rounded-2xl' }} border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
     <div class="flex flex-col gap-4 border-b border-zinc-200 px-5 py-4 dark:border-zinc-800 lg:flex-row lg:items-center lg:justify-between">
         <div class="min-w-0">
             <p class="text-[10px] font-semibold uppercase tracking-[.16em] text-red-600">Investment price history</p>

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PrivateInvestmentInstrument extends Model
@@ -12,6 +13,7 @@ class PrivateInvestmentInstrument extends Model
         'symbol',
         'name',
         'category',
+        'reference_asset_id',
         'description',
         'risk_level',
         'status',
@@ -55,6 +57,14 @@ class PrivateInvestmentInstrument extends Model
         'is_visible' => 'boolean',
         'last_valued_at' => 'datetime',
     ];
+
+    public function referenceAsset(): BelongsTo
+    {
+        return $this->belongsTo(
+            PrivateInvestmentAsset::class,
+            'reference_asset_id'
+        );
+    }
 
     public function assets(): HasMany
     {
