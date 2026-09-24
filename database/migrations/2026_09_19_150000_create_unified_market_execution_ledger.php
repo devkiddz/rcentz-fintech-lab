@@ -79,13 +79,15 @@ return new class extends Migration
             });
         }
 
-        foreach ([
-            ['trade_positions', 'entry_market_execution_transaction_id', 'trade_positions_entry_market_execution_fk'],
-            ['trade_positions', 'last_exit_market_execution_transaction_id', 'trade_positions_exit_market_execution_fk'],
-            ['trade_position_events', 'market_execution_transaction_id', 'trade_position_events_market_execution_fk'],
-        ] as [$table, $column, $constraint]) {
-            if (! $this->hasForeign($table, $column, 'market_execution_transactions')) {
-                DB::statement("ALTER TABLE {$table} ADD CONSTRAINT {$constraint} FOREIGN KEY ({$column}) REFERENCES market_execution_transactions(id) ON DELETE SET NULL");
+        if (DB::getDriverName() !== 'sqlite') {
+            foreach ([
+                ['trade_positions', 'entry_market_execution_transaction_id', 'trade_positions_entry_market_execution_fk'],
+                ['trade_positions', 'last_exit_market_execution_transaction_id', 'trade_positions_exit_market_execution_fk'],
+                ['trade_position_events', 'market_execution_transaction_id', 'trade_position_events_market_execution_fk'],
+            ] as [$table, $column, $constraint]) {
+                if (! $this->hasForeign($table, $column, 'market_execution_transactions')) {
+                    DB::statement("ALTER TABLE {$table} ADD CONSTRAINT {$constraint} FOREIGN KEY ({$column}) REFERENCES market_execution_transactions(id) ON DELETE SET NULL");
+                }
             }
         }
 
@@ -122,9 +124,11 @@ return new class extends Migration
                 );
             });
 
-        DB::statement("UPDATE trade_positions p JOIN market_execution_transactions m ON m.native_type = 'stock_transaction' AND m.native_id = p.entry_transaction_id SET p.entry_market_execution_transaction_id = m.id WHERE p.entry_transaction_id IS NOT NULL AND p.entry_market_execution_transaction_id IS NULL");
-        DB::statement("UPDATE trade_positions p JOIN market_execution_transactions m ON m.native_type = 'stock_transaction' AND m.native_id = p.last_exit_transaction_id SET p.last_exit_market_execution_transaction_id = m.id WHERE p.last_exit_transaction_id IS NOT NULL AND p.last_exit_market_execution_transaction_id IS NULL");
-        DB::statement("UPDATE trade_position_events e JOIN market_execution_transactions m ON m.native_type = 'stock_transaction' AND m.native_id = e.stock_transaction_id SET e.market_execution_transaction_id = m.id WHERE e.stock_transaction_id IS NOT NULL AND e.market_execution_transaction_id IS NULL");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("UPDATE trade_positions p JOIN market_execution_transactions m ON m.native_type = 'stock_transaction' AND m.native_id = p.entry_transaction_id SET p.entry_market_execution_transaction_id = m.id WHERE p.entry_transaction_id IS NOT NULL AND p.entry_market_execution_transaction_id IS NULL");
+            DB::statement("UPDATE trade_positions p JOIN market_execution_transactions m ON m.native_type = 'stock_transaction' AND m.native_id = p.last_exit_transaction_id SET p.last_exit_market_execution_transaction_id = m.id WHERE p.last_exit_transaction_id IS NOT NULL AND p.last_exit_market_execution_transaction_id IS NULL");
+            DB::statement("UPDATE trade_position_events e JOIN market_execution_transactions m ON m.native_type = 'stock_transaction' AND m.native_id = e.stock_transaction_id SET e.market_execution_transaction_id = m.id WHERE e.stock_transaction_id IS NOT NULL AND e.market_execution_transaction_id IS NULL");
+        }
     }
 
     public function down(): void
@@ -147,7 +151,8 @@ return new class extends Migration
             ['trade_positions', 'entry_market_execution_transaction_id', 'trade_positions_entry_market_execution_fk'],
         ] as [$table, $column, $constraint]) {
             if (Schema::hasColumn($table, $column)) {
-                if ($this->hasForeign($table, $column, 'market_execution_transactions')) {
+                if (DB::getDriverName() !== 'sqlite'
+                    && $this->hasForeign($table, $column, 'market_execution_transactions')) {
                     DB::statement("ALTER TABLE {$table} DROP FOREIGN KEY {$constraint}");
                 }
                 Schema::table($table, function (Blueprint $blueprint) use ($column) {

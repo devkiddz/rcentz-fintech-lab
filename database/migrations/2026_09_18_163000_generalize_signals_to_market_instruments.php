@@ -28,13 +28,16 @@ return new class extends Migration
         });
 
         // Existing Signal schema made stock_id mandatory. FX2 preserves the FK
-        // but allows NULL for non-stock instruments.
-        DB::statement('ALTER TABLE signals MODIFY stock_id BIGINT UNSIGNED NULL');
-        DB::statement('ALTER TABLE signal_analysis_runs MODIFY stock_id BIGINT UNSIGNED NULL');
+        // but allows NULL for non-stock instruments. These are MySQL-specific
+        // compatibility DDL/data bridges; SQLite test databases do not need them.
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE signals MODIFY stock_id BIGINT UNSIGNED NULL');
+            DB::statement('ALTER TABLE signal_analysis_runs MODIFY stock_id BIGINT UNSIGNED NULL');
 
-        DB::statement("\n            UPDATE signals s\n            INNER JOIN market_instruments mi ON mi.stock_id = s.stock_id AND mi.asset_class = 'stock'\n            SET s.market_instrument_id = mi.id\n            WHERE s.market_instrument_id IS NULL\n        ");
+            DB::statement("\n                UPDATE signals s\n                INNER JOIN market_instruments mi ON mi.stock_id = s.stock_id AND mi.asset_class = 'stock'\n                SET s.market_instrument_id = mi.id\n                WHERE s.market_instrument_id IS NULL\n            ");
 
-        DB::statement("\n            UPDATE signal_analysis_runs r\n            INNER JOIN market_instruments mi ON mi.stock_id = r.stock_id AND mi.asset_class = 'stock'\n            SET r.market_instrument_id = mi.id\n            WHERE r.market_instrument_id IS NULL\n        ");
+            DB::statement("\n                UPDATE signal_analysis_runs r\n                INNER JOIN market_instruments mi ON mi.stock_id = r.stock_id AND mi.asset_class = 'stock'\n                SET r.market_instrument_id = mi.id\n                WHERE r.market_instrument_id IS NULL\n            ");
+        }
     }
 
     public function down(): void
@@ -56,7 +59,9 @@ return new class extends Migration
             $table->dropColumn('market_instrument_id');
         });
 
-        DB::statement('ALTER TABLE signals MODIFY stock_id BIGINT UNSIGNED NOT NULL');
-        DB::statement('ALTER TABLE signal_analysis_runs MODIFY stock_id BIGINT UNSIGNED NOT NULL');
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE signals MODIFY stock_id BIGINT UNSIGNED NOT NULL');
+            DB::statement('ALTER TABLE signal_analysis_runs MODIFY stock_id BIGINT UNSIGNED NOT NULL');
+        }
     }
 };

@@ -62,11 +62,13 @@ return new class extends Migration
 
         $schema = DB::getDatabaseName();
 
-        $fkExists = DB::table('information_schema.TABLE_CONSTRAINTS')
-            ->where('CONSTRAINT_SCHEMA', $schema)
-            ->where('TABLE_NAME', 'private_investment_assets')
-            ->where('CONSTRAINT_NAME', 'priv_inv_asset_pub_base_fk')
-            ->exists();
+        $fkExists = DB::getDriverName() === 'sqlite'
+            ? true
+            : DB::table('information_schema.TABLE_CONSTRAINTS')
+                ->where('CONSTRAINT_SCHEMA', $schema)
+                ->where('TABLE_NAME', 'private_investment_assets')
+                ->where('CONSTRAINT_NAME', 'priv_inv_asset_pub_base_fk')
+                ->exists();
 
         if (! $fkExists) {
             Schema::table('private_investment_assets', function (Blueprint $table) {
@@ -80,11 +82,13 @@ return new class extends Migration
             });
         }
 
-        $indexExists = DB::table('information_schema.STATISTICS')
-            ->where('TABLE_SCHEMA', $schema)
-            ->where('TABLE_NAME', 'private_investment_assets')
-            ->where('INDEX_NAME', 'priv_inv_pub_base_mode_idx')
-            ->exists();
+        $indexExists = DB::getDriverName() === 'sqlite'
+            ? Schema::hasIndex('private_investment_assets', 'priv_inv_pub_base_mode_idx')
+            : DB::table('information_schema.STATISTICS')
+                ->where('TABLE_SCHEMA', $schema)
+                ->where('TABLE_NAME', 'private_investment_assets')
+                ->where('INDEX_NAME', 'priv_inv_pub_base_mode_idx')
+                ->exists();
 
         if (! $indexExists) {
             Schema::table('private_investment_assets', function (Blueprint $table) {
@@ -143,17 +147,21 @@ return new class extends Migration
         )) {
             $schema = DB::getDatabaseName();
 
-            $fkExists = DB::table('information_schema.TABLE_CONSTRAINTS')
-                ->where('CONSTRAINT_SCHEMA', $schema)
-                ->where('TABLE_NAME', 'private_investment_assets')
-                ->where('CONSTRAINT_NAME', 'priv_inv_asset_pub_base_fk')
-                ->exists();
+            $fkExists = DB::getDriverName() === 'sqlite'
+                ? false
+                : DB::table('information_schema.TABLE_CONSTRAINTS')
+                    ->where('CONSTRAINT_SCHEMA', $schema)
+                    ->where('TABLE_NAME', 'private_investment_assets')
+                    ->where('CONSTRAINT_NAME', 'priv_inv_asset_pub_base_fk')
+                    ->exists();
 
-            $indexExists = DB::table('information_schema.STATISTICS')
-                ->where('TABLE_SCHEMA', $schema)
-                ->where('TABLE_NAME', 'private_investment_assets')
-                ->where('INDEX_NAME', 'priv_inv_pub_base_mode_idx')
-                ->exists();
+            $indexExists = DB::getDriverName() === 'sqlite'
+                ? Schema::hasIndex('private_investment_assets', 'priv_inv_pub_base_mode_idx')
+                : DB::table('information_schema.STATISTICS')
+                    ->where('TABLE_SCHEMA', $schema)
+                    ->where('TABLE_NAME', 'private_investment_assets')
+                    ->where('INDEX_NAME', 'priv_inv_pub_base_mode_idx')
+                    ->exists();
 
             Schema::table('private_investment_assets', function (Blueprint $table) use ($fkExists, $indexExists) {
                 if ($fkExists) {

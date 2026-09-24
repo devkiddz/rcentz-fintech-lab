@@ -11,11 +11,11 @@ return new class extends Migration
     {
         // V4.3 introduced "completed" as a lifecycle state, but the original
         // MySQL enum only allowed active / paused / stopped.
-        DB::statement("
-            ALTER TABLE copy_relationships
-            MODIFY status ENUM('active','paused','stopped','completed')
-            NOT NULL DEFAULT 'active'
-        ");
+        Schema::table('copy_relationships', function (Blueprint $table) {
+            $table->enum('status', ['active', 'paused', 'stopped', 'completed'])
+                ->default('active')
+                ->change();
+        });
 
         // A duration-based copy relationship is now an immutable CONTRACT.
         // A follower can therefore have multiple sequential contracts for the
@@ -60,11 +60,11 @@ return new class extends Migration
                 'updated_at' => now(),
             ]);
 
-        DB::statement("
-            ALTER TABLE copy_relationships
-            MODIFY status ENUM('active','paused','stopped')
-            NOT NULL DEFAULT 'active'
-        ");
+        Schema::table('copy_relationships', function (Blueprint $table) {
+            $table->enum('status', ['active', 'paused', 'stopped'])
+                ->default('active')
+                ->change();
+        });
 
         if (Schema::hasIndex('copy_relationships', 'copy_relationships_follower_strategy_idx')) {
             Schema::table('copy_relationships', function (Blueprint $table) {

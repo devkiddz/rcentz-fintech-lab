@@ -100,14 +100,16 @@ return new class extends Migration
             });
         }
 
-        if (! $this->hasIndex('stock_transactions', 'stock_transactions_trade_position_idx')) {
+        if (DB::getDriverName() !== 'sqlite'
+            && ! $this->hasIndex('stock_transactions', 'stock_transactions_trade_position_idx')) {
             DB::statement(
                 'ALTER TABLE stock_transactions
                  ADD INDEX stock_transactions_trade_position_idx (trade_position_id)'
             );
         }
 
-        if (! $this->hasForeign('stock_transactions', 'trade_position_id', 'trade_positions')) {
+        if (DB::getDriverName() !== 'sqlite'
+            && ! $this->hasForeign('stock_transactions', 'trade_position_id', 'trade_positions')) {
             DB::statement(
                 'ALTER TABLE stock_transactions
                  ADD CONSTRAINT stock_transactions_trade_position_fk
@@ -134,11 +136,13 @@ return new class extends Migration
             });
         }
 
-        DB::statement("
-            ALTER TABLE copy_relationships
-            MODIFY status ENUM('active','paused','stopped','settling','settlement_failed','completed')
-            NOT NULL DEFAULT 'active'
-        ");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("
+                ALTER TABLE copy_relationships
+                MODIFY status ENUM('active','paused','stopped','settling','settlement_failed','completed')
+                NOT NULL DEFAULT 'active'
+            ");
+        }
     }
 
     public function down(): void
@@ -147,11 +151,13 @@ return new class extends Migration
             ->whereIn('status', ['settling','settlement_failed'])
             ->update(['status' => 'stopped']);
 
-        DB::statement("
-            ALTER TABLE copy_relationships
-            MODIFY status ENUM('active','paused','stopped','completed')
-            NOT NULL DEFAULT 'active'
-        ");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("
+                ALTER TABLE copy_relationships
+                MODIFY status ENUM('active','paused','stopped','completed')
+                NOT NULL DEFAULT 'active'
+            ");
+        }
 
         Schema::table('trading_bots', function (Blueprint $table) {
             foreach (['position_duration_minutes','take_profit_percent','stop_loss_percent'] as $column) {
@@ -160,10 +166,12 @@ return new class extends Migration
         });
 
         if (Schema::hasColumn('stock_transactions', 'trade_position_id')) {
-            if ($this->hasForeign('stock_transactions', 'trade_position_id', 'trade_positions')) {
+            if (DB::getDriverName() !== 'sqlite'
+                && $this->hasForeign('stock_transactions', 'trade_position_id', 'trade_positions')) {
                 DB::statement('ALTER TABLE stock_transactions DROP FOREIGN KEY stock_transactions_trade_position_fk');
             }
-            if ($this->hasIndex('stock_transactions', 'stock_transactions_trade_position_idx')) {
+            if (DB::getDriverName() !== 'sqlite'
+                && $this->hasIndex('stock_transactions', 'stock_transactions_trade_position_idx')) {
                 DB::statement('ALTER TABLE stock_transactions DROP INDEX stock_transactions_trade_position_idx');
             }
             Schema::table('stock_transactions', function (Blueprint $table) {

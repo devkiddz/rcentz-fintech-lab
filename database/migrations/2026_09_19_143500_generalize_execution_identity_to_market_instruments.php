@@ -67,37 +67,54 @@ return new class extends Migration
             });
         }
 
-        DB::statement('UPDATE stock_holdings h JOIN stocks s ON s.id = h.stock_id SET h.market_instrument_id = s.market_instrument_id WHERE h.market_instrument_id IS NULL');
-        DB::statement('UPDATE stock_transactions t JOIN stocks s ON s.id = t.stock_id SET t.market_instrument_id = s.market_instrument_id WHERE t.market_instrument_id IS NULL');
-        DB::statement('UPDATE trade_positions p JOIN stocks s ON s.id = p.stock_id SET p.market_instrument_id = s.market_instrument_id WHERE p.market_instrument_id IS NULL');
-
-        foreach ([
-            ['stock_holdings', 'stock_holdings_market_instrument_idx'],
-            ['stock_transactions', 'stock_transactions_market_instrument_idx'],
-            ['trade_positions', 'trade_positions_market_instrument_idx'],
-        ] as [$table, $index]) {
-            if (! $this->hasIndex($table, $index)) {
-                DB::statement("ALTER TABLE {$table} ADD INDEX {$index} (market_instrument_id)");
+        if (DB::getDriverName() === 'sqlite') {
+            foreach (['stock_holdings', 'stock_transactions', 'trade_positions'] as $table) {
+                foreach (DB::table($table)->whereNull('market_instrument_id')->get() as $row) {
+                    $parentId = DB::table('stocks')->where('id', $row->stock_id)->value('market_instrument_id');
+                    if ($parentId) DB::table($table)->where('id', $row->id)->update(['market_instrument_id' => $parentId]);
+                }
             }
+        } else {
+            DB::statement('UPDATE stock_holdings h JOIN stocks s ON s.id = h.stock_id SET h.market_instrument_id = s.market_instrument_id WHERE h.market_instrument_id IS NULL');
+            DB::statement('UPDATE stock_transactions t JOIN stocks s ON s.id = t.stock_id SET t.market_instrument_id = s.market_instrument_id WHERE t.market_instrument_id IS NULL');
+            DB::statement('UPDATE trade_positions p JOIN stocks s ON s.id = p.stock_id SET p.market_instrument_id = s.market_instrument_id WHERE p.market_instrument_id IS NULL');
         }
 
-        if (! $this->hasIndex('trade_positions', 'trade_positions_market_status_idx')) {
-            DB::statement('ALTER TABLE trade_positions ADD INDEX trade_positions_market_status_idx (market_instrument_id, status)');
-        }
+        if (DB::getDriverName() !== 'sqlite') {
+            foreach ([
+                ['stock_holdings', 'stock_holdings_market_instrument_idx'],
+                ['stock_transactions', 'stock_transactions_market_instrument_idx'],
+                ['trade_positions', 'trade_positions_market_instrument_idx'],
+            ] as [$table, $index]) {
+                if (! $this->hasIndex($table, $index)) {
+                    DB::statement("ALTER TABLE {$table} ADD INDEX {$index} (market_instrument_id)");
+                }
+            }
 
-        foreach ([
-            ['stock_holdings', 'stock_holdings_market_instrument_fk'],
-            ['stock_transactions', 'stock_transactions_market_instrument_fk'],
-            ['trade_positions', 'trade_positions_market_instrument_fk'],
-        ] as [$table, $constraint]) {
-            if (! $this->hasForeign($table, 'market_instrument_id', 'market_instruments')) {
-                DB::statement("ALTER TABLE {$table} ADD CONSTRAINT {$constraint} FOREIGN KEY (market_instrument_id) REFERENCES market_instruments(id) ON DELETE RESTRICT");
+            if (! $this->hasIndex('trade_positions', 'trade_positions_market_status_idx')) {
+                DB::statement('ALTER TABLE trade_positions ADD INDEX trade_positions_market_status_idx (market_instrument_id, status)');
+            }
+
+            foreach ([
+                ['stock_holdings', 'stock_holdings_market_instrument_fk'],
+                ['stock_transactions', 'stock_transactions_market_instrument_fk'],
+                ['trade_positions', 'trade_positions_market_instrument_fk'],
+            ] as [$table, $constraint]) {
+                if (! $this->hasForeign($table, 'market_instrument_id', 'market_instruments')) {
+                    DB::statement("ALTER TABLE {$table} ADD CONSTRAINT {$constraint} FOREIGN KEY (market_instrument_id) REFERENCES market_instruments(id) ON DELETE RESTRICT");
+                }
             }
         }
 
         // TradePosition is the cross-asset position authority. Stock remains a
         // compatibility child reference for existing equity execution only.
-        DB::statement('ALTER TABLE trade_positions MODIFY stock_id BIGINT UNSIGNED NULL');
+        if (DB::getDriverName() === 'sqlite') {
+            Schema::table('trade_positions', function (Blueprint $table) {
+                $table->unsignedBigInteger('stock_id')->nullable()->change();
+            });
+        } else {
+            DB::statement('ALTER TABLE trade_positions MODIFY stock_id BIGINT UNSIGNED NULL');
+        }
     }
 
     public function down(): void
@@ -107,7 +124,13 @@ return new class extends Migration
             if ($nonStock > 0) {
                 throw new RuntimeException('Cannot roll back E2 while non-Stock TradePosition rows exist.');
             }
-            DB::statement('ALTER TABLE trade_positions MODIFY stock_id BIGINT UNSIGNED NOT NULL');
+            if (DB::getDriverName() === 'sqlite') {
+                Schema::table('trade_positions', function (Blueprint $table) {
+                    $table->unsignedBigInteger('stock_id')->nullable(false)->change();
+                });
+            } else {
+                DB::statement('ALTER TABLE trade_positions MODIFY stock_id BIGINT UNSIGNED NOT NULL');
+            }
         }
 
         foreach ([
@@ -116,13 +139,16 @@ return new class extends Migration
             ['stock_holdings', 'stock_holdings_market_instrument_fk', null, 'stock_holdings_market_instrument_idx'],
         ] as [$table, $constraint, $compoundIndex, $index]) {
             if (Schema::hasColumn($table, 'market_instrument_id')) {
-                if ($this->hasForeign($table, 'market_instrument_id', 'market_instruments')) {
+                if (DB::getDriverName() !== 'sqlite'
+                    && $this->hasForeign($table, 'market_instrument_id', 'market_instruments')) {
                     DB::statement("ALTER TABLE {$table} DROP FOREIGN KEY {$constraint}");
                 }
-                if ($compoundIndex && $this->hasIndex($table, $compoundIndex)) {
+                if (DB::getDriverName() !== 'sqlite'
+                    && $compoundIndex && $this->hasIndex($table, $compoundIndex)) {
                     DB::statement("ALTER TABLE {$table} DROP INDEX {$compoundIndex}");
                 }
-                if ($this->hasIndex($table, $index)) {
+                if (DB::getDriverName() !== 'sqlite'
+                    && $this->hasIndex($table, $index)) {
                     DB::statement("ALTER TABLE {$table} DROP INDEX {$index}");
                 }
                 Schema::table($table, function (Blueprint $blueprint) {

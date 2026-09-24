@@ -57,38 +57,42 @@ return new class extends Migration
             });
         }
 
-        DB::statement('ALTER TABLE copy_trade_executions MODIFY provider_stock_transaction_id BIGINT UNSIGNED NULL');
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE copy_trade_executions MODIFY provider_stock_transaction_id BIGINT UNSIGNED NULL');
 
-        DB::statement("UPDATE copy_trade_executions c JOIN stock_transactions s ON s.id = c.provider_stock_transaction_id SET c.market_instrument_id = s.market_instrument_id WHERE c.market_instrument_id IS NULL AND c.provider_stock_transaction_id IS NOT NULL");
-        DB::statement("UPDATE copy_trade_executions c JOIN market_execution_transactions m ON m.native_type = 'stock_transaction' AND m.native_id = c.provider_stock_transaction_id SET c.provider_market_execution_transaction_id = m.id WHERE c.provider_market_execution_transaction_id IS NULL AND c.provider_stock_transaction_id IS NOT NULL");
-        DB::statement("UPDATE copy_trade_executions c JOIN market_execution_transactions m ON m.native_type = 'stock_transaction' AND m.native_id = c.follower_stock_transaction_id SET c.follower_market_execution_transaction_id = m.id WHERE c.follower_market_execution_transaction_id IS NULL AND c.follower_stock_transaction_id IS NOT NULL");
-        DB::statement("UPDATE copy_trade_executions c JOIN broker_orders b ON b.market_execution_transaction_id = c.provider_market_execution_transaction_id SET c.provider_broker_order_id = b.id WHERE c.provider_broker_order_id IS NULL");
-        DB::statement("UPDATE copy_trade_executions c JOIN broker_orders b ON b.market_execution_transaction_id = c.follower_market_execution_transaction_id SET c.follower_broker_order_id = b.id WHERE c.follower_broker_order_id IS NULL");
-
-        foreach ([
-            ['copy_trade_executions', 'market_instrument_id', 'copy_trade_exec_market_instrument_fk', 'market_instruments'],
-            ['copy_trade_executions', 'provider_market_execution_transaction_id', 'copy_trade_exec_provider_market_fk', 'market_execution_transactions'],
-            ['copy_trade_executions', 'provider_broker_order_id', 'copy_trade_exec_provider_broker_fk', 'broker_orders'],
-            ['copy_trade_executions', 'follower_market_execution_transaction_id', 'copy_trade_exec_follower_market_fk', 'market_execution_transactions'],
-            ['copy_trade_executions', 'follower_broker_order_id', 'copy_trade_exec_follower_broker_fk', 'broker_orders'],
-        ] as [$table, $column, $constraint, $referenced]) {
-            if (! $this->hasForeign($table, $column, $referenced)) {
-                DB::statement("ALTER TABLE {$table} ADD CONSTRAINT {$constraint} FOREIGN KEY ({$column}) REFERENCES {$referenced}(id) ON DELETE SET NULL");
-            }
+            DB::statement("UPDATE copy_trade_executions c JOIN stock_transactions s ON s.id = c.provider_stock_transaction_id SET c.market_instrument_id = s.market_instrument_id WHERE c.market_instrument_id IS NULL AND c.provider_stock_transaction_id IS NOT NULL");
+            DB::statement("UPDATE copy_trade_executions c JOIN market_execution_transactions m ON m.native_type = 'stock_transaction' AND m.native_id = c.provider_stock_transaction_id SET c.provider_market_execution_transaction_id = m.id WHERE c.provider_market_execution_transaction_id IS NULL AND c.provider_stock_transaction_id IS NOT NULL");
+            DB::statement("UPDATE copy_trade_executions c JOIN market_execution_transactions m ON m.native_type = 'stock_transaction' AND m.native_id = c.follower_stock_transaction_id SET c.follower_market_execution_transaction_id = m.id WHERE c.follower_market_execution_transaction_id IS NULL AND c.follower_stock_transaction_id IS NOT NULL");
+            DB::statement("UPDATE copy_trade_executions c JOIN broker_orders b ON b.market_execution_transaction_id = c.provider_market_execution_transaction_id SET c.provider_broker_order_id = b.id WHERE c.provider_broker_order_id IS NULL");
+            DB::statement("UPDATE copy_trade_executions c JOIN broker_orders b ON b.market_execution_transaction_id = c.follower_market_execution_transaction_id SET c.follower_broker_order_id = b.id WHERE c.follower_broker_order_id IS NULL");
         }
 
-        foreach ([
-            ['copy_trade_executions', 'copy_trade_exec_market_idx', 'market_instrument_id'],
-            ['copy_trade_executions', 'copy_trade_exec_provider_market_idx', 'provider_market_execution_transaction_id'],
-            ['copy_trade_executions', 'copy_trade_exec_follower_market_idx', 'follower_market_execution_transaction_id'],
-            ['copy_trade_executions', 'copy_trade_exec_follower_broker_idx', 'follower_broker_order_id'],
-        ] as [$table, $index, $column]) {
-            if (! $this->hasIndex($table, $index)) {
-                DB::statement("ALTER TABLE {$table} ADD INDEX {$index} ({$column})");
+        if (DB::getDriverName() !== 'sqlite') {
+            foreach ([
+                ['copy_trade_executions', 'market_instrument_id', 'copy_trade_exec_market_instrument_fk', 'market_instruments'],
+                ['copy_trade_executions', 'provider_market_execution_transaction_id', 'copy_trade_exec_provider_market_fk', 'market_execution_transactions'],
+                ['copy_trade_executions', 'provider_broker_order_id', 'copy_trade_exec_provider_broker_fk', 'broker_orders'],
+                ['copy_trade_executions', 'follower_market_execution_transaction_id', 'copy_trade_exec_follower_market_fk', 'market_execution_transactions'],
+                ['copy_trade_executions', 'follower_broker_order_id', 'copy_trade_exec_follower_broker_fk', 'broker_orders'],
+            ] as [$table, $column, $constraint, $referenced]) {
+                if (! $this->hasForeign($table, $column, $referenced)) {
+                    DB::statement("ALTER TABLE {$table} ADD CONSTRAINT {$constraint} FOREIGN KEY ({$column}) REFERENCES {$referenced}(id) ON DELETE SET NULL");
+                }
             }
-        }
 
-        DB::statement("ALTER TABLE copy_relationships MODIFY status ENUM('active','paused','stopped','completed','settling','settlement_failed') NOT NULL DEFAULT 'active'");
+            foreach ([
+                ['copy_trade_executions', 'copy_trade_exec_market_idx', 'market_instrument_id'],
+                ['copy_trade_executions', 'copy_trade_exec_provider_market_idx', 'provider_market_execution_transaction_id'],
+                ['copy_trade_executions', 'copy_trade_exec_follower_market_idx', 'follower_market_execution_transaction_id'],
+                ['copy_trade_executions', 'copy_trade_exec_follower_broker_idx', 'follower_broker_order_id'],
+            ] as [$table, $index, $column]) {
+                if (! $this->hasIndex($table, $index)) {
+                    DB::statement("ALTER TABLE {$table} ADD INDEX {$index} ({$column})");
+                }
+            }
+
+            DB::statement("ALTER TABLE copy_relationships MODIFY status ENUM('active','paused','stopped','completed','settling','settlement_failed') NOT NULL DEFAULT 'active'");
+        }
     }
 
     public function down(): void
@@ -99,7 +103,9 @@ return new class extends Migration
         }
 
         DB::table('copy_relationships')->whereIn('status', ['settling','settlement_failed'])->update(['status' => 'stopped']);
-        DB::statement("ALTER TABLE copy_relationships MODIFY status ENUM('active','paused','stopped','completed') NOT NULL DEFAULT 'active'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE copy_relationships MODIFY status ENUM('active','paused','stopped','completed') NOT NULL DEFAULT 'active'");
+        }
 
         foreach ([
             ['follower_broker_order_id', 'copy_trade_exec_follower_broker_fk', 'copy_trade_exec_follower_broker_idx'],
@@ -109,14 +115,14 @@ return new class extends Migration
             ['market_instrument_id', 'copy_trade_exec_market_instrument_fk', 'copy_trade_exec_market_idx'],
         ] as [$column, $constraint, $index]) {
             if (Schema::hasColumn('copy_trade_executions', $column)) {
-                if ($this->hasForeign('copy_trade_executions', $column, match($column) {
+                if (DB::getDriverName() !== 'sqlite' && $this->hasForeign('copy_trade_executions', $column, match($column) {
                     'market_instrument_id' => 'market_instruments',
                     'provider_broker_order_id', 'follower_broker_order_id' => 'broker_orders',
                     default => 'market_execution_transactions',
                 })) {
                     DB::statement("ALTER TABLE copy_trade_executions DROP FOREIGN KEY {$constraint}");
                 }
-                if ($index && $this->hasIndex('copy_trade_executions', $index)) {
+                if (DB::getDriverName() !== 'sqlite' && $index && $this->hasIndex('copy_trade_executions', $index)) {
                     DB::statement("ALTER TABLE copy_trade_executions DROP INDEX {$index}");
                 }
                 Schema::table('copy_trade_executions', function (Blueprint $table) use ($column) {
@@ -129,6 +135,8 @@ return new class extends Migration
         if ($missingProvider > 0) {
             throw new RuntimeException('Cannot restore required provider_stock_transaction_id while null rows exist.');
         }
-        DB::statement('ALTER TABLE copy_trade_executions MODIFY provider_stock_transaction_id BIGINT UNSIGNED NOT NULL');
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE copy_trade_executions MODIFY provider_stock_transaction_id BIGINT UNSIGNED NOT NULL');
+        }
     }
 };

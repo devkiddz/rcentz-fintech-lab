@@ -35,11 +35,26 @@ return new class extends Migration
 
         // Existing rows receive the canonical parent ID. This is the one-time
         // data bridge required to turn MarketInstrument into the parent.
-        DB::statement("\n            UPDATE stocks s\n            INNER JOIN market_instruments mi ON mi.stock_id = s.id\n            SET s.market_instrument_id = mi.id\n            WHERE s.market_instrument_id IS NULL\n        ");
+        if (DB::getDriverName() === 'sqlite') {
+            foreach (DB::table('stocks')->whereNull('market_instrument_id')->get() as $row) {
+                $parentId = DB::table('market_instruments')->where('stock_id', $row->id)->value('id');
+                if ($parentId) DB::table('stocks')->where('id', $row->id)->update(['market_instrument_id' => $parentId]);
+            }
+            foreach (DB::table('forex_pairs')->whereNull('market_instrument_id')->get() as $row) {
+                $parentId = DB::table('market_instruments')->where('forex_pair_id', $row->id)->value('id');
+                if ($parentId) DB::table('forex_pairs')->where('id', $row->id)->update(['market_instrument_id' => $parentId]);
+            }
+            foreach (DB::table('controlled_market_instruments')->whereNull('market_instrument_id')->get() as $row) {
+                $parentId = DB::table('market_instruments')->where('stock_id', $row->stock_id)->value('id');
+                if ($parentId) DB::table('controlled_market_instruments')->where('id', $row->id)->update(['market_instrument_id' => $parentId]);
+            }
+        } else {
+            DB::statement("\n                UPDATE stocks s\n                INNER JOIN market_instruments mi ON mi.stock_id = s.id\n                SET s.market_instrument_id = mi.id\n                WHERE s.market_instrument_id IS NULL\n            ");
 
-        DB::statement("\n            UPDATE forex_pairs fp\n            INNER JOIN market_instruments mi ON mi.forex_pair_id = fp.id\n            SET fp.market_instrument_id = mi.id\n            WHERE fp.market_instrument_id IS NULL\n        ");
+            DB::statement("\n                UPDATE forex_pairs fp\n                INNER JOIN market_instruments mi ON mi.forex_pair_id = fp.id\n                SET fp.market_instrument_id = mi.id\n                WHERE fp.market_instrument_id IS NULL\n            ");
 
-        DB::statement("\n            UPDATE controlled_market_instruments cmi\n            INNER JOIN market_instruments mi ON mi.stock_id = cmi.stock_id\n            SET cmi.market_instrument_id = mi.id\n            WHERE cmi.market_instrument_id IS NULL\n        ");
+            DB::statement("\n                UPDATE controlled_market_instruments cmi\n                INNER JOIN market_instruments mi ON mi.stock_id = cmi.stock_id\n                SET cmi.market_instrument_id = mi.id\n                WHERE cmi.market_instrument_id IS NULL\n            ");
+        }
     }
 
     public function down(): void

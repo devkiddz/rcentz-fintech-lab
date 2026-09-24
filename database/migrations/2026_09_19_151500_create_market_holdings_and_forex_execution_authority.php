@@ -9,10 +9,7 @@ return new class extends Migration
 {
     private function hasIndex(string $table, string $index): bool
     {
-        return (bool) DB::scalar(
-            'SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?',
-            [$table, $index]
-        );
+        return Schema::hasIndex($table, $index);
     }
 
     public function up(): void
