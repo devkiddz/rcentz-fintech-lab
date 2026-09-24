@@ -1,0 +1,22 @@
+{
+    "format": 1,
+    "kind": "rcentz-release-baseline",
+    "source_database": "sanitized-release-baseline",
+    "source_head": "d573d3d0d827e162273c4dde79b0bb1358b93536",
+    "sha256": "7c1b62137a04c6eeeeb38646e861e0a8bea7d389caa615ea36cc43c362fd80e3",
+    "expected": {
+        "tables": 100,
+        "users": 4,
+        "market_instruments": 31,
+        "stocks": 10,
+        "forex_pairs": 10,
+        "crypto_pairs": 10,
+        "commodity_instruments": 1,
+        "signals": 6,
+        "bot_products": 7,
+        "copy_trader_profiles": 3,
+        "copy_strategies": 7,
+        "languages": 56,
+        "language_translations": 52192
+    }
+}

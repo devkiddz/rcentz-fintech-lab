@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Setting;
+use App\Services\ReleaseBaselineInstaller;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -34,21 +35,23 @@ class InstallationDemoSeeder extends Seeder
             if (! $adminId) {
                 throw new \RuntimeException('Installation demo seeding requires the installer-created administrator first.');
             }
-
             $users = [
                 'demo1' => [
+                    'reserved_email' => ReleaseBaselineInstaller::RESERVED_AMARA_EMAIL,
                     'name' => 'Amara Okafor',
                     'email' => 'amara.okafor@'.$demoDomain,
                     'country' => 'Nigeria',
                     'currency' => 'USD',
                 ],
                 'demo2' => [
+                    'reserved_email' => ReleaseBaselineInstaller::RESERVED_DANIEL_EMAIL,
                     'name' => 'Daniel Brooks',
                     'email' => 'daniel.brooks@'.$demoDomain,
                     'country' => 'United States',
                     'currency' => 'USD',
                 ],
                 'demo3' => [
+                    'reserved_email' => ReleaseBaselineInstaller::RESERVED_SOFIA_EMAIL,
                     'name' => 'Sofia Martinez',
                     'email' => 'sofia.martinez@'.$demoDomain,
                     'country' => 'Spain',
@@ -57,15 +60,25 @@ class InstallationDemoSeeder extends Seeder
             ];
 
             foreach ($users as $key => $user) {
-                $this->upsertUser($user['email'], [
-                    'name' => $user['name'],
-                    'password' => Hash::make($userPassword),
-                    'email_verified_at' => $now,
-                    'is_admin' => false,
-                    'country' => $user['country'],
-                    'currency' => $user['currency'],
-                ]);
-                $users[$key]['id'] = $this->idBy('users', 'email', $user['email']);
+                $users[$key]['id'] = $this->claimReservedUser(
+                    $user['reserved_email'],
+                    $user['email'],
+                    [
+                        'name' => $user['name'],
+                        'password' => Hash::make($userPassword),
+                        'email_verified_at' => $now,
+                        'is_admin' => false,
+                        'country' => $user['country'],
+                        'currency' => $user['currency'],
+                        'locale' => (string) Setting::get('default_locale', 'en'),
+                        'account_status' => 'active',
+                        'status_reason' => null,
+                        'status_until' => null,
+                        'status_changed_at' => null,
+                        'status_changed_by_user_id' => null,
+                        'remember_token' => null,
+                    ]
+                );
             }
 
             // KYC state coverage: approved, pending, and rejected.
@@ -482,17 +495,40 @@ class InstallationDemoSeeder extends Seeder
             $this->command?->warn('Sofia Martinez: '.$users['demo3']['email'].' / '.$userPassword);
         });
     }
+    private function claimReservedUser(
+        string $reservedEmail,
+        string $email,
+        array $attributes
+    ): int {
+        $reserved = DB::table('users')
+            ->where('email', $reservedEmail)
+            ->first();
 
-    private function upsertUser(string $email, array $attributes): void
-    {
-        DB::table('users')->updateOrInsert(
-            ['email' => $email],
-            array_merge($attributes, [
+        if (! $reserved) {
+            throw new \RuntimeException(
+                'Reserved installation practice identity is unavailable: '.$reservedEmail
+            );
+        }
+
+        if (
+            DB::table('users')
+                ->where('email', $email)
+                ->where('id', '!=', $reserved->id)
+                ->exists()
+        ) {
+            throw new \RuntimeException(
+                'Installation practice email already belongs to another account: '.$email
+            );
+        }
+
+        DB::table('users')
+            ->where('id', $reserved->id)
+            ->update(array_merge($attributes, [
                 'email' => $email,
                 'updated_at' => now(),
-                'created_at' => now(),
-            ])
-        );
+            ]));
+
+        return (int) $reserved->id;
     }
 
     private function upsertKyc(int $userId, array $attributes): void

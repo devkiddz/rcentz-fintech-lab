@@ -6,9 +6,8 @@ use App\Models\Language;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\LocalizationService;
-use Database\Seeders\CoreDataSeeder;
+use App\Services\ReleaseBaselineInstaller;
 use Database\Seeders\InstallationDemoSeeder;
-use Database\Seeders\LocalizationSeeder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -47,6 +46,13 @@ class InstallController extends Controller
 
         if (! $this->allRequirementsMet()) {
             return back()->withErrors(['install' => 'The server requirements are not satisfied yet.'])->withInput();
+        }
+
+        // A fresh installation may run many migrations and seed the bundled
+        // localization catalogue. Do not allow PHP's normal web-request time
+        // limit to interrupt a valid one-time installation midway through.
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(0);
         }
 
         $languageCodes = array_keys(config('localization.languages', ['en' => []]));
@@ -108,32 +114,59 @@ class InstallController extends Controller
                 Artisan::call('key:generate', ['--force' => true]);
                 Artisan::call('config:clear');
             }
+            $baselineInstaller = app(ReleaseBaselineInstaller::class);
+            $baselineInstaller->import();
 
+            // The release baseline already contains the complete accepted
+            // application schema and platform data. Migrate only applies
+            // migrations newer than the packaged baseline, if any.
             Artisan::call('migrate', ['--force' => true]);
-            Artisan::call('db:seed', ['--class' => CoreDataSeeder::class, '--force' => true]);
-            Artisan::call('db:seed', ['--class' => \Database\Seeders\SettingsSeeder::class, '--force' => true]);
-            Artisan::call('db:seed', ['--class' => LocalizationSeeder::class, '--force' => true]);
+
+            $baselineInstaller->assertImportedAuthority();
 
             $this->applyBrandSettings($validated);
             $this->applyLocalizationSettings($validated);
 
-            User::updateOrCreate(
-                ['email' => $validated['admin_email']],
-                [
-                    'name' => $validated['admin_name'],
-                    'password' => Hash::make($validated['admin_password']),
-                    'is_admin' => true,
-                    'email_verified_at' => now(),
-                    'currency' => $validated['default_currency'],
-                    'locale' => $validated['default_locale'],
-                ]
-            );
+            $administrator = User::query()
+                ->where('email', ReleaseBaselineInstaller::RESERVED_ADMIN_EMAIL)
+                ->first();
+
+            if (! $administrator) {
+                throw new \RuntimeException(
+                    'The reserved release administrator identity is unavailable.'
+                );
+            }
+
+            $administrator->forceFill([
+                'name' => $validated['admin_name'],
+                'email' => $validated['admin_email'],
+                'password' => Hash::make($validated['admin_password']),
+                'is_admin' => true,
+                'email_verified_at' => now(),
+                'country' => null,
+                'currency' => $validated['default_currency'],
+                'locale' => $validated['default_locale'],
+                'date_of_birth' => null,
+                'employment_class' => null,
+                'education_level' => null,
+                'account_status' => 'active',
+                'status_reason' => null,
+                'status_until' => null,
+                'status_changed_at' => null,
+                'status_changed_by_user_id' => null,
+                'remember_token' => null,
+            ])->save();
 
 
             config(['bootstrap.installation_demo.password' => $validated['demo_password']]);
             Artisan::call('db:seed', ['--class' => InstallationDemoSeeder::class, '--force' => true]);
 
             $demoDomain = (Str::slug($validated['company_name']) ?: 'platform').'.test';
+
+            $baselineInstaller->assertPersonalizedAuthority(
+                $validated['admin_email'],
+                $demoDomain
+            );
             try {
                 Artisan::call('storage:link');
             } catch (Throwable $ignored) {
@@ -177,7 +210,7 @@ class InstallController extends Controller
         Setting::set('site_phone', $values['support_phone'] ?? '');
         Setting::set('brand_primary_color', strtolower($values['brand_primary_color']));
         Setting::set('brand_secondary_color', strtolower($values['brand_secondary_color']));
-        Setting::set('footer_text', '© '.date('Y').' '.$legalName.'. All rights reserved.');
+        Setting::set('footer_text', '?? '.date('Y').' '.$legalName.'. All rights reserved.');
         Setting::set('developer_credit_enabled', '0');
         Setting::clearCache();
     }
@@ -275,6 +308,7 @@ class InstallController extends Controller
             ['label' => 'Mbstring extension', 'ok' => extension_loaded('mbstring')],
             ['label' => 'OpenSSL extension', 'ok' => extension_loaded('openssl')],
             ['label' => 'Fileinfo extension', 'ok' => extension_loaded('fileinfo')],
+            ['label' => 'Zlib extension', 'ok' => extension_loaded('zlib')],
             ['label' => 'cURL extension', 'ok' => extension_loaded('curl')],
             ['label' => 'DOM/XML extension', 'ok' => extension_loaded('dom')],
             ['label' => 'Ctype extension', 'ok' => extension_loaded('ctype')],

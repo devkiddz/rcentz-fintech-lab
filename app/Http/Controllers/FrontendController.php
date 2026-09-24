@@ -365,8 +365,24 @@ class FrontendController extends Controller
             $heroMarkets->push(['available' => false, 'asset_class' => 'crypto', 'asset_label' => 'Crypto', 'symbol' => 'BTC/USD', 'name' => 'Bitcoin / US Dollar']);
         }
 
+        $featuredCars = Car::query()
+            ->where('is_available', true)
+            ->latest('created_at')
+            ->limit(3)
+            ->get();
+
+        $featuredInvestments = PrivateInvestmentInstrument::query()
+            ->where('is_visible', true)
+            ->whereIn('status', ['active', 'paused'])
+            ->where('name', 'not like', '%ACCEPTANCE%')
+            ->orderByDesc('is_featured')
+            ->orderBy('name')
+            ->limit(3)
+            ->get();
+
         $platformStats = [
             'instruments' => MarketInstrument::active()->count(),
+            'automotive_inventory' => Car::query()->where('is_available', true)->count(),
             'investments' => PrivateInvestmentInstrument::query()
                 ->where('is_visible', true)
                 ->whereIn('status', ['active', 'paused'])
@@ -385,7 +401,14 @@ class FrontendController extends Controller
                 ->count(),
         ];
 
-        return view('frontend.home', compact('marketShowcase', 'marketTape', 'heroMarkets', 'platformStats'));
+        return view('frontend.home', compact(
+            'marketShowcase',
+            'marketTape',
+            'heroMarkets',
+            'platformStats',
+            'featuredCars',
+            'featuredInvestments'
+        ));
     }
     public function show($id)
     {

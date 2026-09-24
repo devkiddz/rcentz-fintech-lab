@@ -55,8 +55,8 @@
                 <div class="section">
                     <div class="section-title"><span class="step">3</span> Language & region</div>
                     <div class="fields">
-                        <div><label for="default_locale">Default language</label><select id="default_locale" name="default_locale">@foreach($languageRegistry as $code=>$language)<option value="{{ $code }}" @selected(old('default_locale','en')===$code)>{{ $language['native_name'] }} · {{ $language['name'] }}</option>@endforeach</select></div>
-                        <div><label for="default_currency">Default currency</label><select id="default_currency" name="default_currency">@foreach($currencies as $code=>$name)<option value="{{ $code }}" @selected(old('default_currency','USD')===$code)>{{ $code }} · {{ $name }}</option>@endforeach</select></div>
+                        <div><label for="default_locale">Default language</label><select id="default_locale" name="default_locale">@foreach($languageRegistry as $code=>$language)<option value="{{ $code }}" @selected(old('default_locale','en')===$code)>{{ $language['native_name'] }} ?? {{ $language['name'] }}</option>@endforeach</select></div>
+                        <div><label for="default_currency">Default currency</label><select id="default_currency" name="default_currency">@foreach($currencies as $code=>$name)<option value="{{ $code }}" @selected(old('default_currency','USD')===$code)>{{ $code }} ?? {{ $name }}</option>@endforeach</select></div>
                         <div class="full"><label for="default_timezone">Timezone</label><select id="default_timezone" name="default_timezone">@foreach($timezones as $timezone)<option value="{{ $timezone }}" @selected(old('default_timezone','UTC')===$timezone)>{{ $timezone }}</option>@endforeach</select></div>
                         <div class="full">
                             <label>Languages shown to customers</label>
@@ -85,7 +85,7 @@
                 <div class="section">
                     <div class="section-title"><span class="step">6</span> Practice accounts</div>
                     <div class="fields">
-                        <div class="full"><div class="note" style="margin-top:0">Three ordinary customer accounts will be created from the company name: Demo One, Demo Two and Demo Three. They use the real customer experience with controlled balances, KYC states, holdings and activity so the installed platform can be explored immediately.</div></div>
+                        <div class="full"><div class="note" style="margin-top:0">Three ordinary customer accounts will be created from the company name: Amara Okafor, Daniel Brooks and Sofia Martinez. They use the real customer experience with controlled balances, KYC states, holdings and activity so the installed platform can be explored immediately.</div></div>
                         <div><label for="demo_password">Practice account password</label><input id="demo_password" type="password" name="demo_password" minlength="10" required autocomplete="new-password"></div>
                         <div><label for="demo_password_confirmation">Confirm practice password</label><input id="demo_password_confirmation" type="password" name="demo_password_confirmation" minlength="10" required autocomplete="new-password"></div>
                         <div class="full"><div class="hint">The generated addresses use the reserved .test domain, for example amara.okafor@your-company.test. The same password is used by all three practice accounts and can be changed later from administration.</div></div>

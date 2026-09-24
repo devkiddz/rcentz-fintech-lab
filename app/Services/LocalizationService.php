@@ -139,7 +139,7 @@ class LocalizationService
 
         DB::transaction(function () use ($languages, $majors, $bundle, &$languageCount, &$translationCount) {
             foreach ($languages as $code => $meta) {
-                $language = Language::query()->updateOrCreate(
+                Language::query()->updateOrCreate(
                     ['code' => $code],
                     [
                         'name' => $meta['name'],
@@ -157,41 +157,94 @@ class LocalizationService
             if (! Language::query()->where('is_default', true)->exists()) {
                 Language::query()->where('code', 'en')->update(['is_default' => true]);
             }
+
             if (! Language::query()->where('is_enabled', true)->exists()) {
                 Language::query()->whereIn('code', $majors)->update(['is_enabled' => true]);
             }
 
+            $languageIds = Language::query()
+                ->whereIn('code', array_keys($languages))
+                ->pluck('id', 'code');
+
+            $locked = LanguageTranslation::query()
+                ->where('is_locked', true)
+                ->get(['language_id', 'group', 'key'])
+                ->mapWithKeys(fn (LanguageTranslation $row) => [
+                    $row->language_id.'|'.$row->group.'|'.$row->key => true,
+                ])
+                ->all();
+
+            $now = now();
+            $rows = [];
+
+            $flush = function () use (&$rows): void {
+                if ($rows === []) {
+                    return;
+                }
+
+                DB::table('language_translations')->upsert(
+                    $rows,
+                    ['language_id', 'group', 'key'],
+                    ['source_text', 'translated_text', 'status', 'updated_at']
+                );
+
+                $rows = [];
+            };
+
             foreach (($bundle['source'] ?? []) as $identity => $sourceText) {
                 [$group, $key] = $this->splitIdentity($identity);
+
                 foreach ($languages as $code => $_meta) {
-                    $language = Language::query()->where('code', $code)->firstOrFail();
+                    $languageId = $languageIds->get($code);
+
+                    if (! $languageId) {
+                        throw new \RuntimeException('Localization language identity missing: '.$code);
+                    }
+
+                    $lockKey = $languageId.'|'.$group.'|'.$key;
+
+                    if (isset($locked[$lockKey])) {
+                        continue;
+                    }
+
                     $translated = $bundle['translations'][$code][$identity] ?? null;
-                    if ($code === 'en') $translated = $sourceText;
-                    $status = $code === 'en' ? 'reviewed' : (filled($translated) ? 'generated' : 'missing');
 
-                    $row = LanguageTranslation::query()
-                        ->where('language_id', $language->id)
-                        ->where('group', $group)
-                        ->where('key', $key)
-                        ->first();
+                    if ($code === 'en') {
+                        $translated = $sourceText;
+                    }
 
-                    if ($row?->is_locked) continue;
+                    $status = $code === 'en'
+                        ? 'reviewed'
+                        : (filled($translated) ? 'generated' : 'missing');
 
-                    LanguageTranslation::query()->updateOrCreate(
-                        ['language_id' => $language->id, 'group' => $group, 'key' => $key],
-                        [
-                            'source_text' => $sourceText,
-                            'translated_text' => $translated,
-                            'status' => $status,
-                        ]
-                    );
+                    $rows[] = [
+                        'language_id' => $languageId,
+                        'group' => $group,
+                        'key' => $key,
+                        'source_text' => $sourceText,
+                        'translated_text' => $translated,
+                        'status' => $status,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+
                     $translationCount++;
+
+                    if (count($rows) >= 1000) {
+                        $flush();
+                    }
                 }
             }
+
+            $flush();
         });
 
         $this->clearCache();
-        return ['languages' => $languageCount, 'translations' => $translationCount];
+
+        return [
+            'languages' => $languageCount,
+            'translations' => $translationCount,
+        ];
     }
 
     public function statusRows(): Collection

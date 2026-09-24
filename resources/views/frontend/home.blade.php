@@ -19,6 +19,9 @@
     $botUrl = auth()->check() ? route('ai-bots.marketplace') : route('login');
     $copyUrl = auth()->check() ? route('copy-trading.marketplace') : route('login');
     $signalUrl = auth()->check() ? route('signals.index') : route('login');
+    $automotiveUrl = route('cars.browse');
+    $registerUrl = route('register');
+    $workspaceUrl = auth()->check() ? (auth()->user()->isAdmin() ? route('admin.dashboard') : route('dashboard')) : $registerUrl;
 
     $sparklinePoints = function ($quotes, int $width = 300, int $height = 96) {
         $values = collect($quotes ?? [])
@@ -116,188 +119,776 @@
     .home-proof-rich{min-height:40rem}
     .home-proof-chart{background:linear-gradient(180deg,rgba(255,255,255,.028),rgba(255,255,255,.008))}
     @media(max-width:1023px){.home-proof-rich{min-height:auto}}
+
+    /* V1 release hero: all visual accents derive from the configured theme. */
+    .release-hero{
+        --hero-primary:var(--brand-primary);
+        --hero-secondary:var(--brand-secondary);
+        position:relative;
+        overflow:hidden;
+        background:
+            radial-gradient(circle at 78% 24%,color-mix(in srgb,var(--hero-primary) 13%,transparent),transparent 34%),
+            radial-gradient(circle at 84% 78%,color-mix(in srgb,var(--hero-secondary) 9%,transparent),transparent 30%),
+            hsl(var(--background));
+    }
+    .dark .release-hero{
+        background:
+            radial-gradient(circle at 78% 24%,color-mix(in srgb,var(--hero-primary) 22%,transparent),transparent 36%),
+            radial-gradient(circle at 84% 78%,color-mix(in srgb,var(--hero-secondary) 14%,transparent),transparent 32%),
+            hsl(var(--background));
+    }
+    .release-hero::before{
+        content:"";
+        position:absolute;
+        inset:0;
+        pointer-events:none;
+        background-image:
+            linear-gradient(hsl(var(--border)/.12) 1px,transparent 1px),
+            linear-gradient(90deg,hsl(var(--border)/.12) 1px,transparent 1px);
+        background-size:56px 56px;
+        mask-image:linear-gradient(to bottom,rgba(0,0,0,.46),transparent 88%);
+    }
+    .release-hero-shell{
+        position:relative;
+        min-height:34rem;
+    }
+    .release-hero-slide{
+        position:absolute;
+        inset:0;
+        opacity:0;
+        visibility:hidden;
+        pointer-events:none;
+        transform:translateX(18px);
+        transition:opacity .42s ease,transform .42s ease,visibility .42s ease;
+    }
+    .release-hero-slide[data-active="true"]{
+        position:relative;
+        opacity:1;
+        visibility:visible;
+        pointer-events:auto;
+        transform:none;
+    }
+    .release-hero-layout{
+        display:grid;
+        gap:2rem;
+        align-items:center;
+    }
+    @media(min-width:760px){
+        .release-hero-layout{
+            grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr);
+            gap:2.4rem;
+        }
+    }
+    .release-hero-copy{max-width:35rem}
+    .release-hero-title{
+        font-size:clamp(2.5rem,5.2vw,4.75rem);
+        line-height:.98;
+        letter-spacing:-.058em;
+        color:hsl(var(--foreground));
+    }
+    @media(min-width:760px) and (max-width:1080px){
+        .release-hero-title{font-size:clamp(2.65rem,4.9vw,3.8rem)}
+    }
+    .release-hero-primary-text{color:var(--hero-primary)}
+    .release-hero-secondary-text{color:var(--hero-secondary)}
+    .release-hero-primary-button{
+        background:var(--hero-primary);
+        color:#fff;
+        box-shadow:0 14px 34px color-mix(in srgb,var(--hero-primary) 20%,transparent);
+        transition:transform .2s ease,filter .2s ease,box-shadow .2s ease;
+    }
+    .release-hero-primary-button:hover{
+        transform:translateY(-2px);
+        filter:brightness(1.06);
+        box-shadow:0 18px 40px color-mix(in srgb,var(--hero-primary) 26%,transparent);
+    }
+    .release-hero-secondary-button{
+        border:1px solid hsl(var(--border));
+        background:hsl(var(--card)/.76);
+        color:hsl(var(--foreground));
+        transition:transform .2s ease,border-color .2s ease,background .2s ease;
+    }
+    .release-hero-secondary-button:hover{
+        transform:translateY(-2px);
+        border-color:color-mix(in srgb,var(--hero-primary) 42%,hsl(var(--border)));
+        background:color-mix(in srgb,var(--hero-primary) 5%,hsl(var(--card)));
+    }
+
+    /* Laptop / product illustration */
+    .release-device-wrap{
+        position:relative;
+        min-width:0;
+        padding:.75rem .25rem 1.35rem;
+    }
+    .release-device-glow{
+        position:absolute;
+        inset:10% 5% 10% 12%;
+        border-radius:9999px;
+        background:color-mix(in srgb,var(--hero-primary) 18%,transparent);
+        filter:blur(66px);
+        pointer-events:none;
+    }
+    .release-device{
+        position:relative;
+        width:100%;
+        max-width:43rem;
+        margin-inline:auto;
+        transform:perspective(1200px) rotateY(-3.5deg) rotateX(1deg);
+        transform-origin:center;
+    }
+    .release-device-screen{
+        position:relative;
+        overflow:hidden;
+        border:1px solid color-mix(in srgb,var(--hero-primary) 24%,hsl(var(--border)));
+        border-radius:1.35rem;
+        background:hsl(var(--card));
+        box-shadow:0 28px 72px rgba(15,23,42,.20),inset 0 1px 0 hsl(var(--background)/.65);
+    }
+    .dark .release-device-screen{
+        box-shadow:0 30px 76px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    .release-device-base{
+        width:92%;
+        height:.72rem;
+        margin:-.08rem auto 0;
+        border-radius:0 0 9999px 9999px;
+        background:linear-gradient(180deg,color-mix(in srgb,hsl(var(--foreground)) 18%,hsl(var(--card))),hsl(var(--muted)));
+        box-shadow:0 9px 22px rgba(15,23,42,.12);
+    }
+    .release-device-hinge{
+        width:18%;
+        height:.22rem;
+        margin:0 auto;
+        border-radius:9999px;
+        background:color-mix(in srgb,var(--hero-primary) 18%,hsl(var(--border)));
+    }
+    .release-screen-top{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:1rem;
+        border-bottom:1px solid hsl(var(--border)/.75);
+        padding:.68rem .85rem;
+    }
+    .release-screen-body{
+        padding:.85rem;
+    }
+    .release-ui-panel{
+        border:1px solid hsl(var(--border)/.72);
+        background:hsl(var(--background)/.62);
+        border-radius:1rem;
+    }
+    .dark .release-ui-panel{
+        background:rgba(255,255,255,.025);
+        border-color:rgba(255,255,255,.06);
+    }
+    .release-ui-icon{
+        color:var(--hero-primary);
+        background:color-mix(in srgb,var(--hero-primary) 9%,transparent);
+        box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--hero-primary) 14%,transparent);
+    }
+    .release-chart-line{
+        fill:none;
+        stroke:var(--hero-primary);
+        stroke-width:3;
+        stroke-linecap:round;
+        stroke-linejoin:round;
+        vector-effect:non-scaling-stroke;
+    }
+
+    /* Carousel selectors */
+    .release-hero-tabs{
+        display:grid;
+        gap:.65rem;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        margin-top:1.5rem;
+    }
+    .release-hero-tab{
+        min-width:0;
+        border:1px solid hsl(var(--border)/.85);
+        background:hsl(var(--card)/.68);
+        border-radius:1rem;
+        padding:.75rem;
+        text-align:left;
+        transition:transform .2s ease,border-color .2s ease,background .2s ease,box-shadow .2s ease;
+    }
+    .release-hero-tab:hover{transform:translateY(-2px)}
+    .release-hero-tab[data-active="true"]{
+        border-color:color-mix(in srgb,var(--hero-primary) 58%,hsl(var(--border)));
+        background:color-mix(in srgb,var(--hero-primary) 6%,hsl(var(--card)));
+        box-shadow:0 10px 26px color-mix(in srgb,var(--hero-primary) 10%,transparent);
+    }
+    .release-hero-number{
+        display:flex;
+        height:2rem;
+        width:2rem;
+        align-items:center;
+        justify-content:center;
+        border-radius:.65rem;
+        border:1px solid hsl(var(--border));
+        color:hsl(var(--foreground));
+        font-size:.68rem;
+        font-weight:700;
+    }
+    .release-hero-tab[data-active="true"] .release-hero-number{
+        border-color:color-mix(in srgb,var(--hero-primary) 50%,hsl(var(--border)));
+        color:var(--hero-primary);
+    }
+
+    @media(max-width:759px){
+        .release-hero-shell{min-height:auto}
+        .release-device{transform:none}
+        .release-hero-tabs{grid-template-columns:1fr}
+        .release-hero-tab{padding:.7rem}
+    }
+    @media(prefers-reduced-motion:reduce){
+        .release-hero-slide{transition:none}
+    }
+
+    /* Slide 1 growth illustration */
+    .release-growth-wrap{
+        position:relative;
+        display:flex;
+        min-width:0;
+        align-items:center;
+        justify-content:center;
+        padding:.25rem 0;
+    }
+    .release-growth-aura{
+        position:absolute;
+        inset:14% 10%;
+        border-radius:9999px;
+        background:color-mix(in srgb,var(--brand-primary) 19%,transparent);
+        filter:blur(78px);
+        opacity:.62;
+        pointer-events:none;
+    }
+    .release-growth-svg{
+        position:relative;
+        z-index:1;
+        width:min(100%,46rem);
+        height:auto;
+        overflow:visible;
+    }
+
+    .growth-panel-stop-a{stop-color:hsl(var(--card))}
+    .growth-panel-stop-b{stop-color:color-mix(in srgb,var(--brand-primary) 5%,hsl(var(--background)))}
+    .dark .growth-panel-stop-a{stop-color:#111827}
+    .dark .growth-panel-stop-b{stop-color:#07101b}
+
+    .growth-bar-stop-a{stop-color:color-mix(in srgb,var(--brand-primary) 72%,white)}
+    .growth-bar-stop-b{stop-color:var(--brand-primary)}
+
+    .growth-tile-stop-a{stop-color:hsl(var(--card))}
+    .growth-tile-stop-b{stop-color:color-mix(in srgb,var(--brand-primary) 5%,hsl(var(--muted)))}
+    .dark .growth-tile-stop-a{stop-color:#152033}
+    .dark .growth-tile-stop-b{stop-color:#0a1220}
+
+    .growth-panel-stroke{
+        stroke:color-mix(in srgb,var(--brand-primary) 26%,hsl(var(--border)));
+        stroke-width:2;
+    }
+    .growth-grid line{
+        stroke:hsl(var(--border));
+        stroke-width:1;
+        stroke-dasharray:5 8;
+    }
+    .growth-badge-bg{
+        fill:hsl(var(--card)/.92);
+        stroke:color-mix(in srgb,var(--brand-primary) 28%,hsl(var(--border)));
+        stroke-width:2;
+    }
+    .dark .growth-badge-bg{fill:rgba(10,18,31,.88)}
+    .growth-accent-fill{fill:var(--brand-primary)}
+    .growth-accent-stroke{
+        fill:none;
+        stroke:var(--brand-primary);
+        stroke-width:4;
+        stroke-linecap:round;
+        stroke-linejoin:round;
+    }
+    .growth-arrow-mark{
+        fill:none;
+        stroke:#fff;
+        stroke-width:5;
+        stroke-linecap:round;
+        stroke-linejoin:round;
+    }
+    .growth-count-text{
+        fill:hsl(var(--foreground));
+        font-size:34px;
+        font-weight:800;
+        letter-spacing:-1.4px;
+    }
+    .growth-label-text{
+        fill:hsl(var(--muted-foreground));
+        font-size:22px;
+        font-weight:500;
+    }
+    .release-growth-line{
+        fill:none;
+        stroke:color-mix(in srgb,var(--brand-primary) 72%,white);
+        stroke-width:5;
+        stroke-linecap:round;
+        stroke-linejoin:round;
+        filter:url(#growthGlow);
+    }
+    .growth-node{
+        fill:hsl(var(--background));
+        stroke:color-mix(in srgb,var(--brand-primary) 64%,white);
+        stroke-width:5;
+    }
+    .growth-tile-stroke{
+        stroke:color-mix(in srgb,var(--brand-primary) 20%,hsl(var(--border)));
+        stroke-width:1.5;
+    }
+    .growth-icon-muted-fill{fill:hsl(var(--muted-foreground)/.62)}
+    .growth-panel-icon-fill{fill:hsl(var(--card))}
+    .growth-icon-muted-stroke{
+        fill:none;
+        stroke:hsl(var(--muted-foreground));
+        stroke-width:5;
+        stroke-linecap:round;
+    }
+    .release-growth-orbit{
+        fill:none;
+        stroke:color-mix(in srgb,var(--brand-primary) 48%,transparent);
+        stroke-width:2.3;
+        stroke-linecap:round;
+        filter:url(#growthGlow);
+    }
+    .release-growth-orbit-b{opacity:.48}
+
+    /* entrance / counting emphasis */
+    .release-hero-slide[data-active="true"] .growth-bar{
+        transform-box:fill-box;
+        transform-origin:center bottom;
+        animation:growthBarRise .72s cubic-bezier(.2,.8,.2,1) both;
+    }
+    .release-hero-slide[data-active="true"] .growth-bar-1{animation-delay:.08s}
+    .release-hero-slide[data-active="true"] .growth-bar-2{animation-delay:.15s}
+    .release-hero-slide[data-active="true"] .growth-bar-3{animation-delay:.22s}
+    .release-hero-slide[data-active="true"] .growth-bar-4{animation-delay:.29s}
+    .release-hero-slide[data-active="true"] .growth-bar-5{animation-delay:.36s}
+    .release-hero-slide[data-active="true"] .growth-bar-6{animation-delay:.43s}
+
+    .release-hero-slide[data-active="true"] .release-growth-line{
+        stroke-dasharray:900;
+        stroke-dashoffset:900;
+        animation:growthLineDraw 1.25s .22s ease forwards;
+    }
+    .release-hero-slide[data-active="true"] .growth-node{
+        transform-box:fill-box;
+        transform-origin:center;
+        animation:growthNodePop .38s ease both;
+    }
+    .release-hero-slide[data-active="true"] .growth-node-1{animation-delay:.35s}
+    .release-hero-slide[data-active="true"] .growth-node-2{animation-delay:.48s}
+    .release-hero-slide[data-active="true"] .growth-node-3{animation-delay:.61s}
+    .release-hero-slide[data-active="true"] .growth-node-4{animation-delay:.74s}
+    .release-hero-slide[data-active="true"] .growth-node-5{animation-delay:.87s}
+    .release-hero-slide[data-active="true"] .growth-node-6{animation-delay:1s}
+
+    .release-growth-badge{
+        transform-box:fill-box;
+        transform-origin:center;
+    }
+    .release-growth-badge[data-count-complete="true"]{
+        animation:growthBadgeBounce .58s cubic-bezier(.2,.95,.3,1.35);
+    }
+    .release-growth-orbit-dot{
+        animation:growthOrbitPulse 2.6s ease-in-out infinite;
+    }
+
+    @keyframes growthBarRise{
+        from{transform:scaleY(.08);opacity:.25}
+        to{transform:scaleY(1);opacity:1}
+    }
+    @keyframes growthLineDraw{
+        to{stroke-dashoffset:0}
+    }
+    @keyframes growthNodePop{
+        0%{transform:scale(.2);opacity:0}
+        72%{transform:scale(1.18);opacity:1}
+        100%{transform:scale(1);opacity:1}
+    }
+    @keyframes growthBadgeBounce{
+        0%{transform:translateY(0) scale(1)}
+        38%{transform:translateY(-9px) scale(1.035)}
+        68%{transform:translateY(3px) scale(.995)}
+        100%{transform:translateY(0) scale(1)}
+    }
+    @keyframes growthOrbitPulse{
+        0%,100%{opacity:.46}
+        50%{opacity:1}
+    }
+
+    @media(max-width:759px){
+        .release-growth-svg{width:min(100%,39rem)}
+    }
+    @media(prefers-reduced-motion:reduce){
+        .release-hero-slide[data-active="true"] .growth-bar,
+        .release-hero-slide[data-active="true"] .release-growth-line,
+        .release-hero-slide[data-active="true"] .growth-node,
+        .release-growth-badge[data-count-complete="true"],
+        .release-growth-orbit-dot{
+            animation:none !important;
+        }
+    }
 </style>
 
 
-<section class="home-hero relative overflow-hidden border-b border-white/10 text-white">
-    <div class="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <div class="absolute -left-20 top-10 h-80 w-80 rounded-full opacity-50" style="background:color-mix(in srgb,var(--brand-primary) 28%,transparent);filter:blur(120px)"></div>
-        <div class="absolute right-[6%] top-12 h-72 w-72 rounded-full opacity-30" style="background:color-mix(in srgb,var(--brand-primary) 20%,transparent);filter:blur(120px)"></div>
-        <div class="absolute bottom-[-9rem] left-[38%] h-72 w-72 rounded-full opacity-20" style="background:#2563eb;filter:blur(135px)"></div>
-    </div>
+<section class="release-hero border-b border-border" data-release-hero>
+    <div class="relative mx-auto max-w-7xl px-4 pb-8 pt-8 sm:px-6 sm:pb-10 sm:pt-10 lg:px-8">
+        <div class="release-hero-shell">
 
-    <div class="relative mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[.86fr_1.14fr] lg:px-8 lg:py-24 xl:gap-16">
-        <div class="flex flex-col justify-center">
-            <div class="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-black/15 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[.16em] text-white/70 backdrop-blur">
-                <span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full opacity-35" style="background:var(--brand-primary)"></span><span class="relative inline-flex h-2 w-2 rounded-full" style="background:var(--brand-primary)"></span></span>
-                {{ localize('ui.r3.home.badge', 'Markets · Intelligence · Controlled execution') }}
-            </div>
+            {{-- 01 / MARKETS --}}
+                        <article class="release-hero-slide" data-release-slide="0" data-active="true">
+                <div class="release-hero-layout">
+                    <div class="release-hero-copy">
+                        <p class="text-[10px] font-semibold uppercase tracking-[.2em] text-muted-foreground">
+                            {{ localize('ui.release.hero.markets.eyebrow', 'One platform. More opportunities.') }}
+                        </p>
 
-            <p class="mt-8 text-xs font-semibold uppercase tracking-[.2em] text-white/60">{{ $company }}</p>
-            <h1 class="mt-3 max-w-3xl text-5xl font-semibold tracking-[-.06em] sm:text-6xl lg:text-[4.6rem] lg:leading-[.93]">{{ $tagline }}</h1>
-            <p class="mt-6 max-w-2xl text-base leading-7 text-white/65 sm:text-lg">{{ $description }}</p>
+                        <h1 class="release-hero-title mt-4 font-semibold">
+                            {{ localize('ui.release.hero.markets.trade', 'Trade') }}
+                            <span class="release-hero-primary-text">{{ localize('ui.release.hero.markets.smarter', 'Smarter.') }}</span>
+                            <span class="block">
+                                {{ localize('ui.release.hero.markets.invest', 'Invest With') }}
+                                <span class="release-hero-primary-text">{{ localize('ui.release.hero.markets.confidence', 'Confidence.') }}</span>
+                            </span>
+                        </h1>
 
-            <div class="mt-9 flex flex-col gap-3 sm:flex-row">
-                <a href="{{ $accountUrl }}" class="inline-flex h-12 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:brightness-110" style="background:var(--brand-primary);box-shadow:0 18px 44px color-mix(in srgb,var(--brand-primary) 24%,transparent)"><i data-lucide="arrow-up-right" class="h-4 w-4"></i>{{ auth()->check() ? localize('ui.common.open_workspace', 'Open workspace') : localize('ui.nav.create_account', 'Create account') }}</a>
-                <a href="#markets" class="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[.04] px-5 text-sm font-semibold text-white/90 backdrop-blur transition hover:bg-white/[.08]">{{ localize('ui.r3.home.hero_explore', 'Explore the platform') }}<i data-lucide="chevron-down" class="h-4 w-4"></i></a>
-            </div>
+                        <p class="mt-5 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
+                            {{ localize('ui.release.hero.markets.copy', 'Research global stocks, forex, crypto and commodities, access investment products, and do more through one connected financial platform.') }}
+                        </p>
 
-            <div class="mt-10 grid max-w-2xl grid-cols-3 overflow-hidden rounded-2xl border border-white/10 bg-black/15 backdrop-blur">
-                @foreach([
-                    [localize('ui.r3.home.metric.instruments', 'Market instruments'), $platformStats['instruments'] ?? 0],
-                    [localize('ui.r3.home.metric.signals', 'Active signals'), $platformStats['signals'] ?? 0],
-                    [localize('ui.r3.home.metric.investments', 'Investment products'), $platformStats['investments'] ?? 0],
-                ] as [$label,$value])
-                    <div class="border-r border-white/10 p-4 last:border-r-0 sm:p-5">
-                        <p class="text-2xl font-semibold tabular-nums sm:text-3xl">{{ number_format($value) }}</p>
-                        <p class="mt-1 text-[8px] uppercase tracking-[.14em] text-white/45 sm:text-[9px]">{{ $label }}</p>
+                        <div class="mt-7 flex flex-col gap-3 sm:flex-row">
+                            <a href="{{ $marketUrl }}" class="release-hero-primary-button inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold">
+                                {{ localize('ui.release.hero.explore', 'Explore Market') }}
+                                <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                            </a>
+                            <a href="{{ $registerUrl }}" class="release-hero-secondary-button inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold">
+                                {{ auth()->check() ? localize('ui.common.open_workspace', 'Open workspace') : localize('ui.release.hero.register', 'Register') }}
+                            </a>
+                        </div>
+
+                        <div class="mt-6 flex flex-wrap gap-x-5 gap-y-2.5 text-[9px] font-medium text-muted-foreground sm:text-[10px]">
+                            <span class="inline-flex items-center gap-2">
+                                <i data-lucide="shield-check" class="h-3.5 w-3.5" style="color:var(--brand-primary)"></i>
+                                {{ localize('ui.release.hero.controlled', 'Secure & controlled access') }}
+                            </span>
+                            <span class="inline-flex items-center gap-2">
+                                <i data-lucide="chart-no-axes-combined" class="h-3.5 w-3.5" style="color:var(--brand-primary)"></i>
+                                {{ localize('ui.release.hero.realtime', 'Multi-asset market data') }}
+                            </span>
+                            <span class="inline-flex items-center gap-2">
+                                <i data-lucide="layers-3" class="h-3.5 w-3.5" style="color:var(--brand-primary)"></i>
+                                {{ localize('ui.release.hero.products', 'Distinct product systems') }}
+                            </span>
+                        </div>
                     </div>
-                @endforeach
-            </div>
+
+                    <div class="release-growth-wrap" aria-label="Growth and financial opportunity illustration">
+                        <div class="release-growth-aura" aria-hidden="true"></div>
+
+                        <svg class="release-growth-svg" viewBox="0 0 760 560" role="img" aria-labelledby="releaseGrowthTitle releaseGrowthDesc">
+                            <title id="releaseGrowthTitle">{{ localize('ui.release.hero.growth.title', 'Financial growth illustration') }}</title>
+                            <desc id="releaseGrowthDesc">{{ localize('ui.release.hero.growth.desc', 'An illustrative growth panel with rising bars and an upward curve.') }}</desc>
+
+                            <defs>
+                                <linearGradient id="growthPanelFill" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0%" class="growth-panel-stop-a"/>
+                                    <stop offset="100%" class="growth-panel-stop-b"/>
+                                </linearGradient>
+
+                                <linearGradient id="growthBarFill" x1="0" y1="1" x2="0" y2="0">
+                                    <stop offset="0%" class="growth-bar-stop-a"/>
+                                    <stop offset="100%" class="growth-bar-stop-b"/>
+                                </linearGradient>
+
+                                <linearGradient id="growthTileFill" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0%" class="growth-tile-stop-a"/>
+                                    <stop offset="100%" class="growth-tile-stop-b"/>
+                                </linearGradient>
+
+                                <filter id="growthGlow" x="-40%" y="-40%" width="180%" height="180%">
+                                    <feGaussianBlur stdDeviation="8" result="blur"/>
+                                    <feMerge>
+                                        <feMergeNode in="blur"/>
+                                        <feMergeNode in="SourceGraphic"/>
+                                    </feMerge>
+                                </filter>
+
+                                <filter id="growthSoftShadow" x="-20%" y="-20%" width="140%" height="150%">
+                                    <feDropShadow dx="0" dy="18" stdDeviation="18" flood-opacity=".22"/>
+                                </filter>
+                            </defs>
+
+                            <g class="release-growth-card" filter="url(#growthSoftShadow)">
+                                <rect x="54" y="54" width="650" height="446" rx="38" fill="url(#growthPanelFill)" class="growth-panel-stroke"/>
+
+                                <g class="growth-grid" opacity=".34">
+                                    <line x1="120" y1="160" x2="650" y2="160"/>
+                                    <line x1="120" y1="226" x2="650" y2="226"/>
+                                    <line x1="120" y1="292" x2="650" y2="292"/>
+                                    <line x1="120" y1="358" x2="650" y2="358"/>
+                                    <line x1="178" y1="142" x2="178" y2="372"/>
+                                    <line x1="270" y1="142" x2="270" y2="372"/>
+                                    <line x1="362" y1="142" x2="362" y2="372"/>
+                                    <line x1="454" y1="142" x2="454" y2="372"/>
+                                    <line x1="546" y1="142" x2="546" y2="372"/>
+                                </g>
+
+                                <g class="release-growth-badge" data-growth-badge>
+                                    <rect x="112" y="90" width="254" height="78" rx="23" class="growth-badge-bg"/>
+                                    <circle cx="150" cy="129" r="24" class="growth-accent-fill"/>
+                                    <path d="M140 138 L160 118 M149 118 H160 V129" class="growth-arrow-mark"/>
+                                    <text x="184" y="137" class="growth-count-text">
+                                        +<tspan data-growth-count>0</tspan>%
+                                    </text>
+                                    <text x="294" y="137" class="growth-label-text">growth</text>
+                                </g>
+
+                                <g class="release-growth-bars" filter="url(#growthGlow)">
+                                    <rect class="growth-bar growth-bar-1" x="142" y="320" width="56" height="52" rx="12" fill="url(#growthBarFill)"/>
+                                    <rect class="growth-bar growth-bar-2" x="228" y="282" width="56" height="90" rx="12" fill="url(#growthBarFill)"/>
+                                    <rect class="growth-bar growth-bar-3" x="314" y="250" width="56" height="122" rx="12" fill="url(#growthBarFill)"/>
+                                    <rect class="growth-bar growth-bar-4" x="400" y="210" width="56" height="162" rx="12" fill="url(#growthBarFill)"/>
+                                    <rect class="growth-bar growth-bar-5" x="486" y="164" width="56" height="208" rx="12" fill="url(#growthBarFill)"/>
+                                    <rect class="growth-bar growth-bar-6" x="572" y="112" width="56" height="260" rx="12" fill="url(#growthBarFill)"/>
+                                </g>
+
+                                <path
+                                    class="release-growth-line"
+                                    d="M150 326 C188 304 207 286 236 294 C267 303 286 266 322 260 C355 255 369 280 404 244 C438 210 456 221 492 194 C523 171 537 152 570 128 C594 111 612 94 638 78"
+                                />
+
+                                <g class="release-growth-nodes" filter="url(#growthGlow)">
+                                    <circle class="growth-node growth-node-1" cx="150" cy="326" r="8"/>
+                                    <circle class="growth-node growth-node-2" cx="236" cy="294" r="8"/>
+                                    <circle class="growth-node growth-node-3" cx="322" cy="260" r="8"/>
+                                    <circle class="growth-node growth-node-4" cx="404" cy="244" r="8"/>
+                                    <circle class="growth-node growth-node-5" cx="492" cy="194" r="8"/>
+                                    <circle class="growth-node growth-node-6" cx="570" cy="128" r="8"/>
+                                    <path d="M630 89 L650 67 L644 99 Z" class="growth-accent-fill"/>
+                                </g>
+
+                                <g class="release-growth-tiles">
+                                    <g transform="translate(116 392)">
+                                        <rect width="118" height="82" rx="18" fill="url(#growthTileFill)" class="growth-tile-stroke"/>
+                                        <rect x="24" y="43" width="11" height="18" rx="3" class="growth-accent-fill"/>
+                                        <rect x="44" y="33" width="11" height="28" rx="3" class="growth-accent-fill"/>
+                                        <rect x="64" y="22" width="11" height="39" rx="3" class="growth-accent-fill"/>
+                                    </g>
+
+                                    <g transform="translate(246 392)">
+                                        <rect width="118" height="82" rx="18" fill="url(#growthTileFill)" class="growth-tile-stroke"/>
+                                        <circle cx="59" cy="42" r="22" class="growth-icon-muted-fill"/>
+                                        <path d="M59 42 L59 20 A22 22 0 0 1 81 42 Z" class="growth-panel-icon-fill"/>
+                                    </g>
+
+                                    <g transform="translate(376 392)">
+                                        <rect width="118" height="82" rx="18" fill="url(#growthTileFill)" class="growth-tile-stroke"/>
+                                        <rect x="39" y="20" width="40" height="43" rx="8" fill="none" class="growth-accent-stroke"/>
+                                        <line x1="49" y1="33" x2="69" y2="33" class="growth-accent-stroke"/>
+                                        <line x1="49" y1="43" x2="69" y2="43" class="growth-accent-stroke"/>
+                                        <line x1="49" y1="53" x2="63" y2="53" class="growth-accent-stroke"/>
+                                    </g>
+
+                                    <g transform="translate(506 392)">
+                                        <rect width="118" height="82" rx="18" fill="url(#growthTileFill)" class="growth-tile-stroke"/>
+                                        <circle cx="59" cy="41" r="14" fill="none" class="growth-icon-muted-stroke"/>
+                                        <path d="M59 15 V24 M59 58 V67 M33 41 H42 M76 41 H85 M41 23 L47 29 M71 53 L77 59 M77 23 L71 29 M47 53 L41 59" class="growth-icon-muted-stroke"/>
+                                    </g>
+                                </g>
+
+                                <path class="release-growth-orbit release-growth-orbit-a" d="M24 370 C148 456 535 468 730 205"/>
+                                <path class="release-growth-orbit release-growth-orbit-b" d="M36 402 C248 522 609 428 738 258"/>
+                                <circle cx="72" cy="394" r="5" class="growth-accent-fill release-growth-orbit-dot"/>
+                                <circle cx="690" cy="292" r="5" class="growth-accent-fill release-growth-orbit-dot"/>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+            </article>
+
+            {{-- 02 / AUTOMOTIVE --}}
+            <article class="release-hero-slide" data-release-slide="1" data-active="false">
+                <div class="release-hero-layout">
+                    <div class="release-hero-copy">
+                        <p class="text-[10px] font-semibold uppercase tracking-[.2em] text-muted-foreground">{{ localize('ui.release.hero.auto.eyebrow', 'Digital commerce · automotive inventory') }}</p>
+                        <h2 class="release-hero-title mt-4 font-semibold">
+                            {{ localize('ui.release.hero.auto.discover', 'Discover') }}
+                            <span class="release-hero-primary-text">{{ localize('ui.release.hero.auto.premium', 'Premium') }}</span>
+                            <span class="block">{{ localize('ui.release.hero.auto.vehicles', 'Vehicle') }}
+                                <span class="release-hero-secondary-text">{{ localize('ui.release.hero.auto.inventory', 'Inventory.') }}</span>
+                            </span>
+                        </h2>
+                        <p class="mt-5 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">{{ localize('ui.release.hero.auto.copy', 'Browse available vehicles through the same connected platform while commerce remains distinct from your financial market activity.') }}</p>
+                        <div class="mt-7 flex flex-col gap-3 sm:flex-row">
+                            <a href="{{ $automotiveUrl }}" class="release-hero-primary-button inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold">{{ localize('ui.release.hero.auto.browse', 'Browse Inventory') }}<i data-lucide="arrow-right" class="h-4 w-4"></i></a>
+                            <a href="{{ $registerUrl }}" class="release-hero-secondary-button inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold">{{ auth()->check() ? localize('ui.common.open_workspace', 'Open workspace') : localize('ui.release.hero.register', 'Register') }}</a>
+                        </div>
+                    </div>
+
+                    <div class="release-device-wrap">
+                        <div class="release-device-glow"></div>
+                        <div class="release-device">
+                            <div class="release-device-screen">
+                                <div class="release-screen-top">
+                                    <div class="flex items-center gap-2">
+                                        <span class="release-ui-icon flex h-7 w-7 items-center justify-center rounded-lg"><i data-lucide="car-front" class="h-3.5 w-3.5"></i></span>
+                                        <div><p class="text-[7px] uppercase tracking-[.14em] text-muted-foreground">{{ $company }}</p><p class="text-[10px] font-semibold text-foreground">{{ localize('ui.release.hero.auto.visual', 'Automotive Inventory') }}</p></div>
+                                    </div>
+                                    <span class="rounded-full border border-border bg-card px-2 py-1 text-[7px] font-semibold text-muted-foreground">{{ number_format($platformStats['automotive_inventory'] ?? 0) }} {{ localize('ui.release.hero.auto.available', 'available') }}</span>
+                                </div>
+
+                                <div class="release-screen-body">
+                                    <div class="grid gap-3 sm:grid-cols-3">
+                                        @forelse($featuredCars as $car)
+                                            <a href="{{ route('cars.show', $car->id) }}" class="group overflow-hidden rounded-xl border border-border bg-card">
+                                                <div class="aspect-[4/3] overflow-hidden bg-muted">
+                                                    @if($car->first_image)
+                                                        <img src="{{ str_starts_with($car->first_image, 'http') ? $car->first_image : asset('storage/'.$car->first_image) }}" alt="{{ $car->title }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" loading="lazy" decoding="async">
+                                                    @else
+                                                        <div class="flex h-full items-center justify-center"><i data-lucide="car-front" class="h-7 w-7 text-muted-foreground"></i></div>
+                                                    @endif
+                                                </div>
+                                                <div class="p-2.5">
+                                                    <p class="truncate text-[9px] font-semibold text-foreground">{{ $car->title }}</p>
+                                                    <p class="mt-1 text-[7px] text-muted-foreground">{{ $car->year }} · {{ $car->make }}</p>
+                                                    <p class="mt-2 text-[10px] font-semibold tabular-nums text-foreground">{{ currency_symbol() }}{{ number_format((float)$car->price,0) }}</p>
+                                                </div>
+                                            </a>
+                                        @empty
+                                            @foreach([1,2,3] as $slot)
+                                                <div class="overflow-hidden rounded-xl border border-dashed border-border bg-card">
+                                                    <div class="flex aspect-[4/3] items-center justify-center bg-muted/40"><i data-lucide="car-front" class="h-7 w-7 text-muted-foreground"></i></div>
+                                                    <div class="p-2.5"><p class="text-[9px] font-semibold text-foreground">{{ localize('ui.release.hero.auto.placeholder', 'Vehicle listing') }}</p><p class="mt-1 text-[7px] text-muted-foreground">{{ localize('ui.release.hero.auto.ready', 'Ready for publishing') }}</p></div>
+                                                </div>
+                                            @endforeach
+                                        @endforelse
+                                    </div>
+                                    <div class="mt-3 grid grid-cols-3 gap-2">
+                                        @foreach([['shield-check','Listing flow'],['credit-card','Checkout'],['history','Purchase records']] as [$icon,$label])
+                                            <div class="release-ui-panel px-3 py-2.5"><i data-lucide="{{ $icon }}" class="h-3 w-3" style="color:var(--brand-primary)"></i><p class="mt-1.5 text-[8px] font-semibold text-foreground">{{ $label }}</p></div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="release-device-hinge"></div>
+                            <div class="release-device-base"></div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+
+            {{-- 03 / DASHBOARD EXPERIENCE --}}
+            <article class="release-hero-slide" data-release-slide="2" data-active="false">
+                <div class="release-hero-layout">
+                    <div class="release-hero-copy">
+                        <p class="text-[10px] font-semibold uppercase tracking-[.2em] text-muted-foreground">{{ localize('ui.release.hero.dashboard.eyebrow', 'Trading · investments · account experience') }}</p>
+                        <h2 class="release-hero-title mt-4 font-semibold">
+                            {{ localize('ui.release.hero.dashboard.your', 'Your') }}
+                            <span class="release-hero-primary-text">{{ localize('ui.release.hero.dashboard.financial', 'Financial') }}</span>
+                            <span class="block">{{ localize('ui.release.hero.dashboard.workspace', 'Workspace,') }}
+                                <span class="release-hero-secondary-text">{{ localize('ui.release.hero.dashboard.connected', 'Connected.') }}</span>
+                            </span>
+                        </h2>
+                        <p class="mt-5 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">{{ localize('ui.release.hero.dashboard.copy', 'Move from market discovery to trading, investment products, automation and account records through dedicated workspaces under one profile.') }}</p>
+                        <div class="mt-7 flex flex-col gap-3 sm:flex-row">
+                            <a href="{{ $investmentUrl }}" class="release-hero-primary-button inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold">{{ localize('ui.release.hero.dashboard.invest', 'Explore Investments') }}<i data-lucide="arrow-right" class="h-4 w-4"></i></a>
+                            <a href="{{ $workspaceUrl }}" class="release-hero-secondary-button inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold">{{ auth()->check() ? localize('ui.common.open_workspace', 'Open workspace') : localize('ui.release.hero.register', 'Register') }}</a>
+                        </div>
+                    </div>
+
+                    <div class="release-device-wrap">
+                        <div class="release-device-glow"></div>
+                        <div class="release-device">
+                            <div class="release-device-screen">
+                                <div class="release-screen-top">
+                                    <div class="flex items-center gap-2">
+                                        <span class="release-ui-icon flex h-7 w-7 items-center justify-center rounded-lg"><i data-lucide="layout-dashboard" class="h-3.5 w-3.5"></i></span>
+                                        <div><p class="text-[7px] uppercase tracking-[.14em] text-muted-foreground">{{ $company }}</p><p class="text-[10px] font-semibold text-foreground">{{ localize('ui.release.hero.dashboard.visual', 'Trading & Investment') }}</p></div>
+                                    </div>
+                                    <span class="rounded-full border border-border bg-card px-2 py-1 text-[7px] font-semibold text-muted-foreground">{{ localize('ui.release.hero.dashboard.account', 'Account workspace') }}</span>
+                                </div>
+
+                                <div class="release-screen-body">
+                                    <div class="grid gap-3 sm:grid-cols-[1.2fr_.8fr]">
+                                        <div class="release-ui-panel p-3.5">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <div><p class="text-[7px] uppercase tracking-[.13em] text-muted-foreground">{{ localize('ui.release.hero.dashboard.execution', 'Market execution') }}</p><p class="mt-1 text-sm font-semibold text-foreground">{{ localize('ui.release.hero.dashboard.multiasset', 'Multi-asset trading') }}</p></div>
+                                                <span class="release-ui-icon flex h-8 w-8 items-center justify-center rounded-lg"><i data-lucide="chart-candlestick" class="h-3.5 w-3.5"></i></span>
+                                            </div>
+                                            <div class="mt-3 h-28 rounded-xl bg-muted/30 p-2">
+                                                <svg viewBox="0 0 500 120" preserveAspectRatio="none" class="h-full w-full" aria-hidden="true">
+                                                    <line x1="0" y1="30" x2="500" y2="30" stroke="hsl(var(--border))" stroke-opacity=".55"/>
+                                                    <line x1="0" y1="61" x2="500" y2="61" stroke="hsl(var(--border))" stroke-opacity=".55"/>
+                                                    <line x1="0" y1="92" x2="500" y2="92" stroke="hsl(var(--border))" stroke-opacity=".55"/>
+                                                    <path d="M0 96 C34 88,58 98,86 76 C116 54,143 69,174 51 C204 34,232 50,261 39 C291 26,320 37,351 23 C384 10,414 30,444 17 C469 8,486 11,500 6" class="release-chart-line"/>
+                                                </svg>
+                                            </div>
+                                            <div class="mt-3 grid grid-cols-3 gap-2">
+                                                @foreach([['Signals',$platformStats['signals'] ?? 0],['Bots',$platformStats['bots'] ?? 0],['Copy',$platformStats['copy_strategies'] ?? 0]] as [$label,$value])
+                                                    <div class="rounded-lg border border-border bg-card px-2.5 py-2"><p class="text-[7px] uppercase tracking-[.09em] text-muted-foreground">{{ $label }}</p><p class="mt-1 text-[10px] font-semibold tabular-nums text-foreground">{{ number_format($value) }}</p></div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+
+                                        <div class="grid gap-2">
+                                            <div class="release-ui-panel p-3">
+                                                <div class="flex items-center justify-between"><div><p class="text-[7px] uppercase tracking-[.12em] text-muted-foreground">{{ localize('ui.release.hero.dashboard.investments', 'Investment products') }}</p><p class="mt-1 text-lg font-semibold tabular-nums text-foreground">{{ number_format($platformStats['investments'] ?? 0) }}</p></div><span class="release-ui-icon flex h-8 w-8 items-center justify-center rounded-lg"><i data-lucide="gem" class="h-3.5 w-3.5"></i></span></div>
+                                            </div>
+                                            @foreach($featuredInvestments as $investment)
+                                                <div class="release-ui-panel p-3">
+                                                    <div class="flex items-center justify-between gap-2">
+                                                        <div class="min-w-0"><p class="truncate text-[9px] font-semibold text-foreground">{{ $investment->symbol }}</p><p class="mt-1 truncate text-[7px] text-muted-foreground">{{ $investment->name }}</p></div>
+                                                        <div class="shrink-0 text-right"><p class="text-[8px] font-semibold tabular-nums text-foreground">{{ number_format((float)$investment->current_price,2) }}</p><p class="mt-1 text-[7px] {{ $investment->change_percent >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400' }}">{{ $investment->change_percent >= 0 ? '+' : '' }}{{ number_format($investment->change_percent,2) }}%</p></div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="release-device-hinge"></div>
+                            <div class="release-device-base"></div>
+                        </div>
+                    </div>
+                </div>
+            </article>
         </div>
 
-        <div class="flex items-center">
-            <div class="home-pulse-glow home-pulse-shell relative w-full overflow-hidden rounded-[2rem] border border-white/10 shadow-2xl backdrop-blur-xl">
-                <div class="relative flex flex-col gap-4 border-b border-white/10 px-5 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
-                    <div class="max-w-xl">
-                        <div class="flex items-center gap-2">
-                            <span class="relative flex h-2 w-2"><span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-35"></span><span class="relative inline-flex h-2 w-2 rounded-full bg-emerald-400"></span></span>
-                            <p class="text-[11px] font-semibold uppercase tracking-[.16em] text-white/60">{{ localize('ui.r3.home.snapshot_eyebrow', 'Market activity') }}</p>
-                        </div>
-                        <h2 class="mt-2 text-xl font-semibold tracking-[-.025em] sm:text-2xl">{{ localize('ui.r3.home.snapshot_title', 'Tesla, Gold and Bitcoin at a glance.') }}</h2>
-                        <p class="mt-2 max-w-lg text-[13px] leading-6 text-white/55">{{ localize('ui.r3.home.snapshot_copy', 'Current prices, market movement, ranges and recent history for Tesla, Gold and Bitcoin.') }}</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2 lg:min-w-[15rem]">
-                        <div class="home-pulse-chip rounded-xl px-3 py-2.5"><p class="text-[9px] font-semibold uppercase tracking-[.11em] text-white/45">{{ localize('ui.r3.home.snapshot_real_data', 'Market data') }}</p><p class="mt-1 text-[12px] font-semibold text-emerald-300">{{ localize('ui.r3.home.market_status.available', 'Available') }}</p></div>
-                        <div class="home-pulse-chip rounded-xl px-3 py-2.5"><p class="text-[9px] font-semibold uppercase tracking-[.11em] text-white/45">{{ localize('ui.r3.home.featured_assets', 'Selected markets') }}</p><p class="mt-1 text-[12px] font-semibold text-white/85">3</p></div>
-                    </div>
+        {{-- 3 carousel preview tabs --}}
+        <div class="release-hero-tabs">
+            <button type="button" class="release-hero-tab" data-release-thumb="0" data-active="true">
+                <div class="flex items-center gap-3">
+                    <span class="release-hero-number">01</span>
+                    <div class="min-w-0"><p class="truncate text-xs font-semibold text-foreground">{{ localize('ui.release.hero.tab1', 'Markets & Assets') }}</p><p class="mt-1 truncate text-[8px] text-muted-foreground">{{ localize('ui.release.hero.tab1copy', 'Trade global assets with market intelligence') }}</p></div>
+                    <i data-lucide="chart-no-axes-combined" class="ml-auto hidden h-4 w-4 text-muted-foreground sm:block"></i>
                 </div>
-
-                <div class="relative p-4 sm:p-5">
-                    <div class="grid gap-3 lg:grid-cols-3">
-                        @foreach($heroMarkets as $market)
-                            @php
-                                $available = (bool) ($market['available'] ?? false);
-                                $points = $available ? $sparklinePoints($market['quotes'] ?? [], 320, 112) : '';
-                                $pulseAccent = match($market['asset_class'] ?? '') {
-                                    'stock' => '#fb7185',
-                                    'commodity' => '#fbbf24',
-                                    'crypto' => '#a78bfa',
-                                    default => '#38bdf8',
-                                };
-                                $assetLabel = localize('ui.r3.home.asset.'.($market['asset_class'] ?? 'market'), $market['asset_label'] ?? 'Market');
-                                $statusKey = 'ui.r3.home.market_status.'.($market['status'] ?? 'available');
-                                $trend = strtolower((string) ($market['trend'] ?? 'neutral'));
-                                $trendKey = 'ui.r3.home.proof.trend_'.$trend;
-                                $rangeIs20d = ($market['range_kind'] ?? '') === '20d';
-                                $activityCode = (string) ($market['activity_code'] ?? 'volume');
-                                $updated = !empty($market['updated_at']) ? \Carbon\Carbon::parse($market['updated_at'])->format('M j · H:i') : '—';
-                            @endphp
-                            <article class="home-pulse-card home-proof-rich group rounded-[1.45rem] p-4 sm:p-5" style="--pulse-accent:{{ $pulseAccent }}">
-                                @if($available)
-                                    <div class="relative flex h-full flex-col">
-                                        <div class="flex items-start justify-between gap-3">
-                                            <div class="min-w-0">
-                                                <span class="rounded-full px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[.12em]" style="background:color-mix(in srgb,var(--pulse-accent) 11%,transparent);color:color-mix(in srgb,var(--pulse-accent) 72%,white);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--pulse-accent) 16%,transparent)">{{ $assetLabel }}</span>
-                                                <h3 class="mt-4 truncate text-xl font-semibold tracking-[-.035em] sm:text-2xl">{{ $market['symbol'] }}</h3>
-                                                <p class="mt-1 truncate text-[11px] text-white/52">{{ $market['name'] }}</p>
-                                            </div>
-                                            <div class="shrink-0 text-right">
-                                                <p class="text-[9px] font-semibold uppercase tracking-[.11em] text-white/45">{{ localize('ui.r3.home.proof.current', 'Current') }}</p>
-                                                <p class="mt-1.5 text-lg font-semibold tabular-nums sm:text-xl">{{ $market['price_display'] }}</p>
-                                                <div class="mt-1 flex items-center justify-end gap-1.5 text-[11px] font-semibold {{ ($market['change'] ?? 0) >= 0 ? 'text-emerald-300' : 'text-red-300' }}">
-                                                    <span>{{ $market['change_amount_display'] ?? '' }}</span>
-                                                    <span>{{ ($market['change'] ?? 0) >= 0 ? '+' : '' }}{{ number_format((float) ($market['change'] ?? 0),2) }}%</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="home-pulse-card-chart home-proof-chart mt-5 h-32 overflow-hidden rounded-xl sm:h-36">
-                                            @if($points)
-                                                <svg viewBox="0 0 320 112" preserveAspectRatio="none" class="relative z-[1] h-full w-full" role="img" aria-label="{{ $market['symbol'] }} recent market history">
-                                                    <defs>
-                                                        <linearGradient id="proofFill{{ $loop->index }}" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="0%" stop-color="{{ ($market['change'] ?? 0) >= 0 ? '#34d399' : '#fb7185' }}" stop-opacity=".18" />
-                                                            <stop offset="100%" stop-color="{{ ($market['change'] ?? 0) >= 0 ? '#34d399' : '#fb7185' }}" stop-opacity="0" />
-                                                        </linearGradient>
-                                                    </defs>
-                                                    <line x1="0" y1="28" x2="320" y2="28" stroke="rgba(255,255,255,.045)" stroke-width="1" />
-                                                    <line x1="0" y1="56" x2="320" y2="56" stroke="rgba(255,255,255,.045)" stroke-width="1" />
-                                                    <line x1="0" y1="84" x2="320" y2="84" stroke="rgba(255,255,255,.045)" stroke-width="1" />
-                                                    <polygon points="0,112 {{ $points }} 320,112" fill="url(#proofFill{{ $loop->index }})" />
-                                                    <polyline points="{{ $points }}" fill="none" stroke="{{ ($market['change'] ?? 0) >= 0 ? '#34d399' : '#fb7185' }}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
-                                                </svg>
-                                            @else
-                                                <div class="relative z-[1] flex h-full items-center justify-center text-[11px] text-white/45">{{ localize('ui.r3.home.proof.history_building', 'Price history is building') }}</div>
-                                            @endif
-                                        </div>
-
-                                        <div class="mt-3 grid grid-cols-3 gap-2">
-                                            <div class="home-pulse-metric rounded-xl px-3 py-2.5">
-                                                <p class="text-[9px] uppercase tracking-[.1em] text-white/45">{{ localize('ui.r3.home.proof.trend', 'Trend') }}</p>
-                                                <p class="mt-1.5 text-[12px] font-semibold text-white/86">{{ localize($trendKey, ucfirst($trend)) }}</p>
-                                            </div>
-                                            <div class="home-pulse-metric rounded-xl px-3 py-2.5">
-                                                <p class="text-[9px] uppercase tracking-[.1em] text-white/45">{{ localize('ui.r3.home.proof.momentum', 'Momentum') }}</p>
-                                                <p class="mt-1.5 text-[12px] font-semibold {{ ($market['momentum_percent'] ?? 0) >= 0 ? 'text-emerald-300' : 'text-red-300' }}">{{ ($market['momentum_percent'] ?? 0) >= 0 ? '+' : '' }}{{ number_format((float) ($market['momentum_percent'] ?? 0),1) }}%</p>
-                                            </div>
-                                            <div class="home-pulse-metric rounded-xl px-3 py-2.5">
-                                                <p class="text-[9px] uppercase tracking-[.1em] text-white/45">{{ localize('ui.r3.home.proof.'.($activityCode === 'volume' ? 'volume' : 'spot_feed'), $activityCode === 'volume' ? 'Volume' : 'Spot feed') }}</p>
-                                                <p class="mt-1.5 truncate text-[12px] font-semibold text-white/86">{{ $market['activity_value'] ?? '—' }}</p>
-                                                @if(!empty($market['activity_meta_value']))<p class="mt-0.5 text-[9px] text-white/48">{{ $market['activity_meta_value'] }} {{ localize('ui.r3.home.proof.vs_average', 'vs avg') }}</p>@endif
-                                            </div>
-                                        </div>
-
-                                        <div class="mt-3 rounded-xl bg-white/[.025] px-3 py-3 ring-1 ring-inset ring-white/[.045]">
-                                            <div class="flex items-center justify-between gap-3 text-[9px] uppercase tracking-[.09em] text-white/46">
-                                                <span>{{ $rangeIs20d ? localize('ui.r3.home.proof.range_20d', '20D range') : localize('ui.r3.home.proof.day_range', 'Day range') }}</span>
-                                                <span class="text-white/48">{{ $market['range_low_display'] ?? '—' }} — {{ $market['range_high_display'] ?? '—' }}</span>
-                                            </div>
-                                            <div class="relative mt-2 h-1.5 rounded-full bg-white/[.07]">
-                                                <div class="absolute inset-y-0 left-0 rounded-full" style="width:{{ number_format((float) ($market['range_position'] ?? 50),2,'.','') }}%;background:linear-gradient(90deg,color-mix(in srgb,var(--pulse-accent) 35%,transparent),var(--pulse-accent))"></div>
-                                                <span class="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/60" style="left:{{ number_format((float) ($market['range_position'] ?? 50),2,'.','') }}%;background:var(--pulse-accent);box-shadow:0 0 12px color-mix(in srgb,var(--pulse-accent) 60%,transparent)"></span>
-                                            </div>
-                                        </div>
-
-                                        <div class="mt-3 grid grid-cols-2 gap-2">
-                                            <div class="home-pulse-metric rounded-xl px-3 py-2.5"><p class="text-[9px] uppercase tracking-[.1em] text-white/43">{{ localize('ui.r3.home.proof.previous', 'Previous close') }}</p><p class="mt-1.5 truncate text-[11px] font-semibold text-white/78">{{ $market['previous_display'] ?? '—' }}</p></div>
-                                            @if($rangeIs20d)
-                                                <div class="home-pulse-metric rounded-xl px-3 py-2.5"><p class="text-[9px] uppercase tracking-[.1em] text-white/43">{{ localize('ui.r3.home.proof.range_20d', '20D range') }}</p><p class="mt-1.5 truncate text-[11px] font-semibold text-white/78">{{ $market['range_low_display'] ?? '—' }} — {{ $market['range_high_display'] ?? '—' }}</p></div>
-                                            @else
-                                                <div class="home-pulse-metric rounded-xl px-3 py-2.5"><p class="text-[9px] uppercase tracking-[.1em] text-white/43">{{ localize('ui.r3.home.proof.open', 'Open') }}</p><p class="mt-1.5 truncate text-[11px] font-semibold text-white/78">{{ $market['open_display'] ?? '—' }}</p></div>
-                                                <div class="home-pulse-metric rounded-xl px-3 py-2.5"><p class="text-[9px] uppercase tracking-[.1em] text-white/43">{{ localize('ui.r3.home.proof.high', 'High') }}</p><p class="mt-1.5 truncate text-[11px] font-semibold text-white/78">{{ $market['high_display'] ?? '—' }}</p></div>
-                                                <div class="home-pulse-metric rounded-xl px-3 py-2.5"><p class="text-[9px] uppercase tracking-[.1em] text-white/43">{{ localize('ui.r3.home.proof.low', 'Low') }}</p><p class="mt-1.5 truncate text-[11px] font-semibold text-white/78">{{ $market['low_display'] ?? '—' }}</p></div>
-                                            @endif
-                                        </div>
-
-                                        <div class="mt-3 grid grid-cols-2 gap-2 border-t border-white/[.06] pt-3">
-                                            <div><p class="text-[10px] uppercase tracking-[.1em] text-white/48">{{ localize('ui.r3.home.proof.support', 'Support') }}</p><p class="mt-1 text-[11px] font-semibold text-white/72">{{ $market['support_display'] ?? '—' }}</p></div>
-                                            <div class="text-right"><p class="text-[10px] uppercase tracking-[.1em] text-white/48">{{ localize('ui.r3.home.proof.resistance', 'Resistance') }}</p><p class="mt-1 text-[11px] font-semibold text-white/72">{{ $market['resistance_display'] ?? '—' }}</p></div>
-                                        </div>
-
-                                        <div class="mt-auto flex items-center justify-between gap-3 pt-4 text-[10px] text-white/48">
-                                            <span>{{ localize($statusKey, ucfirst(str_replace('_', ' ', $market['status'] ?? 'available'))) }}</span>
-                                            <span>{{ localize('ui.r3.home.proof.updated', 'Updated') }} {{ $updated }}</span>
-                                        </div>
-                                    </div>
-                                @else
-                                    <div class="relative flex min-h-[31rem] flex-col items-center justify-center px-4 text-center">
-                                        <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[.05] text-white/55 ring-1 ring-inset ring-white/[.08]"><i data-lucide="activity" class="h-5 w-5"></i></span>
-                                        <p class="mt-5 text-[10px] font-semibold uppercase tracking-[.12em]" style="color:color-mix(in srgb,var(--pulse-accent) 72%,white)">{{ $assetLabel }}</p>
-                                        <h3 class="mt-2 text-2xl font-semibold">{{ $market['symbol'] }}</h3>
-                                        <p class="mt-1 text-[11px] text-white/52">{{ $market['name'] }}</p>
-                                        <p class="mt-5 max-w-[16rem] text-[12px] leading-5 text-white/50">{{ localize('ui.r3.home.proof.data_warming', 'Market data is not available for this instrument yet. This card will update when the feed is available.') }}</p>
-                                    </div>
-                                @endif
-                            </article>
-                        @endforeach
-                    </div>
-                    <div class="mt-3 flex flex-col gap-2 rounded-xl bg-black/15 px-4 py-3 text-[10px] text-white/48 sm:flex-row sm:items-center sm:justify-between">
-                        <span>{{ localize('ui.r3.home.proof.fixed_assets', 'Tesla · Gold · Bitcoin') }}</span>
-                        <span class="font-semibold text-white/45">{{ localize('ui.r3.home.proof.no_fake_data', 'Price history · market activity · key levels') }}</span>
-                    </div>
+            </button>
+            <button type="button" class="release-hero-tab" data-release-thumb="1" data-active="false">
+                <div class="flex items-center gap-3">
+                    <span class="release-hero-number">02</span>
+                    <div class="min-w-0"><p class="truncate text-xs font-semibold text-foreground">{{ localize('ui.release.hero.tab2', 'Automotive Inventory') }}</p><p class="mt-1 truncate text-[8px] text-muted-foreground">{{ localize('ui.release.hero.tab2copy', 'Browse and manage available vehicle inventory') }}</p></div>
+                    <i data-lucide="car-front" class="ml-auto hidden h-4 w-4 text-muted-foreground sm:block"></i>
                 </div>
-            </div>
+            </button>
+            <button type="button" class="release-hero-tab" data-release-thumb="2" data-active="false">
+                <div class="flex items-center gap-3">
+                    <span class="release-hero-number">03</span>
+                    <div class="min-w-0"><p class="truncate text-xs font-semibold text-foreground">{{ localize('ui.release.hero.tab3', 'Trading & Investment') }}</p><p class="mt-1 truncate text-[8px] text-muted-foreground">{{ localize('ui.release.hero.tab3copy', 'Dashboard, trading and investment experience') }}</p></div>
+                    <i data-lucide="layout-dashboard" class="ml-auto hidden h-4 w-4 text-muted-foreground sm:block"></i>
+                </div>
+            </button>
+        </div>
+
+        <div class="mt-3 flex justify-end gap-2">
+            <button type="button" data-release-prev class="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground transition hover:bg-muted" aria-label="Previous slide"><i data-lucide="chevron-left" class="h-4 w-4"></i></button>
+            <button type="button" data-release-next class="release-hero-primary-button flex h-9 w-9 items-center justify-center rounded-full" aria-label="Next slide"><i data-lucide="chevron-right" class="h-4 w-4"></i></button>
         </div>
     </div>
 </section>
@@ -485,6 +1076,114 @@
 @push('scripts')
 <script>
 (() => {
+    const releaseHero = document.querySelector('[data-release-hero]');
+    const releaseSlides = Array.from(releaseHero?.querySelectorAll('[data-release-slide]') || []);
+    const releaseThumbs = Array.from(releaseHero?.querySelectorAll('[data-release-thumb]') || []);
+    const releasePrev = releaseHero?.querySelector('[data-release-prev]');
+    const releaseNext = releaseHero?.querySelector('[data-release-next]');
+    let releaseIndex = 0;
+    let releaseTimer = null;
+
+    const animateGrowthCount = () => {
+        const countNode = releaseHero?.querySelector('[data-growth-count]');
+        const badge = releaseHero?.querySelector('[data-growth-badge]');
+        if (!countNode || !badge) return;
+
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        badge.dataset.countComplete = 'false';
+
+        if (countNode._growthFrame) {
+            cancelAnimationFrame(countNode._growthFrame);
+            countNode._growthFrame = null;
+        }
+
+        if (reduceMotion) {
+            countNode.textContent = '68';
+            badge.dataset.countComplete = 'true';
+            return;
+        }
+
+        const duration = 1450;
+        const started = performance.now();
+        countNode.textContent = '0';
+
+        const tick = (now) => {
+            const elapsed = Math.min(1, (now - started) / duration);
+            const eased = 1 - Math.pow(1 - elapsed, 3);
+            const value = Math.round(68 * eased);
+            countNode.textContent = String(value);
+
+            if (elapsed < 1) {
+                countNode._growthFrame = requestAnimationFrame(tick);
+            } else {
+                countNode.textContent = '68';
+                badge.dataset.countComplete = 'true';
+                countNode._growthFrame = null;
+            }
+        };
+
+        countNode._growthFrame = requestAnimationFrame(tick);
+    };
+
+    const showReleaseSlide = (index) => {
+        if (!releaseSlides.length) return;
+        releaseIndex = (index + releaseSlides.length) % releaseSlides.length;
+
+        releaseSlides.forEach((slide, i) => {
+            const active = i === releaseIndex;
+            slide.dataset.active = active ? 'true' : 'false';
+            slide.setAttribute('aria-hidden', active ? 'false' : 'true');
+        });
+
+        releaseThumbs.forEach((thumb, i) => {
+            const active = i === releaseIndex;
+            thumb.dataset.active = active ? 'true' : 'false';
+            thumb.setAttribute('aria-current', active ? 'true' : 'false');
+        });
+
+        if (window.lucide) lucide.createIcons();
+
+        if (releaseIndex === 0) {
+            requestAnimationFrame(animateGrowthCount);
+        }
+    };
+
+    const stopReleaseRotation = () => {
+        if (releaseTimer) clearInterval(releaseTimer);
+        releaseTimer = null;
+    };
+
+    const startReleaseRotation = () => {
+        stopReleaseRotation();
+        if (!releaseHero || releaseSlides.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        releaseTimer = setInterval(() => showReleaseSlide(releaseIndex + 1), 8000);
+    };
+
+    releaseThumbs.forEach((thumb, index) => {
+        thumb.addEventListener('click', () => {
+            showReleaseSlide(index);
+            startReleaseRotation();
+        });
+    });
+
+    releasePrev?.addEventListener('click', () => {
+        showReleaseSlide(releaseIndex - 1);
+        startReleaseRotation();
+    });
+
+    releaseNext?.addEventListener('click', () => {
+        showReleaseSlide(releaseIndex + 1);
+        startReleaseRotation();
+    });
+
+    releaseHero?.addEventListener('mouseenter', stopReleaseRotation);
+    releaseHero?.addEventListener('mouseleave', startReleaseRotation);
+    releaseHero?.addEventListener('focusin', stopReleaseRotation);
+    releaseHero?.addEventListener('focusout', startReleaseRotation);
+
+    showReleaseSlide(0);
+    startReleaseRotation();
+
     const carousel = document.querySelector('[data-market-carousel]');
     const cards = () => Array.from(carousel?.querySelectorAll('[data-market-card]:not([hidden])') || []);
 

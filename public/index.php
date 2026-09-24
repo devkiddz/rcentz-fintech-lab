@@ -37,24 +37,28 @@ if (! file_exists($installLock)) {
         exit('Installation bootstrap could not read the environment file.');
     }
 
-    preg_match('/^APP_KEY\s*=\s*(.*)$/m', $envContents, $keyMatch);
+    preg_match(
+        '/^APP_KEY[ \t]*=[ \t]*([^\r\n]*)$/m',
+        $envContents,
+        $keyMatch
+    );
 
     $currentKey = isset($keyMatch[1])
         ? trim($keyMatch[1], " \t\n\r\0\x0B\"'")
         : '';
 
     if ($currentKey === '') {
-        $generatedKey = 'base64:'.base64_encode(random_bytes(32));
+        $currentKey = 'base64:'.base64_encode(random_bytes(32));
 
-        if (preg_match('/^APP_KEY\s*=.*$/m', $envContents)) {
+        if (preg_match('/^APP_KEY[ \t]*=[^\r\n]*$/m', $envContents)) {
             $envContents = preg_replace(
-                '/^APP_KEY\s*=.*$/m',
-                'APP_KEY='.$generatedKey,
+                '/^APP_KEY[ \t]*=[^\r\n]*$/m',
+                'APP_KEY='.$currentKey,
                 $envContents,
                 1
             );
         } else {
-            $envContents = rtrim($envContents).PHP_EOL.'APP_KEY='.$generatedKey.PHP_EOL;
+            $envContents = rtrim($envContents).PHP_EOL.'APP_KEY='.$currentKey.PHP_EOL;
         }
 
         if (@file_put_contents($envPath, $envContents, LOCK_EX) === false) {
@@ -62,6 +66,11 @@ if (! file_exists($installLock)) {
             exit('Installation bootstrap could not write the application key. Check environment-file permissions.');
         }
     }
+
+    // Make the key available to Laravel during this same first request.
+    putenv('APP_KEY='.$currentKey);
+    $_ENV['APP_KEY'] = $currentKey;
+    $_SERVER['APP_KEY'] = $currentKey;
 }
 
 // Determine if the application is in maintenance mode...
