@@ -410,6 +410,165 @@ class FrontendController extends Controller
             'featuredInvestments'
         ));
     }
+
+    public function markets(BotMarketContextService $markets)
+    {
+        $seriesFor = function (?MarketInstrument $instrument, array $fallback = []) use ($markets): array {
+            $quotes = $instrument
+                ? collect($markets->priceSeries($instrument, 24))
+                    ->pluck('price')
+                    ->map(fn ($price) => (float) $price)
+                    ->filter(fn ($price) => $price > 0)
+                    ->values()
+                : collect();
+
+            if ($quotes->count() < 2) {
+                $quotes = collect($fallback)
+                    ->map(fn ($price) => (float) $price)
+                    ->filter(fn ($price) => $price > 0)
+                    ->values();
+            }
+
+            return $quotes->all();
+        };
+
+        $marketCards = collect();
+
+        $stocks = Stock::active()
+            ->with('marketInstrument')
+            ->where('company_name', 'not like', '%ACCEPTANCE%')
+            ->orderByDesc('is_featured')
+            ->orderByDesc('volume')
+            ->limit(12)
+            ->get();
+
+        foreach ($stocks as $stock) {
+            $current = (float) $stock->current_price;
+            $previous = (float) ($stock->previous_close ?? 0);
+
+            $marketCards->push([
+                'asset_class' => 'stock',
+                'asset_label' => 'Stock',
+                'symbol' => (string) $stock->symbol,
+                'name' => (string) ($stock->company_name ?: 'Listed equity'),
+                'price_display' => '$'.number_format($current, 2),
+                'change' => (float) ($stock->change_percentage ?? ($previous > 0 ? (($current - $previous) / $previous) * 100 : 0)),
+                'icon' => 'chart-no-axes-combined',
+                'quotes' => $seriesFor($stock->marketInstrument, [$previous, $current]),
+                'action_url' => auth()->check()
+                    ? route('instruments.stocks.show', ['stock' => $stock->symbol])
+                    : route('login'),
+            ]);
+        }
+
+        $forexPairs = ForexPair::active()
+            ->with('marketInstrument')
+            ->where('name', 'not like', '%ACCEPTANCE%')
+            ->orderByDesc('is_featured')
+            ->orderBy('symbol')
+            ->limit(12)
+            ->get();
+
+        foreach ($forexPairs as $pair) {
+            $current = (float) $pair->current_rate;
+            $previous = (float) ($pair->previous_close ?? 0);
+            $precision = max(2, min(8, (int) ($pair->price_precision ?? 5)));
+            $symbol = (string) ($pair->display_symbol ?: $pair->symbol);
+
+            $marketCards->push([
+                'asset_class' => 'forex',
+                'asset_label' => 'Forex',
+                'symbol' => $symbol,
+                'name' => (string) ($pair->name ?: 'Currency pair'),
+                'price_display' => number_format($current, $precision),
+                'change' => $previous > 0 ? (($current - $previous) / $previous) * 100 : 0.0,
+                'icon' => 'arrow-left-right',
+                'quotes' => $seriesFor($pair->marketInstrument, [$previous, $current]),
+                'action_url' => auth()->check()
+                    ? route('instruments.forex.show', ['symbol' => $pair->symbol])
+                    : route('login'),
+            ]);
+        }
+
+        $cryptoPairs = CryptoPair::active()
+            ->with('marketInstrument')
+            ->where('name', 'not like', '%ACCEPTANCE%')
+            ->orderByDesc('is_featured')
+            ->orderBy('symbol')
+            ->limit(12)
+            ->get();
+
+        foreach ($cryptoPairs as $pair) {
+            $current = (float) $pair->current_rate;
+            $previous = (float) ($pair->previous_close ?? 0);
+            $precision = max(2, min(8, (int) ($pair->price_precision ?? 2)));
+            $quote = strtoupper((string) ($pair->quote_asset ?: 'USD'));
+            $displayPrice = number_format($current, $precision);
+            $symbol = (string) ($pair->display_symbol ?: $pair->symbol);
+
+            $marketCards->push([
+                'asset_class' => 'crypto',
+                'asset_label' => 'Crypto',
+                'symbol' => $symbol,
+                'name' => (string) ($pair->name ?: 'Digital asset pair'),
+                'price_display' => $quote === 'USD' ? '$'.$displayPrice : $displayPrice.' '.$quote,
+                'change' => $previous > 0 ? (($current - $previous) / $previous) * 100 : 0.0,
+                'icon' => 'bitcoin',
+                'quotes' => $seriesFor($pair->marketInstrument, [$previous, $current]),
+                'action_url' => auth()->check()
+                    ? route('instruments.crypto.show', ['symbol' => $pair->symbol])
+                    : route('login'),
+            ]);
+        }
+
+        $commodities = MarketInstrument::query()
+            ->active()
+            ->with('canonicalCommodityInstrument')
+            ->where('asset_class', MarketInstrument::ASSET_COMMODITY)
+            ->orderBy('symbol')
+            ->limit(12)
+            ->get();
+
+        foreach ($commodities as $instrument) {
+            $commodity = $instrument->canonicalCommodityInstrument;
+            if (!$commodity) continue;
+
+            $current = (float) ($commodity->current_price ?? 0);
+            $previous = (float) ($commodity->previous_close ?? 0);
+
+            $marketCards->push([
+                'asset_class' => 'commodity',
+                'asset_label' => 'Commodity',
+                'symbol' => (string) ($instrument->display_symbol ?: $instrument->symbol),
+                'name' => (string) ($instrument->name ?: 'Commodity market'),
+                'price_display' => $current > 0 ? '$'.number_format($current, 2) : '—',
+                'change' => $previous > 0 && $current > 0 ? (($current - $previous) / $previous) * 100 : 0.0,
+                'icon' => 'gem',
+                'quotes' => $seriesFor($instrument, [$previous, $current]),
+                'action_url' => auth()->check()
+                    ? route('instruments.commodities.show', ['symbol' => $instrument->symbol])
+                    : route('login'),
+            ]);
+        }
+
+        $marketCards = $marketCards
+            ->sortBy([
+                ['asset_class', 'asc'],
+                ['symbol', 'asc'],
+            ])
+            ->values();
+
+        $marketStats = [
+            'total' => $marketCards->count(),
+            'stock' => $marketCards->where('asset_class', 'stock')->count(),
+            'forex' => $marketCards->where('asset_class', 'forex')->count(),
+            'crypto' => $marketCards->where('asset_class', 'crypto')->count(),
+            'commodity' => $marketCards->where('asset_class', 'commodity')->count(),
+        ];
+
+        return view('frontend.markets', compact('marketCards', 'marketStats'));
+    }
+
     public function show($id)
     {
         $car = Car::findOrFail($id);

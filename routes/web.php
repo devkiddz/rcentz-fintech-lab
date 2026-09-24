@@ -61,6 +61,7 @@ Route::get('/impersonate-leave', [\Lab404\Impersonate\Controllers\ImpersonateCon
 
 // Frontend Routes
 Route::get('/', [FrontendController::class, 'index'])->name('home');
+Route::get('/markets', [FrontendController::class, 'markets'])->name('markets');
 Route::post('/locale', [LocaleController::class, 'update'])->name('locale.update');
 
 // CSRF Token Refresh Route

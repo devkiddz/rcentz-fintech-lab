@@ -1,4 +1,5 @@
 @extends('layouts.main')
+@section('shell_top_spacing', '')
 
 @section('content')
 @php
@@ -14,7 +15,7 @@
         : localize('ui.r3.home.description_default', $descriptionDefault);
     $company = setting('company_name', site_name());
     $accountUrl = auth()->check() ? (auth()->user()->isAdmin() ? route('admin.dashboard') : route('dashboard')) : route('register');
-    $marketUrl = auth()->check() ? route('instruments.index') : route('login');
+    $marketUrl = route('markets');
     $investmentUrl = auth()->check() ? route('investments.index') : route('login');
     $botUrl = auth()->check() ? route('ai-bots.marketplace') : route('login');
     $copyUrl = auth()->check() ? route('copy-trading.marketplace') : route('login');
@@ -345,121 +346,274 @@
         .release-hero-slide{transition:none}
     }
 
-    /* Slide 1 growth illustration */
+    /* Slide 1 growth illustration — R3 realism / atmosphere */
+
+    /* hero atmosphere overrides — theme aware */
+    .release-hero{
+        padding-top:2rem;
+        background:
+            radial-gradient(circle at 15% 16%, color-mix(in srgb,var(--hero-primary) 8%, transparent) 0, transparent 30%),
+            radial-gradient(circle at 78% 18%, color-mix(in srgb,var(--hero-primary) 13%, transparent) 0, transparent 36%),
+            radial-gradient(circle at 82% 78%, color-mix(in srgb,var(--hero-secondary) 9%, transparent) 0, transparent 40%),
+            linear-gradient(
+                112deg,
+                color-mix(in srgb,var(--hero-primary) 3%, hsl(var(--background))) 0%,
+                hsl(var(--background)) 46%,
+                color-mix(in srgb,var(--hero-secondary) 2%, hsl(var(--background))) 100%
+            );
+    }
+    .dark .release-hero{
+        background:
+            radial-gradient(circle at 15% 16%, color-mix(in srgb,var(--hero-primary) 15%, transparent) 0, transparent 31%),
+            radial-gradient(circle at 78% 18%, color-mix(in srgb,var(--hero-primary) 23%, transparent) 0, transparent 38%),
+            radial-gradient(circle at 82% 78%, color-mix(in srgb,var(--hero-secondary) 14%, transparent) 0, transparent 42%),
+            linear-gradient(
+                112deg,
+                color-mix(in srgb,var(--hero-primary) 7%, hsl(var(--background))) 0%,
+                hsl(var(--background)) 44%,
+                color-mix(in srgb,var(--hero-secondary) 4%, hsl(var(--background))) 100%
+            );
+    }
+    .release-hero::before{
+        content:"";
+        position:absolute;
+        inset:0;
+        pointer-events:none;
+        background-image:
+            linear-gradient(hsl(var(--border)/.10) 1px,transparent 1px),
+            linear-gradient(90deg,hsl(var(--border)/.10) 1px,transparent 1px);
+        background-size:54px 54px;
+        mask-image:linear-gradient(to bottom,rgba(0,0,0,.52),transparent 88%);
+        opacity:.7;
+    }
+    .release-hero::after{
+        content:"";
+        position:absolute;
+        inset:6% -8% -10% 46%;
+        border-radius:50%;
+        background:
+            radial-gradient(circle at 36% 34%, color-mix(in srgb,var(--hero-primary) 15%, transparent) 0, transparent 28%),
+            radial-gradient(circle at 64% 52%, color-mix(in srgb,var(--hero-primary) 10%, transparent) 0, transparent 34%),
+            radial-gradient(circle at 52% 72%, color-mix(in srgb,var(--hero-secondary) 7%, transparent) 0, transparent 44%);
+        filter:blur(74px);
+        opacity:.72;
+        pointer-events:none;
+    }
+    .dark .release-hero::after{
+        background:
+            radial-gradient(circle at 36% 34%, color-mix(in srgb,var(--hero-primary) 22%, transparent) 0, transparent 28%),
+            radial-gradient(circle at 64% 52%, color-mix(in srgb,var(--hero-primary) 15%, transparent) 0, transparent 34%),
+            radial-gradient(circle at 52% 72%, color-mix(in srgb,var(--hero-secondary) 11%, transparent) 0, transparent 44%);
+        opacity:.94;
+    }
+    .release-hero-shell{
+        position:relative;
+        min-height:35.5rem;
+        isolation:isolate;
+        padding-top:.5rem;
+    }
+    .release-hero-shell::before{
+        content:"";
+        position:absolute;
+        inset:20% 36% 8% -4%;
+        background:
+            radial-gradient(circle at 8% 42%, color-mix(in srgb,var(--hero-primary) 7%, transparent) 0, transparent 26%),
+            radial-gradient(circle at 85% 18%, color-mix(in srgb,var(--hero-primary) 6%, transparent) 0, transparent 32%);
+        filter:blur(58px);
+        pointer-events:none;
+        opacity:.9;
+    }
+
     .release-growth-wrap{
         position:relative;
         display:flex;
         min-width:0;
         align-items:center;
         justify-content:center;
-        padding:.25rem 0;
+        min-height:33rem;
+        padding:1.7rem 0 2.5rem;
+        perspective:1850px;
+        isolation:isolate;
     }
     .release-growth-aura{
         position:absolute;
-        inset:14% 10%;
+        inset:12% 2% 4% 6%;
         border-radius:9999px;
-        background:color-mix(in srgb,var(--brand-primary) 19%,transparent);
-        filter:blur(78px);
-        opacity:.62;
+        background:
+            radial-gradient(circle at 62% 38%, color-mix(in srgb,var(--brand-primary) 22%, transparent), transparent 36%),
+            radial-gradient(circle at 56% 84%, color-mix(in srgb,var(--brand-primary) 11%, transparent), transparent 48%),
+            radial-gradient(circle at 86% 56%, color-mix(in srgb,var(--brand-primary) 10%, transparent), transparent 30%);
+        filter:blur(74px);
+        opacity:.88;
         pointer-events:none;
     }
     .release-growth-svg{
         position:relative;
         z-index:1;
-        width:min(100%,46rem);
+        width:min(114%,50rem);
         height:auto;
         overflow:visible;
+        transform:perspective(1850px) rotateY(-12deg) rotateX(5.2deg) rotateZ(-1.2deg) translate3d(8px,0,0);
+        transform-origin:54% 52%;
+        filter:drop-shadow(0 26px 34px hsl(var(--foreground)/.12));
+        animation:growthDeviceFloat 6.8s ease-in-out infinite;
+        will-change:transform;
+    }
+    .dark .release-growth-svg{
+        filter:drop-shadow(0 34px 42px rgba(0,0,0,.38));
     }
 
-    .growth-panel-stop-a{stop-color:hsl(var(--card))}
-    .growth-panel-stop-b{stop-color:color-mix(in srgb,var(--brand-primary) 5%,hsl(var(--background)))}
-    .dark .growth-panel-stop-a{stop-color:#111827}
-    .dark .growth-panel-stop-b{stop-color:#07101b}
+    .growth-panel-stop-a{stop-color:hsl(var(--card)/.28)}
+    .growth-panel-stop-b{stop-color:color-mix(in srgb,var(--brand-primary) 4%,hsl(var(--background)/.10))}
+    .dark .growth-panel-stop-a{stop-color:rgba(17,26,40,.22)}
+    .dark .growth-panel-stop-b{stop-color:rgba(6,11,20,.08)}
 
-    .growth-bar-stop-a{stop-color:color-mix(in srgb,var(--brand-primary) 72%,white)}
+    .growth-rear-stop-a{stop-color:hsl(var(--card)/.17)}
+    .growth-rear-stop-b{stop-color:color-mix(in srgb,var(--brand-primary) 4%,hsl(var(--background)/.06))}
+    .dark .growth-rear-stop-a{stop-color:rgba(18,28,43,.14)}
+    .dark .growth-rear-stop-b{stop-color:rgba(4,8,17,.05)}
+
+    .growth-base-stop-a{stop-color:color-mix(in srgb,hsl(var(--foreground)) 12%,hsl(var(--card)))}
+    .growth-base-stop-b{stop-color:color-mix(in srgb,var(--brand-primary) 8%,hsl(var(--muted)))}
+    .dark .growth-base-stop-a{stop-color:#172232}
+    .dark .growth-base-stop-b{stop-color:#090d15}
+
+    .growth-bar-stop-a{stop-color:color-mix(in srgb,var(--brand-primary) 68%,white)}
     .growth-bar-stop-b{stop-color:var(--brand-primary)}
 
-    .growth-tile-stop-a{stop-color:hsl(var(--card))}
-    .growth-tile-stop-b{stop-color:color-mix(in srgb,var(--brand-primary) 5%,hsl(var(--muted)))}
-    .dark .growth-tile-stop-a{stop-color:#152033}
-    .dark .growth-tile-stop-b{stop-color:#0a1220}
+    .growth-tile-stop-a{stop-color:hsl(var(--card)/.22)}
+    .growth-tile-stop-b{stop-color:color-mix(in srgb,var(--brand-primary) 3%,hsl(var(--muted)/.12))}
+    .dark .growth-tile-stop-a{stop-color:rgba(25,35,52,.18)}
+    .dark .growth-tile-stop-b{stop-color:rgba(8,13,23,.10)}
+
+    .growth-rear-panel{
+        fill:url(#growthRearFill);
+        stroke:color-mix(in srgb,var(--brand-primary) 12%, hsl(var(--border)));
+        stroke-width:1.3;
+    }
+    .growth-base-top{
+        fill:url(#growthBaseFill);
+        stroke:color-mix(in srgb,var(--brand-primary) 14%,hsl(var(--border)));
+        stroke-width:1.4;
+    }
+    .growth-base-front{
+        fill:color-mix(in srgb,var(--brand-primary) 6%,hsl(var(--muted)));
+        stroke:color-mix(in srgb,var(--brand-primary) 12%,hsl(var(--border)));
+        stroke-width:1.2;
+    }
+    .dark .growth-base-front{fill:#070b12}
+    .growth-base-edge{
+        fill:none;
+        stroke:color-mix(in srgb,var(--brand-primary) 55%,transparent);
+        stroke-width:2;
+        filter:url(#growthGlow);
+    }
 
     .growth-panel-stroke{
-        stroke:color-mix(in srgb,var(--brand-primary) 26%,hsl(var(--border)));
-        stroke-width:2;
+        stroke:color-mix(in srgb,var(--brand-primary) 20%,hsl(var(--border)));
+        stroke-width:1.6;
+    }
+    .growth-panel-inner-edge{
+        fill:none;
+        stroke:hsl(var(--foreground)/.07);
+        stroke-width:1;
+    }
+    .dark .growth-panel-inner-edge{stroke:rgba(255,255,255,.08)}
+    .growth-panel-highlight{
+        fill:none;
+        stroke:url(#growthEdgeHighlight);
+        stroke-width:1.8;
+        opacity:.78;
+    }
+    .growth-panel-highlight-soft{
+        fill:none;
+        stroke:url(#growthSoftHighlight);
+        stroke-width:1.2;
+        opacity:.44;
     }
     .growth-grid line{
-        stroke:hsl(var(--border));
+        stroke:hsl(var(--foreground)/.08);
         stroke-width:1;
         stroke-dasharray:5 8;
     }
+    .dark .growth-grid line{stroke:rgba(255,255,255,.055)}
     .growth-badge-bg{
-        fill:hsl(var(--card)/.92);
-        stroke:color-mix(in srgb,var(--brand-primary) 28%,hsl(var(--border)));
-        stroke-width:2;
+        fill:hsl(var(--card)/.28);
+        stroke:color-mix(in srgb,var(--brand-primary) 18%,hsl(var(--border)));
+        stroke-width:1.2;
     }
-    .dark .growth-badge-bg{fill:rgba(10,18,31,.88)}
+    .dark .growth-badge-bg{fill:rgba(7,14,24,.24)}
     .growth-accent-fill{fill:var(--brand-primary)}
     .growth-accent-stroke{
         fill:none;
         stroke:var(--brand-primary);
-        stroke-width:4;
+        stroke-width:3.8;
         stroke-linecap:round;
         stroke-linejoin:round;
     }
     .growth-arrow-mark{
         fill:none;
         stroke:#fff;
-        stroke-width:5;
+        stroke-width:4;
         stroke-linecap:round;
         stroke-linejoin:round;
     }
     .growth-count-text{
         fill:hsl(var(--foreground));
-        font-size:34px;
+        font-size:30px;
         font-weight:800;
-        letter-spacing:-1.4px;
+        letter-spacing:-1.1px;
     }
     .growth-label-text{
         fill:hsl(var(--muted-foreground));
-        font-size:22px;
+        font-size:17px;
         font-weight:500;
+        font-style:italic;
     }
     .release-growth-line{
         fill:none;
-        stroke:color-mix(in srgb,var(--brand-primary) 72%,white);
-        stroke-width:5;
+        stroke:color-mix(in srgb,var(--brand-primary) 74%,white);
+        stroke-width:4;
         stroke-linecap:round;
         stroke-linejoin:round;
         filter:url(#growthGlow);
     }
     .growth-node{
         fill:hsl(var(--background));
-        stroke:color-mix(in srgb,var(--brand-primary) 64%,white);
-        stroke-width:5;
+        stroke:color-mix(in srgb,var(--brand-primary) 68%,white);
+        stroke-width:3.8;
     }
     .growth-tile-stroke{
-        stroke:color-mix(in srgb,var(--brand-primary) 20%,hsl(var(--border)));
-        stroke-width:1.5;
+        stroke:color-mix(in srgb,var(--brand-primary) 14%,hsl(var(--border)));
+        stroke-width:1.1;
     }
-    .growth-icon-muted-fill{fill:hsl(var(--muted-foreground)/.62)}
+    .growth-icon-muted-fill{fill:hsl(var(--muted-foreground)/.48)}
     .growth-panel-icon-fill{fill:hsl(var(--card))}
     .growth-icon-muted-stroke{
         fill:none;
-        stroke:hsl(var(--muted-foreground));
-        stroke-width:5;
+        stroke:hsl(var(--muted-foreground)/.76);
+        stroke-width:3.8;
         stroke-linecap:round;
     }
     .release-growth-orbit{
         fill:none;
-        stroke:color-mix(in srgb,var(--brand-primary) 48%,transparent);
-        stroke-width:2.3;
+        stroke:color-mix(in srgb,var(--brand-primary) 56%,transparent);
+        stroke-width:1.8;
         stroke-linecap:round;
         filter:url(#growthGlow);
     }
-    .release-growth-orbit-b{opacity:.48}
+    .release-growth-orbit-b{opacity:.26}
+    .growth-orbit-dots{
+        fill:color-mix(in srgb,var(--brand-primary) 78%,white);
+        filter:url(#growthGlow);
+    }
+    .growth-ambient{
+        fill:none;
+        stroke:color-mix(in srgb,var(--brand-primary) 20%,transparent);
+        stroke-width:1.2;
+        opacity:.44;
+    }
 
-    /* entrance / counting emphasis */
     .release-hero-slide[data-active="true"] .growth-bar{
         transform-box:fill-box;
         transform-origin:center bottom;
@@ -504,9 +658,7 @@
         from{transform:scaleY(.08);opacity:.25}
         to{transform:scaleY(1);opacity:1}
     }
-    @keyframes growthLineDraw{
-        to{stroke-dashoffset:0}
-    }
+    @keyframes growthLineDraw{to{stroke-dashoffset:0}}
     @keyframes growthNodePop{
         0%{transform:scale(.2);opacity:0}
         72%{transform:scale(1.18);opacity:1}
@@ -514,32 +666,1115 @@
     }
     @keyframes growthBadgeBounce{
         0%{transform:translateY(0) scale(1)}
-        38%{transform:translateY(-9px) scale(1.035)}
-        68%{transform:translateY(3px) scale(.995)}
+        38%{transform:translateY(-7px) scale(1.024)}
+        68%{transform:translateY(2px) scale(.997)}
         100%{transform:translateY(0) scale(1)}
     }
     @keyframes growthOrbitPulse{
-        0%,100%{opacity:.46}
+        0%,100%{opacity:.34}
         50%{opacity:1}
+    }
+    @keyframes growthDeviceFloat{
+        0%,100%{transform:perspective(1850px) rotateY(-12deg) rotateX(5.2deg) rotateZ(-1.2deg) translate3d(8px,0,0)}
+        50%{transform:perspective(1850px) rotateY(-12deg) rotateX(5.2deg) rotateZ(-1.2deg) translate3d(8px,-8px,0)}
     }
 
     @media(max-width:759px){
-        .release-growth-svg{width:min(100%,39rem)}
+        .release-hero{padding-top:1rem}
+        .release-hero-shell{min-height:auto;padding-top:0}
+        .release-growth-wrap{min-height:auto;padding:1rem 0 1.3rem}
+        .release-growth-svg{
+            width:min(100%,40rem);
+            transform:none;
+            animation:growthDeviceFloatMobile 6.8s ease-in-out infinite;
+        }
+        @keyframes growthDeviceFloatMobile{
+            0%,100%{transform:translateY(0)}
+            50%{transform:translateY(-6px)}
+        }
     }
     @media(prefers-reduced-motion:reduce){
         .release-hero-slide[data-active="true"] .growth-bar,
         .release-hero-slide[data-active="true"] .release-growth-line,
         .release-hero-slide[data-active="true"] .growth-node,
         .release-growth-badge[data-count-complete="true"],
-        .release-growth-orbit-dot{
+        .release-growth-orbit-dot,
+        .release-growth-svg{
             animation:none !important;
         }
     }
+
+    /* Slide 2 — Electric automobile */
+    .release-hero-secondary-text{color:var(--hero-primary)}
+
+    .release-ev-wrap{
+        position:relative;
+        display:flex;
+        min-width:0;
+        min-height:33rem;
+        align-items:center;
+        justify-content:center;
+        padding:1rem 0 2rem;
+        isolation:isolate;
+        perspective:1700px;
+    }
+    .release-ev-aura{
+        position:absolute;
+        inset:12% 2% 10% 8%;
+        border-radius:9999px;
+        background:
+            radial-gradient(circle at 58% 46%,color-mix(in srgb,var(--hero-primary) 18%,transparent),transparent 36%),
+            radial-gradient(circle at 72% 76%,color-mix(in srgb,var(--hero-secondary) 8%,transparent),transparent 38%);
+        filter:blur(78px);
+        opacity:.78;
+        pointer-events:none;
+    }
+    .release-ev-svg{
+        position:relative;
+        z-index:1;
+        width:min(112%,50rem);
+        height:auto;
+        overflow:visible;
+        transform:perspective(1700px) rotateY(-7deg) rotateX(2deg) translate3d(10px,0,0);
+        transform-origin:center;
+        filter:drop-shadow(0 30px 42px hsl(var(--foreground)/.14));
+        animation:evFloat 7s ease-in-out infinite;
+    }
+    .dark .release-ev-svg{
+        filter:drop-shadow(0 34px 46px rgba(0,0,0,.36));
+    }
+
+    .ev-floor{
+        fill:color-mix(in srgb,var(--hero-primary) 8%,transparent);
+        filter:url(#evBlur);
+    }
+    .ev-orbit{
+        fill:none;
+        stroke:color-mix(in srgb,var(--hero-primary) 48%,transparent);
+        stroke-width:2;
+        stroke-linecap:round;
+        filter:url(#evGlow);
+    }
+    .ev-orbit-soft{opacity:.28}
+    .ev-dot{
+        fill:color-mix(in srgb,var(--hero-primary) 78%,white);
+        filter:url(#evGlow);
+    }
+
+    .ev-body-main{
+        fill:url(#evBodyFill);
+        stroke:color-mix(in srgb,var(--hero-primary) 17%,hsl(var(--border)));
+        stroke-width:1.6;
+    }
+    .ev-body-highlight{
+        fill:none;
+        stroke:url(#evEdgeFill);
+        stroke-width:2;
+        opacity:.78;
+    }
+    .ev-glass{
+        fill:url(#evGlassFill);
+        stroke:hsl(var(--foreground)/.09);
+        stroke-width:1.3;
+    }
+    .dark .ev-glass{stroke:rgba(255,255,255,.08)}
+    .ev-glass-line{
+        fill:none;
+        stroke:hsl(var(--foreground)/.12);
+        stroke-width:1.1;
+    }
+    .dark .ev-glass-line{stroke:rgba(255,255,255,.10)}
+
+    .ev-wheel-outer{
+        fill:hsl(var(--foreground)/.88);
+        stroke:hsl(var(--background)/.72);
+        stroke-width:5;
+    }
+    .dark .ev-wheel-outer{fill:#05080d}
+    .ev-wheel-inner{
+        fill:url(#evWheelFill);
+        stroke:color-mix(in srgb,var(--hero-primary) 22%,hsl(var(--border)));
+        stroke-width:2;
+    }
+    .ev-wheel-hub{
+        fill:hsl(var(--muted));
+        stroke:hsl(var(--border));
+        stroke-width:1.5;
+    }
+
+    .ev-light{
+        fill:color-mix(in srgb,var(--hero-primary) 78%,white);
+        filter:url(#evGlowStrong);
+    }
+    .ev-tail{
+        fill:var(--hero-primary);
+        filter:url(#evGlowStrong);
+    }
+    .ev-line{
+        fill:none;
+        stroke:color-mix(in srgb,var(--hero-primary) 52%,transparent);
+        stroke-width:2.2;
+        stroke-linecap:round;
+    }
+    .ev-energy-line{
+        fill:none;
+        stroke:var(--hero-primary);
+        stroke-width:3.1;
+        stroke-linecap:round;
+        stroke-dasharray:9 10;
+        filter:url(#evGlow);
+        animation:evEnergyFlow 2.1s linear infinite;
+    }
+    .ev-battery-shell{
+        fill:hsl(var(--card)/.42);
+        stroke:color-mix(in srgb,var(--hero-primary) 22%,hsl(var(--border)));
+        stroke-width:1.4;
+    }
+    .dark .ev-battery-shell{fill:rgba(9,15,25,.30)}
+    .ev-battery-fill{fill:var(--hero-primary)}
+    .ev-battery-text{
+        fill:hsl(var(--foreground));
+        font-size:19px;
+        font-weight:800;
+        letter-spacing:-.4px;
+    }
+    .ev-battery-label{
+        fill:hsl(var(--muted-foreground));
+        font-size:10px;
+        font-weight:700;
+        letter-spacing:1.1px;
+        text-transform:uppercase;
+    }
+    .ev-road-line{
+        fill:none;
+        stroke:hsl(var(--foreground)/.09);
+        stroke-width:1.2;
+        stroke-dasharray:10 14;
+    }
+    .dark .ev-road-line{stroke:rgba(255,255,255,.06)}
+
+    @keyframes evFloat{
+        0%,100%{transform:perspective(1700px) rotateY(-7deg) rotateX(2deg) translate3d(10px,0,0)}
+        50%{transform:perspective(1700px) rotateY(-7deg) rotateX(2deg) translate3d(10px,-7px,0)}
+    }
+    @keyframes evEnergyFlow{
+        to{stroke-dashoffset:-38}
+    }
+
+    @media(max-width:759px){
+        .release-ev-wrap{min-height:auto;padding:.8rem 0 1.25rem}
+        .release-ev-svg{
+            width:min(100%,41rem);
+            transform:none;
+            animation:evFloatMobile 7s ease-in-out infinite;
+        }
+        @keyframes evFloatMobile{
+            0%,100%{transform:translateY(0)}
+            50%{transform:translateY(-6px)}
+        }
+    }
+    @media(prefers-reduced-motion:reduce){
+        .release-ev-svg,
+        .ev-energy-line{animation:none !important}
+    }
+
+
+    /* Slide 2 — actual Tesla video trial */
+    .release-hero-secondary-text{color:var(--hero-primary)}
+
+    .release-tesla-video-wrap{
+        position:relative;
+        display:flex;
+        min-width:0;
+        min-height:32rem;
+        align-items:center;
+        justify-content:center;
+        padding:1rem 0 2rem;
+        isolation:isolate;
+    }
+    .release-tesla-video-aura{
+        position:absolute;
+        inset:11% 2% 8% 7%;
+        border-radius:9999px;
+        background:
+            radial-gradient(circle at 58% 45%,color-mix(in srgb,var(--hero-primary) 22%,transparent),transparent 38%),
+            radial-gradient(circle at 74% 78%,color-mix(in srgb,var(--hero-secondary) 9%,transparent),transparent 42%);
+        filter:blur(76px);
+        opacity:.82;
+        pointer-events:none;
+    }
+    .release-tesla-video-stage{
+        position:relative;
+        z-index:1;
+        width:min(100%,47rem);
+        aspect-ratio:16/10;
+        overflow:hidden;
+        border-radius:2rem;
+        border:1px solid color-mix(in srgb,var(--hero-primary) 18%,hsl(var(--border)));
+        background:hsl(var(--card));
+        box-shadow:
+            0 30px 70px hsl(var(--foreground)/.16),
+            inset 0 1px 0 hsl(var(--background)/.70);
+        transform:perspective(1500px) rotateY(-5deg) rotateX(1.5deg);
+        transform-origin:center;
+    }
+    .dark .release-tesla-video-stage{
+        box-shadow:
+            0 34px 80px rgba(0,0,0,.38),
+            inset 0 1px 0 rgba(255,255,255,.07);
+    }
+    .release-tesla-video-stage::before{
+        content:"";
+        position:absolute;
+        inset:0;
+        z-index:2;
+        pointer-events:none;
+        background:
+            linear-gradient(90deg,hsl(var(--background)/.16),transparent 28%,transparent 72%,hsl(var(--background)/.12)),
+            linear-gradient(180deg,transparent 56%,hsl(var(--background)/.44) 100%);
+    }
+    .release-tesla-video-stage::after{
+        content:"";
+        position:absolute;
+        inset:0;
+        z-index:3;
+        pointer-events:none;
+        border-radius:inherit;
+        box-shadow:
+            inset 0 0 0 1px rgba(255,255,255,.05),
+            inset 0 -1px 0 color-mix(in srgb,var(--hero-primary) 26%,transparent);
+    }
+    .release-tesla-video{
+        position:absolute;
+        inset:0;
+        width:100%;
+        height:100%;
+        object-fit:cover;
+        object-position:center 55%;
+        transform:scale(1.03);
+        filter:saturate(.96) contrast(1.03);
+    }
+    .release-tesla-video-glowline{
+        position:absolute;
+        z-index:4;
+        left:6%;
+        right:6%;
+        bottom:8%;
+        height:1px;
+        background:linear-gradient(90deg,transparent,var(--hero-primary),transparent);
+        opacity:.62;
+        box-shadow:0 0 18px color-mix(in srgb,var(--hero-primary) 62%,transparent);
+        pointer-events:none;
+    }
+    .release-tesla-video-chip{
+        position:absolute;
+        z-index:5;
+        top:1rem;
+        right:1rem;
+        display:flex;
+        align-items:center;
+        gap:.55rem;
+        border:1px solid color-mix(in srgb,var(--hero-primary) 18%,hsl(var(--border)));
+        border-radius:9999px;
+        padding:.55rem .8rem;
+        background:hsl(var(--card)/.54);
+        color:hsl(var(--foreground));
+        box-shadow:0 12px 32px rgba(0,0,0,.12);
+        backdrop-filter:blur(16px);
+        -webkit-backdrop-filter:blur(16px);
+    }
+    .dark .release-tesla-video-chip{background:rgba(9,15,25,.44)}
+    .release-tesla-video-chip-dot{
+        width:.48rem;
+        height:.48rem;
+        border-radius:9999px;
+        background:var(--hero-primary);
+        box-shadow:0 0 14px color-mix(in srgb,var(--hero-primary) 72%,transparent);
+    }
+    .release-tesla-video-chip span:last-child{
+        font-size:.68rem;
+        font-weight:700;
+        letter-spacing:.04em;
+    }
+    .release-tesla-video-caption{
+        position:absolute;
+        z-index:5;
+        left:1.15rem;
+        bottom:1rem;
+        max-width:70%;
+        border:1px solid hsl(var(--border)/.65);
+        border-radius:1rem;
+        padding:.7rem .85rem;
+        background:hsl(var(--card)/.46);
+        backdrop-filter:blur(14px);
+        -webkit-backdrop-filter:blur(14px);
+    }
+    .dark .release-tesla-video-caption{background:rgba(7,13,22,.42)}
+    .release-tesla-video-caption p:first-child{
+        color:hsl(var(--foreground));
+        font-size:.72rem;
+        font-weight:700;
+    }
+    .release-tesla-video-caption p:last-child{
+        margin-top:.18rem;
+        color:hsl(var(--muted-foreground));
+        font-size:.58rem;
+        line-height:1.35;
+    }
+
+    @media(max-width:759px){
+        .release-tesla-video-wrap{min-height:auto;padding:.75rem 0 1.25rem}
+        .release-tesla-video-stage{
+            width:min(100%,42rem);
+            transform:none;
+            border-radius:1.5rem;
+        }
+    }
+
+
+    /* Slide 2 — centered electric mobility showcase */
+    .release-hero-secondary-text{color:var(--hero-primary)}
+
+    .release-auto-showcase{
+        position:relative;
+        min-height:35.5rem;
+        display:flex;
+        flex-direction:column;
+        justify-content:center;
+        overflow:hidden;
+        isolation:isolate;
+    }
+    .release-auto-showcase::before{
+        content:"";
+        position:absolute;
+        inset:8% 7% 10%;
+        border-radius:2.25rem;
+        background:
+            linear-gradient(90deg,
+                transparent 0 16%,
+                hsl(var(--foreground)/.035) 16% 32%,
+                transparent 32% 49%,
+                hsl(var(--foreground)/.028) 49% 65%,
+                transparent 65% 100%);
+        border:1px solid hsl(var(--border)/.45);
+        pointer-events:none;
+    }
+    .dark .release-auto-showcase::before{
+        background:
+            linear-gradient(90deg,
+                transparent 0 16%,
+                rgba(255,255,255,.025) 16% 32%,
+                transparent 32% 49%,
+                rgba(255,255,255,.018) 49% 65%,
+                transparent 65% 100%);
+        border-color:rgba(255,255,255,.045);
+    }
+    .release-auto-showcase::after{
+        content:"";
+        position:absolute;
+        inset:18% 15% 5%;
+        border-radius:9999px;
+        background:
+            radial-gradient(circle at 50% 48%,color-mix(in srgb,var(--hero-primary) 13%,transparent),transparent 40%),
+            radial-gradient(circle at 75% 72%,color-mix(in srgb,var(--hero-primary) 7%,transparent),transparent 38%);
+        filter:blur(76px);
+        pointer-events:none;
+        opacity:.8;
+    }
+
+    .release-auto-copy{
+        position:relative;
+        z-index:2;
+        max-width:52rem;
+        margin-inline:auto;
+        text-align:center;
+    }
+    .release-auto-title{
+        margin-top:.75rem;
+        font-size:clamp(2.4rem,4.3vw,4.45rem);
+        line-height:.96;
+        letter-spacing:-.055em;
+        color:hsl(var(--foreground));
+    }
+    .release-auto-description{
+        max-width:42rem;
+        margin:1rem auto 0;
+        color:hsl(var(--muted-foreground));
+        font-size:.9rem;
+        line-height:1.75;
+    }
+
+    .release-auto-cars-stage{
+        position:relative;
+        z-index:2;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        min-height:19rem;
+        margin-top:.35rem;
+    }
+    .release-auto-cars-stage::before{
+        content:"";
+        position:absolute;
+        left:14%;
+        right:14%;
+        bottom:6%;
+        height:2.6rem;
+        border-radius:9999px;
+        background:color-mix(in srgb,var(--hero-primary) 10%,transparent);
+        filter:blur(25px);
+        opacity:.7;
+    }
+    .release-auto-cars{
+        position:relative;
+        z-index:1;
+        display:block;
+        width:min(92%,64rem);
+        height:auto;
+        object-fit:contain;
+        transform:translateY(.35rem);
+        filter:drop-shadow(0 24px 26px hsl(var(--foreground)/.17));
+        transition:transform .45s ease,filter .45s ease;
+    }
+    .dark .release-auto-cars{
+        filter:
+            drop-shadow(0 26px 30px rgba(0,0,0,.42))
+            drop-shadow(0 0 20px color-mix(in srgb,var(--hero-primary) 8%,transparent));
+    }
+    .release-hero-slide[data-active="true"] .release-auto-cars{
+        animation:autoCarsArrive .85s cubic-bezier(.2,.75,.2,1) both;
+    }
+
+    .release-auto-bottom{
+        position:relative;
+        z-index:3;
+        display:grid;
+        grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+        align-items:center;
+        gap:1rem;
+        margin-top:-.2rem;
+    }
+    .release-auto-features{
+        display:flex;
+        align-items:center;
+        gap:1rem;
+        justify-self:start;
+    }
+    .release-auto-feature{
+        min-width:0;
+    }
+    .release-auto-feature-label{
+        font-size:.58rem;
+        text-transform:uppercase;
+        letter-spacing:.14em;
+        color:hsl(var(--muted-foreground));
+    }
+    .release-auto-feature-value{
+        margin-top:.22rem;
+        font-size:.8rem;
+        font-weight:700;
+        color:hsl(var(--foreground));
+        white-space:nowrap;
+    }
+    .release-auto-divider{
+        width:1px;
+        height:2rem;
+        background:color-mix(in srgb,var(--hero-primary) 48%,hsl(var(--border)));
+    }
+    .release-auto-cta{
+        justify-self:center;
+    }
+    .release-auto-pager{
+        justify-self:end;
+        display:flex;
+        align-items:center;
+        gap:.55rem;
+        color:hsl(var(--muted-foreground));
+    }
+    .release-auto-pager span{
+        width:2.2rem;
+        height:2.2rem;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        border-radius:9999px;
+        border:1px solid hsl(var(--border));
+        background:hsl(var(--card)/.48);
+    }
+
+    @keyframes autoCarsArrive{
+        from{opacity:0;transform:translateY(1.4rem) scale(.975)}
+        to{opacity:1;transform:translateY(.35rem) scale(1)}
+    }
+
+    @media(max-width:900px){
+        .release-auto-showcase{min-height:auto;padding:.75rem 0 1rem}
+        .release-auto-cars-stage{min-height:16rem}
+        .release-auto-cars{width:min(100%,55rem)}
+        .release-auto-bottom{
+            grid-template-columns:1fr;
+            justify-items:center;
+            margin-top:.5rem;
+        }
+        .release-auto-features{justify-self:center;flex-wrap:wrap;justify-content:center}
+        .release-auto-cta{justify-self:center}
+        .release-auto-pager{display:none}
+    }
+    @media(max-width:600px){
+        .release-auto-title{font-size:clamp(2.25rem,11vw,3.35rem)}
+        .release-auto-description{font-size:.82rem;line-height:1.65}
+        .release-auto-cars-stage{min-height:12.5rem}
+        .release-auto-cars{width:108%;max-width:none}
+        .release-auto-feature-value{font-size:.72rem}
+    }
+    @media(prefers-reduced-motion:reduce){
+        .release-hero-slide[data-active="true"] .release-auto-cars{animation:none}
+    }
+
+
+    /* Slide 3 — trade invest bot showcase */
+    .release-bot-showcase{
+        position:relative;
+        min-height:34rem;
+        display:grid;
+        grid-template-columns:minmax(0, .96fr) minmax(0, 1.04fr);
+        align-items:center;
+        gap:2rem;
+        isolation:isolate;
+    }
+    .release-bot-showcase::before{
+        content:"";
+        position:absolute;
+        inset:8% 0 4%;
+        background:
+            radial-gradient(circle at 18% 28%,color-mix(in srgb,var(--hero-primary) 10%,transparent),transparent 26%),
+            radial-gradient(circle at 82% 24%,color-mix(in srgb,var(--hero-secondary) 10%,transparent),transparent 30%),
+            radial-gradient(circle at 76% 74%,color-mix(in srgb,var(--hero-primary) 7%,transparent),transparent 34%);
+        filter:blur(70px);
+        opacity:.86;
+        pointer-events:none;
+    }
+    .release-bot-copy{
+        position:relative;
+        z-index:2;
+        max-width:35rem;
+    }
+    .release-bot-title{
+        margin-top:.85rem;
+        font-size:clamp(2.5rem,4vw,4.7rem);
+        line-height:.95;
+        letter-spacing:-.055em;
+        color:hsl(var(--foreground));
+    }
+    .release-bot-description{
+        margin-top:1.15rem;
+        max-width:34rem;
+        color:hsl(var(--muted-foreground));
+        font-size:.95rem;
+        line-height:1.78;
+    }
+    .release-bot-pills{
+        margin-top:1.35rem;
+        display:flex;
+        flex-wrap:wrap;
+        gap:.65rem;
+    }
+    .release-bot-pill{
+        display:inline-flex;
+        align-items:center;
+        gap:.5rem;
+        padding:.55rem .8rem;
+        border-radius:9999px;
+        border:1px solid color-mix(in srgb,var(--hero-primary) 16%,hsl(var(--border)));
+        background:hsl(var(--card)/.46);
+        color:hsl(var(--foreground));
+        backdrop-filter:blur(12px);
+        -webkit-backdrop-filter:blur(12px);
+        font-size:.72rem;
+        font-weight:600;
+        letter-spacing:.01em;
+    }
+    .dark .release-bot-pill{background:rgba(9,15,25,.36)}
+    .release-bot-art{
+        position:relative;
+        z-index:2;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        min-height:22rem;
+    }
+    .release-bot-art::before{
+        content:"";
+        position:absolute;
+        left:8%;
+        right:8%;
+        bottom:10%;
+        height:2.7rem;
+        border-radius:9999px;
+        background:color-mix(in srgb,var(--hero-primary) 12%,transparent);
+        filter:blur(28px);
+        opacity:.72;
+    }
+    .release-bot-image{
+        position:relative;
+        z-index:1;
+        display:block;
+        width:min(100%,54rem);
+        height:auto;
+        object-fit:contain;
+        filter:
+            drop-shadow(0 26px 30px hsl(var(--foreground)/.16))
+            drop-shadow(0 0 18px color-mix(in srgb,var(--hero-primary) 7%,transparent));
+        transform:translateY(.15rem);
+    }
+    .dark .release-bot-image{
+        filter:
+            drop-shadow(0 30px 34px rgba(0,0,0,.38))
+            drop-shadow(0 0 20px color-mix(in srgb,var(--hero-primary) 10%,transparent));
+    }
+    .release-hero-slide[data-active="true"] .release-bot-image{
+        animation:tradeBotArrive .8s cubic-bezier(.2,.8,.2,1) both;
+    }
+
+    .release-bot-metrics{
+        margin-top:1.6rem;
+        display:grid;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        gap:1rem;
+        max-width:34rem;
+    }
+    .release-bot-metric{
+        min-width:0;
+        padding-right:.7rem;
+        border-right:1px solid color-mix(in srgb,var(--hero-primary) 20%,hsl(var(--border)));
+    }
+    .release-bot-metric:last-child{border-right:none;padding-right:0}
+    .release-bot-metric-label{
+        font-size:.58rem;
+        text-transform:uppercase;
+        letter-spacing:.16em;
+        color:hsl(var(--muted-foreground));
+    }
+    .release-bot-metric-value{
+        margin-top:.28rem;
+        font-size:.92rem;
+        font-weight:700;
+        color:hsl(var(--foreground));
+        white-space:nowrap;
+    }
+
+    @keyframes tradeBotArrive{
+        from{opacity:0;transform:translateY(1rem) scale(.985)}
+        to{opacity:1;transform:translateY(.15rem) scale(1)}
+    }
+
+    @media(max-width:980px){
+        .release-bot-showcase{
+            min-height:auto;
+            grid-template-columns:1fr;
+            gap:1.25rem;
+            padding:.3rem 0 1rem;
+        }
+        .release-bot-copy{
+            max-width:none;
+            text-align:center;
+            margin-inline:auto;
+        }
+        .release-bot-description,
+        .release-bot-metrics{margin-left:auto;margin-right:auto}
+        .release-bot-pills{justify-content:center}
+        .release-bot-art{min-height:17rem}
+    }
+    @media(max-width:600px){
+        .release-bot-title{font-size:clamp(2.2rem,10vw,3.6rem)}
+        .release-bot-description{font-size:.84rem;line-height:1.68}
+        .release-bot-metrics{
+            grid-template-columns:1fr;
+            gap:.8rem;
+        }
+        .release-bot-metric{
+            border-right:none;
+            padding-right:0;
+            text-align:center;
+        }
+    }
+    @media(prefers-reduced-motion:reduce){
+        .release-hero-slide[data-active="true"] .release-bot-image{animation:none}
+    }
+
+
+    /* FINAL HERO COMPACT NORMALIZATION R1
+       One shared canvas for all 3 slides: equal height, compact spacing, stable nav gap. */
+    @media(min-width:760px){
+        .release-hero{
+            padding-top:1.15rem !important;
+        }
+
+        .release-hero > .relative.mx-auto{
+            padding-top:1.15rem !important;
+            padding-bottom:1rem !important;
+        }
+
+        .release-hero-shell{
+            height:29.75rem !important;
+            min-height:29.75rem !important;
+        }
+
+        .release-hero-slide,
+        .release-hero-slide[data-active="true"]{
+            position:absolute !important;
+            inset:0 !important;
+            height:100% !important;
+        }
+
+        .release-hero-slide[data-active="true"]{
+            display:block;
+        }
+
+        .release-hero-layout,
+        .release-auto-showcase,
+        .release-bot-showcase{
+            height:100% !important;
+            min-height:0 !important;
+        }
+
+        .release-hero-layout{
+            grid-template-columns:minmax(0,.91fr) minmax(0,1.09fr) !important;
+            gap:1.65rem !important;
+            align-items:center !important;
+        }
+
+        .release-hero-copy,
+        .release-bot-copy{
+            align-self:center;
+        }
+
+        .release-hero-title,
+        .release-auto-title,
+        .release-bot-title{
+            font-size:clamp(2.35rem,3.75vw,4rem) !important;
+            line-height:.97 !important;
+            letter-spacing:-.052em !important;
+        }
+
+        .release-hero-copy > p.mt-5,
+        .release-bot-description{
+            margin-top:.9rem !important;
+            line-height:1.62 !important;
+        }
+
+        .release-hero-copy > .mt-7,
+        .release-bot-copy > .mt-7{
+            margin-top:1.05rem !important;
+        }
+
+        .release-hero-copy > .mt-6,
+        .release-bot-pills{
+            margin-top:.9rem !important;
+        }
+
+        /* Slide 1 */
+        .release-growth-wrap{
+            min-height:0 !important;
+            height:100% !important;
+            padding:.2rem 0 .45rem !important;
+        }
+
+        .release-growth-svg{
+            width:min(100%,42.5rem) !important;
+            max-height:28rem !important;
+        }
+
+        /* Slide 2 */
+        .release-auto-showcase{
+            padding:.1rem 0 .25rem !important;
+            justify-content:center !important;
+        }
+
+        .release-auto-copy{
+            max-width:46rem !important;
+        }
+
+        .release-auto-description{
+            margin-top:.65rem !important;
+            line-height:1.58 !important;
+        }
+
+        .release-auto-cars-stage{
+            min-height:14.2rem !important;
+            margin-top:-.1rem !important;
+        }
+
+        .release-auto-cars{
+            width:min(86%,56rem) !important;
+            max-height:15.5rem !important;
+            object-fit:contain !important;
+        }
+
+        .release-auto-bottom{
+            margin-top:-.65rem !important;
+        }
+
+        /* Slide 3 */
+        .release-bot-showcase{
+            grid-template-columns:minmax(0,.93fr) minmax(0,1.07fr) !important;
+            gap:1.35rem !important;
+        }
+
+        .release-bot-description{
+            font-size:.88rem !important;
+        }
+
+        .release-bot-pills{
+            gap:.45rem !important;
+        }
+
+        .release-bot-pill{
+            padding:.46rem .68rem !important;
+            font-size:.67rem !important;
+        }
+
+        .release-bot-metrics{
+            margin-top:1rem !important;
+            gap:.7rem !important;
+        }
+
+        .release-bot-art{
+            min-height:0 !important;
+            height:100% !important;
+        }
+
+        .release-bot-image{
+            width:min(100%,47rem) !important;
+            max-height:25rem !important;
+            object-fit:contain !important;
+        }
+
+        /* Shared selector strip */
+        .release-hero-tabs{
+            margin-top:.72rem !important;
+            gap:.55rem !important;
+        }
+
+        .release-hero-tab{
+            padding:.62rem .7rem !important;
+            border-radius:.9rem !important;
+        }
+
+        .release-hero-number{
+            height:1.85rem !important;
+            width:1.85rem !important;
+        }
+    }
+
+    @media(min-width:1180px){
+        .release-hero-shell{
+            height:30.25rem !important;
+            min-height:30.25rem !important;
+        }
+
+        .release-growth-svg{
+            width:min(103%,43.5rem) !important;
+        }
+
+        .release-auto-cars{
+            width:min(88%,58rem) !important;
+        }
+
+        .release-bot-image{
+            width:min(104%,49rem) !important;
+        }
+    }
+
+    @media(max-width:759px){
+        .release-hero{
+            padding-top:.8rem !important;
+        }
+
+        .release-hero > .relative.mx-auto{
+            padding-top:.8rem !important;
+            padding-bottom:.8rem !important;
+        }
+
+        .release-hero-shell{
+            height:auto !important;
+            min-height:0 !important;
+        }
+
+        .release-hero-slide[data-active="true"]{
+            position:relative !important;
+            inset:auto !important;
+            height:auto !important;
+        }
+
+        .release-hero-layout,
+        .release-auto-showcase,
+        .release-bot-showcase{
+            height:auto !important;
+        }
+
+        .release-hero-tabs{
+            margin-top:.8rem !important;
+        }
+    }
+
+
+    /* FINAL HERO NAV SEPARATION R2
+       External spacing belongs between the navigation and hero; do not inflate slide internals. */
+    @media(min-width:760px){
+        .release-hero{
+            margin-top:1.65rem !important;
+            padding-top:.35rem !important;
+        }
+
+        .release-hero > .relative.mx-auto{
+            padding-top:.55rem !important;
+            padding-bottom:.9rem !important;
+        }
+
+        .release-hero-shell{
+            height:28.35rem !important;
+            min-height:28.35rem !important;
+        }
+
+        .release-growth-wrap{
+            padding:0 0 .3rem !important;
+        }
+
+        .release-auto-showcase{
+            padding:0 0 .15rem !important;
+        }
+
+        .release-bot-showcase{
+            padding:0 !important;
+        }
+
+        .release-hero-tabs{
+            margin-top:.62rem !important;
+        }
+    }
+
+    @media(min-width:1180px){
+        .release-hero{
+            margin-top:1.85rem !important;
+        }
+
+        .release-hero-shell{
+            height:28.75rem !important;
+            min-height:28.75rem !important;
+        }
+    }
+
+    @media(max-width:759px){
+        .release-hero{
+            margin-top:.9rem !important;
+            padding-top:.25rem !important;
+        }
+
+        .release-hero > .relative.mx-auto{
+            padding-top:.5rem !important;
+        }
+    }
+
+
+    /* HOME HERO SHELL OWNERSHIP R3
+       The public layout no longer reserves the fixed-header spacer for this page.
+       The hero owns its own navbar clearance so its background can begin at viewport top. */
+    .release-hero{
+        margin-top:0 !important;
+        padding-top:5.15rem !important;
+    }
+
+    .release-hero > .relative.mx-auto{
+        padding-top:.7rem !important;
+        padding-bottom:.9rem !important;
+    }
+
+    @media(min-width:760px){
+        .release-hero-shell{
+            height:27.85rem !important;
+            min-height:27.85rem !important;
+        }
+    }
+
+    @media(min-width:1180px){
+        .release-hero{
+            padding-top:5.2rem !important;
+        }
+
+        .release-hero-shell{
+            height:28.15rem !important;
+            min-height:28.15rem !important;
+        }
+    }
+
+    @media(max-width:759px){
+        .release-hero{
+            margin-top:0 !important;
+            padding-top:4.75rem !important;
+        }
+
+        .release-hero > .relative.mx-auto{
+            padding-top:.6rem !important;
+            padding-bottom:.8rem !important;
+        }
+
+        .release-hero-shell{
+            height:auto !important;
+            min-height:0 !important;
+        }
+    }
+
+
+    /* HERO CONTROLS RELOCATION R4 */
+    .release-hero-controls{
+        position:absolute;
+        z-index:20;
+        right:1.75rem;
+        bottom:5.55rem;
+        display:flex;
+        align-items:center;
+        gap:.55rem;
+    }
+
+    .release-hero-controls button{
+        height:2.55rem;
+        width:2.55rem;
+        box-shadow:0 12px 28px hsl(var(--foreground)/.10);
+        backdrop-filter:blur(14px);
+        -webkit-backdrop-filter:blur(14px);
+    }
+
+    .release-hero-controls [data-release-prev]{
+        background:hsl(var(--card)/.72);
+    }
+
+    .release-hero-controls [data-release-next]{
+        box-shadow:
+            0 12px 30px color-mix(in srgb,var(--hero-primary) 20%,transparent),
+            inset 0 0 0 1px color-mix(in srgb,var(--hero-primary) 18%,transparent);
+    }
+
+    /* Old Slide 2 decorative arrows are intentionally removed from the visual system. */
+    .release-auto-pager{
+        display:none !important;
+    }
+
+    @media(max-width:759px){
+        .release-hero-controls{
+            position:relative;
+            right:auto;
+            bottom:auto;
+            justify-content:flex-end;
+            margin-top:.7rem;
+        }
+    }
+
 </style>
 
 
 <section class="release-hero border-b border-border" data-release-hero>
-    <div class="relative mx-auto max-w-7xl px-4 pb-8 pt-8 sm:px-6 sm:pb-10 sm:pt-10 lg:px-8">
+    <div class="relative mx-auto max-w-7xl px-4 pb-8 pt-14 sm:px-6 sm:pb-10 sm:pt-16 lg:px-8 lg:pt-20 xl:pt-24">
         <div class="release-hero-shell">
 
             {{-- 01 / MARKETS --}}
@@ -592,14 +1827,24 @@
                     <div class="release-growth-wrap" aria-label="Growth and financial opportunity illustration">
                         <div class="release-growth-aura" aria-hidden="true"></div>
 
-                        <svg class="release-growth-svg" viewBox="0 0 760 560" role="img" aria-labelledby="releaseGrowthTitle releaseGrowthDesc">
+                        <svg class="release-growth-svg" viewBox="0 0 840 590" role="img" aria-labelledby="releaseGrowthTitle releaseGrowthDesc">
                             <title id="releaseGrowthTitle">{{ localize('ui.release.hero.growth.title', 'Financial growth illustration') }}</title>
-                            <desc id="releaseGrowthDesc">{{ localize('ui.release.hero.growth.desc', 'An illustrative growth panel with rising bars and an upward curve.') }}</desc>
+                            <desc id="releaseGrowthDesc">{{ localize('ui.release.hero.growth.desc', 'A glassmorphism growth display with stronger perspective and layered financial UI.') }}</desc>
 
                             <defs>
                                 <linearGradient id="growthPanelFill" x1="0" y1="0" x2="1" y2="1">
                                     <stop offset="0%" class="growth-panel-stop-a"/>
                                     <stop offset="100%" class="growth-panel-stop-b"/>
+                                </linearGradient>
+
+                                <linearGradient id="growthRearFill" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0%" class="growth-rear-stop-a"/>
+                                    <stop offset="100%" class="growth-rear-stop-b"/>
+                                </linearGradient>
+
+                                <linearGradient id="growthBaseFill" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" class="growth-base-stop-a"/>
+                                    <stop offset="100%" class="growth-base-stop-b"/>
                                 </linearGradient>
 
                                 <linearGradient id="growthBarFill" x1="0" y1="1" x2="0" y2="0">
@@ -612,101 +1857,137 @@
                                     <stop offset="100%" class="growth-tile-stop-b"/>
                                 </linearGradient>
 
+                                <linearGradient id="growthEdgeHighlight" x1="0" y1="0" x2="1" y2="1">
+                                    <stop offset="0%" stop-color="white" stop-opacity=".68"/>
+                                    <stop offset="34%" stop-color="white" stop-opacity=".10"/>
+                                    <stop offset="72%" stop-color="var(--brand-primary)" stop-opacity=".12"/>
+                                    <stop offset="100%" stop-color="var(--brand-primary)" stop-opacity=".60"/>
+                                </linearGradient>
+
+                                <linearGradient id="growthSoftHighlight" x1="0" y1="0" x2="1" y2="0">
+                                    <stop offset="0%" stop-color="white" stop-opacity=".30"/>
+                                    <stop offset="40%" stop-color="white" stop-opacity=".05"/>
+                                    <stop offset="100%" stop-color="white" stop-opacity="0"/>
+                                </linearGradient>
+
                                 <filter id="growthGlow" x="-40%" y="-40%" width="180%" height="180%">
-                                    <feGaussianBlur stdDeviation="8" result="blur"/>
+                                    <feGaussianBlur stdDeviation="7" result="blur"/>
                                     <feMerge>
                                         <feMergeNode in="blur"/>
                                         <feMergeNode in="SourceGraphic"/>
                                     </feMerge>
                                 </filter>
 
-                                <filter id="growthSoftShadow" x="-20%" y="-20%" width="140%" height="150%">
-                                    <feDropShadow dx="0" dy="18" stdDeviation="18" flood-opacity=".22"/>
+                                <filter id="growthSoftShadow" x="-25%" y="-25%" width="160%" height="175%">
+                                    <feDropShadow dx="0" dy="22" stdDeviation="18" flood-opacity=".24"/>
+                                </filter>
+
+                                <filter id="growthBaseShadow" x="-30%" y="-50%" width="180%" height="220%">
+                                    <feGaussianBlur stdDeviation="14"/>
                                 </filter>
                             </defs>
 
-                            <g class="release-growth-card" filter="url(#growthSoftShadow)">
-                                <rect x="54" y="54" width="650" height="446" rx="38" fill="url(#growthPanelFill)" class="growth-panel-stroke"/>
+                            <g aria-hidden="true">
+                                <path class="release-growth-orbit release-growth-orbit-a" d="M10 390 C168 519 603 510 824 202"/>
+                                <path class="release-growth-orbit release-growth-orbit-b" d="M26 435 C276 574 677 454 826 264"/>
+                                <circle cx="84" cy="421" r="4.5" class="growth-orbit-dots release-growth-orbit-dot"/>
+                                <circle cx="766" cy="299" r="4.5" class="growth-orbit-dots release-growth-orbit-dot"/>
+                                <path class="growth-ambient" d="M140 96 C226 58 365 39 502 45"/>
+                                <path class="growth-ambient" d="M628 104 C700 124 746 159 789 214"/>
+                            </g>
 
-                                <g class="growth-grid" opacity=".34">
-                                    <line x1="120" y1="160" x2="650" y2="160"/>
-                                    <line x1="120" y1="226" x2="650" y2="226"/>
-                                    <line x1="120" y1="292" x2="650" y2="292"/>
-                                    <line x1="120" y1="358" x2="650" y2="358"/>
-                                    <line x1="178" y1="142" x2="178" y2="372"/>
-                                    <line x1="270" y1="142" x2="270" y2="372"/>
-                                    <line x1="362" y1="142" x2="362" y2="372"/>
-                                    <line x1="454" y1="142" x2="454" y2="372"/>
-                                    <line x1="546" y1="142" x2="546" y2="372"/>
+                            <ellipse cx="460" cy="505" rx="304" ry="30" fill="var(--brand-primary)" opacity=".12" filter="url(#growthBaseShadow)"/>
+
+                            <g class="release-growth-base" filter="url(#growthSoftShadow)">
+                                <path class="growth-base-top" d="M175 452 L706 420 L789 468 L246 506 Q214 506 193 492 L163 471 Q154 466 175 452 Z"/>
+                                <path class="growth-base-front" d="M193 492 Q214 506 245 506 L789 470 L779 494 Q774 506 759 509 L252 545 Q220 546 198 528 L170 505 Q159 496 163 471 Z"/>
+                                <path class="growth-base-edge" d="M193 492 Q214 506 245 506 L786 470"/>
+                            </g>
+
+                            <g class="release-growth-rear">
+                                <path class="growth-rear-panel" d="M168 104 Q171 70 203 65 L717 34 Q749 31 753 63 L709 422 Q706 449 677 452 L141 482 Q112 482 116 450 Z"/>
+                                <path class="growth-panel-inner-edge" d="M184 117 L706 88 L669 407 L137 439"/>
+                            </g>
+
+                            <g class="release-growth-card" filter="url(#growthSoftShadow)">
+                                <path d="M141 82 Q145 50 177 46 L729 15 Q761 12 765 45 L720 414 Q717 443 686 447 L117 476 Q88 476 93 444 Z"
+                                      fill="url(#growthPanelFill)" class="growth-panel-stroke"/>
+                                <path class="growth-panel-highlight" d="M147 84 Q149 57 179 52 L724 22 Q751 20 754 44"/>
+                                <path class="growth-panel-highlight-soft" d="M174 76 L607 50"/>
+                                <path class="growth-panel-inner-edge" d="M123 111 L730 79 L694 414 L112 445"/>
+
+                                <g class="growth-grid" opacity=".52">
+                                    <line x1="163" y1="177" x2="693" y2="147"/>
+                                    <line x1="156" y1="236" x2="687" y2="206"/>
+                                    <line x1="149" y1="295" x2="680" y2="265"/>
+                                    <line x1="142" y1="354" x2="673" y2="324"/>
+                                    <line x1="217" y1="145" x2="194" y2="381"/>
+                                    <line x1="310" y1="140" x2="287" y2="376"/>
+                                    <line x1="403" y1="135" x2="380" y2="370"/>
+                                    <line x1="496" y1="129" x2="473" y2="364"/>
+                                    <line x1="589" y1="124" x2="566" y2="358"/>
                                 </g>
 
                                 <g class="release-growth-badge" data-growth-badge>
-                                    <rect x="112" y="90" width="254" height="78" rx="23" class="growth-badge-bg"/>
-                                    <circle cx="150" cy="129" r="24" class="growth-accent-fill"/>
-                                    <path d="M140 138 L160 118 M149 118 H160 V129" class="growth-arrow-mark"/>
-                                    <text x="184" y="137" class="growth-count-text">
-                                        +<tspan data-growth-count>0</tspan>%
-                                    </text>
-                                    <text x="294" y="137" class="growth-label-text">growth</text>
+                                    <rect x="168" y="98" width="214" height="62" rx="20" class="growth-badge-bg"/>
+                                    <circle cx="198" cy="129" r="19" class="growth-accent-fill"/>
+                                    <path d="M190 137 L206 121 M197 121 H206 V130" class="growth-arrow-mark"/>
+                                    <text x="226" y="136" class="growth-count-text">+<tspan data-growth-count>0</tspan>%</text>
+                                    <text x="316" y="135" class="growth-label-text">growth</text>
                                 </g>
 
-                                <g class="release-growth-bars" filter="url(#growthGlow)">
-                                    <rect class="growth-bar growth-bar-1" x="142" y="320" width="56" height="52" rx="12" fill="url(#growthBarFill)"/>
-                                    <rect class="growth-bar growth-bar-2" x="228" y="282" width="56" height="90" rx="12" fill="url(#growthBarFill)"/>
-                                    <rect class="growth-bar growth-bar-3" x="314" y="250" width="56" height="122" rx="12" fill="url(#growthBarFill)"/>
-                                    <rect class="growth-bar growth-bar-4" x="400" y="210" width="56" height="162" rx="12" fill="url(#growthBarFill)"/>
-                                    <rect class="growth-bar growth-bar-5" x="486" y="164" width="56" height="208" rx="12" fill="url(#growthBarFill)"/>
-                                    <rect class="growth-bar growth-bar-6" x="572" y="112" width="56" height="260" rx="12" fill="url(#growthBarFill)"/>
+                                <g class="release-growth-bars">
+                                    <g transform="skewX(-8)">
+                                        <rect class="growth-bar growth-bar-1" x="193" y="325" width="50" height="44" rx="10" fill="url(#growthBarFill)"/>
+                                        <rect class="growth-bar growth-bar-2" x="274" y="291" width="50" height="78" rx="10" fill="url(#growthBarFill)"/>
+                                        <rect class="growth-bar growth-bar-3" x="355" y="257" width="50" height="112" rx="10" fill="url(#growthBarFill)"/>
+                                        <rect class="growth-bar growth-bar-4" x="436" y="218" width="50" height="151" rx="10" fill="url(#growthBarFill)"/>
+                                        <rect class="growth-bar growth-bar-5" x="517" y="173" width="50" height="196" rx="10" fill="url(#growthBarFill)"/>
+                                        <rect class="growth-bar growth-bar-6" x="598" y="116" width="50" height="253" rx="10" fill="url(#growthBarFill)"/>
+                                    </g>
                                 </g>
 
-                                <path
-                                    class="release-growth-line"
-                                    d="M150 326 C188 304 207 286 236 294 C267 303 286 266 322 260 C355 255 369 280 404 244 C438 210 456 221 492 194 C523 171 537 152 570 128 C594 111 612 94 638 78"
-                                />
+                                <path class="release-growth-line"
+                                      d="M187 329 C226 309 250 289 282 297 C316 305 339 269 374 264 C410 258 427 281 463 245 C498 210 520 223 558 194 C590 169 609 146 640 119 C662 101 678 82 706 60"/>
 
-                                <g class="release-growth-nodes" filter="url(#growthGlow)">
-                                    <circle class="growth-node growth-node-1" cx="150" cy="326" r="8"/>
-                                    <circle class="growth-node growth-node-2" cx="236" cy="294" r="8"/>
-                                    <circle class="growth-node growth-node-3" cx="322" cy="260" r="8"/>
-                                    <circle class="growth-node growth-node-4" cx="404" cy="244" r="8"/>
-                                    <circle class="growth-node growth-node-5" cx="492" cy="194" r="8"/>
-                                    <circle class="growth-node growth-node-6" cx="570" cy="128" r="8"/>
-                                    <path d="M630 89 L650 67 L644 99 Z" class="growth-accent-fill"/>
+                                <g class="release-growth-nodes">
+                                    <circle class="growth-node growth-node-1" cx="187" cy="329" r="7"/>
+                                    <circle class="growth-node growth-node-2" cx="282" cy="297" r="7"/>
+                                    <circle class="growth-node growth-node-3" cx="374" cy="264" r="7"/>
+                                    <circle class="growth-node growth-node-4" cx="463" cy="245" r="7"/>
+                                    <circle class="growth-node growth-node-5" cx="558" cy="194" r="7"/>
+                                    <circle class="growth-node growth-node-6" cx="640" cy="119" r="7"/>
+                                    <path d="M698 72 L720 49 L713 81 Z" class="growth-accent-fill"/>
                                 </g>
 
                                 <g class="release-growth-tiles">
-                                    <g transform="translate(116 392)">
-                                        <rect width="118" height="82" rx="18" fill="url(#growthTileFill)" class="growth-tile-stroke"/>
-                                        <rect x="24" y="43" width="11" height="18" rx="3" class="growth-accent-fill"/>
-                                        <rect x="44" y="33" width="11" height="28" rx="3" class="growth-accent-fill"/>
-                                        <rect x="64" y="22" width="11" height="39" rx="3" class="growth-accent-fill"/>
+                                    <g transform="translate(139 383) skewX(-8)">
+                                        <rect width="120" height="68" rx="18" fill="url(#growthTileFill)" class="growth-tile-stroke"/>
+                                        <rect x="25" y="40" width="10" height="14" rx="3" class="growth-accent-fill"/>
+                                        <rect x="44" y="31" width="10" height="23" rx="3" class="growth-accent-fill"/>
+                                        <rect x="63" y="22" width="10" height="32" rx="3" class="growth-accent-fill"/>
                                     </g>
 
-                                    <g transform="translate(246 392)">
-                                        <rect width="118" height="82" rx="18" fill="url(#growthTileFill)" class="growth-tile-stroke"/>
-                                        <circle cx="59" cy="42" r="22" class="growth-icon-muted-fill"/>
-                                        <path d="M59 42 L59 20 A22 22 0 0 1 81 42 Z" class="growth-panel-icon-fill"/>
+                                    <g transform="translate(271 375) skewX(-8)">
+                                        <rect width="120" height="68" rx="18" fill="url(#growthTileFill)" class="growth-tile-stroke"/>
+                                        <circle cx="60" cy="34" r="20" class="growth-icon-muted-fill"/>
+                                        <path d="M60 34 L60 14 A20 20 0 0 1 80 34 Z" class="growth-panel-icon-fill"/>
                                     </g>
 
-                                    <g transform="translate(376 392)">
-                                        <rect width="118" height="82" rx="18" fill="url(#growthTileFill)" class="growth-tile-stroke"/>
-                                        <rect x="39" y="20" width="40" height="43" rx="8" fill="none" class="growth-accent-stroke"/>
-                                        <line x1="49" y1="33" x2="69" y2="33" class="growth-accent-stroke"/>
-                                        <line x1="49" y1="43" x2="69" y2="43" class="growth-accent-stroke"/>
-                                        <line x1="49" y1="53" x2="63" y2="53" class="growth-accent-stroke"/>
+                                    <g transform="translate(403 367) skewX(-8)">
+                                        <rect width="120" height="68" rx="18" fill="url(#growthTileFill)" class="growth-tile-stroke"/>
+                                        <rect x="41" y="16" width="38" height="39" rx="7" fill="none" class="growth-accent-stroke"/>
+                                        <line x1="50" y1="28" x2="70" y2="28" class="growth-accent-stroke"/>
+                                        <line x1="50" y1="38" x2="70" y2="38" class="growth-accent-stroke"/>
+                                        <line x1="50" y1="48" x2="64" y2="48" class="growth-accent-stroke"/>
                                     </g>
 
-                                    <g transform="translate(506 392)">
-                                        <rect width="118" height="82" rx="18" fill="url(#growthTileFill)" class="growth-tile-stroke"/>
-                                        <circle cx="59" cy="41" r="14" fill="none" class="growth-icon-muted-stroke"/>
-                                        <path d="M59 15 V24 M59 58 V67 M33 41 H42 M76 41 H85 M41 23 L47 29 M71 53 L77 59 M77 23 L71 29 M47 53 L41 59" class="growth-icon-muted-stroke"/>
+                                    <g transform="translate(535 359) skewX(-8)">
+                                        <rect width="120" height="68" rx="18" fill="url(#growthTileFill)" class="growth-tile-stroke"/>
+                                        <circle cx="60" cy="34" r="13" fill="none" class="growth-icon-muted-stroke"/>
+                                        <path d="M60 12 V21 M60 47 V56 M37 34 H46 M74 34 H83 M43 18 L49 24 M71 44 L77 50 M77 18 L71 24 M49 44 L43 50" class="growth-icon-muted-stroke"/>
                                     </g>
                                 </g>
-
-                                <path class="release-growth-orbit release-growth-orbit-a" d="M24 370 C148 456 535 468 730 205"/>
-                                <path class="release-growth-orbit release-growth-orbit-b" d="M36 402 C248 522 609 428 738 258"/>
-                                <circle cx="72" cy="394" r="5" class="growth-accent-fill release-growth-orbit-dot"/>
-                                <circle cx="690" cy="292" r="5" class="growth-accent-fill release-growth-orbit-dot"/>
                             </g>
                         </svg>
                     </div>
@@ -714,151 +1995,127 @@
             </article>
 
             {{-- 02 / AUTOMOTIVE --}}
+                        {{-- 02 / ELECTRIC AUTOMOBILE --}}
+            {{-- 02 / ELECTRIC AUTOMOBILE — VIDEO TRIAL --}}
+            {{-- 02 / ELECTRIC MOBILITY SHOWCASE --}}
             <article class="release-hero-slide" data-release-slide="1" data-active="false">
-                <div class="release-hero-layout">
-                    <div class="release-hero-copy">
-                        <p class="text-[10px] font-semibold uppercase tracking-[.2em] text-muted-foreground">{{ localize('ui.release.hero.auto.eyebrow', 'Digital commerce · automotive inventory') }}</p>
-                        <h2 class="release-hero-title mt-4 font-semibold">
-                            {{ localize('ui.release.hero.auto.discover', 'Discover') }}
-                            <span class="release-hero-primary-text">{{ localize('ui.release.hero.auto.premium', 'Premium') }}</span>
-                            <span class="block">{{ localize('ui.release.hero.auto.vehicles', 'Vehicle') }}
-                                <span class="release-hero-secondary-text">{{ localize('ui.release.hero.auto.inventory', 'Inventory.') }}</span>
-                            </span>
+                <div class="release-auto-showcase">
+                    <div class="release-auto-copy">
+                        <p class="text-[10px] font-semibold uppercase tracking-[.2em] text-muted-foreground">
+                            {{ localize('ui.release.hero.auto.eyebrow', 'Electric mobility · connected automotive') }}
+                        </p>
+
+                        <h2 class="release-auto-title font-semibold">
+                            {{ localize('ui.release.hero.auto.discover', 'Drive Into') }}
+                            <span class="release-hero-primary-text">{{ localize('ui.release.hero.auto.premium', 'Tomorrow.') }}</span>
                         </h2>
-                        <p class="mt-5 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">{{ localize('ui.release.hero.auto.copy', 'Browse available vehicles through the same connected platform while commerce remains distinct from your financial market activity.') }}</p>
-                        <div class="mt-7 flex flex-col gap-3 sm:flex-row">
-                            <a href="{{ $automotiveUrl }}" class="release-hero-primary-button inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold">{{ localize('ui.release.hero.auto.browse', 'Browse Inventory') }}<i data-lucide="arrow-right" class="h-4 w-4"></i></a>
-                            <a href="{{ $registerUrl }}" class="release-hero-secondary-button inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold">{{ auth()->check() ? localize('ui.common.open_workspace', 'Open workspace') : localize('ui.release.hero.register', 'Register') }}</a>
-                        </div>
+
+                        <p class="release-auto-description">
+                            {{ localize('ui.release.hero.auto.copy', 'Explore a connected automotive experience built around electric mobility, modern vehicle technology and simpler access to the cars you want.') }}
+                        </p>
                     </div>
 
-                    <div class="release-device-wrap">
-                        <div class="release-device-glow"></div>
-                        <div class="release-device">
-                            <div class="release-device-screen">
-                                <div class="release-screen-top">
-                                    <div class="flex items-center gap-2">
-                                        <span class="release-ui-icon flex h-7 w-7 items-center justify-center rounded-lg"><i data-lucide="car-front" class="h-3.5 w-3.5"></i></span>
-                                        <div><p class="text-[7px] uppercase tracking-[.14em] text-muted-foreground">{{ $company }}</p><p class="text-[10px] font-semibold text-foreground">{{ localize('ui.release.hero.auto.visual', 'Automotive Inventory') }}</p></div>
-                                    </div>
-                                    <span class="rounded-full border border-border bg-card px-2 py-1 text-[7px] font-semibold text-muted-foreground">{{ number_format($platformStats['automotive_inventory'] ?? 0) }} {{ localize('ui.release.hero.auto.available', 'available') }}</span>
-                                </div>
+                    <div class="release-auto-cars-stage">
+                        <img
+                            src="{{ asset('assets/hero/electric-mobility-trio.png') }}"
+                            alt="{{ localize('ui.release.hero.auto.visual_alt', 'A white electric SUV with red and white electric sedans') }}"
+                            class="release-auto-cars"
+                            loading="eager"
+                            decoding="async"
+                        >
+                    </div>
 
-                                <div class="release-screen-body">
-                                    <div class="grid gap-3 sm:grid-cols-3">
-                                        @forelse($featuredCars as $car)
-                                            <a href="{{ route('cars.show', $car->id) }}" class="group overflow-hidden rounded-xl border border-border bg-card">
-                                                <div class="aspect-[4/3] overflow-hidden bg-muted">
-                                                    @if($car->first_image)
-                                                        <img src="{{ str_starts_with($car->first_image, 'http') ? $car->first_image : asset('storage/'.$car->first_image) }}" alt="{{ $car->title }}" class="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04]" loading="lazy" decoding="async">
-                                                    @else
-                                                        <div class="flex h-full items-center justify-center"><i data-lucide="car-front" class="h-7 w-7 text-muted-foreground"></i></div>
-                                                    @endif
-                                                </div>
-                                                <div class="p-2.5">
-                                                    <p class="truncate text-[9px] font-semibold text-foreground">{{ $car->title }}</p>
-                                                    <p class="mt-1 text-[7px] text-muted-foreground">{{ $car->year }} · {{ $car->make }}</p>
-                                                    <p class="mt-2 text-[10px] font-semibold tabular-nums text-foreground">{{ currency_symbol() }}{{ number_format((float)$car->price,0) }}</p>
-                                                </div>
-                                            </a>
-                                        @empty
-                                            @foreach([1,2,3] as $slot)
-                                                <div class="overflow-hidden rounded-xl border border-dashed border-border bg-card">
-                                                    <div class="flex aspect-[4/3] items-center justify-center bg-muted/40"><i data-lucide="car-front" class="h-7 w-7 text-muted-foreground"></i></div>
-                                                    <div class="p-2.5"><p class="text-[9px] font-semibold text-foreground">{{ localize('ui.release.hero.auto.placeholder', 'Vehicle listing') }}</p><p class="mt-1 text-[7px] text-muted-foreground">{{ localize('ui.release.hero.auto.ready', 'Ready for publishing') }}</p></div>
-                                                </div>
-                                            @endforeach
-                                        @endforelse
-                                    </div>
-                                    <div class="mt-3 grid grid-cols-3 gap-2">
-                                        @foreach([['shield-check','Listing flow'],['credit-card','Checkout'],['history','Purchase records']] as [$icon,$label])
-                                            <div class="release-ui-panel px-3 py-2.5"><i data-lucide="{{ $icon }}" class="h-3 w-3" style="color:var(--brand-primary)"></i><p class="mt-1.5 text-[8px] font-semibold text-foreground">{{ $label }}</p></div>
-                                        @endforeach
-                                    </div>
-                                </div>
+                    <div class="release-auto-bottom">
+                        <div class="release-auto-features" aria-label="Electric mobility highlights">
+                            <div class="release-auto-feature">
+                                <p class="release-auto-feature-label">{{ localize('ui.release.hero.auto.highlight1_label', 'Mobility') }}</p>
+                                <p class="release-auto-feature-value">{{ localize('ui.release.hero.auto.highlight1', 'Electric-first') }}</p>
                             </div>
-                            <div class="release-device-hinge"></div>
-                            <div class="release-device-base"></div>
+                            <span class="release-auto-divider" aria-hidden="true"></span>
+                            <div class="release-auto-feature">
+                                <p class="release-auto-feature-label">{{ localize('ui.release.hero.auto.highlight2_label', 'Experience') }}</p>
+                                <p class="release-auto-feature-value">{{ localize('ui.release.hero.auto.highlight2', 'Connected') }}</p>
+                            </div>
+                            <span class="release-auto-divider" aria-hidden="true"></span>
+                            <div class="release-auto-feature">
+                                <p class="release-auto-feature-label">{{ localize('ui.release.hero.auto.highlight3_label', 'Selection') }}</p>
+                                <p class="release-auto-feature-value">{{ localize('ui.release.hero.auto.highlight3', 'Multiple classes') }}</p>
+                            </div>
                         </div>
+
+                        <a href="{{ $automotiveUrl }}" class="release-auto-cta release-hero-primary-button inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold">
+                            {{ localize('ui.release.hero.auto.browse', 'Explore Vehicles') }}
+                            <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                        </a>
+
+                        
                     </div>
                 </div>
             </article>
 
-            {{-- 03 / DASHBOARD EXPERIENCE --}}
+            {{-- 03 / TRADE · INVEST · BOTS --}}
             <article class="release-hero-slide" data-release-slide="2" data-active="false">
-                <div class="release-hero-layout">
-                    <div class="release-hero-copy">
-                        <p class="text-[10px] font-semibold uppercase tracking-[.2em] text-muted-foreground">{{ localize('ui.release.hero.dashboard.eyebrow', 'Trading · investments · account experience') }}</p>
-                        <h2 class="release-hero-title mt-4 font-semibold">
-                            {{ localize('ui.release.hero.dashboard.your', 'Your') }}
-                            <span class="release-hero-primary-text">{{ localize('ui.release.hero.dashboard.financial', 'Financial') }}</span>
-                            <span class="block">{{ localize('ui.release.hero.dashboard.workspace', 'Workspace,') }}
-                                <span class="release-hero-secondary-text">{{ localize('ui.release.hero.dashboard.connected', 'Connected.') }}</span>
-                            </span>
+                <div class="release-bot-showcase">
+                    <div class="release-bot-copy">
+                        <p class="text-[10px] font-semibold uppercase tracking-[.2em] text-muted-foreground">
+                            {{ localize('ui.release.hero.bots.eyebrow', 'Trading · investing · automation') }}
+                        </p>
+
+                        <h2 class="release-bot-title font-semibold">
+                            {{ localize('ui.release.hero.bots.titleA', 'Trade.') }}
+                            <span class="release-hero-primary-text">{{ localize('ui.release.hero.bots.titleB', 'Invest.') }}</span>
+                            <span class="block">{{ localize('ui.release.hero.bots.titleC', 'Automate With') }} <span class="release-hero-primary-text">{{ localize('ui.release.hero.bots.titleD', 'Confidence.') }}</span></span>
                         </h2>
-                        <p class="mt-5 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">{{ localize('ui.release.hero.dashboard.copy', 'Move from market discovery to trading, investment products, automation and account records through dedicated workspaces under one profile.') }}</p>
+
+                        <p class="release-bot-description">
+                            {{ localize('ui.release.hero.bots.copy', 'Combine live market experience, connected investment tools and intelligent automation inside one premium fintech environment built for modern decision-making.') }}
+                        </p>
+
+                        <div class="release-bot-pills" aria-label="Capabilities">
+                            <span class="release-bot-pill"><i data-lucide="candlestick-chart" class="h-3.5 w-3.5" style="color:var(--brand-primary)"></i>{{ localize('ui.release.hero.bots.pill1', 'Trade global assets') }}</span>
+                            <span class="release-bot-pill"><i data-lucide="wallet" class="h-3.5 w-3.5" style="color:var(--brand-primary)"></i>{{ localize('ui.release.hero.bots.pill2', 'Invest with clarity') }}</span>
+                            <span class="release-bot-pill"><i data-lucide="bot" class="h-3.5 w-3.5" style="color:var(--brand-primary)"></i>{{ localize('ui.release.hero.bots.pill3', 'Automation workflows') }}</span>
+                        </div>
+
                         <div class="mt-7 flex flex-col gap-3 sm:flex-row">
-                            <a href="{{ $investmentUrl }}" class="release-hero-primary-button inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold">{{ localize('ui.release.hero.dashboard.invest', 'Explore Investments') }}<i data-lucide="arrow-right" class="h-4 w-4"></i></a>
-                            <a href="{{ $workspaceUrl }}" class="release-hero-secondary-button inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold">{{ auth()->check() ? localize('ui.common.open_workspace', 'Open workspace') : localize('ui.release.hero.register', 'Register') }}</a>
+                            <a href="{{ $workspaceUrl ?? $registerUrl }}" class="release-hero-primary-button inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold">
+                                {{ auth()->check() ? localize('ui.common.open_workspace', 'Open workspace') : localize('ui.release.hero.register', 'Get started') }}
+                                <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                            </a>
+                            <a href="{{ $marketsUrl ?? $tradingUrl ?? $workspaceUrl ?? $registerUrl }}" class="release-hero-secondary-button inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold">
+                                {{ localize('ui.release.hero.bots.learn_more', 'Explore markets') }}
+                            </a>
+                        </div>
+
+                        <div class="release-bot-metrics">
+                            <div class="release-bot-metric">
+                                <p class="release-bot-metric-label">{{ localize('ui.release.hero.bots.metric1_label', 'Coverage') }}</p>
+                                <p class="release-bot-metric-value">{{ localize('ui.release.hero.bots.metric1_value', 'Trade · Invest · Automate') }}</p>
+                            </div>
+                            <div class="release-bot-metric">
+                                <p class="release-bot-metric-label">{{ localize('ui.release.hero.bots.metric2_label', 'Experience') }}</p>
+                                <p class="release-bot-metric-value">{{ localize('ui.release.hero.bots.metric2_value', 'Multi-device workflow') }}</p>
+                            </div>
+                            <div class="release-bot-metric">
+                                <p class="release-bot-metric-label">{{ localize('ui.release.hero.bots.metric3_label', 'Intelligence') }}</p>
+                                <p class="release-bot-metric-value">{{ localize('ui.release.hero.bots.metric3_value', 'Bot-assisted insight') }}</p>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="release-device-wrap">
-                        <div class="release-device-glow"></div>
-                        <div class="release-device">
-                            <div class="release-device-screen">
-                                <div class="release-screen-top">
-                                    <div class="flex items-center gap-2">
-                                        <span class="release-ui-icon flex h-7 w-7 items-center justify-center rounded-lg"><i data-lucide="layout-dashboard" class="h-3.5 w-3.5"></i></span>
-                                        <div><p class="text-[7px] uppercase tracking-[.14em] text-muted-foreground">{{ $company }}</p><p class="text-[10px] font-semibold text-foreground">{{ localize('ui.release.hero.dashboard.visual', 'Trading & Investment') }}</p></div>
-                                    </div>
-                                    <span class="rounded-full border border-border bg-card px-2 py-1 text-[7px] font-semibold text-muted-foreground">{{ localize('ui.release.hero.dashboard.account', 'Account workspace') }}</span>
-                                </div>
-
-                                <div class="release-screen-body">
-                                    <div class="grid gap-3 sm:grid-cols-[1.2fr_.8fr]">
-                                        <div class="release-ui-panel p-3.5">
-                                            <div class="flex items-center justify-between gap-3">
-                                                <div><p class="text-[7px] uppercase tracking-[.13em] text-muted-foreground">{{ localize('ui.release.hero.dashboard.execution', 'Market execution') }}</p><p class="mt-1 text-sm font-semibold text-foreground">{{ localize('ui.release.hero.dashboard.multiasset', 'Multi-asset trading') }}</p></div>
-                                                <span class="release-ui-icon flex h-8 w-8 items-center justify-center rounded-lg"><i data-lucide="chart-candlestick" class="h-3.5 w-3.5"></i></span>
-                                            </div>
-                                            <div class="mt-3 h-28 rounded-xl bg-muted/30 p-2">
-                                                <svg viewBox="0 0 500 120" preserveAspectRatio="none" class="h-full w-full" aria-hidden="true">
-                                                    <line x1="0" y1="30" x2="500" y2="30" stroke="hsl(var(--border))" stroke-opacity=".55"/>
-                                                    <line x1="0" y1="61" x2="500" y2="61" stroke="hsl(var(--border))" stroke-opacity=".55"/>
-                                                    <line x1="0" y1="92" x2="500" y2="92" stroke="hsl(var(--border))" stroke-opacity=".55"/>
-                                                    <path d="M0 96 C34 88,58 98,86 76 C116 54,143 69,174 51 C204 34,232 50,261 39 C291 26,320 37,351 23 C384 10,414 30,444 17 C469 8,486 11,500 6" class="release-chart-line"/>
-                                                </svg>
-                                            </div>
-                                            <div class="mt-3 grid grid-cols-3 gap-2">
-                                                @foreach([['Signals',$platformStats['signals'] ?? 0],['Bots',$platformStats['bots'] ?? 0],['Copy',$platformStats['copy_strategies'] ?? 0]] as [$label,$value])
-                                                    <div class="rounded-lg border border-border bg-card px-2.5 py-2"><p class="text-[7px] uppercase tracking-[.09em] text-muted-foreground">{{ $label }}</p><p class="mt-1 text-[10px] font-semibold tabular-nums text-foreground">{{ number_format($value) }}</p></div>
-                                                @endforeach
-                                            </div>
-                                        </div>
-
-                                        <div class="grid gap-2">
-                                            <div class="release-ui-panel p-3">
-                                                <div class="flex items-center justify-between"><div><p class="text-[7px] uppercase tracking-[.12em] text-muted-foreground">{{ localize('ui.release.hero.dashboard.investments', 'Investment products') }}</p><p class="mt-1 text-lg font-semibold tabular-nums text-foreground">{{ number_format($platformStats['investments'] ?? 0) }}</p></div><span class="release-ui-icon flex h-8 w-8 items-center justify-center rounded-lg"><i data-lucide="gem" class="h-3.5 w-3.5"></i></span></div>
-                                            </div>
-                                            @foreach($featuredInvestments as $investment)
-                                                <div class="release-ui-panel p-3">
-                                                    <div class="flex items-center justify-between gap-2">
-                                                        <div class="min-w-0"><p class="truncate text-[9px] font-semibold text-foreground">{{ $investment->symbol }}</p><p class="mt-1 truncate text-[7px] text-muted-foreground">{{ $investment->name }}</p></div>
-                                                        <div class="shrink-0 text-right"><p class="text-[8px] font-semibold tabular-nums text-foreground">{{ number_format((float)$investment->current_price,2) }}</p><p class="mt-1 text-[7px] {{ $investment->change_percent >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400' }}">{{ $investment->change_percent >= 0 ? '+' : '' }}{{ number_format($investment->change_percent,2) }}%</p></div>
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="release-device-hinge"></div>
-                            <div class="release-device-base"></div>
-                        </div>
+                    <div class="release-bot-art">
+                        <img
+                            src="{{ asset('assets/hero/trade-invest-bot-showcase.png') }}"
+                            alt="{{ localize('ui.release.hero.bots.visual_alt', 'Trading, investing and automation showcase') }}"
+                            class="release-bot-image"
+                            loading="eager"
+                            decoding="async"
+                        >
                     </div>
                 </div>
             </article>
+
+
         </div>
 
         {{-- 3 carousel preview tabs --}}
@@ -873,20 +2130,20 @@
             <button type="button" class="release-hero-tab" data-release-thumb="1" data-active="false">
                 <div class="flex items-center gap-3">
                     <span class="release-hero-number">02</span>
-                    <div class="min-w-0"><p class="truncate text-xs font-semibold text-foreground">{{ localize('ui.release.hero.tab2', 'Automotive Inventory') }}</p><p class="mt-1 truncate text-[8px] text-muted-foreground">{{ localize('ui.release.hero.tab2copy', 'Browse and manage available vehicle inventory') }}</p></div>
+                    <div class="min-w-0"><p class="truncate text-xs font-semibold text-foreground">{{ localize('ui.release.hero.tab2', 'Electric Mobility') }}</p><p class="mt-1 truncate text-[8px] text-muted-foreground">{{ localize('ui.release.hero.tab2copy', 'Explore electric vehicles and connected mobility') }}</p></div>
                     <i data-lucide="car-front" class="ml-auto hidden h-4 w-4 text-muted-foreground sm:block"></i>
                 </div>
             </button>
             <button type="button" class="release-hero-tab" data-release-thumb="2" data-active="false">
                 <div class="flex items-center gap-3">
                     <span class="release-hero-number">03</span>
-                    <div class="min-w-0"><p class="truncate text-xs font-semibold text-foreground">{{ localize('ui.release.hero.tab3', 'Trading & Investment') }}</p><p class="mt-1 truncate text-[8px] text-muted-foreground">{{ localize('ui.release.hero.tab3copy', 'Dashboard, trading and investment experience') }}</p></div>
+                    <div class="min-w-0"><p class="truncate text-xs font-semibold text-foreground">{{ localize('ui.release.hero.tab3', 'Trade · Invest · Bots') }}</p><p class="mt-1 truncate text-[8px] text-muted-foreground">{{ localize('ui.release.hero.tab3copy', 'Trade, invest and automation experience') }}</p></div>
                     <i data-lucide="layout-dashboard" class="ml-auto hidden h-4 w-4 text-muted-foreground sm:block"></i>
                 </div>
             </button>
         </div>
 
-        <div class="mt-3 flex justify-end gap-2">
+        <div class="release-hero-controls" aria-label="Hero carousel controls">
             <button type="button" data-release-prev class="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground transition hover:bg-muted" aria-label="Previous slide"><i data-lucide="chevron-left" class="h-4 w-4"></i></button>
             <button type="button" data-release-next class="release-hero-primary-button flex h-9 w-9 items-center justify-center rounded-full" aria-label="Next slide"><i data-lucide="chevron-right" class="h-4 w-4"></i></button>
         </div>

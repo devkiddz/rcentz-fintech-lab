@@ -89,7 +89,7 @@
 
             <div id="public-mobile-menu" class="public-mobile-nav mt-2 hidden rounded-2xl p-2 md:hidden">
                 <div class="grid gap-1">
-                    <a href="{{ route('home') }}#markets" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="chart-candlestick" class="h-4 w-4 text-muted-foreground"></i>{{ localize('ui.nav.markets', 'Markets') }}</a>
+                    <a href="{{ route('home') }}#markets" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted { request()->routeIs('markets') ? 'bg-muted text-foreground' : '' }"><i data-lucide="chart-candlestick" class="h-4 w-4 text-muted-foreground"></i>{{ localize('ui.nav.markets', 'Markets') }}</a>
                     <a href="{{ route('home') }}#opportunities" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="gem" class="h-4 w-4 text-muted-foreground"></i>{{ localize('ui.nav.investments', 'Investments') }}</a>
                     <a href="{{ route('home') }}#systems" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="bot" class="h-4 w-4 text-muted-foreground"></i>{{ localize('ui.nav.automation', 'Automation') }}</a>
                     <a href="{{ route('cars.browse') }}" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-muted"><i data-lucide="shopping-bag" class="h-4 w-4 text-muted-foreground"></i>{{ localize('ui.nav.inventory', 'Inventory') }}</a>
@@ -99,7 +99,7 @@
             </div>
         </div>
     </header>
-    <div class="pt-20">
+    <div class="@yield('shell_top_spacing', 'pt-20')">
         @if(session('success') || session('error') || session('warning') || session('info'))
             <div class="mx-auto mt-4 max-w-7xl px-4 sm:px-6 lg:px-8">
                 @foreach(['success'=>'emerald','error'=>'red','warning'=>'amber','info'=>'sky'] as $type=>$tone)
