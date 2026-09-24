@@ -1,0 +1,5 @@
+Flag assets source: lipis/flag-icons
+Repository: https://github.com/lipis/flag-icons
+Path: flags/4x3/*.svg
+License: MIT
+Used as representative locale markers only; localization authority remains language code/database.
