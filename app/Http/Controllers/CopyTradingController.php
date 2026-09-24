@@ -35,7 +35,13 @@ class CopyTradingController extends Controller
                 ->whereNotNull('approved_at')
                 ->where('is_public', true)
                 ->where('is_accepting_copiers', true))
-            ->whereHas('profile.user', fn ($q) => $q->where('id', '!=', $user->id))
+            ->whereHas('profile.user', function ($q) use ($user) {
+                $q->where('id', '!=', $user->id);
+
+                if (! $user->isProductionDemo()) {
+                    $q->where('is_production_demo', false);
+                }
+            })
             ->latest()
             ->get();
 
@@ -153,6 +159,14 @@ class CopyTradingController extends Controller
         $strategy->load('profile');
 
         abort_if($strategy->profile->user_id === $user->id, 422);
+
+        $strategy->profile->loadMissing('user');
+        abort_if(
+            $strategy->profile->user?->isProductionDemo()
+                && ! $user->isProductionDemo(),
+            404
+        );
+
         abort_unless(
             $strategy->is_public &&
             $strategy->is_active &&

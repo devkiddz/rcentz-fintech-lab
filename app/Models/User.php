@@ -25,6 +25,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at',
         'profile_image',
         'is_admin',
+        'is_production_demo',
         'country',
         'currency',
         'locale',
@@ -59,6 +60,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'is_production_demo' => 'boolean',
             'date_of_birth' => 'date',
             'status_until' => 'datetime',
             'status_changed_at' => 'datetime',
@@ -190,6 +192,25 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isAdmin()
     {
         return $this->is_admin;
+    }
+
+    public function isProductionDemo(): bool
+    {
+        return (bool) $this->is_production_demo;
+    }
+
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user): void {
+            if (
+                $user->isProductionDemo()
+                && (bool) config('release.production_demo.read_only', true)
+            ) {
+                throw new \RuntimeException(
+                    'Protected production demo accounts cannot be deleted.'
+                );
+            }
+        });
     }
 
     public function isAccountActive(): bool

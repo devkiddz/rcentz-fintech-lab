@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\MembershipAccessService;
+use App\Services\FinancialActivityService;
+use App\Support\ProductionDemoGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules;
 
 class UserController extends Controller
@@ -84,11 +87,6 @@ class UserController extends Controller
 
         $user = User::create($userData);
 
-        $user->wallet()->create([
-            'balance' => 0,
-            'currency' => $request->currency ?? 'USD',
-        ]);
-
         if (is_email_verification_enabled() && !$request->has('email_verified')) {
             $user->sendEmailVerificationNotification();
         }
@@ -132,8 +130,9 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, User $user)
+    public function update(Request $request, User $user, ProductionDemoGuard $productionDemo)
     {
+        $productionDemo->assertMutationAllowed($user, 'administrator account update');
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
@@ -167,87 +166,169 @@ class UserController extends Controller
     /**
      * Fund user wallet
      */
-    public function fundWallet(Request $request, User $user)
-    {
-        $request->validate([
+    public function fundWallet(
+        Request $request,
+        User $user,
+        ProductionDemoGuard $productionDemo,
+        FinancialActivityService $activity
+    ) {
+        $productionDemo->assertMutationAllowed(
+            $user,
+            'administrator wallet funding'
+        );
+
+        $data = $request->validate([
             'amount' => 'required|numeric|min:0.01',
             'description' => 'nullable|string|max:255',
         ]);
 
-        // Create wallet if it doesn't exist
-        if (!$user->wallet) {
-            $user->wallet()->create([
-                'balance' => 0,
-                'currency' => 'USD',
-            ]);
-            $user->refresh(); // Refresh to load the new wallet
-        }
+        $paymentMethod = \App\Models\PaymentMethod::query()
+            ->where('is_active', true)
+            ->first();
 
-        $user->wallet->addFunds($request->amount);
-
-        // Get a default payment method for admin transactions
-        $defaultPaymentMethod = \App\Models\PaymentMethod::where('is_active', true)->first();
-        
-        if (!$defaultPaymentMethod) {
+        if (! $paymentMethod) {
             return redirect()->route('admin.users.show', $user)
                 ->with('error', 'No active payment methods found. Please configure payment methods first.');
         }
 
-        // Create wallet transaction
-        $user->wallet->transactions()->create([
-            'payment_method_id' => $defaultPaymentMethod->id,
-            'type' => 'deposit',
-            'direction' => 'credit',
-            'amount' => $request->amount,
-            'status' => 'completed',
-            'description' => $request->description ?: 'Admin funding',
-            'reference_id' => 'ADMIN_' . time(),
-        ]);
+        DB::transaction(function () use (
+            $user,
+            $data,
+            $paymentMethod,
+            $activity
+        ): void {
+            \App\Models\Wallet::query()->firstOrCreate(
+                ['user_id' => $user->id],
+                ['balance' => 0, 'reserved_balance' => 0, 'currency' => 'USD']
+            );
+
+            $wallet = \App\Models\Wallet::query()
+                ->where('user_id', $user->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $before = $activity->snapshot($wallet);
+            $reference = $activity->reference('ADM-FUND');
+
+            $wallet->addFunds((float) $data['amount']);
+
+            $transaction = $wallet->transactions()->create([
+                'payment_method_id' => $paymentMethod->id,
+                'type' => 'deposit',
+                'direction' => 'credit',
+                'amount' => $data['amount'],
+                'fee' => 0,
+                'status' => 'completed',
+                'description' => $data['description'] ?: 'Admin funding',
+                'reference_id' => $reference,
+            ]);
+
+            $activity->record(
+                $user,
+                'admin.wallet_fund',
+                'Wallet funded by administrator',
+                $data['description'] ?: 'Administrator credited customer wallet.',
+                $reference,
+                'completed',
+                'credit',
+                (float) $data['amount'],
+                $wallet,
+                $transaction,
+                null,
+                $before,
+                ['payment_method_id' => $paymentMethod->id],
+                'admin',
+                auth()->id()
+            );
+        });
 
         return redirect()->route('admin.users.show', $user)
             ->with('success', 'Wallet funded successfully.');
     }
 
-    /**
-     * Deduct from user wallet
-     */
-    public function deductWallet(Request $request, User $user)
-    {
-        $request->validate([
+    public function deductWallet(
+        Request $request,
+        User $user,
+        ProductionDemoGuard $productionDemo,
+        FinancialActivityService $activity
+    ) {
+        $productionDemo->assertMutationAllowed(
+            $user,
+            'administrator wallet deduction'
+        );
+
+        $data = $request->validate([
             'amount' => 'required|numeric|min:0.01',
             'description' => 'nullable|string|max:255',
         ]);
 
-        if (!$user->wallet) {
-            return redirect()->route('admin.users.show', $user)
-                ->with('error', 'User has no wallet.');
-        }
+        $paymentMethod = \App\Models\PaymentMethod::query()
+            ->where('is_active', true)
+            ->first();
 
-        if (!$user->wallet->canWithdraw($request->amount)) {
-            return redirect()->route('admin.users.show', $user)
-                ->with('error', 'Insufficient funds in wallet.');
-        }
-
-        $user->wallet->deductFunds($request->amount);
-
-        // Get a default payment method for admin transactions
-        $defaultPaymentMethod = \App\Models\PaymentMethod::where('is_active', true)->first();
-        
-        if (!$defaultPaymentMethod) {
+        if (! $paymentMethod) {
             return redirect()->route('admin.users.show', $user)
                 ->with('error', 'No active payment methods found. Please configure payment methods first.');
         }
 
-        // Create wallet transaction
-        $user->wallet->transactions()->create([
-            'payment_method_id' => $defaultPaymentMethod->id,
-            'type' => 'withdrawal',
-            'direction' => 'debit',
-            'amount' => $request->amount,
-            'status' => 'completed',
-            'description' => $request->description ?: 'Admin deduction',
-            'reference_id' => 'ADMIN_' . time(),
-        ]);
+        try {
+            DB::transaction(function () use (
+                $user,
+                $data,
+                $paymentMethod,
+                $activity
+            ): void {
+                $wallet = \App\Models\Wallet::query()
+                    ->where('user_id', $user->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $wallet) {
+                    throw new \RuntimeException('User has no wallet.');
+                }
+
+                if (! $wallet->canWithdraw((float) $data['amount'])) {
+                    throw new \RuntimeException('Insufficient available balance.');
+                }
+
+                $before = $activity->snapshot($wallet);
+                $reference = $activity->reference('ADM-DEBIT');
+
+                $wallet->deductFunds((float) $data['amount']);
+
+                $transaction = $wallet->transactions()->create([
+                    'payment_method_id' => $paymentMethod->id,
+                    'type' => 'withdrawal',
+                    'direction' => 'debit',
+                    'amount' => $data['amount'],
+                    'fee' => 0,
+                    'status' => 'completed',
+                    'description' => $data['description'] ?: 'Admin deduction',
+                    'reference_id' => $reference,
+                ]);
+
+                $activity->record(
+                    $user,
+                    'admin.wallet_deduct',
+                    'Wallet debited by administrator',
+                    $data['description'] ?: 'Administrator debited customer wallet.',
+                    $reference,
+                    'completed',
+                    'debit',
+                    (float) $data['amount'],
+                    $wallet,
+                    $transaction,
+                    null,
+                    $before,
+                    ['payment_method_id' => $paymentMethod->id],
+                    'admin',
+                    auth()->id()
+                );
+            });
+        } catch (\RuntimeException $exception) {
+            return redirect()->route('admin.users.show', $user)
+                ->with('error', $exception->getMessage());
+        }
 
         return redirect()->route('admin.users.show', $user)
             ->with('success', 'Amount deducted from wallet successfully.');
@@ -256,8 +337,9 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User $user)
+    public function destroy(User $user, ProductionDemoGuard $productionDemo)
     {
+        $productionDemo->assertMutationAllowed($user, 'administrator account deletion');
         if ($user->purchases()->count() > 0) {
             return redirect()->route('admin.users.index')
                 ->with('error', 'Cannot delete user with existing purchases.');

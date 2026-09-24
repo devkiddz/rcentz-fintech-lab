@@ -84,7 +84,7 @@ Route::get('/terms', [FrontendController::class, 'terms'])->name('terms');
 Route::get('/privacy', [FrontendController::class, 'privacy'])->name('privacy');
 
 // Authenticated User Routes
-Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.active'])->group(function () {
+Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.active', 'demo.readonly'])->group(function () {
     // Checkout Routes
     Route::get('/checkout/{car_id}', [CheckoutController::class, 'checkoutForm'])->name('checkout.form');
     Route::post('/checkout/{car_id}', [CheckoutController::class, 'processCheckout'])->name('checkout.process');

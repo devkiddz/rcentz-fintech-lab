@@ -16,7 +16,11 @@ class SeedRealCommunicationCases extends Command
 
     public function handle(CommunicationService $communications): int
     {
-        $password = 'RcentzQA!2026';
+        $password = (string) config('bootstrap.live_test.user_password');
+        if (strlen($password) < 10) {
+            $this->error('LIVE_TEST_USER_PASSWORD must be configured with at least 10 characters.');
+            return self::FAILURE;
+        }
 
         $admin = $this->qaUser('qa.communication.admin@rcentz.test', 'MS7 QA Support Admin', true, $password);
         $openCustomer = $this->qaUser('qa.communication.ticket@rcentz.test', 'MS7 Open Ticket Customer', false, $password);

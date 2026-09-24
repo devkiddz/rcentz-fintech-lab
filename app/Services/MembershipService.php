@@ -6,14 +6,24 @@ use App\Models\Membership;
 use App\Models\MembershipPlan;
 use App\Models\MembershipTransaction;
 use App\Models\User;
+use App\Support\ProductionDemoGuard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
 
 class MembershipService
 {
+    public function __construct(
+        private ProductionDemoGuard $productionDemo
+    ) {}
+
     public function create(User $user, MembershipPlan $plan, array $data, User $actor): Membership
     {
+        $this->productionDemo->assertMutationAllowed(
+            $user,
+            'administrator membership creation'
+        );
+
         return DB::transaction(function () use ($user, $plan, $data, $actor) {
             $plan->loadMissing('type');
 
@@ -40,6 +50,14 @@ class MembershipService
 
     public function activate(Membership $membership, User $actor): Membership
     {
+        $membership->loadMissing('user');
+        if ($membership->user) {
+            $this->productionDemo->assertMutationAllowed(
+                $membership->user,
+                'membership activation'
+            );
+        }
+
         return DB::transaction(function () use ($membership, $actor) {
             $membership = Membership::query()
                 ->with('plan.type')
@@ -106,6 +124,14 @@ class MembershipService
 
     public function cancel(Membership $membership, User $actor): Membership
     {
+        $membership->loadMissing('user');
+        if ($membership->user) {
+            $this->productionDemo->assertMutationAllowed(
+                $membership->user,
+                'membership cancellation'
+            );
+        }
+
         return DB::transaction(function () use ($membership, $actor) {
             $membership = Membership::query()->lockForUpdate()->findOrFail($membership->id);
 

@@ -8,13 +8,17 @@ use App\Models\RewardGrant;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
+use App\Support\ProductionDemoGuard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
 
 class RewardService
 {
-    public function __construct(private FinancialActivityService $activity) {}
+    public function __construct(
+        private FinancialActivityService $activity,
+        private ProductionDemoGuard $productionDemo
+    ) {}
 
     public function grant(
         User $user,
@@ -24,6 +28,11 @@ class RewardService
         ?User $actor = null,
         array $metadata = []
     ): RewardGrant {
+        $this->productionDemo->assertMutationAllowed(
+            $user,
+            'reward fulfillment'
+        );
+
         $sourceType = trim($sourceType);
         $sourceReference = trim($sourceReference);
 

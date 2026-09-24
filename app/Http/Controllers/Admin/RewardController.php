@@ -19,7 +19,11 @@ class RewardController extends Controller
     {
         $campaigns = RewardCampaign::query()->withCount('grants')->latest('id')->get();
         $grants = RewardGrant::query()->with(['campaign', 'user', 'grantedBy'])->latest('granted_at')->limit(50)->get();
-        $users = User::query()->where('is_admin', false)->orderBy('name')->get(['id', 'name', 'email']);
+        $users = User::query()
+            ->where('is_admin', false)
+            ->where('is_production_demo', false)
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
 
         $stats = [
             'campaigns' => RewardCampaign::count(),

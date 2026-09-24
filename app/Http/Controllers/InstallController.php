@@ -85,6 +85,21 @@ class InstallController extends Controller
             'demo_password' => ['required', 'string', 'min:10', 'confirmed'],
         ]);
 
+        if (
+            $validated['app_env'] === 'production'
+            && ! str_starts_with(strtolower($validated['app_url']), 'https://')
+        ) {
+            return back()
+                ->withErrors(['app_url' => 'Production installation requires an HTTPS application URL.'])
+                ->withInput($request->except([
+                    'db_password',
+                    'admin_password',
+                    'admin_password_confirmation',
+                    'demo_password',
+                    'demo_password_confirmation',
+                ]));
+        }
+
         if (! in_array($validated['default_locale'], $validated['enabled_locales'], true)) {
             return back()->withErrors(['default_locale' => 'The default language must also be enabled.'])->withInput();
         }
@@ -210,7 +225,7 @@ class InstallController extends Controller
         Setting::set('site_phone', $values['support_phone'] ?? '');
         Setting::set('brand_primary_color', strtolower($values['brand_primary_color']));
         Setting::set('brand_secondary_color', strtolower($values['brand_secondary_color']));
-        Setting::set('footer_text', '?? '.date('Y').' '.$legalName.'. All rights reserved.');
+        Setting::set('footer_text', '© '.date('Y').' '.$legalName.'. All rights reserved.');
         Setting::set('developer_credit_enabled', '0');
         Setting::clearCache();
     }
@@ -279,6 +294,14 @@ class InstallController extends Controller
             'MAIL_FROM_ADDRESS' => $values['support_email'],
             'MAIL_FROM_NAME' => $values['app_name'],
             'SESSION_DRIVER' => 'file',
+            'SESSION_ENCRYPT' => 'true',
+            'SESSION_SECURE_COOKIE' => (
+                $values['app_env'] === 'production'
+                || str_starts_with(strtolower($values['app_url']), 'https://')
+            ) ? 'true' : 'false',
+            'SESSION_SAME_SITE' => 'lax',
+            'PRODUCTION_DEMO_READ_ONLY' => 'true',
+            'CRON_TOKEN' => Str::random(64),
             'CACHE_STORE' => 'file',
         ];
 

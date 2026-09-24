@@ -25,7 +25,7 @@ use RuntimeException;
 class SeedRealPrivateInvestmentCases extends Command
 {
     protected $signature = 'investment:seed-ms4-real-cases
-        {--password=RcentzQA!2026 : Shared password for dedicated QA investment users}
+        {--password= : Shared password for dedicated QA investment users}
         {--inspect : Print current case state without attempting mutations}';
 
     protected $description = 'Create and execute three persistent Private Investment QA cases through the real order, valuation and lifecycle services.';
@@ -35,7 +35,7 @@ class SeedRealPrivateInvestmentCases extends Command
         PrivateInvestmentValuationService $valuation,
         PrivateInvestmentLifecycleService $lifecycle
     ): int {
-        $password = (string) $this->option('password');
+        $password = (string) ($this->option('password') ?: config('bootstrap.live_test.user_password'));
         if (strlen($password) < 10) {
             $this->error('QA password must be at least 10 characters.');
             return self::FAILURE;

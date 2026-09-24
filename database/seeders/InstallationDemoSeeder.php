@@ -68,6 +68,7 @@ class InstallationDemoSeeder extends Seeder
                         'password' => Hash::make($userPassword),
                         'email_verified_at' => $now,
                         'is_admin' => false,
+                        'is_production_demo' => true,
                         'country' => $user['country'],
                         'currency' => $user['currency'],
                         'locale' => (string) Setting::get('default_locale', 'en'),
@@ -385,8 +386,8 @@ class InstallationDemoSeeder extends Seeder
             }
 
             $automaticPlans = [
-                ['user' => 'demo1', 'plan' => 'Tesla Growth Fund', 'amount' => 500.00, 'frequency' => 'monthly', 'day' => 15, 'active' => true, 'next' => '2026-10-15'],
-                ['user' => 'demo2', 'plan' => 'Conservative Income Fund', 'amount' => 250.00, 'frequency' => 'quarterly', 'day' => 1, 'active' => true, 'next' => '2026-10-01'],
+                ['user' => 'demo1', 'plan' => 'Tesla Growth Fund', 'amount' => 500.00, 'frequency' => 'monthly', 'day' => 15, 'active' => false, 'next' => null],
+                ['user' => 'demo2', 'plan' => 'Conservative Income Fund', 'amount' => 250.00, 'frequency' => 'quarterly', 'day' => 1, 'active' => false, 'next' => null],
                 ['user' => 'demo3', 'plan' => 'ESG Balanced Fund', 'amount' => 100.00, 'frequency' => 'monthly', 'day' => 20, 'active' => false, 'next' => null],
             ];
             foreach ($automaticPlans as $plan) {
@@ -490,9 +491,6 @@ class InstallationDemoSeeder extends Seeder
             }
 
             $this->command?->info('Installation demonstration dataset seeded for '.$companyName.': 3 practice users with approved, pending and rejected KYC states, wallets, investments, stocks, purchases and activity.');
-            $this->command?->warn('Amara Okafor: '.$users['demo1']['email'].' / '.$userPassword);
-            $this->command?->warn('Daniel Brooks: '.$users['demo2']['email'].' / '.$userPassword);
-            $this->command?->warn('Sofia Martinez: '.$users['demo3']['email'].' / '.$userPassword);
         });
     }
     private function claimReservedUser(

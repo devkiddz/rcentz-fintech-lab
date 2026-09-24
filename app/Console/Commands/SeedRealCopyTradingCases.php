@@ -25,7 +25,7 @@ use RuntimeException;
 class SeedRealCopyTradingCases extends Command
 {
     protected $signature = 'copy-trading:seed-real-cases
-        {--password=RcentzQA!2026 : Shared password for the dedicated QA users}
+        {--password= : Shared password for the dedicated QA users}
         {--inspect : Inspect existing cases without attempting execution}';
 
     protected $description = 'Create and execute three persistent real Copy Trading QA cases across Stock, Forex and Crypto.';
@@ -38,7 +38,7 @@ class SeedRealCopyTradingCases extends Command
         MarketPriceRouter $prices,
         MarketSettlementService $settlement
     ): int {
-        $password = (string) $this->option('password');
+        $password = (string) ($this->option('password') ?: config('bootstrap.live_test.user_password'));
         if (strlen($password) < 10) {
             $this->error('QA password must be at least 10 characters.');
             return self::FAILURE;

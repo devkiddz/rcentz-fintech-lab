@@ -8,6 +8,7 @@ use App\Models\MembershipTransaction;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
+use App\Support\ProductionDemoGuard;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -18,7 +19,8 @@ class MembershipPurchaseService
 {
     public function __construct(
         private MembershipService $memberships,
-        private FinancialActivityService $activity
+        private FinancialActivityService $activity,
+        private ProductionDemoGuard $productionDemo
     ) {}
 
     public function purchase(
@@ -27,6 +29,11 @@ class MembershipPurchaseService
         string $idempotencyKey,
         ?User $actor = null
     ): MembershipTransaction {
+        $this->productionDemo->assertMutationAllowed(
+            $user,
+            'membership purchase'
+        );
+
         $idempotencyKey = trim($idempotencyKey);
         $actor ??= $user;
 

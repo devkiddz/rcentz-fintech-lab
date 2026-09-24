@@ -37,3 +37,7 @@ Thumbs.db
 !/storage/framework/cache/data/.gitignore
 /storage/logs/*
 !/storage/logs/.gitignore
+# Local V1 delivery / rollback artifacts
+/Fintech_V*.exe
+*.bak
+/public/assets/hero/*.pre-*.png

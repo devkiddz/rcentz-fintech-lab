@@ -7,6 +7,7 @@ use App\Models\MarketExecutionTransaction;
 use App\Models\MarketInstrument;
 use App\Models\TradePosition;
 use App\Models\User;
+use App\Support\ProductionDemoGuard;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -18,7 +19,8 @@ final class BrokerOrderService
     public function __construct(
         private MarketExecutionRouter $execution,
         private MarketPriceRouter $prices,
-        private BrokerTradeContractEngine $trades
+        private BrokerTradeContractEngine $trades,
+        private ProductionDemoGuard $productionDemo
     ) {}
 
     public function placeMarketOrder(
@@ -31,6 +33,8 @@ final class BrokerOrderService
         array $risk = [],
         array $context = []
     ): BrokerOrder {
+        $this->productionDemo->assertMutationAllowed($user, 'broker order');
+
         $side = strtolower(trim($side));
         $quantityMode = strtolower(trim($quantityMode));
         $idempotencyKey = trim($idempotencyKey);
@@ -146,6 +150,8 @@ final class BrokerOrderService
         string $idempotencyKey,
         array $context = []
     ): BrokerOrder {
+        $this->productionDemo->assertMutationAllowed($user, 'position close');
+
         $idempotencyKey = trim($idempotencyKey);
         $context = $this->normalizeContext($user, $context);
 

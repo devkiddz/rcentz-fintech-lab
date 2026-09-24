@@ -181,6 +181,7 @@ class PrivateInvestmentAdminController extends Controller
 
         $customers = \App\Models\User::query()
             ->where('is_admin', false)
+            ->where('is_production_demo', false)
             ->with('wallet')
             ->orderBy('name')
             ->get();

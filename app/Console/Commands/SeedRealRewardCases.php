@@ -19,7 +19,11 @@ class SeedRealRewardCases extends Command
 
     public function handle(RewardService $rewards, FinancialActivityService $activity): int
     {
-        $password = 'RcentzQA!2026';
+        $password = (string) config('bootstrap.live_test.user_password');
+        if (strlen($password) < 10) {
+            $this->error('LIVE_TEST_USER_PASSWORD must be configured with at least 10 characters.');
+            return self::FAILURE;
+        }
 
         $cashUser = $this->user('qa.reward.cash@rcentz.test', 'Chidi Reward QA', $password);
         $referralUser = $this->user('qa.reward.referral@rcentz.test', 'Mariam Referral QA', $password);

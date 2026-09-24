@@ -18,7 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: [\App\Http\Middleware\SetLocale::class]);
+        $middleware->web(append: [
+            \App\Http\Middleware\SetLocale::class,
+            \App\Http\Middleware\SecurityHeaders::class,
+        ]);
 
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
@@ -28,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'account.owner' => \App\Http\Middleware\AccountOwnershipBoundary::class,
             'account.active' => \App\Http\Middleware\EnsureAccountIsActive::class,
             'can.impersonate' => \App\Http\Middleware\EnsureUserCanImpersonate::class,
+            'demo.readonly' => \App\Http\Middleware\ProtectProductionDemoMutations::class,
         ]);
 
         // Send guests to the correct authentication surface. Admin URLs should

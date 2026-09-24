@@ -21,7 +21,7 @@ use RuntimeException;
 class SeedRealMembershipCases extends Command
 {
     protected $signature = 'membership:seed-ms5-real-cases
-        {--password=RcentzQA!2026 : Shared password for synthetic QA users}';
+        {--password= : Shared password for synthetic QA users}';
 
     protected $description = 'Create persistent real MS5 Membership payment/access acceptance cases.';
 
@@ -39,7 +39,7 @@ class SeedRealMembershipCases extends Command
         MembershipService $memberships,
         MembershipAccessService $access
     ): int {
-        $password = (string) $this->option('password');
+        $password = (string) ($this->option('password') ?: config('bootstrap.live_test.user_password'));
 
         if (strlen($password) < 10) {
             $this->error('QA password must be at least 10 characters.');

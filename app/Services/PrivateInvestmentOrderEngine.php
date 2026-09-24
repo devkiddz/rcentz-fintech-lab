@@ -8,6 +8,7 @@ use App\Models\PrivateInvestmentTransaction;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\WalletTransaction;
+use App\Support\ProductionDemoGuard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -17,7 +18,8 @@ use RuntimeException;
 class PrivateInvestmentOrderEngine
 {
     public function __construct(
-        private readonly PrivateInvestmentReserveService $reserves
+        private readonly PrivateInvestmentReserveService $reserves,
+        private readonly ProductionDemoGuard $productionDemo
     ) {}
 
     public function subscribe(
@@ -28,6 +30,11 @@ class PrivateInvestmentOrderEngine
         string $source = 'customer',
         ?string $idempotencyKey = null
     ): PrivateInvestmentTransaction {
+        $this->productionDemo->assertMutationAllowed(
+            $user,
+            'private investment subscription'
+        );
+
         $idempotencyKey = $this->normalizeIdempotencyKey($idempotencyKey);
 
         return DB::transaction(function () use ($user, $instrument, $amount, $actorUserId, $source, $idempotencyKey) {
@@ -199,6 +206,11 @@ class PrivateInvestmentOrderEngine
         string $source = 'customer',
         ?string $idempotencyKey = null
     ): PrivateInvestmentTransaction {
+        $this->productionDemo->assertMutationAllowed(
+            $user,
+            'private investment redemption'
+        );
+
         $idempotencyKey = $this->normalizeIdempotencyKey($idempotencyKey);
 
         return DB::transaction(function () use ($user, $instrument, $units, $actorUserId, $source, $idempotencyKey) {

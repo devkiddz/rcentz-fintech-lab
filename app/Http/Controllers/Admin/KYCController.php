@@ -8,6 +8,7 @@ use App\Mail\KYCRejectedEmail;
 use App\Models\KYC;
 use App\Models\User;
 use App\Services\NotificationService;
+use App\Support\ProductionDemoGuard;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Mail;
@@ -46,8 +47,9 @@ class KYCController extends Controller
     /**
      * Approve a KYC application.
      */
-    public function approve(KYC $kyc): RedirectResponse
+    public function approve(KYC $kyc, ProductionDemoGuard $productionDemo): RedirectResponse
     {
+        $productionDemo->assertMutationAllowed($kyc->user, 'administrator KYC approval');
         $kyc->update([
             'status' => 'approved',
             'verified_at' => now(),
@@ -69,8 +71,9 @@ class KYCController extends Controller
     /**
      * Reject a KYC application.
      */
-    public function reject(Request $request, KYC $kyc): RedirectResponse
+    public function reject(Request $request, KYC $kyc, ProductionDemoGuard $productionDemo): RedirectResponse
     {
+        $productionDemo->assertMutationAllowed($kyc->user, 'administrator KYC rejection');
         $request->validate([
             'rejection_reason' => 'required|string|max:500',
         ]);
@@ -97,8 +100,9 @@ class KYCController extends Controller
     /**
      * Delete a KYC application.
      */
-    public function destroy(KYC $kyc): RedirectResponse
+    public function destroy(KYC $kyc, ProductionDemoGuard $productionDemo): RedirectResponse
     {
+        $productionDemo->assertMutationAllowed($kyc->user, 'administrator KYC deletion');
         $kyc->delete();
 
         return redirect()->route('admin.kyc.index')

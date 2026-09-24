@@ -20,14 +20,14 @@ use RuntimeException;
 class SeedRealBrokerCases extends Command
 {
     protected $signature = 'broker:seed-real-cases
-        {--password=RcentzQA!2026 : Shared password for dedicated brokerage QA users}
+        {--password= : Shared password for dedicated brokerage QA users}
         {--inspect : Inspect existing cases without attempting execution}';
 
     protected $description = 'Create three persistent real manual brokerage QA cases across Stock, Forex and Crypto.';
 
     public function handle(BrokerOrderService $orders, MarketPriceRouter $prices): int
     {
-        $password = (string) $this->option('password');
+        $password = (string) ($this->option('password') ?: config('bootstrap.live_test.user_password'));
         if (strlen($password) < 10) {
             $this->error('QA password must be at least 10 characters.');
             return self::FAILURE;

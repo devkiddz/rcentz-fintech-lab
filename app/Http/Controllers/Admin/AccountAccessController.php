@@ -4,13 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\ProductionDemoGuard;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class AccountAccessController extends Controller
 {
-    public function verifyEmail(User $user)
+    public function verifyEmail(User $user, ProductionDemoGuard $productionDemo)
     {
+        $productionDemo->assertMutationAllowed($user, 'administrator email verification');
         if (! $user->email_verified_at) {
             $user->forceFill(['email_verified_at' => now()])->save();
         }
@@ -18,8 +20,9 @@ class AccountAccessController extends Controller
         return back()->with('success', $user->email.' is now manually email-verified.');
     }
 
-    public function update(Request $request, User $user)
+    public function update(Request $request, User $user, ProductionDemoGuard $productionDemo)
     {
+        $productionDemo->assertMutationAllowed($user, 'administrator access-state update');
         abort_if(auth()->id() === $user->id, 422, 'You cannot change your own account access state.');
 
         $data = $request->validate([

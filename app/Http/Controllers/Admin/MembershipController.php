@@ -186,7 +186,11 @@ class MembershipController extends Controller
 
         $memberships = $query->paginate(30)->withQueryString();
         $plans = $type->plans()->orderBy('sort_order')->orderBy('name')->get();
-        $users = User::query()->where('is_admin', false)->orderBy('name')->get(['id', 'name', 'email']);
+        $users = User::query()
+            ->where('is_admin', false)
+            ->where('is_production_demo', false)
+            ->orderBy('name')
+            ->get(['id', 'name', 'email']);
 
         $stats = [
             'active' => $type->memberships()->activeAt()->count(),

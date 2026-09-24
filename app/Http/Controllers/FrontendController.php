@@ -17,37 +17,9 @@ use App\Services\CryptoMarketDataService;
 use App\Services\MarketSessionService;
 use App\Services\StockAnalysisService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\File;
 
 class FrontendController extends Controller
 {
-    public function __construct()
-    {
-        $this->ensureStorageLink();
-    }
-
-    /**
-     * Ensure storage link exists, create it if it doesn't
-     */
-    private function ensureStorageLink()
-    {
-        $linkPath = public_path('storage');
-        
-        // Check if the storage link already exists
-        if (!File::exists($linkPath)) {
-            try {
-                // Run the storage:link artisan command
-                Artisan::call('storage:link');
-                
-                // info logs suppressed; only log errors
-            } catch (\Exception $e) {
-                // Log error but don't break the application
-                \Log::error('Failed to create storage link: ' . $e->getMessage());
-            }
-        }
-    }
-
     public function index(
         BotMarketContextService $markets,
         StockAnalysisService $stockAnalysis,
