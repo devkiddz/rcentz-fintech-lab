@@ -9,6 +9,7 @@ use App\Models\PrivateInvestmentReserveEvent;
 use App\Models\PrivateMarketReference;
 use App\Models\PrivateMarketReferencePrice;
 use App\Services\PrivateInvestmentReserveService;
+use App\Services\PrivateBaseAssetMovementService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -17,7 +18,17 @@ class PrivateMarketReferenceController extends Controller
 {
     public function index()
     {
-        return redirect()->route('admin.investments.instruments.base-assets.index', ['scope' => 'private']);
+        $references = PrivateMarketReference::query()
+            ->withCount('assets')
+            ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
+            ->orderBy('category')
+            ->orderBy('name')
+            ->get();
+
+        return view(
+            'admin.investment-base-assets.private.index',
+            compact('references')
+        );
     }
 
     public function store(Request $request)
@@ -53,7 +64,7 @@ class PrivateMarketReferenceController extends Controller
                 'price' => $price,
                 'change_amount' => 0,
                 'change_percent' => 0,
-                'reason' => 'Opening private market reference valuation.',
+                'reason' => 'Opening Private Base Asset valuation.',
                 'valued_by_user_id' => auth()->id(),
                 'recorded_at' => $now,
             ]);
@@ -62,12 +73,14 @@ class PrivateMarketReferenceController extends Controller
         });
 
         return redirect()
-            ->route('admin.instruments.private-references.show', $reference)
-            ->with('success', 'Private market reference created.');
+            ->route('admin.investments.instruments.private.base-assets.show', $reference)
+            ->with('success', 'Private Base Asset created.');
     }
 
-    public function show(PrivateMarketReference $reference)
-    {
+    public function show(
+        PrivateMarketReference $reference,
+        PrivateBaseAssetMovementService $movement
+    ) {
         $reference->load([
             'assets' => fn ($query) => $query
                 ->with('instrument')
@@ -77,7 +90,13 @@ class PrivateMarketReferenceController extends Controller
                 ->limit(50),
         ]);
 
-        return view('admin.private-market-references.show', compact('reference'));
+        return view(
+            'admin.investment-base-assets.private.show',
+            [
+                'reference' => $reference,
+                'movement' => $movement->settings($reference),
+            ]
+        );
     }
 
     public function updateIdentity(
@@ -90,8 +109,10 @@ class PrivateMarketReferenceController extends Controller
                 'string',
                 'max:32',
                 'alpha_dash',
-                \Illuminate\Validation\Rule::unique('private_market_references', 'symbol')
-                    ->ignore($reference->id),
+                \Illuminate\Validation\Rule::unique(
+                    'private_market_references',
+                    'symbol'
+                )->ignore($reference->id),
             ],
             'name' => ['required', 'string', 'max:255'],
             'category' => ['required', 'string', 'max:64'],
@@ -101,13 +122,46 @@ class PrivateMarketReferenceController extends Controller
             'description' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $reference->update([
-            ...$data,
-            'symbol' => strtoupper($data['symbol']),
-            'currency' => strtoupper($data['currency']),
-        ]);
+        $linked = $reference->assets()->exists();
 
-        return back()->with('success', 'Private base reference updated.');
+        if ($linked) {
+            $structuralChanges = [];
+
+            if (strtoupper($data['symbol']) !== strtoupper($reference->symbol)) {
+                $structuralChanges[] = 'symbol';
+            }
+            if ($data['category'] !== $reference->category) {
+                $structuralChanges[] = 'asset class';
+            }
+            if ($data['reference_unit'] !== $reference->reference_unit) {
+                $structuralChanges[] = 'reference unit';
+            }
+            if (strtoupper($data['currency']) !== strtoupper($reference->currency)) {
+                $structuralChanges[] = 'currency';
+            }
+
+            if ($structuralChanges) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'symbol' =>
+                        'Structural identity is locked while this Private Base Asset is used by an investment reserve: '
+                        .implode(', ', $structuralChanges).'.',
+                ]);
+            }
+
+            $reference->update([
+                'name' => $data['name'],
+                'location' => $data['location'] ?? null,
+                'description' => $data['description'] ?? null,
+            ]);
+        } else {
+            $reference->update([
+                ...$data,
+                'symbol' => strtoupper($data['symbol']),
+                'currency' => strtoupper($data['currency']),
+            ]);
+        }
+
+        return back()->with('success', 'Private Base Asset updated.');
     }
 
     public function updatePrice(
@@ -201,7 +255,7 @@ class PrivateMarketReferenceController extends Controller
             }
         });
 
-        return back()->with('success', 'Private reference valuation updated and linked reserves revalued.');
+        return back()->with('success', 'Private Base Asset valuation updated and linked reserves revalued.');
     }
 
     public function toggleStatus(PrivateMarketReference $reference)
@@ -210,6 +264,6 @@ class PrivateMarketReferenceController extends Controller
             'status' => $reference->status === 'active' ? 'paused' : 'active',
         ]);
 
-        return back()->with('success', 'Private market reference status updated.');
+        return back()->with('success', 'Private Base Asset status updated.');
     }
 }

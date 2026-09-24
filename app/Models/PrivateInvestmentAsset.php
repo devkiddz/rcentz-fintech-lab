@@ -15,6 +15,7 @@ class PrivateInvestmentAsset extends Model
     protected $fillable = [
         'instrument_id',
         'market_instrument_id',
+        'public_investment_base_asset_id',
         'private_market_reference_id',
         'valuation_mode',
         'is_reserve_backing',
@@ -61,6 +62,14 @@ class PrivateInvestmentAsset extends Model
         return $this->belongsTo(
             MarketInstrument::class,
             'market_instrument_id'
+        );
+    }
+
+    public function publicBaseAsset(): BelongsTo
+    {
+        return $this->belongsTo(
+            PublicInvestmentBaseAsset::class,
+            'public_investment_base_asset_id'
         );
     }
 

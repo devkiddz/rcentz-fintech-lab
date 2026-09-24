@@ -34,8 +34,26 @@ class PrivateInvestmentAdminController extends Controller
         }
 
         $instruments = $query
+            ->with([
+                'assets' => fn ($query) => $query
+                    ->where('status', 'active')
+                    ->where('is_reserve_backing', true)
+                    ->with(['marketInstrument', 'privateMarketReference'])
+                    ->orderByDesc('current_valuation'),
+                'prices' => fn ($query) => $query
+                    ->where('timeframe', '1d')
+                    ->orderBy('recorded_at'),
+            ])
+            ->withSum([
+                'assets as active_reserve_value' => fn ($query) => $query
+                    ->where('status', 'active')
+                    ->where('is_reserve_backing', true),
+            ], 'current_valuation')
             ->withCount([
                 'assets',
+                'assets as active_reserve_assets_count' => fn ($query) => $query
+                    ->where('status', 'active')
+                    ->where('is_reserve_backing', true),
                 'events',
                 'holdings',
                 'transactions',
@@ -131,7 +149,7 @@ class PrivateInvestmentAdminController extends Controller
         $instrument->load([
             'assets' => fn ($query) => $query
                 ->where('status', 'active')
-                ->with('marketInstrument')
+                ->with(['marketInstrument', 'publicBaseAsset', 'privateMarketReference'])
                 ->orderByDesc('current_valuation'),
             'events' => fn ($query) => $query
                 ->where('approval_state', 'approved')
@@ -154,7 +172,7 @@ class PrivateInvestmentAdminController extends Controller
     )
     {
         $instrument->load([
-            'assets'=>fn($q)=>$q->with('marketInstrument')->latest('created_at'),
+            'assets'=>fn($q)=>$q->with(['marketInstrument', 'publicBaseAsset', 'privateMarketReference'])->latest('created_at'),
             'events'=>fn($q)=>$q->latest('effective_at')->limit(25),
             'prices'=>fn($q)=>$q->latest('recorded_at')->limit(30),
             'lifecycleEvents'=>fn($q)=>$q->latest('effective_at')->limit(5),
@@ -169,11 +187,19 @@ class PrivateInvestmentAdminController extends Controller
 
         $reserveSummary = $reserves->summary($instrument);
 
-        $marketInstruments = MarketInstrument::query()
-            ->active()
-            ->orderBy('asset_class')
-            ->orderBy('symbol')
-            ->get(['id', 'symbol', 'name', 'asset_class']);
+        $publicBaseAssets = \App\Models\PublicInvestmentBaseAsset::query()
+            ->with('marketInstrument')
+            ->where('status', 'active')
+            ->whereHas('marketInstrument', fn ($query) =>
+                $query->where('is_active', true)
+            )
+            ->orderBy('id')
+            ->get();
+
+        $privateBaseAssets = \App\Models\PrivateMarketReference::query()
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
 
         return view(
             'admin.private-investments.show',
@@ -181,7 +207,8 @@ class PrivateInvestmentAdminController extends Controller
                 'instrument',
                 'customers',
                 'reserveSummary',
-                'marketInstruments'
+                'publicBaseAssets',
+                'privateBaseAssets'
             )
         );
     }
@@ -256,6 +283,15 @@ class PrivateInvestmentAdminController extends Controller
             auth()->id()
         );
 
+        $this->syncPrimaryReferenceAsset(
+            $instrument,
+            auth()->id()
+        );
+
+        $reserves->rebuildSingleBaseAssetHistory(
+            $instrument->fresh()
+        );
+
         return back()->with(
             'success',
             'Reserve asset '.$asset->name.' added from its selected reference authority and sellable capacity synchronized.'
@@ -288,6 +324,15 @@ class PrivateInvestmentAdminController extends Controller
             auth()->id()
         );
 
+        $this->syncPrimaryReferenceAsset(
+            $instrument,
+            auth()->id()
+        );
+
+        $reserves->rebuildSingleBaseAssetHistory(
+            $instrument->fresh()
+        );
+
         return back()->with(
             'success',
             'Reserve asset '.$asset->name.' updated from its selected reference authority and capacity synchronized.'
@@ -308,6 +353,15 @@ class PrivateInvestmentAdminController extends Controller
             'Admin removed the reserve asset from active backing.'
         );
 
+        $this->syncPrimaryReferenceAsset(
+            $instrument,
+            auth()->id()
+        );
+
+        $reserves->rebuildSingleBaseAssetHistory(
+            $instrument->fresh()
+        );
+
         return back()->with(
             'success',
             'Reserve asset removed. Customer coverage and sellable capacity were revalidated.'
@@ -325,22 +379,30 @@ class PrivateInvestmentAdminController extends Controller
         $authority = (string) $request->input('reference_authority');
 
         if (str_starts_with($authority, 'public:')) {
-            $marketId = (int) substr($authority, 7);
+            $baseAssetId = (int) substr($authority, 7);
+
+            $publicBaseAsset = \App\Models\PublicInvestmentBaseAsset::query()
+                ->with('marketInstrument')
+                ->whereKey($baseAssetId)
+                ->where('status', 'active')
+                ->first();
 
             if (
-                $marketId <= 0
-                || ! \App\Models\MarketInstrument::query()
-                    ->whereKey($marketId)
-                    ->exists()
+                ! $publicBaseAsset
+                || ! $publicBaseAsset->marketInstrument
+                || ! $publicBaseAsset->marketInstrument->is_active
             ) {
                 throw \Illuminate\Validation\ValidationException::withMessages([
-                    'reference_authority' => 'Select a valid public market reference.',
+                    'reference_authority' =>
+                        'Select an active approved Public Investment Base Asset.',
                 ]);
             }
 
             $request->merge([
-                'valuation_mode' => PrivateInvestmentAsset::VALUATION_MARKET_LINKED,
-                'market_instrument_id' => $marketId,
+                'valuation_mode' =>
+                    PrivateInvestmentAsset::VALUATION_MARKET_LINKED,
+                'market_instrument_id' =>
+                    $publicBaseAsset->market_instrument_id,
                 'current_unit_price' => null,
             ]);
         } elseif (str_starts_with($authority, 'private:')) {
@@ -414,6 +476,7 @@ class PrivateInvestmentAdminController extends Controller
 
             $asset->update([
                 'private_market_reference_id' => $reference->id,
+                'public_investment_base_asset_id' => null,
                 'market_instrument_id' => null,
                 'valuation_mode' => PrivateInvestmentAsset::VALUATION_PRIVATE,
                 'current_unit_price' => $price,
@@ -448,11 +511,22 @@ class PrivateInvestmentAdminController extends Controller
         }
 
         if (str_starts_with($authority, 'public:')) {
-            if ($asset->private_market_reference_id !== null) {
-                $asset->update([
-                    'private_market_reference_id' => null,
-                ]);
-            }
+            $baseAssetId = (int) substr($authority, 7);
+
+            $publicBaseAsset = \App\Models\PublicInvestmentBaseAsset::query()
+                ->with('marketInstrument')
+                ->whereKey($baseAssetId)
+                ->where('status', 'active')
+                ->firstOrFail();
+
+            $asset->update([
+                'public_investment_base_asset_id' => $publicBaseAsset->id,
+                'private_market_reference_id' => null,
+                'market_instrument_id' =>
+                    $publicBaseAsset->market_instrument_id,
+                'valuation_mode' =>
+                    PrivateInvestmentAsset::VALUATION_MARKET_LINKED,
+            ]);
 
             return $asset->fresh();
         }
@@ -460,6 +534,7 @@ class PrivateInvestmentAdminController extends Controller
         // Existing unlinked manual reserves remain readable until deliberately
         // converted. New reserve creation never offers this option.
         $asset->update([
+            'public_investment_base_asset_id' => null,
             'private_market_reference_id' => null,
             'market_instrument_id' => null,
             'valuation_mode' => PrivateInvestmentAsset::VALUATION_MANUAL,
@@ -531,63 +606,112 @@ public function applyLifecycleEvent(
         );
     }
 
-    public function setReferenceAsset(
-        Request $request,
-        PrivateInvestmentInstrument $instrument
-    ) {
-        $data = $request->validate([
-            'reference_asset_id' => 'required|integer',
-        ]);
+    private function syncPrimaryReferenceAsset(
+        PrivateInvestmentInstrument $instrument,
+        ?int $actorUserId = null
+    ): void {
+        $instrument->refresh();
 
-        $asset = $instrument->assets()
-            ->with('marketInstrument')
-            ->whereKey((int) $data['reference_asset_id'])
+        $active = $instrument->assets()
             ->where('status', 'active')
             ->where('is_reserve_backing', true)
-            ->first();
-
-        if (! $asset) {
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'reference_asset_id' => 'Select an active reserve-backing asset that belongs to this investment.',
-            ]);
-        }
+            ->orderByDesc('current_valuation')
+            ->orderBy('id')
+            ->get();
 
         $previousReferenceId = $instrument->reference_asset_id;
 
-        if ((int) $previousReferenceId === (int) $asset->id) {
-            return back()->with('success', 'Market reference source is already using '.$asset->name.'.');
+        if ($active->isEmpty()) {
+            if ($previousReferenceId !== null) {
+                $instrument->update([
+                    'reference_asset_id' => null,
+                ]);
+
+                PrivateInvestmentReserveEvent::query()->create([
+                    'instrument_id' => $instrument->id,
+                    'asset_id' => null,
+                    'action' => 'base_asset_reference_synchronized',
+                    'valuation_mode' => null,
+                    'previous_quantity' => null,
+                    'new_quantity' => null,
+                    'previous_unit_price' => null,
+                    'new_unit_price' => null,
+                    'previous_valuation' => null,
+                    'new_valuation' => null,
+                    'market_price' => null,
+                    'reason' => 'Displayed Base Asset reference cleared because no active reserve backing remains.',
+                    'created_by_user_id' => $actorUserId,
+                    'metadata' => [
+                        'source' => 'reserve_base_asset_authority',
+                        'previous_reference_asset_id' => $previousReferenceId,
+                        'new_reference_asset_id' => null,
+                    ],
+                    'effective_at' => now(),
+                ]);
+            }
+
+            return;
         }
 
+        $currentStillValid = $previousReferenceId !== null
+            && $active->contains(
+                fn (PrivateInvestmentAsset $asset) =>
+                    (int) $asset->id === (int) $previousReferenceId
+            );
+
+        if ($currentStillValid) {
+            return;
+        }
+
+        $selected = $active->first();
+
         $instrument->update([
-            'reference_asset_id' => $asset->id,
+            'reference_asset_id' => $selected->id,
         ]);
 
         PrivateInvestmentReserveEvent::query()->create([
             'instrument_id' => $instrument->id,
-            'asset_id' => $asset->id,
-            'action' => 'reference_source_selected',
-            'valuation_mode' => $asset->valuation_mode,
+            'asset_id' => $selected->id,
+            'action' => 'base_asset_reference_synchronized',
+            'valuation_mode' => $selected->valuation_mode,
             'previous_quantity' => null,
             'new_quantity' => null,
             'previous_unit_price' => null,
-            'new_unit_price' => (float) $asset->current_unit_price ?: null,
+            'new_unit_price' => (float) $selected->current_unit_price ?: null,
             'previous_valuation' => null,
-            'new_valuation' => (float) $asset->current_valuation,
-            'market_price' => $asset->isMarketLinked()
-                ? ((float) $asset->current_unit_price ?: null)
+            'new_valuation' => (float) $selected->current_valuation,
+            'market_price' => $selected->isMarketLinked()
+                ? ((float) $selected->current_unit_price ?: null)
                 : null,
-            'reason' => 'Admin selected the reserve asset used as the customer-facing market reference.',
-            'created_by_user_id' => auth()->id(),
+            'reason' => 'Displayed Base Asset reference synchronized from active reserve allocation.',
+            'created_by_user_id' => $actorUserId,
             'metadata' => [
-                'source' => 'admin_reference_authority',
+                'source' => 'reserve_base_asset_authority',
                 'previous_reference_asset_id' => $previousReferenceId,
-                'new_reference_asset_id' => $asset->id,
-                'market_instrument_id' => $asset->market_instrument_id,
+                'new_reference_asset_id' => $selected->id,
+                'market_instrument_id' => $selected->market_instrument_id,
+                'private_market_reference_id' =>
+                    $selected->private_market_reference_id,
             ],
             'effective_at' => now(),
         ]);
+    }
 
-        return back()->with('success', 'Market reference source updated to '.$asset->name.'.');
+    public function setReferenceAsset(
+        Request $request,
+        PrivateInvestmentInstrument $instrument
+    ) {
+        // Compatibility endpoint only. The universal reserve/Base Asset editor
+        // now owns this relationship; independent reference selection is retired.
+        $this->syncPrimaryReferenceAsset(
+            $instrument,
+            auth()->id()
+        );
+
+        return back()->with(
+            'success',
+            'Base Asset display reference synchronized from active reserve allocation.'
+        );
     }
 
     public function updatePresentation(Request $request)
@@ -605,6 +729,20 @@ public function applyLifecycleEvent(
 
     private function validateReserveAsset(Request $request): array
     {
+        if ($request->filled('asset_type')) {
+            $assetType = Str::of((string) $request->input('asset_type'))
+                ->trim()
+                ->lower()
+                ->replace(['-', ' '], '_')
+                ->replaceMatches('/_+/', '_')
+                ->trim('_')
+                ->toString();
+
+            $request->merge([
+                'asset_type' => $assetType,
+            ]);
+        }
+
         return $request->validate([
             'valuation_mode'=>'required|in:manual,market_linked',
             'market_instrument_id'=>'nullable|required_if:valuation_mode,market_linked|integer|exists:market_instruments,id',

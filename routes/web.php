@@ -421,9 +421,8 @@ Route::middleware(['auth', 'admin'])
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
         
 
-        // Base Reference Engine: Public references are read-only; Private references are RCENTZ-maintained.
+        // Legacy Base Reference entry point.
         Route::get('base-references', fn () => redirect()->route('admin.investments.instruments.base-assets.index'))->name('base-references.index');
-        Route::post('base-references/public', [\App\Http\Controllers\Admin\BaseReferenceController::class, 'storePublic'])->name('base-references.public.store');
 
         // Read-only generic MarketInstrument registry for admin inspection.
         Route::prefix('instruments')->name('instruments.')->group(function () {
@@ -436,13 +435,9 @@ Route::middleware(['auth', 'admin'])
             Route::get('/crypto/{symbol}', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'showCrypto'])->where('symbol', '[A-Za-z0-9.\\-]+')->name('crypto.show');
             Route::get('/commodities', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'commodities'])->name('commodities');
             Route::get('/commodities/{symbol}', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'showCommodity'])->where('symbol', '[A-Za-z0-9.\\-]+')->name('commodities.show');
-            // Private local/reference authority. Keep these before the generic /{instrument} route.
-            Route::get('/private-references', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'index'])->name('private-references.index');
-            Route::post('/private-references', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'store'])->name('private-references.store');
-            Route::get('/private-references/{reference}', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'show'])->name('private-references.show');
-            Route::patch('/private-references/{reference}', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'updateIdentity'])->name('private-references.identity.update');
-            Route::patch('/private-references/{reference}/price', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'updatePrice'])->name('private-references.price.update');
-            Route::patch('/private-references/{reference}/status', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'toggleStatus'])->name('private-references.status');
+            // Legacy read paths redirect to the Investment-owned Private Base Asset authority.
+            Route::get('/private-references', fn () => redirect()->route('admin.investments.instruments.private.base-assets.index'))->name('private-references.index');
+            Route::get('/private-references/{reference}', fn (\App\Models\PrivateMarketReference $reference) => redirect()->route('admin.investments.instruments.private.base-assets.show', $reference))->name('private-references.show');
             Route::get('/{instrument}', [\App\Http\Controllers\Admin\MarketInstrumentController::class, 'show'])->name('show');
         });
 
@@ -500,15 +495,33 @@ Route::middleware(['auth', 'admin'])
 
         // Admin Investment Management
         Route::prefix('investments')->name('investments.')->group(function () {
-            // Investment Instruments -> Base Assets / References.
+            // Investment Instruments -> Base Assets.
             Route::get('/instruments/base-assets', [\App\Http\Controllers\Admin\BaseReferenceController::class, 'index'])->name('instruments.base-assets.index');
-            Route::post('/instruments/base-assets/public', [\App\Http\Controllers\Admin\BaseReferenceController::class, 'storePublic'])->name('instruments.base-assets.public.store');
-            Route::post('/instruments/base-assets/private', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'store'])->name('instruments.base-assets.private.store');
-            Route::get('/instruments/base-assets/private/{reference}', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'show'])->name('instruments.base-assets.private.show');
-            Route::patch('/instruments/base-assets/private/{reference}', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'updateIdentity'])->name('instruments.base-assets.private.identity.update');
-            Route::patch('/instruments/base-assets/private/{reference}/price', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'updatePrice'])->name('instruments.base-assets.private.price.update');
-            Route::patch('/instruments/base-assets/private/{reference}/status', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'toggleStatus'])->name('instruments.base-assets.private.status');
 
+            // Private Base Assets: created and valued inside RCENTZ.
+            Route::get('/instruments/private/base-assets', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'index'])->name('instruments.private.base-assets.index');
+            Route::post('/instruments/private/base-assets', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'store'])->name('instruments.private.base-assets.store');
+            Route::get('/instruments/private/base-assets/{reference}', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'show'])->name('instruments.private.base-assets.show');
+            Route::patch('/instruments/private/base-assets/{reference}', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'updateIdentity'])->name('instruments.private.base-assets.identity.update');
+            Route::patch('/instruments/private/base-assets/{reference}/price', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'updatePrice'])->name('instruments.private.base-assets.price.update');
+            Route::patch('/instruments/private/base-assets/{reference}/status', [\App\Http\Controllers\Admin\PrivateMarketReferenceController::class, 'toggleStatus'])->name('instruments.private.base-assets.status');
+            Route::get('/instruments/private/base-assets/{reference}/performance', [\App\Http\Controllers\Admin\InvestmentBaseAssetPerformanceController::class, 'private'])->name('instruments.private.base-assets.performance');
+            Route::patch('/instruments/private/base-assets/{reference}/movement', [\App\Http\Controllers\Admin\PrivateBaseAssetMovementController::class, 'update'])->name('instruments.private.base-assets.movement.update');
+            Route::post('/instruments/private/base-assets/{reference}/movement/move', [\App\Http\Controllers\Admin\PrivateBaseAssetMovementController::class, 'move'])->name('instruments.private.base-assets.movement.move');
+            Route::get('/instruments/private/base-assets/{reference}/performance/runtime', [\App\Http\Controllers\Admin\PrivateBaseAssetMovementController::class, 'performance'])->name('instruments.private.base-assets.performance.runtime');
+            Route::post('/instruments/private/base-assets/{reference}/movement/runtime', [\App\Http\Controllers\Admin\PrivateBaseAssetMovementController::class, 'runtime'])->name('instruments.private.base-assets.movement.runtime');
+
+            // Public Base Assets: approved designations of existing Market Instruments.
+            Route::get('/instruments/public/base-assets', [\App\Http\Controllers\Admin\PublicInvestmentBaseAssetController::class, 'index'])->name('instruments.public.base-assets.index');
+            Route::post('/instruments/public/base-assets', [\App\Http\Controllers\Admin\PublicInvestmentBaseAssetController::class, 'store'])->name('instruments.public.base-assets.store');
+            Route::get('/instruments/public/base-assets/{baseAsset}', [\App\Http\Controllers\Admin\PublicInvestmentBaseAssetController::class, 'show'])->name('instruments.public.base-assets.show');
+            Route::patch('/instruments/public/base-assets/{baseAsset}', [\App\Http\Controllers\Admin\PublicInvestmentBaseAssetController::class, 'update'])->name('instruments.public.base-assets.update');
+            Route::patch('/instruments/public/base-assets/{baseAsset}/status', [\App\Http\Controllers\Admin\PublicInvestmentBaseAssetController::class, 'toggleStatus'])->name('instruments.public.base-assets.status');
+            Route::get('/instruments/public/base-assets/{baseAsset}/performance', [\App\Http\Controllers\Admin\InvestmentBaseAssetPerformanceController::class, 'public'])->name('instruments.public.base-assets.performance');
+            Route::delete('/instruments/public/base-assets/{baseAsset}', [\App\Http\Controllers\Admin\PublicInvestmentBaseAssetController::class, 'destroy'])->name('instruments.public.base-assets.destroy');
+
+            // Compatibility redirects for the temporary mixed R1.21/R1.22 paths.
+            Route::get('/instruments/base-assets/private/{reference}', fn (\App\Models\PrivateMarketReference $reference) => redirect()->route('admin.investments.instruments.private.base-assets.show', $reference));
             // V5.26 canonical Private Investment control plane.
             Route::get('/', [PrivateInvestmentAdminController::class, 'index'])->name('control.index');
             Route::get('/instruments', fn () => redirect()->route('admin.investments.control.index'))->name('control.instruments.index');

@@ -149,7 +149,17 @@
                 </summary>
                 <div class="mt-1 space-y-1 pl-5">
                     <a href="{{ route('admin.investments.control.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.control.*') ? $childActive : $childIdle }}"><i data-lucide="layers-3" class="h-3.5 w-3.5"></i><span>Investment Products</span></a>
-                    <a href="{{ route('admin.investments.instruments.base-assets.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.instruments.base-assets.*') ? $childActive : $childIdle }}"><i data-lucide="database-zap" class="h-3.5 w-3.5"></i><span>Base Assets / References</span></a>
+                    <details class="group/base-assets rounded-lg" {{ request()->routeIs('admin.investments.instruments.*.base-assets.*','admin.investments.instruments.base-assets.*') ? 'open' : '' }}>
+                        <summary class="{{ $childBase }} cursor-pointer justify-between {{ request()->routeIs('admin.investments.instruments.*.base-assets.*','admin.investments.instruments.base-assets.*') ? $childActive : $childIdle }}">
+                            <span class="flex items-center gap-3"><i data-lucide="database-zap" class="h-3.5 w-3.5"></i><span>Base Assets</span></span>
+                            <i data-lucide="chevron-down" class="h-3.5 w-3.5 transition-transform group-open/base-assets:rotate-180"></i>
+                        </summary>
+                        <div class="mt-1 space-y-1 pl-5">
+                            <a href="{{ route('admin.investments.instruments.base-assets.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.instruments.base-assets.index') ? $childActive : $childIdle }}"><i data-lucide="layout-grid" class="h-3.5 w-3.5"></i><span>Overview</span></a>
+                            <a href="{{ route('admin.investments.instruments.private.base-assets.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.instruments.private.base-assets.*') ? $childActive : $childIdle }}"><i data-lucide="building-2" class="h-3.5 w-3.5"></i><span>Private</span></a>
+                            <a href="{{ route('admin.investments.instruments.public.base-assets.index') }}" class="{{ $childBase }} {{ request()->routeIs('admin.investments.instruments.public.base-assets.*') ? $childActive : $childIdle }}"><i data-lucide="chart-candlestick" class="h-3.5 w-3.5"></i><span>Public</span></a>
+                        </div>
+                    </details>
                 </div>
             </details>
             <a href="{{ route('investments.index') }}" class="{{ $childBase }}"><i data-lucide="eye" class="h-4 w-4"></i><span>Customer Market</span></a>

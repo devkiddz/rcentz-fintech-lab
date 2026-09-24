@@ -14,8 +14,226 @@
         @endforeach
     </section>
 
-    <section class="mt-4 grid gap-4 xl:grid-cols-[.9fr_1.1fr]">
+
+<section class="mt-4">
+        <div class="ui-panel flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <p class="ui-kicker">Instrument registry</p>
+                <h2 class="mt-1 text-lg font-semibold">Investment Products</h2>
+                <p class="mt-1 text-xs text-muted-foreground">{{ $instruments->total() }} private investment instruments · card management view</p>
+            </div>
+            <a href="{{ route('investments.index') }}" class="ui-btn ui-btn-secondary shrink-0">
+                <i data-lucide="external-link" class="h-4 w-4"></i>
+                Customer Market
+            </a>
+        </div>
+
+        <div class="mt-4 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+            @forelse($instruments as $instrument)
+                @php
+                    $adminChange = (float) $instrument->change_percent;
+                    $adminStory = app(\App\Services\PrivateInvestmentProjectionService::class)
+                        ->forInstrument($instrument, (float)$instrument->minimum_investment);
+
+                    $primaryReserve = $instrument->assets->first();
+                    $baseAssetSymbol = $primaryReserve?->privateMarketReference?->symbol
+                        ?: $primaryReserve?->marketInstrument?->symbol;
+                    $activeReserveValue = (float) ($instrument->active_reserve_value ?? 0);
+
+                    $chartRows = $instrument->prices
+                        ->sortBy('recorded_at')
+                        ->take(-30)
+                        ->values();
+
+                    $chartMin = $chartRows->isNotEmpty()
+                        ? (float) $chartRows->min(fn ($row) => (float) $row->close)
+                        : 0;
+
+                    $chartMax = $chartRows->isNotEmpty()
+                        ? (float) $chartRows->max(fn ($row) => (float) $row->close)
+                        : 0;
+
+                    $chartRange = max($chartMax - $chartMin, 0.000001);
+                    $chartDenominator = max($chartRows->count() - 1, 1);
+
+                    $sparklinePoints = $chartRows
+                        ->map(function ($row, $index) use ($chartMin, $chartRange, $chartDenominator) {
+                            $x = ($index / $chartDenominator) * 240;
+                            $normalized = ((float) $row->close - $chartMin) / $chartRange;
+                            $y = 66 - ($normalized * 54);
+
+                            return number_format($x, 2, '.', '').','.number_format($y, 2, '.', '');
+                        })
+                        ->implode(' ');
+
+                    $chartFirst = $chartRows->first();
+                    $chartLast = $chartRows->last();
+                    $chartChange = $chartFirst && (float) $chartFirst->close > 0
+                        ? (((float) $chartLast->close - (float) $chartFirst->close) / (float) $chartFirst->close) * 100
+                        : 0;
+
+                    $customerUnits = max(
+                        0,
+                        (float) $instrument->unit_supply - (float) $instrument->available_units
+                    );
+                @endphp
+                <article class="ui-panel group flex min-h-[460px] flex-col overflow-hidden p-5 transition hover:-translate-y-0.5 hover:shadow-md">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="rounded-full bg-red-500/10 px-2 py-1 text-[9px] font-semibold uppercase tracking-[.08em] text-red-600">{{ $instrument->symbol }}</span>
+                                <span class="rounded-full border border-border px-2 py-1 text-[9px] font-medium text-muted-foreground">{{ ucwords(str_replace('_',' ',$instrument->category)) }}</span>
+                                <span class="rounded-full border border-border px-2 py-1 text-[9px] font-medium {{ $instrument->status === 'active' ? 'text-emerald-600' : 'text-amber-600' }}">{{ ucfirst($instrument->status) }}</span>
+                            </div>
+                            <h3 class="mt-3 truncate text-base font-semibold">{{ $instrument->name }}</h3>
+                            <p class="mt-1 text-[10px] text-muted-foreground">{{ ucwords(str_replace('_',' ',$instrument->risk_level)) }} risk</p>
+                        </div>
+                        <div class="shrink-0 text-right">
+                            <p class="text-lg font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format((float)$instrument->current_price,2) }}</p>
+                            <p class="mt-1 text-[10px] font-semibold {{ $adminChange >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $adminChange >= 0 ? '+' : '' }}{{ number_format($adminChange,2) }}%</p>
+                        </div>
+                    </div>
+
+                    <p class="mt-4 line-clamp-2 min-h-[40px] text-[11px] leading-5 text-muted-foreground">{{ $instrument->description ?: 'No investment description has been published yet.' }}</p>
+
+                    <div class="mt-4 overflow-hidden rounded-xl border border-border bg-muted/10 p-3">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <p class="text-[8px] font-semibold uppercase tracking-[.11em] text-muted-foreground">Investment trend · recent 1D history</p>
+                                <p class="mt-1 text-[10px] text-muted-foreground">{{ $chartRows->count() }} stored points</p>
+                            </div>
+                            @if($chartRows->count() >= 2)
+                                <div class="text-right">
+                                    <p class="text-[9px] text-muted-foreground">Range move</p>
+                                    <p class="mt-0.5 text-[10px] font-semibold {{ $chartChange >= 0 ? 'text-emerald-600' : 'text-red-600' }}">
+                                        {{ $chartChange >= 0 ? '+' : '' }}{{ number_format($chartChange,2) }}%
+                                    </p>
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="mt-2 h-20 w-full">
+                            @if($chartRows->count() >= 2)
+                                <svg viewBox="0 0 240 72" preserveAspectRatio="none" class="h-full w-full overflow-visible" role="img" aria-label="{{ $instrument->symbol }} recent investment price history">
+                                    <line x1="0" y1="12" x2="240" y2="12" class="stroke-border" stroke-width="0.7" />
+                                    <line x1="0" y1="39" x2="240" y2="39" class="stroke-border" stroke-width="0.7" />
+                                    <line x1="0" y1="66" x2="240" y2="66" class="stroke-border" stroke-width="0.7" />
+                                    <polyline
+                                        points="{{ $sparklinePoints }}"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        vector-effect="non-scaling-stroke"
+                                        class="{{ $chartChange >= 0 ? 'text-emerald-600' : 'text-red-600' }}"
+                                    />
+                                </svg>
+                            @else
+                                <div class="flex h-full items-center justify-center text-[10px] text-muted-foreground">
+                                    Price history is still being established.
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="mt-1 flex items-center justify-between text-[8px] text-muted-foreground">
+                            <span>{{ $chartRows->isNotEmpty() ? currency_symbol().number_format($chartMin,2) : '—' }} low</span>
+                            <span>{{ $chartRows->isNotEmpty() ? currency_symbol().number_format($chartMax,2) : '—' }} high</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-2 border-y border-border">
+                        <div class="border-b border-r border-border py-3 pr-3">
+                            <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">Duration</p>
+                            <p class="mt-1 text-xs font-semibold">{{ $adminStory['duration_label'] }}</p>
+                        </div>
+                        <div class="border-b border-border py-3 pl-3">
+                            <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">Return cycle</p>
+                            <p class="mt-1 text-xs font-semibold">{{ $adminStory['cycle_return_label'] }}</p>
+                            <p class="mt-0.5 text-[8px] text-muted-foreground">every {{ $adminStory['return_interval_label'] }}</p>
+                        </div>
+                        <div class="border-r border-border py-3 pr-3">
+                            <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">Investors</p>
+                            <p class="mt-1 text-xs font-semibold">{{ $instrument->active_holdings_count }}</p>
+                            <p class="mt-0.5 text-[8px] text-muted-foreground">{{ $instrument->holdings_count }} holding records</p>
+                        </div>
+                        <div class="py-3 pl-3">
+                            <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">Backing</p>
+                            <p class="mt-1 text-xs font-semibold">
+                                {{ $instrument->active_reserve_assets_count }} active reserve{{ (int) $instrument->active_reserve_assets_count === 1 ? '' : 's' }}
+                            </p>
+                            @if($primaryReserve)
+                                <p class="mt-0.5 truncate text-[8px] text-muted-foreground">
+                                    Base {{ $baseAssetSymbol ?: 'Linked' }} · {{ currency_symbol() }}{{ number_format($activeReserveValue,0) }}
+                                </p>
+                                <p class="mt-0.5 text-[8px] text-muted-foreground">
+                                    {{ number_format($customerUnits,6) }} customer units · {{ number_format((float)$instrument->unit_supply,6) }} backed
+                                </p>
+                            @else
+                                <p class="mt-0.5 text-[8px] text-amber-600">No active backing</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="mt-auto grid grid-cols-3 gap-3 pt-4">
+                        <div>
+                            <p class="text-[8px] text-muted-foreground">Minimum</p>
+                            <p class="mt-1 text-xs font-semibold">{{ currency_symbol() }}{{ number_format((float)$instrument->minimum_investment,0) }}</p>
+                        </div>
+                        <div>
+                            <p class="text-[8px] text-muted-foreground">Available</p>
+                            <p class="mt-1 text-xs font-semibold">{{ number_format((float)$instrument->available_units,2) }}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[8px] text-muted-foreground">Featured</p>
+                            <p class="mt-1 text-xs font-semibold">{{ $instrument->is_featured ? 'Yes' : 'No' }}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
+                        <a href="{{ route('admin.investments.control.show',$instrument) }}" class="ui-btn ui-btn-primary !h-9 flex-1 justify-center">
+                            <i data-lucide="settings-2" class="h-3.5 w-3.5"></i>
+                            Manage Investment
+                        </a>
+                        <a href="{{ route('admin.investments.control.preview',$instrument) }}" class="ui-btn ui-btn-secondary !h-9 flex-1 justify-center">
+                            <i data-lucide="eye" class="h-3.5 w-3.5"></i>
+                            Preview Asset
+                        </a>
+                    </div>
+                </article>
+            @empty
+                <div class="ui-panel col-span-full border-dashed p-10 text-center text-sm text-muted-foreground">No private investment instruments are registered.</div>
+            @endforelse
+        </div>
+
+        <div class="mt-4 ui-panel p-4">{{ $instruments->links() }}</div>
+    </section>
+
+    <section class="mt-4">
         <div class="ui-panel p-5">
+            <p class="ui-kicker">Market Presentation</p><h2 class="mt-1 text-lg font-semibold">Pricing Authority Message</h2>
+            <form method="POST" action="{{ route('admin.investments.control.presentation.update') }}" class="mt-4 space-y-3">@csrf @method('PATCH')
+                <div><label class="ui-label">Pricing Authority Title</label><input class="ui-input mt-1 w-full" name="title" value="{{ $presentation['title'] }}" required></div>
+                <div><label class="ui-label">Customer-Facing Pricing Message</label><textarea class="ui-input mt-1 w-full" rows="5" name="message" required>{{ $presentation['message'] }}</textarea></div>
+                <button class="ui-btn ui-btn-primary">Save Market Copy</button>
+            </form>
+        </div>
+    </section>
+
+    <section class="mt-4">
+        <details class="ui-panel group overflow-hidden">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5">
+                <div>
+                    <p class="ui-kicker">Instrument Registry</p>
+                    <h2 class="mt-1 text-lg font-semibold">Add New Investment</h2>
+                    <p class="mt-1 text-xs text-muted-foreground">Open the full contract creation form only when a new Investment Product is being registered.</p>
+                </div>
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-muted/20">
+                    <i data-lucide="plus" class="h-4 w-4 transition-transform group-open:rotate-45"></i>
+                </div>
+            </summary>
+            <div class="border-t border-border">
+                <div class="p-5">
             <p class="ui-kicker">Instrument Registry</p><h2 class="mt-1 text-lg font-semibold">Create Investment</h2>
             <form method="POST" action="{{ route('admin.investments.control.instruments.store') }}" class="mt-4 space-y-5">@csrf
                 <div>
@@ -72,110 +290,8 @@
                 <button class="ui-btn ui-btn-primary w-full justify-center">Create Investment</button>
             </form>
         </div>
-
-        <div class="ui-panel p-5">
-            <p class="ui-kicker">Market Presentation</p><h2 class="mt-1 text-lg font-semibold">Pricing Authority Message</h2>
-            <form method="POST" action="{{ route('admin.investments.control.presentation.update') }}" class="mt-4 space-y-3">@csrf @method('PATCH')
-                <div><label class="ui-label">Pricing Authority Title</label><input class="ui-input mt-1 w-full" name="title" value="{{ $presentation['title'] }}" required></div>
-                <div><label class="ui-label">Customer-Facing Pricing Message</label><textarea class="ui-input mt-1 w-full" rows="5" name="message" required>{{ $presentation['message'] }}</textarea></div>
-                <button class="ui-btn ui-btn-primary">Save Market Copy</button>
-            </form>
-        </div>
-    </section>
-
-    <section class="mt-4">
-        <div class="ui-panel flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <p class="ui-kicker">Instrument registry</p>
-                <h2 class="mt-1 text-lg font-semibold">Investment Products</h2>
-                <p class="mt-1 text-xs text-muted-foreground">{{ $instruments->total() }} private investment instruments · card management view</p>
             </div>
-            <a href="{{ route('investments.index') }}" class="ui-btn ui-btn-secondary shrink-0">
-                <i data-lucide="external-link" class="h-4 w-4"></i>
-                Customer Market
-            </a>
-        </div>
-
-        <div class="mt-4 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-            @forelse($instruments as $instrument)
-                @php
-                    $adminChange = (float) $instrument->change_percent;
-                    $adminStory = app(\App\Services\PrivateInvestmentProjectionService::class)
-                        ->forInstrument($instrument, (float)$instrument->minimum_investment);
-                @endphp
-                <article class="ui-panel group flex min-h-[330px] flex-col overflow-hidden p-5 transition hover:-translate-y-0.5 hover:shadow-md">
-                    <div class="flex items-start justify-between gap-4">
-                        <div class="min-w-0">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <span class="rounded-full bg-red-500/10 px-2 py-1 text-[9px] font-semibold uppercase tracking-[.08em] text-red-600">{{ $instrument->symbol }}</span>
-                                <span class="rounded-full border border-border px-2 py-1 text-[9px] font-medium text-muted-foreground">{{ ucwords(str_replace('_',' ',$instrument->category)) }}</span>
-                                <span class="rounded-full border border-border px-2 py-1 text-[9px] font-medium {{ $instrument->status === 'active' ? 'text-emerald-600' : 'text-amber-600' }}">{{ ucfirst($instrument->status) }}</span>
-                            </div>
-                            <h3 class="mt-3 truncate text-base font-semibold">{{ $instrument->name }}</h3>
-                            <p class="mt-1 text-[10px] text-muted-foreground">{{ ucwords(str_replace('_',' ',$instrument->risk_level)) }} risk</p>
-                        </div>
-                        <div class="shrink-0 text-right">
-                            <p class="text-lg font-semibold tabular-nums">{{ currency_symbol() }}{{ number_format((float)$instrument->current_price,2) }}</p>
-                            <p class="mt-1 text-[10px] font-semibold {{ $adminChange >= 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ $adminChange >= 0 ? '+' : '' }}{{ number_format($adminChange,2) }}%</p>
-                        </div>
-                    </div>
-
-                    <p class="mt-4 line-clamp-2 min-h-[40px] text-[11px] leading-5 text-muted-foreground">{{ $instrument->description ?: 'No investment description has been published yet.' }}</p>
-
-                    <div class="mt-4 grid grid-cols-2 border-y border-border">
-                        <div class="border-b border-r border-border py-3 pr-3">
-                            <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">Duration</p>
-                            <p class="mt-1 text-xs font-semibold">{{ $adminStory['duration_label'] }}</p>
-                        </div>
-                        <div class="border-b border-border py-3 pl-3">
-                            <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">Return cycle</p>
-                            <p class="mt-1 text-xs font-semibold">{{ $adminStory['cycle_return_label'] }}</p>
-                            <p class="mt-0.5 text-[8px] text-muted-foreground">every {{ $adminStory['return_interval_label'] }}</p>
-                        </div>
-                        <div class="border-r border-border py-3 pr-3">
-                            <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">Investors</p>
-                            <p class="mt-1 text-xs font-semibold">{{ $instrument->active_holdings_count }}</p>
-                            <p class="mt-0.5 text-[8px] text-muted-foreground">{{ $instrument->holdings_count }} holding records</p>
-                        </div>
-                        <div class="py-3 pl-3">
-                            <p class="text-[8px] uppercase tracking-[.1em] text-muted-foreground">Reserve assets</p>
-                            <p class="mt-1 text-xs font-semibold">{{ $instrument->assets_count }}</p>
-                            <p class="mt-0.5 text-[8px] text-muted-foreground">backing components</p>
-                        </div>
-                    </div>
-
-                    <div class="mt-auto grid grid-cols-3 gap-3 pt-4">
-                        <div>
-                            <p class="text-[8px] text-muted-foreground">Minimum</p>
-                            <p class="mt-1 text-xs font-semibold">{{ currency_symbol() }}{{ number_format((float)$instrument->minimum_investment,0) }}</p>
-                        </div>
-                        <div>
-                            <p class="text-[8px] text-muted-foreground">Available</p>
-                            <p class="mt-1 text-xs font-semibold">{{ number_format((float)$instrument->available_units,2) }}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-[8px] text-muted-foreground">Featured</p>
-                            <p class="mt-1 text-xs font-semibold">{{ $instrument->is_featured ? 'Yes' : 'No' }}</p>
-                        </div>
-                    </div>
-
-                    <div class="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
-                        <a href="{{ route('admin.investments.control.show',$instrument) }}" class="ui-btn ui-btn-primary !h-9 flex-1 justify-center">
-                            <i data-lucide="settings-2" class="h-3.5 w-3.5"></i>
-                            Manage Investment
-                        </a>
-                        <a href="{{ route('admin.investments.control.preview',$instrument) }}" class="ui-btn ui-btn-secondary !h-9 flex-1 justify-center">
-                            <i data-lucide="eye" class="h-3.5 w-3.5"></i>
-                            Preview Asset
-                        </a>
-                    </div>
-                </article>
-            @empty
-                <div class="ui-panel col-span-full border-dashed p-10 text-center text-sm text-muted-foreground">No private investment instruments are registered.</div>
-            @endforelse
-        </div>
-
-        <div class="mt-4 ui-panel p-4">{{ $instruments->links() }}</div>
+        </details>
     </section>
 </div>
 </x-admin-layout>

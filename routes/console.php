@@ -10,6 +10,7 @@ use App\Services\BotSubscriptionLifecycleService;
 use App\Services\CopyRelationshipLifecycleService;
 use App\Services\ControlledMarketEngine;
 use App\Services\MarketPriceRouter;
+use App\Services\PrivateBaseAssetMovementService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -31,6 +32,18 @@ Schedule::call(fn () => app(ControlledMarketEngine::class)->tickIfDue())
     ->name('controlled-market:tick')
     ->everyFiveSeconds()
     ->when(fn () => app(MarketPriceRouter::class)->activeMarketplace() === 'controlled')
+    ->withoutOverlapping()
+    ->onOneServer();
+
+// Private Base Asset movement clock. Each Base Asset keeps its own interval,
+// behavior, strength and volatility controls. This definition does nothing
+// while the scheduler process is stopped.
+Schedule::call(
+    fn () => app(PrivateBaseAssetMovementService::class)
+        ->tickDueReferences()
+)
+    ->name('private-base-assets:movement')
+    ->everyFiveSeconds()
     ->withoutOverlapping()
     ->onOneServer();
 

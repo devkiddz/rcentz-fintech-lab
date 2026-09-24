@@ -11,8 +11,24 @@
         <h2 class="mt-1 text-lg font-semibold">Backing & Capacity</h2>
         <p class="mt-1 max-w-2xl text-[10px] leading-4 text-muted-foreground">Reserve value is the authority for how many customer units can be supported. Unsold catalogue supply cannot create reserve backing.</p>
     </div>
-    <div class="rounded-full border border-border px-3 py-1 text-[10px] font-semibold {{ $reserveSummary['customer_fully_backed'] ? 'text-emerald-600' : 'text-red-600' }}">
-        {{ $reserveSummary['customer_fully_backed'] ? 'CUSTOMER EXPOSURE BACKED' : 'BACKING DEFICIT' }}
+    @php
+        $hasActiveBacking = (int) ($reserveSummary['reserve_assets'] ?? 0) > 0;
+        $hasCustomerExposure = (float) ($reserveSummary['customer_units'] ?? 0) > 0;
+
+        $backingState = ! $hasActiveBacking && ! $hasCustomerExposure
+            ? 'NO ACTIVE BACKING'
+            : ($reserveSummary['customer_fully_backed']
+                ? 'CUSTOMER EXPOSURE BACKED'
+                : 'BACKING DEFICIT');
+
+        $backingStateClass = $backingState === 'CUSTOMER EXPOSURE BACKED'
+            ? 'text-emerald-600'
+            : ($backingState === 'BACKING DEFICIT'
+                ? 'text-red-600'
+                : 'text-amber-600');
+    @endphp
+    <div class="rounded-full border border-border px-3 py-1 text-[10px] font-semibold {{ $backingStateClass }}">
+        {{ $backingState }}
     </div>
 </div>
 <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
@@ -23,39 +39,12 @@
     <div class="rounded-xl border border-border p-3"><p class="text-[9px] uppercase tracking-[.1em] text-muted-foreground">Sellable Now</p><p class="mt-1 text-sm font-semibold">{{ number_format((float)$reserveSummary['sellable_units'],6) }}</p></div>
     <div class="rounded-xl border border-border p-3"><p class="text-[9px] uppercase tracking-[.1em] text-muted-foreground">Customer Coverage</p><p class="mt-1 text-sm font-semibold">{{ number_format((float)$reserveSummary['customer_coverage_percent'],2) }}%</p></div>
 </div>
-@if(!$reserveSummary['listed_fully_backed'])
-<p class="mt-3 text-[10px] leading-4 text-amber-600">Catalogue supply is not yet normalized to reserve capacity. R4B baseline normalization is required before reserve authority is sealed.</p>
+@if(
+    (float) $instrument->unit_supply > 0
+    && ! $reserveSummary['listed_fully_backed']
+)
+<p class="mt-3 text-[10px] leading-4 text-amber-600">Catalogue supply exceeds currently verified reserve-backed capacity. Normalize supply before activating new subscriptions.</p>
 @endif
-</section>
-
-<section class="ui-panel mb-4 p-4" data-r4c-reference-authority>
-    @php
-        $instrument->loadMissing(['assets.marketInstrument', 'assets.privateMarketReference']);
-
-    $referenceCandidates = $instrument->assets
-            ->filter(fn ($asset) => $asset->status === 'active' && (bool) $asset->is_reserve_backing)
-            ->values();
-    @endphp
-    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-            <p class="ui-kicker">Market reference source</p>
-            <h2 class="mt-1 text-sm font-semibold">Select the one reference shown beneath the investment chart</h2>
-            <p class="mt-1 max-w-3xl text-[10px] leading-4 text-muted-foreground">All active reserve assets still contribute to backing. This selection only controls the single price reference customers and administrators see beside the chart.</p>
-        </div>
-        <form method="POST" action="{{ route('admin.investments.control.reference.update',$instrument) }}" class="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
-            @csrf
-            @method('PATCH')
-            <select class="ui-input min-w-[260px]" name="reference_asset_id" required @disabled($referenceCandidates->isEmpty())>
-                <option value="">Select reference asset</option>
-                @foreach($referenceCandidates as $asset)
-                    <option value="{{ $asset->id }}" @selected((int)$instrument->reference_asset_id === (int)$asset->id)>
-                        {{ $asset->name }}{{ $asset->marketInstrument ? ' · '.$asset->marketInstrument->display_symbol : ($asset->privateMarketReference ? ' · '.$asset->privateMarketReference->symbol : ' · LEGACY') }}
-                    </option>
-                @endforeach
-            </select>
-            <button class="ui-btn ui-btn-primary whitespace-nowrap" @disabled($referenceCandidates->isEmpty())>Set Reference</button>
-        </form>
-    </div>
 </section>
 
 <section class="grid gap-4 xl:grid-cols-[1fr_1fr]">
@@ -213,78 +202,114 @@
 <section class="mt-4 grid gap-4 xl:grid-cols-[1fr_1fr]">
 <div class="ui-panel p-5">
 <div class="flex items-start justify-between gap-4">
-    <div><p class="ui-kicker">Reserve management</p><h2 class="mt-1 text-lg font-semibold">Backing Assets</h2><p class="mt-1 text-[10px] leading-4 text-muted-foreground">Reserve quantity × authoritative unit price establishes backing value. Capacity is synchronized automatically; catalogue supply is never typed manually.</p></div>
+    <div><p class="ui-kicker">Reserve management</p><h2 class="mt-1 text-lg font-semibold">Backing Assets</h2><p class="mt-1 text-[10px] leading-4 text-muted-foreground">Reserve quantity × authoritative unit price establishes backing value. Capacity is synchronized automatically. This is the universal Base Asset authority for both Public and Private investment backing.</p></div>
     <span class="rounded-full border border-border px-2.5 py-1 text-[9px] font-semibold">{{ $reserveSummary['reserve_assets'] }} ACTIVE RESERVE{{ $reserveSummary['reserve_assets'] === 1 ? '' : 'S' }}</span>
 </div>
 
-@php
-    $privateMarketReferences = \App\Models\PrivateMarketReference::query()
-        ->where('status', 'active')
-        ->orderBy('name')
-        ->get();
-@endphp
+<details data-add-backing-asset-panel class="mt-4 rounded-xl border border-border bg-muted/5" @if(($reserveSummary['reserve_assets'] ?? 0) === 0) open @endif>
+    <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3">
+        <div>
+            <p class="text-xs font-semibold">
+                {{ ($reserveSummary['reserve_assets'] ?? 0) > 0
+                    ? 'Add Another Backing Asset'
+                    : 'Add First Backing Asset' }}
+            </p>
+            <p class="mt-1 text-[9px] leading-4 text-muted-foreground">
+                {{ ($reserveSummary['reserve_assets'] ?? 0) > 0
+                    ? 'Open only when this Investment Product needs another reserve allocation.'
+                    : 'Choose the Base Asset and create the first reserve allocation for this Investment Product.' }}
+            </p>
+        </div>
+        <span class="rounded-full border border-border px-2 py-1 text-[8px] font-semibold">
+            {{ ($reserveSummary['reserve_assets'] ?? 0) > 0 ? 'OPTIONAL' : 'REQUIRED' }}
+        </span>
+    </summary>
+    <div class="border-t border-border p-4">
 <form method="POST" action="{{ route('admin.investments.control.assets.store',$instrument) }}" class="mt-4 grid gap-3 sm:grid-cols-2">@csrf
     <div class="sm:col-span-2">
-        <label class="ui-label">Base Reference Asset</label>
+        <label class="ui-label">Base Asset for New Reserve</label>
         <select class="ui-input mt-1 w-full" name="reference_authority" required>
-            <option value="">Select the asset's reference...</option>
-            <optgroup label="Public Market — automatic pricing">
-                @foreach($marketInstruments as $market)
-                    <option value="public:{{ $market->id }}">{{ strtoupper($market->asset_class) }} · {{ $market->symbol }} · {{ $market->name }}</option>
+            <option value="">Select the Base Asset...</option>
+            <optgroup label="Public Base Assets — market priced">
+                @foreach($publicBaseAssets as $publicBaseAsset)
+                    @php $market = $publicBaseAsset->marketInstrument; @endphp
+                    @if($market)
+                        <option value="public:{{ $publicBaseAsset->id }}">{{ strtoupper($market->asset_class) }} · {{ $market->display_symbol ?: $market->symbol }} · {{ $market->name }}</option>
+                    @endif
                 @endforeach
             </optgroup>
-            <optgroup label="Private Market — RCENTZ maintained">
-                @foreach($privateMarketReferences as $privateReference)
+            <optgroup label="Private Base Assets — RCENTZ valued">
+                @foreach($privateBaseAssets as $privateReference)
                     <option value="private:{{ $privateReference->id }}">{{ $privateReference->symbol }} · {{ $privateReference->name }}@if($privateReference->location) · {{ $privateReference->location }}@endif</option>
                 @endforeach
             </optgroup>
         </select>
-        <p class="mt-1 text-[9px] leading-4 text-muted-foreground">Public references supply price automatically from the market registry. Private references are created in RCENTZ first, then selected here. The reserve asset never invents its own market price.</p>
+        <p class="mt-1 text-[9px] leading-4 text-muted-foreground">Public Base Assets are approved Market Instruments and remain market-priced. Private Base Assets are created and valued inside RCENTZ. The reserve asset never invents its own market price.</p>
     </div>
-    <div><label class="ui-label">Asset Type</label><input class="ui-input mt-1 w-full" name="asset_type" placeholder="e.g. allocated_gold, property, private_equity" required></div>
+    <div><label class="ui-label">Asset Type</label><input class="ui-input mt-1 w-full" name="asset_type" placeholder="e.g. Equity Reserve, Property Reserve, Private Equity" required></div>
     <div><label class="ui-label">Reserve Asset Name</label><input class="ui-input mt-1 w-full" name="name" placeholder="e.g. Lekki Serviced Apartments" required></div>
     <div><label class="ui-label">Reserve Quantity</label><input class="ui-input mt-1 w-full" type="number" step="0.00000001" min="0.00000001" name="reserve_quantity" placeholder="Actual quantity held" required></div>
     <div><label class="ui-label">Reserve Unit</label><input class="ui-input mt-1 w-full" name="reserve_unit" maxlength="32" placeholder="e.g. property, oz, shares" required></div>
     <div class="sm:col-span-2"><label class="ui-label">Acquisition Unit Price</label><input class="ui-input mt-1 w-full" type="number" step="0.00000001" min="0" name="acquisition_unit_price" placeholder="Optional acquisition cost per reserve unit"></div>
     <div class="sm:col-span-2"><label class="ui-label">Asset Description</label><textarea class="ui-input mt-1 w-full" name="description" rows="2" placeholder="What this reserve represents"></textarea></div>
     <div class="sm:col-span-2"><label class="ui-label">Audit Notes</label><textarea class="ui-input mt-1 w-full" name="notes" rows="2" placeholder="Optional internal reserve notes"></textarea></div>
-    <button class="ui-btn ui-btn-primary sm:col-span-2">Add Reserve Asset</button>
+    <button class="ui-btn ui-btn-primary sm:col-span-2">Create Backing Reserve</button>
 </form>
+    </div>
+</details>
 
-<div class="mt-5 space-y-3">
+<div class="mt-5">
+    <div class="mb-3 flex items-center justify-between gap-3">
+        <div>
+            <p class="ui-kicker">Current allocation</p>
+            <h3 class="mt-1 text-sm font-semibold">Existing Backing Reserve</h3>
+        </div>
+        <span class="text-[9px] text-muted-foreground">Edit the active allocation here</span>
+    </div>
+    <div class="space-y-3">
 @foreach($instrument->assets as $asset)
 <div class="rounded-xl border border-border p-3">
     <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div><p class="text-xs font-semibold">{{ $asset->name }}</p><p class="mt-1 text-[9px] text-muted-foreground">{{ strtoupper(str_replace('_',' ',$asset->valuation_mode ?? 'manual')) }} · {{ number_format((float)$asset->reserve_quantity,8) }} {{ $asset->reserve_unit ?: 'units' }} @if($asset->marketInstrument) · {{ $asset->marketInstrument->symbol }} @elseif($asset->privateMarketReference) · {{ $asset->privateMarketReference->symbol }} @else · LEGACY @endif · {{ $asset->status }}</p></div>
-        <div class="text-right"><p class="text-xs font-semibold">{{ currency_symbol() }}{{ number_format((float)$asset->current_valuation,2) }}</p><p class="text-[9px] text-muted-foreground">{{ number_format((float)$asset->ownership_percentage,2) }}% of active reserve</p></div>
+        <div class="text-right">
+            <p class="text-xs font-semibold">{{ currency_symbol() }}{{ number_format((float)$asset->current_valuation,2) }}</p>
+            @if($asset->status === 'active' && $asset->is_reserve_backing)
+                <p class="text-[9px] text-muted-foreground">{{ number_format((float)$asset->ownership_percentage,2) }}% of active reserve</p>
+            @else
+                <p class="text-[9px] text-muted-foreground">Historical reserve · not active backing</p>
+            @endif
+        </div>
     </div>
 
     @if($asset->status==='active')
     @php
     $assetAuthorityValue = $asset->private_market_reference_id
         ? 'private:'.$asset->private_market_reference_id
-        : ($asset->market_instrument_id ? 'public:'.$asset->market_instrument_id : 'legacy');
+        : ($asset->public_investment_base_asset_id ? 'public:'.$asset->public_investment_base_asset_id : 'legacy');
 @endphp
 <form method="POST" action="{{ route('admin.investments.control.assets.update',[$instrument,$asset]) }}" class="mt-3 grid gap-2 border-t border-border pt-3 sm:grid-cols-2">@csrf @method('PATCH')
     <div class="sm:col-span-2">
-        <label class="ui-label">Base Reference Asset</label>
+        <label class="ui-label">Investment Base Asset</label>
         <select class="ui-input mt-1 w-full" name="reference_authority" required>
             @if($assetAuthorityValue === 'legacy')
                 <option value="legacy" selected>Legacy manual reserve — select a reference when ready</option>
             @endif
             <optgroup label="Public Market — automatic pricing">
-                @foreach($marketInstruments as $market)
-                    <option value="public:{{ $market->id }}" @selected($assetAuthorityValue === 'public:'.$market->id)>{{ strtoupper($market->asset_class) }} · {{ $market->symbol }} · {{ $market->name }}</option>
+                @foreach($publicBaseAssets as $publicBaseAsset)
+                    @php $market = $publicBaseAsset->marketInstrument; @endphp
+                    @if($market)
+                        <option value="public:{{ $publicBaseAsset->id }}" @selected($assetAuthorityValue === 'public:'.$publicBaseAsset->id)>{{ strtoupper($market->asset_class) }} · {{ $market->display_symbol ?: $market->symbol }} · {{ $market->name }}</option>
+                    @endif
                 @endforeach
             </optgroup>
-            <optgroup label="Private Market — RCENTZ maintained">
-                @foreach($privateMarketReferences as $privateReference)
+            <optgroup label="Private Base Assets — RCENTZ valued">
+                @foreach($privateBaseAssets as $privateReference)
                     <option value="private:{{ $privateReference->id }}" @selected($assetAuthorityValue === 'private:'.$privateReference->id)>{{ $privateReference->symbol }} · {{ $privateReference->name }}@if($privateReference->location) · {{ $privateReference->location }}@endif</option>
                 @endforeach
             </optgroup>
         </select>
     </div>
-    <div><label class="ui-label">Asset Type</label><input class="ui-input mt-1 w-full" name="asset_type" value="{{ $asset->asset_type }}" required></div>
+    <div><label class="ui-label">Asset Type</label><input class="ui-input mt-1 w-full" name="asset_type" value="{{ ucwords(str_replace('_',' ', $asset->asset_type)) }}" required><p class="mt-1 text-[9px] text-muted-foreground">Human-readable here; RCENTZ stores the canonical type automatically.</p></div>
     <div><label class="ui-label">Name</label><input class="ui-input mt-1 w-full" name="name" value="{{ $asset->name }}" required></div>
     <div><label class="ui-label">Reserve Quantity</label><input class="ui-input mt-1 w-full" type="number" step="0.00000001" min="0.00000001" name="reserve_quantity" value="{{ $asset->reserve_quantity }}" required></div>
     <div><label class="ui-label">Reserve Unit</label><input class="ui-input mt-1 w-full" name="reserve_unit" maxlength="32" value="{{ $asset->reserve_unit }}" required></div>
@@ -298,6 +323,7 @@
     @endif
 </div>
 @endforeach
+    </div>
 </div>
 
 <div class="mt-5 border-t border-border pt-4">

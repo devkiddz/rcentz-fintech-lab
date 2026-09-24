@@ -504,8 +504,18 @@ final class PrivateInvestmentReserveService
     public function rebuildSingleMarketLinkedHistory(
         PrivateInvestmentInstrument $instrument
     ): int {
+        // Compatibility alias retained for existing callers.
+        return $this->rebuildSingleBaseAssetHistory($instrument);
+    }
+
+    public function rebuildSingleBaseAssetHistory(
+        PrivateInvestmentInstrument $instrument
+    ): int {
+        $instrument = PrivateInvestmentInstrument::query()
+            ->findOrFail($instrument->id);
+
         $assets = $instrument->assets()
-            ->with('marketInstrument')
+            ->with(['marketInstrument', 'privateMarketReference'])
             ->where('status', 'active')
             ->where('is_reserve_backing', true)
             ->get();
@@ -515,14 +525,6 @@ final class PrivateInvestmentReserveService
         }
 
         $asset = $assets->first();
-
-        if (
-            ! $asset->isMarketLinked()
-            || ! $asset->marketInstrument
-        ) {
-            return 0;
-        }
-
         $unitSupply = (float) $instrument->unit_supply;
         $quantity = (float) $asset->reserve_quantity;
 
@@ -530,67 +532,225 @@ final class PrivateInvestmentReserveService
             return 0;
         }
 
-        $history = $this->markets->dailyHistory(
-            $asset->marketInstrument
-        );
-
-        if (count($history) < 2) {
-            return 0;
-        }
-
         $written = 0;
         $previousClose = null;
 
-        foreach ($history as $row) {
-            if (! $row['time'] || (float) $row['close'] <= 0) {
-                continue;
-            }
+        if ($asset->isMarketLinked() && $asset->marketInstrument) {
+            $history = $this->markets->dailyHistory(
+                $asset->marketInstrument
+            );
 
-            $open = ($quantity * (float) $row['open'])
-                / $unitSupply;
+            foreach ($history as $row) {
+                if (! $row['time'] || (float) $row['close'] <= 0) {
+                    continue;
+                }
 
-            $high = ($quantity * (float) $row['high'])
-                / $unitSupply;
+                $open = ($quantity * (float) $row['open']) / $unitSupply;
+                $high = ($quantity * (float) $row['high']) / $unitSupply;
+                $low = ($quantity * (float) $row['low']) / $unitSupply;
+                $close = ($quantity * (float) $row['close']) / $unitSupply;
 
-            $low = ($quantity * (float) $row['low'])
-                / $unitSupply;
+                $change = $previousClose !== null
+                    ? $close - $previousClose
+                    : 0;
 
-            $close = ($quantity * (float) $row['close'])
-                / $unitSupply;
-
-            $change = $previousClose !== null
-                ? $close - $previousClose
-                : 0;
-
-            $percent =
-                $previousClose !== null && $previousClose > 0
+                $percent = $previousClose !== null && $previousClose > 0
                     ? ($change / $previousClose) * 100
                     : 0;
 
-            PrivateInvestmentPrice::query()->updateOrCreate(
-                [
-                    'instrument_id' => $instrument->id,
-                    'timeframe' => '1d',
-                    'recorded_at' =>
-                        $row['time']->copy()->startOfDay(),
-                ],
-                [
-                    'event_id' => null,
-                    'open' => round($open, 6),
-                    'high' => round($high, 6),
-                    'low' => round($low, 6),
-                    'close' => round($close, 6),
-                    'change_amount' => round($change, 6),
-                    'change_percent' => round($percent, 6),
-                    'source' => 'reserve_market_history',
-                ]
-            );
+                $this->writeReserveDerivedHistoryPoint(
+                    $instrument->id,
+                    $row['time']->copy()->startOfDay(),
+                    $open,
+                    $high,
+                    $low,
+                    $close,
+                    $change,
+                    $percent,
+                    'reserve_public_base_history'
+                );
 
-            $previousClose = $close;
-            $written++;
+                $previousClose = $close;
+                $written++;
+            }
+        } elseif ($asset->isPrivateLinked() && $asset->privateMarketReference) {
+            $rows = $asset->privateMarketReference
+                ->prices()
+                ->orderBy('recorded_at')
+                ->orderBy('id')
+                ->get();
+
+            $days = [];
+
+            foreach ($rows as $row) {
+                if (! $row->recorded_at || (float) $row->price <= 0) {
+                    continue;
+                }
+
+                $key = $row->recorded_at->format('Y-m-d');
+                $previousBase = (float) $row->previous_price > 0
+                    ? (float) $row->previous_price
+                    : (float) $row->price;
+                $closeBase = (float) $row->price;
+
+                if (! isset($days[$key])) {
+                    $days[$key] = [
+                        'time' => $row->recorded_at->copy()->startOfDay(),
+                        'open' => $previousBase,
+                        'high' => max($previousBase, $closeBase),
+                        'low' => min($previousBase, $closeBase),
+                        'close' => $closeBase,
+                    ];
+                } else {
+                    $days[$key]['high'] = max(
+                        $days[$key]['high'],
+                        $previousBase,
+                        $closeBase
+                    );
+                    $days[$key]['low'] = min(
+                        $days[$key]['low'],
+                        $previousBase,
+                        $closeBase
+                    );
+                    $days[$key]['close'] = $closeBase;
+                }
+            }
+
+            foreach ($days as $row) {
+                $open = ($quantity * (float) $row['open']) / $unitSupply;
+                $high = ($quantity * (float) $row['high']) / $unitSupply;
+                $low = ($quantity * (float) $row['low']) / $unitSupply;
+                $close = ($quantity * (float) $row['close']) / $unitSupply;
+
+                $change = $previousClose !== null
+                    ? $close - $previousClose
+                    : 0;
+
+                $percent = $previousClose !== null && $previousClose > 0
+                    ? ($change / $previousClose) * 100
+                    : 0;
+
+                $this->writeReserveDerivedHistoryPoint(
+                    $instrument->id,
+                    $row['time'],
+                    $open,
+                    $high,
+                    $low,
+                    $close,
+                    $change,
+                    $percent,
+                    'reserve_private_base_history'
+                );
+
+                $previousClose = $close;
+                $written++;
+            }
+        } else {
+            return 0;
         }
 
+        $this->reconcileCurrentInvestmentHistoryPoint(
+            $instrument->fresh()
+        );
+
         return $written;
+    }
+
+    private function writeReserveDerivedHistoryPoint(
+        int $instrumentId,
+        $recordedAt,
+        float $open,
+        float $high,
+        float $low,
+        float $close,
+        float $change,
+        float $percent,
+        string $source
+    ): void {
+        PrivateInvestmentPrice::query()->updateOrCreate(
+            [
+                'instrument_id' => $instrumentId,
+                'timeframe' => '1d',
+                'recorded_at' => $recordedAt,
+            ],
+            [
+                'event_id' => null,
+                'open' => round($open, 6),
+                'high' => round($high, 6),
+                'low' => round($low, 6),
+                'close' => round($close, 6),
+                'change_amount' => round($change, 6),
+                'change_percent' => round($percent, 6),
+                'source' => $source,
+            ]
+        );
+    }
+
+    private function reconcileCurrentInvestmentHistoryPoint(
+        PrivateInvestmentInstrument $instrument
+    ): void {
+        $current = (float) $instrument->current_price;
+
+        if ($current <= 0) {
+            return;
+        }
+
+        $recordedAt = now()->startOfDay();
+
+        $existing = PrivateInvestmentPrice::query()
+            ->where('instrument_id', $instrument->id)
+            ->where('timeframe', '1d')
+            ->where('recorded_at', $recordedAt)
+            ->first();
+
+        $previous = (float) (
+            PrivateInvestmentPrice::query()
+                ->where('instrument_id', $instrument->id)
+                ->where('timeframe', '1d')
+                ->where('recorded_at', '<', $recordedAt)
+                ->latest('recorded_at')
+                ->value('close')
+                ?? $instrument->previous_price
+                ?? $current
+        );
+
+        if ($previous <= 0) {
+            $previous = $current;
+        }
+
+        $open = $existing
+            ? (float) $existing->open
+            : $previous;
+
+        $high = max(
+            $open,
+            (float) ($existing?->high ?? $open),
+            $current
+        );
+
+        $existingLow = (float) ($existing?->low ?? $open);
+        $low = min(
+            $open,
+            $existingLow > 0 ? $existingLow : $open,
+            $current
+        );
+
+        $change = $current - $previous;
+        $percent = $previous > 0
+            ? ($change / $previous) * 100
+            : 0;
+
+        $this->writeReserveDerivedHistoryPoint(
+            $instrument->id,
+            $recordedAt,
+            $open,
+            $high,
+            $low,
+            $current,
+            $change,
+            $percent,
+            'reserve_base_current'
+        );
     }
 
     public function addReserveAsset(

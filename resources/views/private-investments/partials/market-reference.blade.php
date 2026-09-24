@@ -102,7 +102,7 @@
     }
 
     // Legacy local reserve records remain readable until they are deliberately
-    // linked to a first-class Private Market Reference.
+    // linked to a first-class Private Base Asset Reference.
     if ($referenceAsset && !$referenceMarket && !$privateReference) {
         $latestReferenceEvent = $referenceAsset->reserveEvents()
             ->whereNotNull('previous_unit_price')
@@ -183,7 +183,7 @@
                 <i data-lucide="radar" class="h-3.5 w-3.5 text-red-500"></i>
             </div>
             <div class="min-w-0">
-                <p class="text-[9px] font-semibold uppercase tracking-[.14em] text-red-600">Market Reference</p>
+                <p class="text-[9px] font-semibold uppercase tracking-[.14em] text-red-600">Base Asset Reference</p>
                 <p class="mt-0.5 truncate text-[10px] text-zinc-500">Underlying reserve reference · Total reserve {{ currency_symbol() }}{{ number_format($referenceReserveTotal,2) }}</p>
             </div>
         </div>
@@ -247,8 +247,8 @@
         </div>
     @else
         <div class="border-t border-zinc-100 px-4 py-4 dark:border-zinc-900">
-            <p class="text-[10px] font-semibold text-zinc-700 dark:text-zinc-200">Market reference source has not been selected.</p>
-            <p class="mt-1 text-[9px] text-zinc-500">Reserve backing remains intact. An administrator must select the single reference asset used beside the chart.</p>
+            <p class="text-[10px] font-semibold text-zinc-700 dark:text-zinc-200">Base Asset reference source has not been selected.</p>
+            <p class="mt-1 text-[9px] text-zinc-500">The displayed Base Asset reference is supplied automatically from active reserve allocation.</p>
         </div>
     @endif
 </section>
