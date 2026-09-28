@@ -131,13 +131,12 @@ class InstallController extends Controller
             }
             $baselineInstaller = app(ReleaseBaselineInstaller::class);
             $baselineInstaller->import();
-
-            // The release baseline already contains the complete accepted
-            // application schema and platform data. Migrate only applies
-            // migrations newer than the packaged baseline, if any.
-            Artisan::call('migrate', ['--force' => true]);
-
             $baselineInstaller->assertImportedAuthority();
+
+            // The imported baseline must be proven against its own manifest
+            // before newer migrations change the table/count authority.
+            // Migrate then applies only migrations newer than that baseline.
+            Artisan::call('migrate', ['--force' => true]);
 
             $this->applyBrandSettings($validated);
             $this->applyLocalizationSettings($validated);

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\MarketInstrument;
 use App\Models\PrivateInvestmentAsset;
 use App\Models\PrivateInvestmentInstrument;
+use App\Models\PrivateInvestmentPrice;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -68,6 +69,31 @@ class GoldHedgeInvestmentSeeder extends Seeder
                     'notes' => 'Linked to MarketInstrument XAUUSD. Subscription remains paused until commercial hedge terms are explicitly activated.',
                 ]
             );
+
+            // The catalogue item is intentionally paused until explicit reserve
+            // ownership/quantity is configured, but every private instrument
+            // still carries a price-history authority. This baseline point is
+            // the instrument's own opening price only; it does not assert gold
+            // reserve ownership, quantity, valuation, or live market tracking.
+            if (! PrivateInvestmentPrice::query()
+                ->where('instrument_id', $investment->id)
+                ->exists()) {
+                $price = (float) $investment->current_price;
+
+                PrivateInvestmentPrice::query()->create([
+                    'instrument_id' => $investment->id,
+                    'event_id' => null,
+                    'timeframe' => '1d',
+                    'open' => $price,
+                    'high' => $price,
+                    'low' => $price,
+                    'close' => $price,
+                    'change_amount' => 0,
+                    'change_percent' => 0,
+                    'source' => 'catalogue_baseline',
+                    'recorded_at' => now(),
+                ]);
+            }
         });
 
         $this->command?->info('Gold Hedge Allocation listed under Hedge Assets and linked to canonical XAU/USD.');

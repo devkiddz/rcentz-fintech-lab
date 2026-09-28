@@ -27,7 +27,7 @@ function getThemeScope() {
 
 function getThemeStorageKey(scope = null) {
     const resolvedScope = scope ?? getThemeScope();
-    return `rcentz_theme:${resolvedScope}`;
+    return `platform_theme:${resolvedScope}`;
 }
 
 function applyTheme(theme) {
@@ -37,18 +37,36 @@ function applyTheme(theme) {
 }
 
 function getStoredTheme(scope = null) {
-    const key = getThemeStorageKey(scope);
-    return localStorage.getItem(key);
+    const resolvedScope = scope ?? getThemeScope();
+    const key = getThemeStorageKey(resolvedScope);
+    const storedTheme = localStorage.getItem(key);
+
+    if (storedTheme) return storedTheme;
+
+    const legacyKey = `rcentz_theme:${resolvedScope}`;
+    const legacyTheme = localStorage.getItem(legacyKey);
+
+    if (legacyTheme) {
+        localStorage.setItem(key, legacyTheme);
+        localStorage.removeItem(legacyKey);
+        return legacyTheme;
+    }
+
+    return null;
 }
 
 function setTheme(theme, scope = null) {
-    const key = getThemeStorageKey(scope);
+    const resolvedScope = scope ?? getThemeScope();
+    const key = getThemeStorageKey(resolvedScope);
+    const legacyKey = `rcentz_theme:${resolvedScope}`;
 
     if (theme === null || theme === 'system') {
         localStorage.removeItem(key);
+        localStorage.removeItem(legacyKey);
         applyTheme(null);
     } else {
         localStorage.setItem(key, theme);
+        localStorage.removeItem(legacyKey);
         applyTheme(theme);
     }
 

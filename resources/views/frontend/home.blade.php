@@ -1360,6 +1360,38 @@
         }
     }
 
+
+    /* PRODUCTION MOBILE ACCEPTANCE R5
+       Keep the third hero slide compact and stable on narrow screens. */
+    @media(max-width:759px){
+        .release-bot-showcase{gap:.7rem !important;padding-bottom:.2rem !important}
+        .release-bot-title{font-size:clamp(2rem,9vw,2.75rem) !important;line-height:.98 !important}
+        .release-bot-description{margin-top:.72rem !important;font-size:.78rem !important;line-height:1.55 !important}
+        .release-bot-pills{margin-top:.72rem !important;gap:.38rem !important;justify-content:center}
+        .release-bot-pill{padding:.42rem .58rem !important;font-size:.62rem !important}
+        .release-bot-copy>.mt-7{margin-top:.8rem !important}
+        .release-bot-metrics{grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:.35rem !important;margin-top:.8rem !important;max-width:none !important}
+        .release-bot-metric{min-width:0 !important;padding:0 .32rem 0 0 !important;border-right:1px solid color-mix(in srgb,var(--hero-primary) 18%,hsl(var(--border))) !important;text-align:left !important}
+        .release-bot-metric:last-child{border-right:0 !important;padding-right:0 !important}
+        .release-bot-metric-label{font-size:.48rem !important;letter-spacing:.11em !important}
+        .release-bot-metric-value{margin-top:.2rem !important;font-size:.62rem !important;line-height:1.25 !important;white-space:normal !important;overflow-wrap:anywhere}
+        .release-bot-art{min-height:9.25rem !important;height:9.25rem !important;margin-top:0 !important}
+        .release-bot-image{width:min(88vw,25rem) !important;max-height:10.25rem !important;object-fit:contain !important}
+        .release-hero-tabs{grid-template-columns:repeat(3,minmax(0,1fr)) !important;gap:.35rem !important;margin-top:.65rem !important}
+        .release-hero-tab{padding:.45rem !important;border-radius:.72rem !important}
+        .release-hero-tab .mt-1{display:none !important}
+        .release-hero-tab .text-xs{font-size:.6rem !important;line-height:1.15 !important;white-space:normal !important}
+        .release-hero-number{height:1.55rem !important;width:1.55rem !important;flex:none !important;font-size:.58rem !important}
+        .release-hero-controls{margin-top:.5rem !important}
+    }
+    @media(max-width:420px){
+        .release-bot-pills{display:grid !important;grid-template-columns:1fr 1fr !important}
+        .release-bot-pill{justify-content:center}
+        .release-bot-pill:last-child{grid-column:1/-1;justify-self:center}
+        .release-bot-art{height:8.5rem !important;min-height:8.5rem !important}
+        .release-bot-image{max-height:9.25rem !important}
+    }
+
 </style>
 
 
@@ -2002,7 +2034,12 @@
 
     const startReleaseRotation = () => {
         stopReleaseRotation();
-        if (!releaseHero || releaseSlides.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        if (
+            !releaseHero
+            || releaseSlides.length < 2
+            || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+            || window.matchMedia('(max-width: 759px)').matches
+        ) return;
         releaseTimer = setInterval(() => showReleaseSlide(releaseIndex + 1), 8000);
     };
 
