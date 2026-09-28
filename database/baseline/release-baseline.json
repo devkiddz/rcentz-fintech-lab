@@ -1,22 +1,22 @@
 {
+    "expected": {
+        "bot_products": 7,
+        "commodity_instruments": 1,
+        "copy_strategies": 7,
+        "copy_trader_profiles": 3,
+        "crypto_pairs": 10,
+        "forex_pairs": 10,
+        "language_translations": 52192,
+        "languages": 56,
+        "market_instruments": 31,
+        "signals": 6,
+        "stocks": 10,
+        "tables": 104,
+        "users": 4
+    },
     "format": 1,
     "kind": "rcentz-release-baseline",
+    "sha256": "167b55f856d061f135dd11eb71f15d8168faad992ae263984ab0296acd0d56dd",
     "source_database": "sanitized-release-baseline",
-    "source_head": "d573d3d0d827e162273c4dde79b0bb1358b93536",
-    "sha256": "7c1b62137a04c6eeeeb38646e861e0a8bea7d389caa615ea36cc43c362fd80e3",
-    "expected": {
-        "tables": 100,
-        "users": 4,
-        "market_instruments": 31,
-        "stocks": 10,
-        "forex_pairs": 10,
-        "crypto_pairs": 10,
-        "commodity_instruments": 1,
-        "signals": 6,
-        "bot_products": 7,
-        "copy_trader_profiles": 3,
-        "copy_strategies": 7,
-        "languages": 56,
-        "language_translations": 52192
-    }
+    "source_head": "18ed71de68aed3dfa51ac2f5c7921c43815f2619"
 }
