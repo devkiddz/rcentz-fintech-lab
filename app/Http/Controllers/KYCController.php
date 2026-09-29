@@ -105,6 +105,7 @@ class KYCController extends Controller
 
             // Create notification
             NotificationService::createKYCStatusNotification($user, 'pending');
+            NotificationService::createKYCAdminSubmissionNotification($user, $kyc);
 
             // Send KYC submission email
             Mail::to($user->email)->send(new KYCSubmittedEmail($user, $kyc));

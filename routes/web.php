@@ -420,6 +420,15 @@ Route::middleware(['auth', 'admin'])
     ->group(function () {
         // Admin Dashboard
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        // Admin notification center (customer notification routes sit behind customer.access).
+        Route::prefix('notifications')->name('notifications.')->group(function () {
+            Route::get('/api', [NotificationController::class, 'getNotifications'])->name('api');
+            Route::patch('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
+            Route::get('/unread-count', [NotificationController::class, 'unreadCount'])->name('unread-count');
+            Route::patch('/{notification}/read', [NotificationController::class, 'markAsRead'])->name('read');
+            Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
+        });
         
 
         // Legacy Base Reference entry point.

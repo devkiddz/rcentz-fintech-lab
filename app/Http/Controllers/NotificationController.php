@@ -150,8 +150,29 @@ class NotificationController extends Controller
                 Route::has('admin.signals.show')
             ) {
                 $data['action_url'] = route('admin.signals.show', $signalId, false);
-                $notification->setAttribute('data', $data);
             }
+
+            // Historical notifications created before universal action routing.
+            if (empty($data['action_url'])) {
+                $routeName = match ($notification->type) {
+                    'kyc_status' => 'profile.kyc',
+                    'wallet_update' => 'money.activity',
+                    'investment_success', 'automatic_investment' => 'account.investments',
+                    'investment_update' => 'account.investments.portfolio',
+                    'portfolio_summary' => 'account.investments.performance',
+                    'stock_update', 'price_alert' => 'stocks.index',
+                    'message' => $user->isAdmin() ? 'admin.messages.index' : 'messages.index',
+                    'support' => $user->isAdmin() ? 'admin.support.index' : 'support.index',
+                    'kyc_admin' => 'admin.kyc.index',
+                    default => $user->isAdmin() ? 'admin.dashboard' : 'dashboard',
+                };
+
+                if (Route::has($routeName)) {
+                    $data['action_url'] = route($routeName, [], false);
+                }
+            }
+
+            $notification->setAttribute('data', $data);
 
             return $notification;
         });

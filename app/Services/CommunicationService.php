@@ -86,6 +86,10 @@ class CommunicationService
                     'ticket_number' => $conversation->ticket_number,
                 ], $message);
 
+                NotificationService::notifyAdmins('support','New support ticket',$customer->name.' opened '.$conversation->ticket_number.': '.$conversation->subject,[
+                    'conversation_id'=>$conversation->id,'customer_user_id'=>$customer->id,'action_url'=>route('admin.support.show',$conversation,false),
+                ]);
+
                 return $conversation->fresh([
                     'messages.attachments',
                     'participants.user',
@@ -177,6 +181,7 @@ class CommunicationService
                     'customer_user_id' => $customer->id,
                 ], $message);
 
+                NotificationService::createCommunicationNotification($customer,$conversation,$admin,'conversation.created');
                 return $conversation->fresh(['messages.attachments', 'participants.user']);
             });
         } catch (\Throwable $e) {
@@ -305,6 +310,13 @@ class CommunicationService
                     'attachment_count' => count($stored),
                     'reply_to_message_id' => $replyTo?->id,
                 ], $message);
+
+                if ($conversation->type === 'support_ticket' && ! $sender->isAdmin()) {
+                    User::query()->where('is_admin', true)->get()->each(fn (User $admin) => NotificationService::createCommunicationNotification($admin,$conversation,$sender,'message.sent'));
+                } else {
+                    $recipientIds = CommunicationParticipant::query()->where('conversation_id',$conversation->id)->where('user_id','!=',$sender->id)->pluck('user_id');
+                    User::query()->whereIn('id',$recipientIds)->get()->each(fn (User $recipient) => NotificationService::createCommunicationNotification($recipient,$conversation,$sender,'message.sent'));
+                }
 
                 return $message->fresh(['attachments', 'sender', 'replyTo.sender']);
             });

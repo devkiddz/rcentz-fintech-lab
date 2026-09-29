@@ -8,31 +8,33 @@
         : 0;
 @endphp
 
-<details class="group relative" data-admin-notification-center>
+<details class="group relative z-[1100]" data-admin-notification-center data-api-url="{{ route('admin.notifications.api') }}">
     <summary class="relative inline-flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground [&::-webkit-details-marker]:hidden" title="Admin notifications">
         <i data-lucide="bell" class="h-4 w-4"></i>
         <span data-admin-notification-badge class="{{ $adminUnreadCount > 0 ? '' : 'hidden' }} absolute -right-1 -top-1 min-w-4 rounded-full bg-red-600 px-1 text-center text-[9px] font-bold leading-4 text-white">{{ $adminUnreadCount > 99 ? '99+' : $adminUnreadCount }}</span>
     </summary>
 
-    <div class="absolute right-0 z-[90] mt-2 w-[min(92vw,360px)] overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-xl">
+    <div class="absolute right-0 z-[1200] mt-2 w-[min(92vw,360px)] overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-xl">
         <div class="flex items-center justify-between border-b border-border px-4 py-3">
             <div><p class="text-xs font-semibold">Admin notifications</p><p class="mt-0.5 text-[9px] text-muted-foreground">Operational receipts and platform alerts</p></div>
             @if($adminUnreadCount > 0)
-                <button type="button" data-admin-notifications-read-all="{{ route('notifications.mark-all-read') }}" class="text-[9px] font-semibold text-muted-foreground hover:text-foreground">Mark all read</button>
+                <button type="button" data-admin-notifications-read-all="{{ route('admin.notifications.mark-all-read') }}" class="text-[9px] font-semibold text-muted-foreground hover:text-foreground">Mark all read</button>
             @endif
         </div>
 
-        <div class="max-h-[420px] divide-y divide-border overflow-y-auto">
+        <div class="max-h-[420px] divide-y divide-border overflow-y-auto" data-admin-notification-list>
             @forelse($adminNotifications as $notification)
                 @php
                     $data = (array) ($notification->data ?? []);
-                    $destination = !empty($data['signal_id']) && Route::has('admin.signals.show')
-                        ? route('admin.signals.show', $data['signal_id'])
-                        : route('admin.dashboard');
+                    $destination = !empty($data['action_url'])
+                        ? url($data['action_url'])
+                        : (!empty($data['signal_id']) && Route::has('admin.signals.show')
+                            ? route('admin.signals.show', $data['signal_id'])
+                            : route('admin.dashboard'));
                 @endphp
                 <button type="button"
                         data-admin-notification-item
-                        data-read-url="{{ route('notifications.read', $notification) }}"
+                        data-read-url="{{ route('admin.notifications.read', $notification) }}"
                         data-destination="{{ $destination }}"
                         class="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-muted/30 {{ $notification->is_read ? '' : 'bg-red-500/[.03]' }}">
                     <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/40"><i data-lucide="{{ $notification->icon }}" class="h-4 w-4"></i></span>
@@ -55,6 +57,18 @@
         window.__adminNotificationCenterBound = true;
 
         const token = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        const center = document.querySelector('[data-admin-notification-center]');
+        const badge = center?.querySelector('[data-admin-notification-badge]');
+        const refreshCenter = async () => {
+            if (!center?.dataset.apiUrl) return;
+            try {
+                const response = await fetch(center.dataset.apiUrl,{headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'},credentials:'same-origin',cache:'no-store'});
+                if (!response.ok) return;
+                const payload = await response.json(); const count = Number(payload.unread_count || 0);
+                if (badge) { badge.textContent = count > 99 ? '99+' : String(count); badge.classList.toggle('hidden', count < 1); }
+            } catch (_) {}
+        };
+        refreshCenter(); window.setInterval(refreshCenter,20000);
 
         document.addEventListener('click', async (event) => {
             const item = event.target.closest('[data-admin-notification-item]');

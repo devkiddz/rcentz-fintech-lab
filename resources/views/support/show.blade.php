@@ -1271,7 +1271,10 @@
             const html = await response.text();
             if (!response.ok) throw new Error('Request failed with status ' + response.status);
             const doc = new DOMParser().parseFromString(html, 'text/html');
-            if (!applyServerConversation(doc, true)) throw new Error('Conversation payload was not returned.');
+            if (!applyServerConversation(doc, true)) {
+                if (response.redirected && response.url) { window.location.href = response.url; return; }
+                throw new Error('Conversation payload was not returned.');
+            }
 
             if (form.id === 'chat-composer') resetComposer();
             closeR12Trays();
@@ -1429,5 +1432,5 @@
 {{-- /RCENTZ_MS9_R3_CONVERSATION_SIDE_LAYOUT_REPAIR --}}
 
 {{-- /RCENTZ_MS7_R12_ASYNC_TELEGRAM_CHAT --}}
-
+\n{{-- RCENTZ_R8_COMMUNICATION_ACTION_LAYER --}}\n<style id="rcentz-r8-communication-action-layer">\n.rcentz-message-row{overflow:visible!important}.rcentz-message-tools,.rcentz-message-actions,.rcentz-r9-actions{position:relative!important;overflow:visible!important}.rcentz-r9-actions.rcentz-r9-open{z-index:260!important}.rcentz-r9-menu,.rcentz-message-action-menu{position:absolute!important;top:auto!important;bottom:calc(100% + .45rem)!important;z-index:270!important;min-width:12.5rem!important;width:max-content!important;max-width:min(18rem,calc(100vw - 2rem))!important;border:1px solid hsl(var(--border))!important;border-radius:.85rem!important;background:hsl(var(--popover))!important;box-shadow:0 18px 44px rgba(0,0,0,.24)!important}.rcentz-message-row[data-message-mine="1"] .rcentz-r9-menu,.rcentz-message-row[data-message-mine="1"] .rcentz-message-action-menu{right:0!important;left:auto!important}.rcentz-message-row[data-message-mine="0"] .rcentz-r9-menu,.rcentz-message-row[data-message-mine="0"] .rcentz-message-action-menu{left:0!important;right:auto!important}.rcentz-message-row[data-message-mine="1"]{align-items:flex-end!important}.rcentz-message-row[data-message-mine="0"]{align-items:flex-start!important}\n</style>\n{{-- /RCENTZ_R8_COMMUNICATION_ACTION_LAYER --}}\n
 </x-user-layout>

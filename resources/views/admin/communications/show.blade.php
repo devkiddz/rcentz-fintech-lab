@@ -170,7 +170,7 @@
         </aside>
 
         <main class="flex min-h-[700px] min-w-0 flex-col bg-muted/5 lg:min-h-0">
-            <header class="flex items-center justify-between gap-3 border-b border-border bg-background/95 px-4 py-3 backdrop-blur sm:px-5">
+            <header class="relative z-[300] flex items-center justify-between gap-3 border-b border-border bg-background/95 px-4 py-3 backdrop-blur sm:px-5">
                 <div class="flex min-w-0 items-center gap-3">
                     <button type="button" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-muted" data-admin-inbox-toggle title="Toggle inbox"><i data-lucide="panel-left" class="h-4 w-4"></i></button>
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/10 text-xs font-bold text-red-600">{{ strtoupper(mb_substr($activeDisplayName,0,1)) }}</div>
@@ -179,10 +179,10 @@
                         <p class="mt-0.5 truncate text-[10px] text-muted-foreground">{{ $workspace === 'messages' ? $conversation->subject.' · Private conversation' : $conversation->subject.' · '.$conversation->ticket_number.' · '.ucfirst($conversation->status) }}</p>
                     </div>
                 </div>
-                <details class="relative"><summary class="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full hover:bg-muted"><i data-lucide="more-vertical" class="h-4 w-4"></i></summary><div class="rcentz-chat-menu absolute right-0 mt-2 rounded-xl border border-border bg-background p-1.5 shadow-2xl"><form method="POST" action="{{ route($routeBase.'.archive',$conversation) }}">@csrf @method('PATCH')<input type="hidden" name="archived" value="{{ $participant?->archived_at ? 0 : 1 }}"><button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs hover:bg-muted"><i data-lucide="archive" class="h-4 w-4"></i>{{ $participant?->archived_at?'Move to inbox':'Archive chat' }}</button></form><form method="POST" action="{{ route($routeBase.'.delete-for-me',$conversation) }}" onsubmit="return confirm('Delete this conversation from your admin inbox?');">@csrf @method('DELETE')<button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-red-600 hover:bg-red-500/10"><i data-lucide="trash-2" class="h-4 w-4"></i>Delete chat for me</button></form></div></details>
+                <details class="relative z-[400]"><summary class="flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-full hover:bg-muted"><i data-lucide="more-vertical" class="h-4 w-4"></i></summary><div class="rcentz-chat-menu absolute right-0 mt-2 rounded-xl border border-border bg-background p-1.5 shadow-2xl"><form method="POST" action="{{ route($routeBase.'.archive',$conversation) }}">@csrf @method('PATCH')<input type="hidden" name="archived" value="{{ $participant?->archived_at ? 0 : 1 }}"><button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs hover:bg-muted"><i data-lucide="archive" class="h-4 w-4"></i>{{ $participant?->archived_at?'Move to inbox':'Archive chat' }}</button></form><form method="POST" action="{{ route($routeBase.'.delete-for-me',$conversation) }}" onsubmit="return confirm('Delete this conversation from your admin inbox?');">@csrf @method('DELETE')<button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs text-red-600 hover:bg-red-500/10"><i data-lucide="trash-2" class="h-4 w-4"></i>Delete chat for me</button></form></div></details>
             </header>
 
-            <div id="admin-chat-scroll" class="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-5 sm:px-5">
+            <div id="admin-chat-scroll" class="relative z-0 min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-5 sm:px-5">
                 @foreach($conversation->messages as $message)
                     @php
                         $mine=$message->sender_user_id===auth()->id();
@@ -961,7 +961,7 @@
         statusTimer = setTimeout(() => { statusBox.dataset.show = 'false'; }, duration);
     };
 
-    const currentScroll = () => document.getElementById('chat-scroll');
+    const currentScroll = () => document.getElementById('admin-chat-scroll') || document.getElementById('chat-scroll');
 
     const locateRow = (node) => node?.closest('.rcentz-message-row, [id^="message-"]');
 
@@ -1100,7 +1100,7 @@
     };
 
     const sourceConversationParts = (doc) => {
-        const scroll = doc.getElementById('chat-scroll');
+        const scroll = doc.getElementById('admin-chat-scroll') || doc.getElementById('chat-scroll');
         if (!scroll) return null;
         const main = scroll.closest('main');
         return { scroll, main, info: main?.nextElementSibling?.tagName === 'ASIDE' ? main.nextElementSibling : null };
@@ -1153,7 +1153,13 @@
             const html = await response.text();
             if (!response.ok) throw new Error('Request failed with status ' + response.status);
             const doc = new DOMParser().parseFromString(html, 'text/html');
-            if (!applyServerConversation(doc, true)) throw new Error('Conversation payload was not returned.');
+            if (!applyServerConversation(doc, true)) {
+                if (response.redirected && response.url) {
+                    window.location.href = response.url;
+                    return;
+                }
+                throw new Error('Conversation payload was not returned.');
+            }
 
             if (form.id === 'chat-composer') resetComposer();
             closeR12Trays();
@@ -1174,6 +1180,8 @@
         const isMessageAction = !!form.closest('.rcentz-message-action-menu, .rcentz-r9-menu');
         if (!isComposer && !isMessageAction) return;
         if (event.defaultPrevented) return;
+        const method = (form.querySelector('input[name="_method"]')?.value || '').toUpperCase();
+        if (isMessageAction && method === 'DELETE') return;
         event.preventDefault();
         asyncSubmit(form, event.submitter || null);
     });
@@ -1311,5 +1319,17 @@
 {{-- /RCENTZ_MS9_R3_CONVERSATION_SIDE_LAYOUT_REPAIR --}}
 
 {{-- /RCENTZ_MS7_R12_ASYNC_TELEGRAM_CHAT --}}
+
+{{-- RCENTZ_R9_ADMIN_COMMUNICATION_ACTION_LAYER --}}
+<style id="rcentz-r9-admin-communication-action-layer">
+.rcentz-admin-messenger-shell>main>header{position:relative!important;z-index:300!important;overflow:visible!important}
+.rcentz-admin-messenger-shell>main>header details{position:relative!important;z-index:400!important}
+.rcentz-admin-messenger-shell>main>header .rcentz-chat-menu{z-index:500!important}
+#admin-chat-scroll{position:relative!important;z-index:0!important}
+.rcentz-message-row,.rcentz-message-tools,.rcentz-message-actions,.rcentz-r9-actions{overflow:visible!important}
+.rcentz-r9-actions.rcentz-r9-open{z-index:240!important}
+.rcentz-r9-menu,.rcentz-message-action-menu{z-index:260!important}
+</style>
+{{-- /RCENTZ_R9_ADMIN_COMMUNICATION_ACTION_LAYER --}}
 
 </x-admin-layout>

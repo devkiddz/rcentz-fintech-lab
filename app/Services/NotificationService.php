@@ -25,6 +25,7 @@ class NotificationService
             'data' => [
                 'symbol' => $stockSymbol,
                 'percentage_change' => $percentageChange,
+                'action_url' => route('stocks.index', [], false),
             ],
         ]);
     }
@@ -41,6 +42,7 @@ class NotificationService
             'data' => [
                 'plan_name' => $planName,
                 'amount' => $amount,
+                'action_url' => route('account.investments', [], false),
             ],
         ]);
     }
@@ -60,6 +62,7 @@ class NotificationService
             'data' => [
                 'type' => $type,
                 'amount' => $amount,
+                'action_url' => route('money.activity', [], false),
             ],
         ]);
     }
@@ -78,6 +81,7 @@ class NotificationService
                 'amount' => $amount,
                 'payment_method' => $paymentMethodName,
                 'reference_id' => $referenceId,
+                'action_url' => route('money.activity', [], false),
             ],
         ]);
     }
@@ -106,6 +110,7 @@ class NotificationService
             'data' => [
                 'status' => $status,
                 'reason' => $reason,
+                'action_url' => route('profile.kyc', [], false),
             ],
         ]);
     }
@@ -122,6 +127,7 @@ class NotificationService
             'data' => [
                 'plan_name' => $planName,
                 'amount' => $amount,
+                'action_url' => route('account.investments', [], false),
             ],
         ]);
     }
@@ -139,6 +145,7 @@ class NotificationService
                 'symbol' => $symbol,
                 'current_price' => $currentPrice,
                 'alert_price' => $alertPrice,
+                'action_url' => route('stocks.index', [], false),
             ],
         ]);
     }
@@ -159,6 +166,7 @@ class NotificationService
             'data' => [
                 'plan_name' => $planName,
                 'percentage_change' => $percentageChange,
+                'action_url' => route('account.investments.portfolio', [], false),
             ],
         ]);
     }
@@ -181,6 +189,7 @@ class NotificationService
                 'total_current_value' => $totalCurrentValue,
                 'total_gain_loss' => $totalGainLoss,
                 'total_gain_loss_percentage' => $totalGainLossPercentage,
+                'action_url' => route('account.investments.performance', [], false),
             ],
         ]);
     }
@@ -266,6 +275,44 @@ class NotificationService
                 'failed_count' => (int) $distribution->failed_count,
             ],
         ]);
+    }
+
+
+    /** Operational notifications for administrators. Failures never block the originating business action. */
+    public static function notifyAdmins(string $type, string $title, string $message, array $data = []): void
+    {
+        try {
+            User::query()->where('is_admin', true)->get()->each(function (User $admin) use ($type, $title, $message, $data) {
+                $admin->notifications()->create(['type'=>$type,'title'=>$title,'message'=>$message,'data'=>$data]);
+            });
+        } catch (\Throwable $e) {
+            \Log::warning('Admin notification delivery failed.', ['type'=>$type,'error'=>$e->getMessage()]);
+        }
+    }
+
+    public static function createKYCAdminSubmissionNotification(User $customer, \App\Models\KYC $kyc): void
+    {
+        self::notifyAdmins('kyc_admin','New KYC awaiting review',$customer->name.' submitted identity verification for review.',[
+            'kyc_id'=>$kyc->id,'customer_user_id'=>$customer->id,'action_url'=>route('admin.kyc.show',$kyc,false),
+        ]);
+    }
+
+    public static function createCommunicationNotification(User $recipient, \App\Models\CommunicationConversation $conversation, User $sender, string $kind = 'message'): void
+    {
+        try {
+            $support = $conversation->type === 'support_ticket';
+            $recipient->notifications()->create([
+                'type'=>$support?'support':'message',
+                'title'=>$support?'Support update: '.$conversation->subject:'New message from '.$sender->name,
+                'message'=>$support?$sender->name.' added an update to '.$conversation->ticket_number.'.':$sender->name.' sent you a private message.',
+                'data'=>[
+                    'conversation_id'=>$conversation->id,'sender_user_id'=>$sender->id,'kind'=>$kind,
+                    'action_url'=>$recipient->isAdmin()?route($support?'admin.support.show':'admin.messages.show',$conversation,false):route($support?'support.show':'messages.show',$conversation,false),
+                ],
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('Communication notification delivery failed.', ['conversation_id'=>$conversation->id,'recipient_user_id'=>$recipient->id,'error'=>$e->getMessage()]);
+        }
     }
 
 }

@@ -12,12 +12,15 @@ use App\Models\InvestmentHolding;
 use App\Models\Stock;
 use App\Models\StockTransaction;
 use App\Models\StockHolding;
+use App\Models\KYC;
+use App\Models\CommunicationConversation;
+use App\Services\CommunicationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(CommunicationService $communications)
     {
         $totalCars = Car::count();
         $availableCars = Car::where('is_available', true)->count();
@@ -111,6 +114,14 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
+        $admin = auth()->user();
+        $pendingKycCount = KYC::query()->where('status','pending')->count();
+        $attentionSupportCount = CommunicationConversation::query()->where('type','support_ticket')->whereIn('status',['open','pending'])->count();
+        $unreadDirectMessages = CommunicationConversation::query()->where('type','direct')->get()->sum(fn (CommunicationConversation $c) => $communications->unreadCount($admin,$c));
+        $unreadSupportMessages = CommunicationConversation::query()->where('type','support_ticket')->get()->sum(fn (CommunicationConversation $c) => $communications->unreadCount($admin,$c));
+        $unreadAdminNotifications = $admin->notifications()->unread()->count();
+        $actionCenterTotal = $pendingKycCount + $unreadDirectMessages + $unreadSupportMessages + $unreadAdminNotifications;
+
         return view('admin.dashboard', compact(
             'totalCars',
             'availableCars', 
@@ -143,6 +154,12 @@ class DashboardController extends Controller
             'totalStockAum',
             'stockUsers',
             'recentStockTransactions',
+            'pendingKycCount',
+            'attentionSupportCount',
+            'unreadDirectMessages',
+            'unreadSupportMessages',
+            'unreadAdminNotifications',
+            'actionCenterTotal',
         ));
     }
 }

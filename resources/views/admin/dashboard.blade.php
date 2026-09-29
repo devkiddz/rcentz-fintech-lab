@@ -33,6 +33,19 @@
             </div>
         </section>
 
+        <section class="mt-5 overflow-hidden rounded-2xl border border-border bg-card">
+            <div class="flex flex-col gap-3 border-b border-border/70 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-center gap-3"><span class="flex h-9 w-9 items-center justify-center rounded-xl bg-red-500/10 text-red-500"><i data-lucide="inbox" class="h-4 w-4"></i></span><div><h2 class="text-sm font-semibold">Action center</h2><p class="mt-0.5 text-[10px] text-muted-foreground">Customer updates and operational queues requiring attention.</p></div></div>
+                <span class="rounded-full border border-border bg-muted/45 px-3 py-1 text-[10px] font-semibold">{{ number_format($actionCenterTotal) }} pending signals</span>
+            </div>
+            <div class="grid gap-px bg-border sm:grid-cols-2 xl:grid-cols-4">
+                <a href="{{ route('admin.kyc.by-status','pending') }}" class="flex items-center gap-3 bg-card px-5 py-4 hover:bg-muted/25"><i data-lucide="user-check" class="h-4 w-4 text-amber-500"></i><span class="flex-1"><span class="block text-[9px] uppercase tracking-[.12em] text-muted-foreground">KYC review</span><strong class="text-lg">{{ number_format($pendingKycCount) }}</strong></span></a>
+                <a href="{{ route('admin.messages.index') }}" class="flex items-center gap-3 bg-card px-5 py-4 hover:bg-muted/25"><i data-lucide="message-circle" class="h-4 w-4 text-sky-500"></i><span class="flex-1"><span class="block text-[9px] uppercase tracking-[.12em] text-muted-foreground">Unread messages</span><strong class="text-lg">{{ number_format($unreadDirectMessages) }}</strong></span></a>
+                <a href="{{ route('admin.support.index') }}" class="flex items-center gap-3 bg-card px-5 py-4 hover:bg-muted/25"><i data-lucide="life-buoy" class="h-4 w-4 text-violet-500"></i><span class="flex-1"><span class="block text-[9px] uppercase tracking-[.12em] text-muted-foreground">Support attention</span><strong class="text-lg">{{ number_format($attentionSupportCount) }}</strong><span class="ml-1 text-[9px] text-muted-foreground">{{ number_format($unreadSupportMessages) }} unread</span></span></a>
+                <button type="button" onclick="document.querySelector('[data-admin-notification-center] > summary')?.click()" class="flex items-center gap-3 bg-card px-5 py-4 text-left hover:bg-muted/25"><i data-lucide="bell-ring" class="h-4 w-4 text-rose-500"></i><span class="flex-1"><span class="block text-[9px] uppercase tracking-[.12em] text-muted-foreground">Unread alerts</span><strong class="text-lg">{{ number_format($unreadAdminNotifications) }}</strong></span></button>
+            </div>
+        </section>
+
         <section class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <a href="{{ route('admin.users.index') }}"
                class="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 transition hover:-translate-y-0.5 hover:border-foreground/15">
