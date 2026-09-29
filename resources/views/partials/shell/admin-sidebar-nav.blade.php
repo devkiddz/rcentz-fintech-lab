@@ -1,15 +1,15 @@
 @php
-    $parentBase = 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-[12px] font-semibold transition-colors';
-    $parentIdle = 'text-foreground bg-transparent hover:bg-muted/70';
-    $parentActive = 'text-foreground bg-red-500/[.07] ring-1 ring-red-500/15 shadow-sm';
+    $parentBase = 'flex items-center gap-3 rounded-lg px-3 py-2 text-[11px] font-medium transition-colors';
+    $parentIdle = 'text-foreground/90 bg-transparent hover:bg-muted/60';
+    $parentActive = 'text-foreground bg-muted/75';
 
-    $childBase = 'flex items-center gap-3 rounded-lg px-3 py-2 text-[11px] font-medium transition-colors';
-    $childIdle = 'text-muted-foreground hover:bg-muted/55 hover:text-foreground';
-    $childActive = 'bg-red-500/[.08] text-red-600 dark:text-red-400';
+    $childBase = 'flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[10px] font-medium transition-colors';
+    $childIdle = 'text-muted-foreground hover:bg-muted/50 hover:text-foreground';
+    $childActive = 'bg-muted/70 text-foreground';
 
-    $standaloneBase = 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-[12px] font-semibold transition-colors';
-    $standaloneIdle = 'text-foreground bg-transparent hover:bg-muted/70';
-    $standaloneActive = 'text-foreground bg-red-500/[.07] ring-1 ring-red-500/15 shadow-sm';
+    $standaloneBase = 'flex items-center gap-3 rounded-lg px-3 py-2 text-[11px] font-medium transition-colors';
+    $standaloneIdle = 'text-foreground/90 bg-transparent hover:bg-muted/60';
+    $standaloneActive = 'text-foreground bg-muted/75';
 @endphp
 
 <div class="px-3 pt-3 pb-1">

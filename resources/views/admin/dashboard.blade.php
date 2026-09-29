@@ -1,34 +1,70 @@
 <x-admin-layout>
     <x-slot name="header">Overview</x-slot>
 
-    <div class="ui-page max-w-[1600px]">
-        <section class="flex flex-col gap-5 border-b border-border/70 pb-5 xl:flex-row xl:items-end xl:justify-between">
-            <div class="max-w-3xl">
-                <div class="mb-2 flex items-center gap-2">
-                    <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-border bg-muted/40">
-                        <i data-lucide="layout-dashboard" class="h-3.5 w-3.5"></i>
-                    </span>
-                    <p class="ui-kicker text-[10px]">Admin command center</p>
-                </div>
+    <style>
+        .admin-action-strip,
+        .admin-metric-strip{
+            display:flex;
+            overflow-x:auto;
+            overflow-y:hidden;
+            -webkit-overflow-scrolling:touch;
+            overscroll-behavior-inline:contain;
+            scrollbar-width:none;
+        }
+        .admin-action-strip::-webkit-scrollbar,
+        .admin-metric-strip::-webkit-scrollbar{
+            display:none;
+        }
+        .admin-action-strip > *{
+            flex:0 0 15rem;
+        }
+        .admin-metric-strip{
+            gap:.75rem;
+        }
+        .admin-metric-strip > *{
+            flex:0 0 17rem;
+        }
+        @media (min-width:1024px){
+            .admin-action-strip{
+                display:grid;
+                grid-template-columns:repeat(4,minmax(0,1fr));
+                overflow:visible;
+            }
+            .admin-action-strip > *{
+                min-width:0;
+            }
+            .admin-metric-strip{
+                display:grid;
+                grid-template-columns:repeat(4,minmax(0,1fr));
+                overflow:visible;
+            }
+            .admin-metric-strip > *{
+                min-width:0;
+            }
+        }
+    </style>
 
-                <h1 class="ui-heading !text-3xl">Operations overview</h1>
-                <p class="ui-lead !mt-2 !max-w-3xl !text-[13px]">
-                    Monitor customers, money movement, trading activity, investment products and operational review queues.
+    <div class="ui-page max-w-[1600px]">
+        <section class="flex flex-col gap-4 border-b border-border/60 pb-4 lg:flex-row lg:items-end lg:justify-between">
+            <div class="max-w-2xl">
+                <h1 class="text-2xl font-semibold tracking-tight text-foreground">Operations overview</h1>
+                <p class="mt-1.5 text-[12px] leading-5 text-muted-foreground">
+                    Customers, finance, markets and operational queues in one view.
                 </p>
             </div>
 
-            <div class="flex flex-wrap gap-2">
-                <a href="{{ route('admin.wallet-transactions.index') }}" class="ui-btn ui-btn-secondary">
-                    <i data-lucide="wallet-cards" class="h-4 w-4"></i>
+            <div class="flex flex-wrap items-center gap-1.5">
+                <a href="{{ route('admin.wallet-transactions.index') }}" class="ui-btn ui-btn-secondary ui-btn-sm">
+                    <i data-lucide="wallet-cards" class="h-3.5 w-3.5"></i>
                     Transactions
                 </a>
-                <a href="{{ route('admin.kyc.index') }}" class="ui-btn ui-btn-secondary">
-                    <i data-lucide="shield-check" class="h-4 w-4"></i>
-                    KYC review
+                <a href="{{ route('admin.kyc.index') }}" class="ui-btn ui-btn-secondary ui-btn-sm">
+                    <i data-lucide="shield-check" class="h-3.5 w-3.5"></i>
+                    KYC
                 </a>
-                <a href="{{ route('admin.ai-bots.create') }}" class="ui-btn ui-btn-primary">
-                    <i data-lucide="bot" class="h-4 w-4"></i>
-                    Create bot
+                <a href="{{ route('admin.ai-bots.create') }}" class="ui-btn ui-btn-primary ui-btn-sm">
+                    <i data-lucide="bot" class="h-3.5 w-3.5"></i>
+                    New bot
                 </a>
             </div>
         </section>
@@ -38,7 +74,7 @@
                 <div class="flex items-center gap-3"><span class="flex h-9 w-9 items-center justify-center rounded-xl bg-red-500/10 text-red-500"><i data-lucide="inbox" class="h-4 w-4"></i></span><div><h2 class="text-sm font-semibold">Action center</h2><p class="mt-0.5 text-[10px] text-muted-foreground">Customer updates and operational queues requiring attention.</p></div></div>
                 <span class="rounded-full border border-border bg-muted/45 px-3 py-1 text-[10px] font-semibold">{{ number_format($actionCenterTotal) }} pending signals</span>
             </div>
-            <div class="grid gap-px bg-border sm:grid-cols-2 xl:grid-cols-4">
+            <div class="admin-action-strip gap-px bg-border">
                 <a href="{{ route('admin.kyc.by-status','pending') }}" class="flex items-center gap-3 bg-card px-5 py-4 hover:bg-muted/25"><i data-lucide="user-check" class="h-4 w-4 text-amber-500"></i><span class="flex-1"><span class="block text-[9px] uppercase tracking-[.12em] text-muted-foreground">KYC review</span><strong class="text-lg">{{ number_format($pendingKycCount) }}</strong></span></a>
                 <a href="{{ route('admin.messages.index') }}" class="flex items-center gap-3 bg-card px-5 py-4 hover:bg-muted/25"><i data-lucide="message-circle" class="h-4 w-4 text-sky-500"></i><span class="flex-1"><span class="block text-[9px] uppercase tracking-[.12em] text-muted-foreground">Unread messages</span><strong class="text-lg">{{ number_format($unreadDirectMessages) }}</strong></span></a>
                 <a href="{{ route('admin.support.index') }}" class="flex items-center gap-3 bg-card px-5 py-4 hover:bg-muted/25"><i data-lucide="life-buoy" class="h-4 w-4 text-violet-500"></i><span class="flex-1"><span class="block text-[9px] uppercase tracking-[.12em] text-muted-foreground">Support attention</span><strong class="text-lg">{{ number_format($attentionSupportCount) }}</strong><span class="ml-1 text-[9px] text-muted-foreground">{{ number_format($unreadSupportMessages) }} unread</span></span></a>
@@ -46,7 +82,7 @@
             </div>
         </section>
 
-        <section class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section class="admin-metric-strip mt-5">
             <a href="{{ route('admin.users.index') }}"
                class="group relative overflow-hidden rounded-2xl border border-border bg-card p-5 transition hover:-translate-y-0.5 hover:border-foreground/15">
                 <div class="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-sky-500/10 blur-2xl"></div>
@@ -124,7 +160,7 @@
             </a>
         </section>
 
-        <section class="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <section class="admin-metric-strip mt-3">
             <a href="{{ route('admin.stocks.index') }}" class="group flex items-center gap-4 rounded-2xl border border-border bg-card/70 p-4 transition hover:bg-card">
                 <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
                     <i data-lucide="activity" class="h-4 w-4"></i>

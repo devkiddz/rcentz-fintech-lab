@@ -41,6 +41,8 @@
         }
     </style>
 
+    @include('partials.dashboard-horizontal-rail')
+
     <div class="ui-page max-w-[1440px]" data-overview-redesign>
         <section class="ui-page-header">
             <div class="min-w-0">
@@ -63,8 +65,17 @@
             </div>
         </section>
 
-        <section class="overview-hero-grid mb-4">
-            <article class="ui-panel overflow-hidden">
+        <div class="dashboard-rail-shell" data-dashboard-rail-shell>
+            <div class="dashboard-rail-head">
+                <span class="dashboard-rail-hint">Swipe through your account</span>
+                <div class="dashboard-rail-controls">
+                    <button type="button" class="dashboard-rail-control" data-dashboard-prev aria-label="Previous dashboard card"><i data-lucide="arrow-left" class="h-3.5 w-3.5"></i></button>
+                    <button type="button" class="dashboard-rail-control" data-dashboard-next aria-label="Next dashboard card"><i data-lucide="arrow-right" class="h-3.5 w-3.5"></i></button>
+                </div>
+            </div>
+            <div class="dashboard-infinite-rail" data-dashboard-rail aria-label="Customer account overview">
+        <section class="overview-hero-grid" data-dashboard-flatten>
+            <article data-dashboard-card class="dashboard-card-wide ui-panel overflow-hidden">
                 <div class="p-5 sm:p-6">
                     <div class="flex flex-col gap-5">
                         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -106,7 +117,7 @@
                 </div>
             </article>
 
-            <article class="ui-panel p-5 sm:p-6">
+            <article data-dashboard-card class="ui-panel p-5 sm:p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="ui-kicker">Quick actions</p>
@@ -130,7 +141,7 @@
         </section>
 
         @if($accountAlerts->isNotEmpty())
-            <section class="mb-4 ui-panel overflow-hidden">
+            <section data-dashboard-card class="dashboard-card-wide ui-panel overflow-hidden">
                 <div class="flex items-center justify-between gap-4 border-b border-border px-5 py-3.5 sm:px-6">
                     <div><p class="ui-kicker">Account alerts</p><h2 class="mt-1 text-sm font-semibold">For your attention</h2></div>
                     <span class="rounded-full border border-border bg-muted/30 px-2.5 py-1 text-[9px] font-semibold uppercase">{{ $accountAlerts->count() }}</span>
@@ -152,8 +163,9 @@
             </section>
         @endif
 
-        <section class="overview-command-grid mb-4">
-            <details class="ui-panel overflow-hidden" data-dashboard-signals open>
+        <section class="overview-command-grid" data-dashboard-flatten>
+            @if($dashboardSignals->isNotEmpty())
+            <details data-dashboard-card class="dashboard-card-wide ui-panel overflow-hidden" data-dashboard-signals open>
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 sm:px-6">
                     <div class="min-w-0">
                         <p class="ui-kicker">Signal intelligence</p>
@@ -214,8 +226,9 @@
                     <div class="flex justify-end border-t border-border px-5 py-3 sm:px-6"><a href="{{ route('signals.index') }}" class="ui-btn ui-btn-ghost ui-btn-sm">View all Signals<i data-lucide="arrow-right" class="h-4 w-4"></i></a></div>
                 </div>
             </details>
+            @endif
 
-            <article class="ui-panel overflow-hidden">
+            <article data-dashboard-card class="ui-panel overflow-hidden">
                 <div class="border-b border-border px-5 py-4 sm:px-6">
                     <p class="ui-kicker">Membership access</p>
                     <h2 class="mt-1 text-lg font-semibold">Account coverage</h2>
@@ -245,8 +258,9 @@
             </article>
         </section>
 
-        <section class="overview-lower-grid mb-4">
-            <article class="ui-panel p-5 sm:p-6">
+        <section class="overview-lower-grid" data-dashboard-flatten>
+            @if(collect($allocation)->sum('value') > 0)
+            <article data-dashboard-card class="dashboard-card-wide ui-panel p-5 sm:p-6">
                 <div class="flex items-start justify-between gap-4">
                     <div><p class="ui-kicker">Asset allocation</p><h2 class="mt-1 text-lg font-semibold">Where your assets sit</h2></div>
                     <a href="{{ route('portfolio.index') }}" class="ui-btn ui-btn-ghost ui-btn-sm">Portfolio<i data-lucide="arrow-right" class="h-4 w-4"></i></a>
@@ -267,8 +281,10 @@
                     <div class="rounded-xl border border-border bg-muted/15 p-3.5"><p class="ui-label">Investments</p><p class="mt-1 text-sm font-semibold">{{ format_currency($investmentValue) }}</p><p class="mt-1 text-[10px] text-muted-foreground">{{ $investmentHoldings->count() }} active holding{{ $investmentHoldings->count() === 1 ? '' : 's' }}</p></div>
                 </div>
             </article>
+            @endif
 
-            <article class="ui-panel overflow-hidden">
+            @if($recentTransactions->isNotEmpty())
+            <article data-dashboard-card class="dashboard-card-wide ui-panel overflow-hidden">
                 <div class="flex items-center justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
                     <div><p class="ui-kicker">Recent activity</p><h2 class="mt-1 text-lg font-semibold">Latest transactions</h2></div>
                     <a href="{{ route('money.activity') }}" class="ui-btn ui-btn-ghost ui-btn-sm">View all</a>
@@ -287,26 +303,35 @@
                     </div>
                 @endif
             </article>
+            @endif
         </section>
 
-        <section class="grid gap-4 md:grid-cols-3">
-            <article class="ui-panel p-5 sm:p-6">
+        <section data-dashboard-flatten>
+            @if((float)$totalCredits > 0 || (float)$totalDebits > 0)
+            <article data-dashboard-card class="ui-panel p-5 sm:p-6">
                 <div class="flex items-center justify-between gap-4"><div><p class="ui-kicker">Cash flow</p><h2 class="mt-1 text-lg font-semibold">Credits & debits</h2></div><i data-lucide="landmark" class="h-5 w-5 text-muted-foreground"></i></div>
                 <div class="mt-5 grid grid-cols-2 gap-3">
                     <div class="rounded-xl border border-border bg-muted/15 p-3"><p class="ui-label">Credits</p><p class="mt-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">+{{ format_currency($totalCredits) }}</p></div>
                     <div class="rounded-xl border border-border bg-muted/15 p-3"><p class="ui-label">Debits</p><p class="mt-1 text-sm font-semibold text-red-600 dark:text-red-400">-{{ format_currency($totalDebits) }}</p></div>
                 </div>
             </article>
+            @endif
 
-            <article class="ui-panel p-5 sm:p-6">
+            @if($stockHoldings->isNotEmpty())
+            <article data-dashboard-card class="ui-panel p-5 sm:p-6">
                 <div class="flex items-center justify-between gap-4"><div><p class="ui-kicker">Stock portfolio</p><h2 class="mt-1 text-lg font-semibold">{{ format_currency($stockValue) }}</h2><p class="mt-1 text-xs text-muted-foreground">{{ $stockHoldings->count() }} active position{{ $stockHoldings->count() === 1 ? '' : 's' }}</p></div><i data-lucide="candlestick-chart" class="h-5 w-5 text-muted-foreground"></i></div>
                 <a href="{{ route('trading.portfolio') }}" class="ui-btn ui-btn-secondary ui-btn-sm mt-5">View stock portfolio</a>
             </article>
+            @endif
 
-            <article class="ui-panel p-5 sm:p-6">
+            @if($investmentHoldings->isNotEmpty())
+            <article data-dashboard-card class="ui-panel p-5 sm:p-6">
                 <div class="flex items-center justify-between gap-4"><div><p class="ui-kicker">Investment plans</p><h2 class="mt-1 text-lg font-semibold">{{ format_currency($investmentValue) }}</h2><p class="mt-1 text-xs text-muted-foreground">{{ $investmentHoldings->count() }} active holding{{ $investmentHoldings->count() === 1 ? '' : 's' }}</p></div><i data-lucide="pie-chart" class="h-5 w-5 text-muted-foreground"></i></div>
                 <a href="{{ route('portfolio.index') }}" class="ui-btn ui-btn-secondary ui-btn-sm mt-5">View investments</a>
             </article>
+            @endif
         </section>
+            </div>
+        </div>
     </div>
 </x-user-layout>

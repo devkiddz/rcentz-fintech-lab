@@ -9,20 +9,29 @@
 @endphp
 
 <details class="group relative z-[1100]" data-admin-notification-center data-api-url="{{ route('admin.notifications.api') }}">
-    <summary class="relative inline-flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground [&::-webkit-details-marker]:hidden" title="Admin notifications">
+    <summary class="relative cursor-pointer list-none [&::-webkit-details-marker]:hidden" title="Admin notifications" aria-label="Admin notifications">
         <i data-lucide="bell" class="h-4 w-4"></i>
-        <span data-admin-notification-badge class="{{ $adminUnreadCount > 0 ? '' : 'hidden' }} absolute -right-1 -top-1 min-w-4 rounded-full bg-red-600 px-1 text-center text-[9px] font-bold leading-4 text-white">{{ $adminUnreadCount > 99 ? '99+' : $adminUnreadCount }}</span>
+        <span data-admin-notification-badge class="{{ $adminUnreadCount > 0 ? '' : 'hidden' }} absolute -right-1 -top-1 min-w-4 rounded-full bg-red-600 px-1 text-center text-[9px] font-bold leading-4 text-white">
+            {{ $adminUnreadCount > 99 ? '99+' : $adminUnreadCount }}
+        </span>
     </summary>
 
-    <div class="absolute right-0 z-[1200] mt-2 w-[min(92vw,360px)] overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-xl">
-        <div class="flex items-center justify-between border-b border-border px-4 py-3">
-            <div><p class="text-xs font-semibold">Admin notifications</p><p class="mt-0.5 text-[9px] text-muted-foreground">Operational receipts and platform alerts</p></div>
+    <div class="admin-notification-panel absolute right-0 mt-2 text-card-foreground">
+        <div class="flex items-center justify-between gap-3 px-4 py-3.5">
+            <div class="min-w-0">
+                <p class="text-sm font-semibold text-foreground">Notifications</p>
+                <p class="mt-0.5 truncate text-[10px] text-muted-foreground">Admin activity and platform alerts</p>
+            </div>
             @if($adminUnreadCount > 0)
-                <button type="button" data-admin-notifications-read-all="{{ route('admin.notifications.mark-all-read') }}" class="text-[9px] font-semibold text-muted-foreground hover:text-foreground">Mark all read</button>
+                <button type="button"
+                        data-admin-notifications-read-all="{{ route('admin.notifications.mark-all-read') }}"
+                        class="shrink-0 text-[10px] font-semibold text-muted-foreground transition hover:text-foreground">
+                    Mark all read
+                </button>
             @endif
         </div>
 
-        <div class="max-h-[420px] divide-y divide-border overflow-y-auto" data-admin-notification-list>
+        <div class="admin-notification-list max-h-[24rem] overflow-y-auto border-y border-border/55" data-admin-notification-list>
             @forelse($adminNotifications as $notification)
                 @php
                     $data = (array) ($notification->data ?? []);
@@ -36,17 +45,35 @@
                         data-admin-notification-item
                         data-read-url="{{ route('admin.notifications.read', $notification) }}"
                         data-destination="{{ $destination }}"
-                        class="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-muted/30 {{ $notification->is_read ? '' : 'bg-red-500/[.03]' }}">
-                    <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/40"><i data-lucide="{{ $notification->icon }}" class="h-4 w-4"></i></span>
+                        class="group flex w-full items-start gap-3 border-b border-border/45 px-4 py-3 text-left transition last:border-b-0 hover:bg-muted/35 {{ $notification->is_read ? '' : 'bg-muted/20' }}">
+                    <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/65 text-muted-foreground">
+                        <i data-lucide="{{ $notification->icon ?: 'bell' }}" class="h-3.5 w-3.5"></i>
+                    </span>
                     <span class="min-w-0 flex-1">
-                        <span class="flex items-start justify-between gap-3"><span class="truncate text-[11px] font-semibold">{{ $notification->title }}</span>@unless($notification->is_read)<span data-unread-dot class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-red-500"></span>@endunless</span>
-                        <span class="mt-1 block text-[10px] leading-4 text-muted-foreground">{{ $notification->message }}</span>
-                        <span class="mt-1.5 block text-[9px] text-muted-foreground">{{ $notification->formatted_time }}</span>
+                        <span class="flex items-start gap-2">
+                            <span class="min-w-0 flex-1 truncate text-[11px] font-semibold text-foreground">{{ $notification->title }}</span>
+                            @unless($notification->is_read)
+                                <span data-unread-dot class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style="background:var(--brand-primary)"></span>
+                            @endunless
+                        </span>
+                        <span class="mt-1 line-clamp-2 block text-[10px] leading-4 text-muted-foreground">{{ $notification->message }}</span>
+                        <span class="mt-1.5 block text-[9px] text-muted-foreground/80">{{ $notification->formatted_time }}</span>
                     </span>
                 </button>
             @empty
-                <div class="px-5 py-8 text-center"><i data-lucide="bell-off" class="mx-auto h-5 w-5 text-muted-foreground"></i><p class="mt-2 text-xs font-semibold">No admin alerts yet</p><p class="mt-1 text-[10px] text-muted-foreground">Signal delivery receipts will appear here.</p></div>
+                <div class="px-5 py-10 text-center">
+                    <div class="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
+                        <i data-lucide="bell-off" class="h-4 w-4"></i>
+                    </div>
+                    <p class="mt-3 text-xs font-semibold text-foreground">No admin alerts</p>
+                    <p class="mt-1 text-[10px] text-muted-foreground">New platform activity will appear here.</p>
+                </div>
             @endforelse
+        </div>
+
+        <div class="flex items-center justify-between gap-3 px-4 py-3">
+            <span class="text-[9px] text-muted-foreground">Operational activity</span>
+            <span class="text-[9px] text-muted-foreground">{{ $adminNotifications->count() }} recent</span>
         </div>
     </div>
 </details>
