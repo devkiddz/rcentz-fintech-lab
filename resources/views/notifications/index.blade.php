@@ -18,15 +18,27 @@
                     </p>
                 </div>
 
-                @if($unreadCount > 0)
-                    <button
-                        type="button"
-                        onclick="window.CustomerNotifications.markAllRead({reload: true})"
-                        class="ui-btn ui-btn-secondary self-start sm:self-auto"
-                    >
-                        <i data-lucide="check-check" class="h-4 w-4"></i>
-                        {{ localize('ui.r2e.notifications.mark_all', 'Mark all read') }}
-                    </button>
+                @if($notifications->total() > 0)
+                    <div class="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                        @if($unreadCount > 0)
+                            <button
+                                type="button"
+                                onclick="window.CustomerNotifications.markAllRead({reload: true})"
+                                class="ui-btn ui-btn-secondary"
+                            >
+                                <i data-lucide="check-check" class="h-4 w-4"></i>
+                                {{ localize('ui.r2e.notifications.mark_all', 'Mark all read') }}
+                            </button>
+                        @endif
+                        <button
+                            type="button"
+                            onclick="window.CustomerNotifications.clearAll({reload: true, confirmClear: true})"
+                            class="ui-btn ui-btn-secondary text-red-600"
+                        >
+                            <i data-lucide="trash-2" class="h-4 w-4"></i>
+                            Clear all
+                        </button>
+                    </div>
                 @endif
             </div>
         </section>

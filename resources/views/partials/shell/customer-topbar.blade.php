@@ -36,7 +36,7 @@
                 </a>
             @endif
 
-            <div class="relative" data-customer-notifications>
+            <div class="customer-notification-center relative" data-customer-notifications>
                 <button
                     type="button"
                     class="customer-shell-icon relative"
@@ -51,7 +51,7 @@
 
                 <div
                     id="customer-notifications-dropdown"
-                    class="absolute right-0 z-50 mt-2 hidden w-[min(23rem,calc(100vw-2rem))] overflow-hidden rounded-2xl bg-card shadow-2xl ring-1 ring-border/60"
+                    class="customer-notification-dropdown absolute right-0 z-50 mt-2 hidden w-[min(23rem,calc(100vw-2rem))] overflow-hidden rounded-2xl bg-card shadow-2xl ring-1 ring-border/60"
                     data-notification-dropdown
                 >
                     <div class="flex items-center justify-between gap-4 px-4 py-3.5">
@@ -59,7 +59,11 @@
                             <h3 class="text-sm font-semibold text-foreground">{{ localize('ui.nav.notifications', 'Notifications') }}</h3>
                             <p class="mt-0.5 text-[10px] text-muted-foreground" data-notification-summary>{{ localize('ui.common.recent_account_activity', 'Recent account activity') }}</p>
                         </div>
-                        <button type="button" class="text-[10px] font-semibold text-muted-foreground transition hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40" data-notification-mark-all disabled>{{ localize('ui.common.mark_all_read', 'Mark all read') }}</button>
+                        <div class="flex items-center gap-2">
+                            <button type="button" class="text-[10px] font-semibold text-muted-foreground transition hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40" data-notification-mark-all disabled>{{ localize('ui.common.mark_all_read', 'Mark all read') }}</button>
+                            <span class="h-3 w-px bg-border"></span>
+                            <button type="button" class="text-[10px] font-semibold text-red-500 transition hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40" data-notification-clear-all disabled>Clear</button>
+                        </div>
                     </div>
 
                     <div class="max-h-80 overflow-y-auto border-y border-border/50" data-notification-list>

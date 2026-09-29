@@ -1,5 +1,6 @@
 const CUSTOMER_NOTIFICATION_API = '/notifications/api';
 const CUSTOMER_NOTIFICATION_MARK_ALL = '/notifications/mark-all-read';
+const CUSTOMER_NOTIFICATION_CLEAR_ALL = '/notifications/clear-all';
 const CUSTOMER_NOTIFICATION_POLL_MS = 60000;
 
 const csrfToken = () => document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -165,8 +166,9 @@ const bootCustomerNotificationBell = () => {
     const list = root.querySelector('[data-notification-list]');
     const summary = root.querySelector('[data-notification-summary]');
     const markAll = root.querySelector('[data-notification-mark-all]');
+    const clearAll = root.querySelector('[data-notification-clear-all]');
 
-    if (!toggle || !dropdown || !badge || !list || !summary || !markAll) return;
+    if (!toggle || !dropdown || !badge || !list || !summary || !markAll || !clearAll) return;
 
     let loading = false;
 
@@ -185,6 +187,7 @@ const bootCustomerNotificationBell = () => {
                 ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`
                 : 'Recent account activity';
             markAll.disabled = unreadCount <= 0;
+            clearAll.disabled = notifications.length <= 0;
 
             if (!notifications.length) {
                 renderEmpty(list);
@@ -227,6 +230,19 @@ const bootCustomerNotificationBell = () => {
             await refresh();
         } finally {
             markAll.disabled = false;
+        }
+    });
+
+    clearAll.addEventListener('click', async () => {
+        if (clearAll.disabled) return;
+        if (!window.confirm('Clear all notifications? This permanently removes your notification history.')) return;
+
+        clearAll.disabled = true;
+        try {
+            await requestJson(CUSTOMER_NOTIFICATION_CLEAR_ALL, { method: 'DELETE' });
+            await refresh();
+        } finally {
+            clearAll.disabled = false;
         }
     });
 
@@ -275,11 +291,19 @@ const deleteNotification = async (notificationId, options = {}) => {
     if (options.reload) window.location.reload();
 };
 
+const clearAllNotifications = async (options = {}) => {
+    if (options.confirmClear && !window.confirm('Clear all notifications? This permanently removes your notification history.')) return;
+
+    await requestJson(CUSTOMER_NOTIFICATION_CLEAR_ALL, { method: 'DELETE' });
+    if (options.reload) window.location.reload();
+};
+
 window.CustomerNotifications = {
     refresh: () => requestJson(CUSTOMER_NOTIFICATION_API),
     markAsRead,
     markAllRead,
     deleteNotification,
+    clearAll: clearAllNotifications,
 };
 
 if (document.readyState === 'loading') {

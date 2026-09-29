@@ -34,7 +34,7 @@
         .customer-workspace #sidebar .sidebar-subnav{position:relative;border-left:0!important;margin-left:.8rem!important;padding-left:1rem!important}
         .customer-workspace #sidebar .sidebar-subnav::before{content:"";position:absolute;left:.14rem;top:.3rem;bottom:.3rem;width:1px;background:linear-gradient(180deg,transparent,hsl(var(--border)/.78) 15%,hsl(var(--border)/.78) 85%,transparent)}
         .customer-workspace #sidebar .sidebar-subnav a{border-radius:.8rem!important}
-        .customer-shell-topbar{position:sticky;top:0;z-index:40;padding:.65rem .9rem 0;background:linear-gradient(180deg,hsl(var(--background)) 60%,transparent)}
+        .customer-shell-topbar{position:sticky;top:0;z-index:1000;padding:.65rem .9rem 0;background:linear-gradient(180deg,hsl(var(--background)) 60%,transparent);overflow:visible!important}
         .customer-shell-topbar-inner{display:flex;min-height:3.65rem;align-items:center;justify-content:space-between;gap:1rem;border-radius:1rem;background:hsl(var(--card)/.84);padding:.55rem .75rem;box-shadow:0 14px 34px rgba(15,23,42,.06),inset 0 0 0 1px hsl(var(--border)/.55);backdrop-filter:blur(18px)}
         .dark .customer-shell-topbar-inner{box-shadow:0 16px 36px rgba(0,0,0,.22),inset 0 0 0 1px hsl(var(--border)/.50)}
         .customer-shell-icon{display:inline-flex;height:2.35rem;width:2.35rem;align-items:center;justify-content:center;border:0;border-radius:.8rem;background:hsl(var(--muted)/.58);color:hsl(var(--muted-foreground));transition:.18s ease}
@@ -43,6 +43,41 @@
         .customer-shell-topbar .shell-icon-button:hover{background:hsl(var(--muted))!important;color:hsl(var(--foreground))!important}
         .customer-mobile-dock{border:0!important;background:hsl(var(--card)/.94)!important;box-shadow:0 -8px 34px rgba(15,23,42,.10),inset 0 0 0 1px hsl(var(--border)/.52);backdrop-filter:blur(18px)}
         .dark .customer-mobile-dock{box-shadow:0 -10px 36px rgba(0,0,0,.28),inset 0 0 0 1px hsl(var(--border)/.42)}
+        .customer-notification-center{position:relative;z-index:1100}
+        .customer-notification-dropdown{z-index:1200}
+        @media (max-width:639px){
+            /*
+             * backdrop-filter creates a containing block for fixed descendants
+             * in Chromium. Disable it on the compact topbar so the notification
+             * tray is fixed to the viewport, not to the topbar card.
+             */
+            .customer-shell-topbar-inner{
+                backdrop-filter:none!important;
+                -webkit-backdrop-filter:none!important;
+            }
+            .customer-notification-dropdown{
+                position:fixed!important;
+                left:.75rem!important;
+                right:.75rem!important;
+                top:4.65rem!important;
+                bottom:5.75rem!important;
+                width:auto!important;
+                max-width:none!important;
+                margin-top:0!important;
+                display:flex;
+                flex-direction:column;
+                border-radius:1rem!important;
+                overflow:hidden!important;
+            }
+            .customer-notification-dropdown.hidden{display:none!important}
+            .customer-notification-dropdown [data-notification-list]{
+                max-height:none!important;
+                min-height:0;
+                flex:1 1 auto;
+                overflow-y:auto;
+                overscroll-behavior:contain;
+            }
+        }
     </style>
 </head>
 

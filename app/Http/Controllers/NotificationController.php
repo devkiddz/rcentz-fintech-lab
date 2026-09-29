@@ -94,6 +94,20 @@ class NotificationController extends Controller
     }
 
     /**
+     * Permanently clear every notification owned by the authenticated user.
+     */
+    public function clearAll()
+    {
+        $user = Auth::user();
+        $deleted = $user->notifications()->delete();
+
+        return response()->json([
+            'success' => true,
+            'deleted' => $deleted,
+        ]);
+    }
+
+    /**
      * Delete notification.
      */
     public function destroy(Notification $notification)
