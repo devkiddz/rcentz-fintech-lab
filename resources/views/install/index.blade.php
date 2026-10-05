@@ -44,6 +44,16 @@
                 </div>
 
                 <div class="section">
+                    <div class="section-title">Market provider keys (optional)</div>
+                    <div class="fields">
+                        <div><label for="alpha_vantage_api_key">Alpha Vantage API key</label><input id="alpha_vantage_api_key" type="password" name="alpha_vantage_api_key" autocomplete="new-password"></div>
+                        <div><label for="twelve_data_api_key">Twelve Data API key</label><input id="twelve_data_api_key" type="password" name="twelve_data_api_key" autocomplete="new-password"></div>
+                        <div><label for="coinmarketcap_api_key">CoinMarketCap API key</label><input id="coinmarketcap_api_key" type="password" name="coinmarketcap_api_key" autocomplete="new-password"></div>
+                    </div>
+                    <p class="hint">Create your own key in each provider account: <a href="https://www.alphavantage.co/support/#api-key" target="_blank" rel="noopener noreferrer">Alpha Vantage</a>, <a href="https://twelvedata.com/" target="_blank" rel="noopener noreferrer">Twelve Data</a>, <a href="https://coinmarketcap.com/api/" target="_blank" rel="noopener noreferrer">CoinMarketCap</a>. Keys are optional for configured markets. Register manually, copy your key here, and keep it private. Each server needs its own configured credentials; multiple servers sharing a key also share its quota. Twelve Data storage alone does not start the separate live-feed worker.</p>
+                </div>
+
+                <div class="section">
                     <div class="section-title"><span class="step">2</span> Branding</div>
                     <div class="colors">
                         <div class="color-field"><input id="brand_primary_color" type="color" name="brand_primary_color" value="{{ old('brand_primary_color','#c8102e') }}"><div><label for="brand_primary_color" style="margin:0">Primary color</label><div class="hint" id="primary-value">{{ old('brand_primary_color','#c8102e') }}</div></div></div>

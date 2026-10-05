@@ -1,3 +1,5 @@
+import './account-async';
+import './instrument-trading';
 // Parent-first automatic market runtime.
 // MarketInstrument IDs are the generic authority. Legacy stock-symbol hooks remain
 // supported so the mature stock trading UI can migrate without a big-bang rewrite.
@@ -25,7 +27,6 @@ const tone = (el, value) => {
 
 const movementState = new WeakMap();
 const movementBadges = new WeakMap();
-const movementTimers = new WeakMap();
 
 const applyMovementTick = (el, row) => {
     if (!el || !row || row.unavailable) return;
@@ -70,13 +71,7 @@ const applyMovementTick = (el, row) => {
     badge.textContent = arrow + ' ' + sign + percent.toFixed(2) + '%';
     badge.title = 'Movement since the previous authoritative price update';
 
-    const oldTimer = movementTimers.get(el);
-    if (oldTimer) window.clearTimeout(oldTimer);
-
-    movementTimers.set(el, window.setTimeout(() => {
-        badge.classList.remove('opacity-100');
-        badge.classList.add('opacity-0');
-    }, 2200));
+    // Keep the last movement visible until a newer valid quote changes it.
 };
 
 const collect = () => {
@@ -140,11 +135,13 @@ const stockRowFor = (payload, el, symbol) => {
 };
 
 const applyPriceRow = (el, row, field) => {
-    if (!row || row.unavailable) return;
+    if (!row || row.unavailable || !Number.isFinite(Number(row.price)) || Number(row.price) <= 0) return;
+    const formatted = row['formatted_' + field];
+    if (typeof formatted !== 'string' || !formatted.trim()) return;
 
     if (field === 'price') {
         applyMovementTick(el, row);
-        el.textContent = row.formatted_price;
+        if (el.textContent !== row.formatted_price) el.textContent = row.formatted_price;
         return;
     }
 
@@ -213,7 +210,7 @@ const apply = (payload) => {
         document.querySelectorAll('[data-market-position-label="' + id + '"]').forEach((el) => { el.textContent = row.label; });
         document.querySelectorAll('[data-market-position-cmp="' + id + '"]').forEach((el) => { el.textContent = row.formatted_cmp; });
         document.querySelectorAll('[data-market-position-difference="' + id + '"]').forEach((el) => { el.textContent = row.formatted_difference; tone(el, row.difference); });
-        document.querySelectorAll('[data-market-position-pnl="' + id + '"]').forEach((el) => { el.textContent = row.formatted_pnl; tone(el, row.pnl); });
+        document.querySelectorAll('[data-market-position-pnl="' + id + '"]').forEach((el) => { const floating = el.dataset.marketPositionFloating === 'true'; el.textContent = floating ? (row.formatted_floating_pnl ?? '—') : row.formatted_pnl; tone(el, floating ? row.unrealized_profit_loss : row.pnl); });
         document.querySelectorAll('[data-market-position-return="' + id + '"]').forEach((el) => {
             el.textContent = row.formatted_return;
             tone(el, row.return_percent);
@@ -225,7 +222,12 @@ const apply = (payload) => {
         const marketplace = String(el.dataset.marketplace || 'live').toLowerCase();
         const next = payload.instrument_analysis?.[id + ':' + marketplace];
         if (next && window.RcentzCharts?.refreshAnalysis) {
-            window.RcentzCharts.refreshAnalysis(el, next);
+            // Use the same source-specific mark as the price ticket.
+            const mark = payload.instruments?.[id]?.[marketplace];
+            const price = Number(mark?.price);
+            const synced = mark && !mark.unavailable && Number.isFinite(price) && price > 0
+                ? {...next, current_price:price} : next;
+            window.RcentzCharts.refreshAnalysis(el, synced);
         }
     });
 

@@ -1,5 +1,7 @@
 <x-user-layout>
 <x-slot name="header">My Investments</x-slot>
+<div data-account-async-feedback role="status" aria-live="polite" hidden class="mx-4 my-3 rounded-xl border border-border p-3 text-sm"></div>
+<div data-account-async="private-investments/account">
 
 <div class="mx-auto max-w-[1280px] space-y-5 px-3 py-5 sm:px-5 lg:px-6">
     <section class="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
@@ -84,5 +86,6 @@
             @endif
         </section>
     </div>
+</div>
 </div>
 </x-user-layout>

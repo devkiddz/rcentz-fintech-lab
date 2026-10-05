@@ -66,6 +66,11 @@ final class ForexExecutionQuoteService
             throw new RuntimeException('Forex market is closed. Live Forex execution is unavailable until the 24/5 market reopens.');
         }
 
+        $shared = app(SharedLiveFeed::class);
+        if ($shared->applies($instrument)) {
+            if (!$pair->external_feed_enabled) throw new RuntimeException('Live Forex feed is disabled.');
+            return $shared->execution($instrument);
+        }
         if (! $this->provider->isAvailable()) {
             throw new RuntimeException('Live Forex execution quote provider is not configured.');
         }

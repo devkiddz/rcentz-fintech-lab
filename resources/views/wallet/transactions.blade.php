@@ -1,5 +1,7 @@
 <x-user-layout>
     <x-slot name="header">{{ localize('ui.money.activity', 'Activity') }}</x-slot>
+<div data-account-async-feedback role="status" aria-live="polite" hidden class="mx-4 my-3 rounded-xl border border-border p-3 text-sm"></div>
+<div data-account-async="wallet/transactions">
 
     <div class="ui-page max-w-[1440px]">
         <section class="ui-page-header">
@@ -173,4 +175,5 @@
             @endif
         </section>
     </div>
+</div>
 </x-user-layout>

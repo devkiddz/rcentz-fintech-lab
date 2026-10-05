@@ -34,6 +34,8 @@ final class MarketInstrumentAnalysisService
             return $this->forControlled($instrument);
         }
 
+        $shared = app(SharedLiveFeed::class);
+        if ($shared->applies($instrument)) return $this->decorate($instrument, 'live', $shared->analysis($instrument));
         if ($instrument->isStock()) {
             $stock = $instrument->canonicalStock ?: $instrument->stock;
             if (! $stock) {
@@ -199,8 +201,8 @@ final class MarketInstrumentAnalysisService
         $analysis['market_instrument_id'] = $instrument->id;
         $analysis['asset_class'] = $instrument->asset_class;
         $analysis['symbol'] = $instrument->symbol;
-        $analysis['display_symbol'] = $instrument->display_symbol;
-        $analysis['label'] = $instrument->name;
+        $analysis['display_symbol'] = BasketDisplay::symbol($instrument, $marketplace);
+        $analysis['label'] = BasketDisplay::name($instrument, $marketplace);
         $analysis['marketplace'] = $marketplace;
         $analysis['price_precision'] = (int) $instrument->price_precision;
         $analysis['quote_asset'] = $instrument->quote_asset;

@@ -492,6 +492,10 @@ class TradePositionService
 
         TradePosition::with(['user','stock','entryTransaction'])
             ->whereNotNull('stock_id')
+            ->where(function ($query) {
+                $query->whereNull('metadata->execution_model')
+                    ->orWhere('metadata->execution_model', '!=', 'paper_v1');
+            })
             ->whereIn('status',['open','exit_queued'])
             ->where('open_quantity','>',0)
             // Copy followers are closed by provider mirroring or copy-contract

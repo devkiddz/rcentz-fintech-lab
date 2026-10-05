@@ -1,5 +1,7 @@
 <x-user-layout>
 <x-slot name="header">Investment Performance</x-slot>
+<div data-account-async-feedback role="status" aria-live="polite" hidden class="mx-4 my-3 rounded-xl border border-border p-3 text-sm"></div>
+<div data-account-async="private-investments/performance">
 <div class="mx-auto max-w-[1100px] px-3 py-5 sm:px-5">
     <section class="rounded-3xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
         <p class="text-[10px] font-semibold uppercase tracking-[.16em] text-red-600">Private investment performance</p>
@@ -27,5 +29,6 @@
             </div>
         @endif
     </section>
+</div>
 </div>
 </x-user-layout>

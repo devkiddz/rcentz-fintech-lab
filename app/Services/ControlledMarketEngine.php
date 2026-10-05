@@ -180,11 +180,13 @@ final class ControlledMarketEngine
         $environment = MarketEnvironment::current();
         $mode = $mode ?: $environment->controlled_drive_mode ?: 'range';
 
-        if (! in_array($mode, ['up', 'down', 'range'], true)) {
-            throw new RuntimeException('Controlled market drive must be up, down or range.');
+        if (! in_array($mode, ['up', 'down', 'range', 'neutral'], true)) {
+            throw new RuntimeException('Controlled market drive must be up, down, range or neutral.');
         }
 
+
         $strength = max(0.10, min(3.00, (float) $environment->controlled_drive_strength));
+        if (config('basket_engine.enabled', false)) app(BasketReferenceStore::class)->importSaved();
         $result = ['mode' => $mode, 'updated' => 0, 'failed' => 0];
 
         ControlledMarketInstrument::query()
@@ -194,8 +196,9 @@ final class ControlledMarketEngine
             ->chunkById(100, function ($instruments) use ($mode, $strength, &$result) {
                 foreach ($instruments as $instrument) {
                     try {
+                        $before=$instrument->ticks()->count();
                         $this->tick($instrument, $mode, $strength);
-                        $result['updated']++;
+                        if ($instrument->ticks()->count()>$before) { $result['updated']++; }
                     } catch (\Throwable $e) {
                         \Log::warning('Controlled market tick failed', [
                             'instrument_id' => $instrument->id,
@@ -213,6 +216,7 @@ final class ControlledMarketEngine
 
     public function tick(ControlledMarketInstrument $instrument, string $mode, float $strength = 1): ControlledMarketInstrument
     {
+        if (!in_array($mode,['up','down','range','neutral'],true)) { throw new RuntimeException('Unsupported market movement mode.'); }
         return DB::transaction(function () use ($instrument, $mode, $strength) {
             $instrument = ControlledMarketInstrument::query()
                 ->with(['marketInstrument.stock'])
@@ -236,14 +240,22 @@ final class ControlledMarketEngine
                 if ($distance > $volatility * 2) $direction = -1;
                 if ($distance < -$volatility * 2) $direction = 1;
                 $magnitude *= 0.45;
-            } else {
+            } elseif ($mode !== 'neutral') {
                 $upProbability = $mode === 'up' ? 0.68 : 0.32;
                 $upProbability += $bias * 0.15;
                 $upProbability = max(0.08, min(0.92, $upProbability));
                 $direction = (random_int(0, 10000) / 10000) <= $upProbability ? 1 : -1;
             }
 
-            $movePercent = $magnitude * $direction;
+            $movePercent = $mode === 'neutral' ? 0 : $magnitude * $direction;
+            if ($mode === 'neutral') {
+                $previous=(float)$instrument->previous_price;
+                $previousReturn=$previous>0 ? (($open-$previous)/$previous)*100 : 0;
+                $movePercent=NeutralMarketStep::move($volatility,$previousReturn,
+                    random_int(0,1000000)/1000000,random_int(0,1000000)/1000000);
+                $movePercent=app(BasketReferenceStore::class)->move((int)$instrument->market_instrument_id,$movePercent,$open,(string)($instrument->marketInstrument?->quote_asset ?? ''),(string)($instrument->marketInstrument?->base_asset ?? ''));
+                $direction=$movePercent>=0 ? 1 : -1;
+            }
             $rawClose = $open * (1 + ($movePercent / 100));
             $minimum = max((float) $instrument->minimum_price, (float) $instrument->minimum_tick);
             $precision = max(0, min(8, (int) $instrument->decimal_precision));

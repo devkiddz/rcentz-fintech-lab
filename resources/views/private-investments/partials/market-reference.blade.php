@@ -56,7 +56,13 @@
         : ($privateCurrency !== '' ? $privateCurrency.' ' : '');
     $marketplace = null;
 
-    if ($referenceAsset && $referenceMarket) {
+    // investment-reserve-snapshot-v1
+    $boundInvestment = app(\App\Services\InvestmentBasketPricer::class)->bound((int)$instrument->id);
+    if ($boundInvestment && $referenceAsset) {
+        $referencePrice = (float)$referenceAsset->current_unit_price;
+        $updatedAt = $referenceAsset->last_valued_at;
+    }
+    if ($referenceAsset && $referenceMarket && !$boundInvestment) {
         try {
             $marketRouter = app(\App\Services\MarketPriceRouter::class);
             $marketplace = $marketRouter->activeMarketplace();

@@ -1,5 +1,7 @@
 <x-user-layout>
     <x-slot name="header">{{ localize('ui.money.money', 'Money') }}</x-slot>
+<div data-account-async-feedback role="status" aria-live="polite" hidden class="mx-4 my-3 rounded-xl border border-border p-3 text-sm"></div>
+<div data-account-async="wallet/index">
 
     <div class="ui-page max-w-7xl space-y-5 sm:space-y-6">
         <section class="wallet-shell-card">
@@ -105,4 +107,5 @@
             </div>
         </section>
     </div>
+</div>
 </x-user-layout>

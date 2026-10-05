@@ -1,5 +1,7 @@
 <x-user-layout>
 <x-slot name="header">{{ localize('ui.r2d.copy.my_copied', 'My Copied Strategies') }}</x-slot>
+<div data-account-async-feedback role="status" aria-live="polite" hidden class="mx-4 my-3 rounded-xl border border-border p-3 text-sm"></div>
+<div data-account-async="copy-trading/my-copies">
 <div class="ui-page max-w-[1440px]">
 <section class="ui-page-header">
     <div>
@@ -231,6 +233,7 @@
 @empty
 <div class="ui-panel p-8 text-center text-sm text-muted-foreground xl:col-span-2">{{ localize('ui.r2d.copy.no_copied', 'No copied strategies yet.') }}</div>
 @endforelse
+</div>
 </div>
 </div>
 </x-user-layout>

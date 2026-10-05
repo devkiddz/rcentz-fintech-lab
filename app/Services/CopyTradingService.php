@@ -47,6 +47,11 @@ class CopyTradingService
         if ($providerExecution->status !== 'completed') {
             return;
         }
+        if (($providerExecution->metadata['execution_model'] ?? null) === \App\Services\PaperTrading\PaperBrokerService::MODEL) {
+            app(\App\Services\PaperTrading\PaperCopyTradingService::class)->mirror($providerExecution, $strategyId);
+            return;
+        }
+
 
         $providerExecution->loadMissing(['user', 'marketInstrument', 'tradePosition']);
         $instrument = $providerExecution->marketInstrument;

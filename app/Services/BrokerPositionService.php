@@ -20,9 +20,19 @@ final class BrokerPositionService
         TradePosition $position,
         ?float $stopLossPercent,
         ?float $takeProfitPercent,
-        ?int $durationMinutes
+        ?int $durationMinutes,
+        ?float $stopLossPrice = null,
+        ?float $takeProfitPrice = null
     ): TradePosition {
         $this->assertOwned($user, $position);
+
+        if (\App\Services\PaperTrading\PaperBrokerService::owns($position)) {
+            return app(\App\Services\PaperTrading\PaperBrokerService::class)->updateRisk(
+                $user, $position, $stopLossPercent, $takeProfitPercent, $durationMinutes, $stopLossPrice, $takeProfitPrice
+            );
+        }
+
+        if ($stopLossPrice !== null || $takeProfitPrice !== null) { throw new \InvalidArgumentException('Exact prices are supported on the new position engine only.'); }
 
         if ($position->stock_id !== null) {
             return $this->stockPositions->updateRisk(

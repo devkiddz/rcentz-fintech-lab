@@ -1,4 +1,5 @@
 <x-admin-layout>
+<style>[data-market-runtime] :disabled { opacity:.45; cursor:not-allowed; }</style>
 <div class="ui-page max-w-[1500px]" data-market-runtime>
     <section class="ui-page-header">
         <div>
@@ -30,7 +31,7 @@
             </div>
             <form method="POST" action="{{ route('admin.trading.marketplace.tick') }}" class="mt-4">
                 @csrf
-                <button class="ui-btn ui-btn-primary w-full justify-center"><i data-lucide="step-forward" class="h-4 w-4"></i> Run one tick now</button>
+                <button @disabled($environment->active_marketplace === 'live') class="ui-btn ui-btn-primary w-full justify-center"><i data-lucide="step-forward" class="h-4 w-4"></i> Run one tick now</button>
             </form>
         </div>
 
@@ -41,10 +42,10 @@
 
             <form method="POST" action="{{ route('admin.trading.marketplace.instruments.store') }}" class="mt-5 grid gap-3 sm:grid-cols-3">
                 @csrf
-                <div><label class="text-[9px] uppercase tracking-[.1em] text-muted-foreground">Symbol</label><input class="ui-input mt-2 w-full" name="symbol" value="{{ old('symbol') }}" placeholder="AAPL" required></div>
-                <div><label class="text-[9px] uppercase tracking-[.1em] text-muted-foreground">Label</label><input class="ui-input mt-2 w-full" name="label" value="{{ old('label') }}" placeholder="Apple Inc." required></div>
-                <div><label class="text-[9px] uppercase tracking-[.1em] text-muted-foreground">Starting price</label><input class="ui-input mt-2 w-full" type="number" step="0.000001" min="0.000001" name="current_price" value="{{ old('current_price') }}" placeholder="248.50" required></div>
-                <button class="ui-btn ui-btn-primary justify-center sm:col-span-3"><i data-lucide="plus" class="h-4 w-4"></i> Add instrument</button>
+                <div><label class="text-[9px] uppercase tracking-[.1em] text-muted-foreground">Symbol</label><input @disabled($environment->active_marketplace === 'live') class="ui-input mt-2 w-full" name="symbol" value="{{ old('symbol') }}" placeholder="AAPL" required></div>
+                <div><label class="text-[9px] uppercase tracking-[.1em] text-muted-foreground">Label</label><input @disabled($environment->active_marketplace === 'live') class="ui-input mt-2 w-full" name="label" value="{{ old('label') }}" placeholder="Apple Inc." required></div>
+                <div><label class="text-[9px] uppercase tracking-[.1em] text-muted-foreground">Starting price</label><input @disabled($environment->active_marketplace === 'live') class="ui-input mt-2 w-full" type="number" step="0.000001" min="0.000001" name="current_price" value="{{ old('current_price') }}" placeholder="248.50" required></div>
+                <button @disabled($environment->active_marketplace === 'live') class="ui-btn ui-btn-primary justify-center sm:col-span-3"><i data-lucide="plus" class="h-4 w-4"></i> Add instrument</button>
             </form>
         </div>
     </section>
@@ -74,10 +75,10 @@
                             <td class="px-4 py-3 text-[10px]">{{ (float)$instrument->individual_bias === 0.0 ? 'Neutral' : number_format((float)$instrument->individual_bias,2) }}</td>
                             <td class="px-4 py-3 text-[10px]">{{ $instrument->is_active ? 'Active' : 'Paused' }}</td>
                             <td class="px-4 py-3">
-                                <form method="POST" action="{{ route('admin.trading.marketplace.instruments.price',$instrument) }}" class="flex min-w-[170px] gap-2">@csrf @method('PATCH')<input class="ui-input !h-8 min-w-0" type="number" step="0.000001" min="0.000001" name="current_price" value="{{ $instrument->current_price }}"><button class="ui-btn ui-btn-secondary !h-8 !px-2">Set</button></form>
+                                <form method="POST" action="{{ route('admin.trading.marketplace.instruments.price',$instrument) }}" class="flex min-w-[170px] gap-2">@csrf @method('PATCH')<input @disabled($environment->active_marketplace === 'live') class="ui-input !h-8 min-w-0" type="number" step="0.000001" min="0.000001" name="current_price" value="{{ $instrument->current_price }}"><button @disabled($environment->active_marketplace === 'live') class="ui-btn ui-btn-secondary !h-8 !px-2">Set</button></form>
                             </td>
                             <td class="px-4 py-3 text-right">
-                                <form method="POST" action="{{ route('admin.trading.marketplace.instruments.toggle',$instrument) }}">@csrf @method('PATCH')<button class="ui-btn ui-btn-secondary !h-8 !px-3">{{ $instrument->is_active ? 'Pause' : 'Activate' }}</button></form>
+                                <form method="POST" action="{{ route('admin.trading.marketplace.instruments.toggle',$instrument) }}">@csrf @method('PATCH')<button @disabled($environment->active_marketplace === 'live') class="ui-btn ui-btn-secondary !h-8 !px-3">{{ $instrument->is_active ? 'Pause' : 'Activate' }}</button></form>
                             </td>
                         </tr>
                     @empty

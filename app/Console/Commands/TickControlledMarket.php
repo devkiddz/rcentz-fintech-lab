@@ -7,7 +7,7 @@ use Illuminate\Console\Command;
 
 class TickControlledMarket extends Command
 {
-    protected $signature = 'market:controlled-tick {--mode= : Optional up, down or range override for this tick only}';
+    protected $signature = 'market:controlled-tick {--mode= : Optional up, down, range or neutral override for this tick only}';
     protected $description = 'Advance every active Controlled Market instrument by one market tick.';
 
     public function handle(ControlledMarketEngine $engine): int

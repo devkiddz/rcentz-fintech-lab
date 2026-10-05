@@ -59,8 +59,9 @@ class MarketEnvironmentController extends Controller
 
     public function updateDrive(Request $request)
     {
+        abort_if(MarketEnvironment::current()->active_marketplace === 'live', 409, 'Select Market before changing movement settings.');
         $data = $request->validate([
-            'controlled_drive_mode' => 'required|in:up,down,range',
+            'controlled_drive_mode' => 'required|in:up,down,range,neutral',
             'controlled_drive_strength' => 'required|numeric|min:0.1|max:3',
             'controlled_tick_seconds' => 'required|integer|in:5,10,15,30,60,120,300',
         ]);
@@ -77,6 +78,7 @@ class MarketEnvironmentController extends Controller
 
     public function tick(ControlledMarketEngine $engine)
     {
+        abort_if(MarketEnvironment::current()->active_marketplace === 'live', 409, 'Select Market before using movement controls.');
         $result = $engine->tickAll();
 
         return back()->with('success', 'Market tick completed: '.$result['updated'].' updated, '.$result['failed'].' failed.');
@@ -84,6 +86,7 @@ class MarketEnvironmentController extends Controller
 
     public function storeInstrument(Request $request, ControlledMarketEngine $engine)
     {
+        abort_if(MarketEnvironment::current()->active_marketplace === 'live', 409, 'Select Market before using instrument controls.');
         $data = $request->validate([
             'symbol' => ['required','string','max:20','regex:/^[A-Za-z0-9.\-]+$/'],
             'label' => 'required|string|max:120',
@@ -153,6 +156,7 @@ class MarketEnvironmentController extends Controller
         ControlledMarketInstrument $instrument,
         ControlledMarketEngine $engine
     ) {
+        abort_if(MarketEnvironment::current()->active_marketplace === 'live', 409, 'Select Market before using instrument controls.');
         $data = $request->validate([
             'current_price' => 'required|numeric|min:0.000001',
         ]);
@@ -164,6 +168,7 @@ class MarketEnvironmentController extends Controller
 
     public function toggleInstrument(ControlledMarketInstrument $instrument)
     {
+        abort_if(MarketEnvironment::current()->active_marketplace === 'live', 409, 'Select Market before using instrument controls.');
         $instrument->update(['is_active' => ! $instrument->is_active]);
 
         return back()->with('success', $instrument->symbol.' is now '.($instrument->is_active ? 'active' : 'paused').'.');

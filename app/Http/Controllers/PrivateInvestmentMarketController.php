@@ -18,6 +18,17 @@ class PrivateInvestmentMarketController extends Controller
             ->where('is_visible', true)
             ->whereIn('status', ['active', 'paused']);
 
+        $categoryTitle = $request->routeIs('investments.commodities') ? 'Commodities' : null;
+        if ($request->routeIs('investments.commodities')) {
+            $query->where(function ($q) {
+                $q->whereIn('category', ['commodity','commodities'])
+                    ->orWhereHas('referenceAsset', function ($asset) {
+                        $asset->where('asset_type','commodity_hedge_reference')
+                            ->orWhereHas('marketInstrument', fn($market) => $market->where('asset_class','commodity'));
+                    });
+            });
+        }
+
         if ($request->filled('category')) {
             $query->where('category', $request->string('category'));
         }
@@ -73,6 +84,14 @@ class PrivateInvestmentMarketController extends Controller
             ->groupBy('category')
             ->pluck('instrument_count', 'category');
 
+        $categoryStats['commodities'] = (clone $marketQuery)->where(function ($q) {
+            $q->whereIn('category', ['commodity','commodities'])
+                ->orWhereHas('referenceAsset', function ($asset) {
+                    $asset->where('asset_type','commodity_hedge_reference')
+                        ->orWhereHas('marketInstrument', fn($market) => $market->where('asset_class','commodity'));
+                });
+        })->count();
+
         $overview = [
             'instruments' => (clone $marketQuery)->count(),
             'categories' => (clone $marketQuery)->distinct('category')->count('category'),
@@ -88,7 +107,8 @@ class PrivateInvestmentMarketController extends Controller
             'featured',
             'movers',
             'categoryStats',
-            'overview'
+            'overview',
+            'categoryTitle'
         ));
     }
 
@@ -105,6 +125,11 @@ class PrivateInvestmentMarketController extends Controller
     public function crypto(Request $request)
     {
         return $this->categoryListing($request, 'cryptocurrency', 'Cryptocurrency');
+    }
+
+    public function commodities(Request $request)
+    {
+        return $this->index($request);
     }
 
     public function realEstate(Request $request)
@@ -418,25 +443,8 @@ class PrivateInvestmentMarketController extends Controller
         PrivateInvestmentInstrument $instrument,
         PrivateInvestmentChartService $charts
     ) {
-        abort_unless($instrument->is_visible, 404);
-
-        $instrument->load([
-            'assets' => fn ($q) => $q->where('status', 'active')->orderByDesc('current_valuation'),
-            'events' => fn ($q) => $q->where('approval_state', 'approved')->latest('effective_at')->limit(12),
-        ]);
-
-        $analysis = $charts->forInstrument($instrument);
-
-        $viewerHolding = auth()->user()->isAdmin()
-            ? null
-            : \App\Models\PrivateInvestmentHolding::query()
-                ->where('user_id', auth()->id())
-                ->where('instrument_id', $instrument->id)
-                ->first();
-
-        $viewerWallet = auth()->user()->isAdmin() ? null : auth()->user()->wallet;
-
-        return view('private-investments.show', compact('instrument', 'analysis', 'viewerHolding', 'viewerWallet'));
+        // investment-valuation-snapshot-v1
+        return view('private-investments.show', app(\App\Services\InvestmentValuationSnapshot::class)->forPage((int)$instrument->id, auth()->user()));
     }
 
     public function search(Request $request)

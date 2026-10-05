@@ -21,6 +21,15 @@ class TradingBotService
 
     public function run(TradingBot $bot,bool $manual=false):TradingBotExecution
     {
+        if (config('paper_trading.enabled', false)) {
+            return app(\App\Services\PaperTrading\PaperBotService::class)->run($bot, $manual);
+        }
+        // Explicit position intent must never fall through to holdings-based execution.
+        if ($bot->paper_intent !== null) {
+            $instrument = $bot->marketInstrument ?? $bot->stock?->marketInstrument;
+            return $this->log($bot, null, null, 0, 0, 0, 'skipped',
+                'Position execution is not enabled yet.', $instrument);
+        }
         $bot->loadMissing([
             'user.kyc',
             'user.wallet',

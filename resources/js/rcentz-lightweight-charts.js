@@ -1,3 +1,4 @@
+﻿import {validPeriod,movingAverage,zoomRange,executionMarkers} from './chart-controls-math';
 import {
     createChart,
     CandlestickSeries,
@@ -302,244 +303,147 @@ const renderAnalysis = (el) => {
     let payload = parseAnalysis(el.dataset.analysis);
     const compact = el.dataset.compact === 'true';
     const wrapper = el.closest('section');
-    const timeframeButtons = wrapper ? wrapper.querySelectorAll('[data-rcentz-timeframe]') : [];
-    const modeButtons = wrapper ? wrapper.querySelectorAll('[data-rcentz-chart-mode]') : [];
-
-    let chart = null;
-    let activeFrame = el.dataset.defaultTimeframe || payload.default_timeframe || '1d';
-    let activeMode = localStorage.getItem('rcentz_stock_chart_mode') || 'line';
-
-    if (!['candles','line','area'].includes(activeMode)) {
-        activeMode = 'line';
-    }
-
-    const destroyChart = () => {
-        if (chart) {
-            chart.remove();
-            chart = null;
-        }
-        el.innerHTML = '';
+    const timeButtons = wrapper?.querySelectorAll('[data-rcentz-timeframe]') || [];
+    const modeButtons = wrapper?.querySelectorAll('[data-rcentz-chart-mode]') || [];
+    const precision = Math.max(0, Math.min(8, Number(el.dataset.pricePrecision || 2)));
+    const priceFormat = {type:'price',precision,minMove:Math.pow(10,-precision)};
+    const controls = wrapper?.querySelector('[data-chart-controls]');
+    let chart, primary, averages=[], volume, markers, levelLines=[];
+    let frame = payload.source==='twelve_data_shared' ? payload.default_timeframe : (el.dataset.defaultTimeframe || payload.default_timeframe || '1d');
+    let mode = localStorage.getItem('rcentz_stock_chart_mode') || 'candles';
+    if (!['line','area','candles'].includes(mode)) mode='candles';
+    const pointOnly = () => payload.point_series === true && payload.asset_class === 'commodity' && payload.marketplace === 'live';
+    if(pointOnly()) mode='line';
+    const checked = (name, fallback=true) => controls?.querySelector('[data-chart-toggle="'+name+'"]')?.checked ?? fallback;
+    const period = (index) => validPeriod(controls?.querySelector('[data-chart-period="'+index+'"]')?.value, [20,50,200][index]);
+    const capture = () => chart ? {logical:chart.timeScale().getVisibleLogicalRange(),
+        auto:chart.priceScale('right').options().autoScale,
+        price:chart.priceScale('right').getVisibleRange?.()} : null;
+    const restore = (view) => {
+        if (!view) return;
+        if (view.logical) chart.timeScale().setVisibleLogicalRange(view.logical);
+        chart.priceScale('right').applyOptions({autoScale:view.auto});
+        if (!view.auto && view.price) chart.priceScale('right').setVisibleRange?.(view.price);
     };
-
-    const setButtonStates = () => {
-        timeframeButtons.forEach((button) => {
-            const isActive = button.dataset.rcentzTimeframe === activeFrame;
-            button.classList.toggle('bg-muted', isActive);
-            button.classList.toggle('text-foreground', isActive);
-            button.classList.toggle('text-muted-foreground', !isActive);
-        });
-
-        modeButtons.forEach((button) => {
-            const isActive = button.dataset.rcentzChartMode === activeMode;
-            button.classList.toggle('bg-muted', isActive);
-            button.classList.toggle('text-foreground', isActive);
-            button.classList.toggle('text-muted-foreground', !isActive);
-        });
+    const build = () => {
+        if (chart) chart.remove();
+        el.innerHTML='';levelLines=[];
+        chart=createChart(el,{...chartOptions(compact),rightPriceScale:{borderColor:'rgba(148,163,184,.14)',scaleMargins:{top:.08,bottom:.24},autoScale:checked('auto')},
+            timeScale:{borderColor:'rgba(148,163,184,.14)',timeVisible:['5m','15m','1h','4h'].includes(frame),rightOffset:3,barSpacing:9,minBarSpacing:2}});
+        const type=mode==='candles'?CandlestickSeries:mode==='area'?AreaSeries:LineSeries;
+        primary=chart.addSeries(type,{priceFormat,lineWidth:2,color:'#0ea5e9',lineColor:'#0ea5e9',topColor:'rgba(14,165,233,.28)',bottomColor:'rgba(14,165,233,.02)',
+            upColor:'#10b981',downColor:'#ef4444',borderUpColor:'#10b981',borderDownColor:'#ef4444',wickUpColor:'#10b981',wickDownColor:'#ef4444'});
+        averages=['#38bdf8','#8b5cf6','#a855f7'].map(color=>chart.addSeries(LineSeries,{priceFormat,color,lineWidth:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false}));
+        volume=chart.addSeries(HistogramSeries,{priceFormat:{type:'volume'},priceScaleId:''});
+        volume.priceScale().applyOptions({scaleMargins:{top:.8,bottom:0}});
+        markers=createSeriesMarkers(primary,[]);
+        RCENTZ_CHARTS.set(el,chart);
     };
-
-    const renderFrame = (frame = activeFrame, mode = activeMode) => {
-        const rows = payload.timeframes?.[frame] || [];
-        if (rows.length < 2) return;
-
-        activeFrame = frame;
-        activeMode = mode;
-        localStorage.setItem('rcentz_stock_chart_mode', mode);
-
-        destroyChart();
-
-        chart = createChart(el, {
-            ...chartOptions(compact),
-            rightPriceScale: {
-                borderColor: 'rgba(148, 163, 184, 0.14)',
-                scaleMargins: { top: 0.08, bottom: 0.24 },
-                autoScale: true,
-            },
-            timeScale: {
-                borderColor: 'rgba(148, 163, 184, 0.14)',
-                timeVisible: ['5m','15m','1h','4h'].includes(frame),
-                secondsVisible: false,
-                rightOffset: compact ? 1 : 3,
-                barSpacing: compact ? 5 : 9,
-                minBarSpacing: 2,
+    const draw = (reset=false, rebuild=false) => {
+        if(pointOnly()) { if(mode==='candles'){mode='line';rebuild=true;} modeButtons.forEach(b=>{b.disabled=b.dataset.rcentzChartMode==='candles';b.title=b.disabled?'Provider supplies price points, not OHLC candles.':'';}); }
+        const rows=payload.timeframes?.[frame] || [];
+        if (rows.length<2) return;
+        const view=capture();
+        if (!chart || rebuild) build();
+        const currentAuto=rebuild ? checked('auto') : (view?.auto ?? checked('auto'));
+        primary.setData(rows.map(row=>mode==='candles'?{time:row.time,open:row.open,high:row.high,low:row.low,close:row.close}:{time:row.time,value:row.close}));
+        const legend=[];
+        averages.forEach((series,index)=>{
+            const enabled=checked('ma'+index);
+            const count=period(index);
+            const defaults=[20,50,200];
+            let points=movingAverage(rows,count);
+            // Server-provided default averages can include history preceding this chart window.
+            if (count===defaults[index]) {
+                const stored=rows.filter(row=>Number.isFinite(row['sma'+count])).map(row=>({time:row.time,value:row['sma'+count]}));
+                if (stored.length) points=stored;
             }
+            series.setData(points);series.applyOptions({visible:enabled});
+            if (enabled) legend.push('SMA '+count+(points.length?' '+points[points.length-1].value.toFixed(precision):' Â· needs more history'));
         });
-
-        let primarySeries;
-
-        if (mode === 'line') {
-            primarySeries = chart.addSeries(LineSeries, {
-                color: '#0ea5e9',
-                lineWidth: 2,
-                priceLineVisible: true,
-                lastValueVisible: true,
-                crosshairMarkerVisible: true,
-            });
-
-            primarySeries.setData(rows.map((row) => ({
-                time: row.time,
-                value: row.close,
-            })));
-        } else if (mode === 'area') {
-            primarySeries = chart.addSeries(AreaSeries, {
-                lineColor: '#0ea5e9',
-                topColor: 'rgba(14,165,233,.28)',
-                bottomColor: 'rgba(14,165,233,.02)',
-                lineWidth: 2,
-                priceLineVisible: true,
-                lastValueVisible: true,
-            });
-
-            primarySeries.setData(rows.map((row) => ({
-                time: row.time,
-                value: row.close,
-            })));
-        } else {
-            primarySeries = chart.addSeries(CandlestickSeries, {
-                upColor: '#10b981',
-                downColor: '#ef4444',
-                borderUpColor: '#10b981',
-                borderDownColor: '#ef4444',
-                wickUpColor: '#10b981',
-                wickDownColor: '#ef4444',
-                priceLineVisible: true,
-                lastValueVisible: true,
-            });
-
-            primarySeries.setData(rows.map((row) => ({
-                time: row.time,
-                open: row.open,
-                high: row.high,
-                low: row.low,
-                close: row.close,
-            })));
-        }
-
-        const addSma = (key, color, width = 2) => {
-            const points = rows
-                .filter((row) => Number.isFinite(row[key]))
-                .map((row) => ({ time: row.time, value: row[key] }));
-
-            if (!points.length) return;
-
-            const line = chart.addSeries(LineSeries, {
-                color,
-                lineWidth: width,
-                priceLineVisible: false,
-                lastValueVisible: false,
-                crosshairMarkerVisible: false,
-            });
-
-            line.setData(points);
+        volume.setData(rows.filter(row=>row.volume>0).map(row=>({time:row.time,value:row.volume,color:row.close>=row.open?'rgba(16,185,129,.38)':'rgba(239,68,68,.38)'})));
+        volume.applyOptions({visible:checked('volume')});
+        levelLines.forEach(line=>primary.removePriceLine(line));levelLines=[];
+        const line=(price,color,title)=>{
+            if (!Number.isFinite(Number(price)) || Number(price)<=0) return;
+            levelLines.push(primary.createPriceLine({price:Number(price),color,lineWidth:1,lineStyle:2,axisLabelVisible:true,title}));
         };
+        // Live marks and historical closes are distinct observations.
+        const isLive = payload.marketplace === 'live' || el.dataset.marketplace === 'live';
+        primary.applyOptions({lastValueVisible:!isLive,priceLineVisible:!isLive});
+        if(isLive) {
 
-        addSma('sma20', '#38bdf8', 2);
-        addSma('sma50', '#8b5cf6', 2);
-        addSma('sma200', '#a855f7', 1);
-
-        const volumeRows = rows.filter((row) => row.volume > 0);
-
-        if (volumeRows.length) {
-            const volume = chart.addSeries(HistogramSeries, {
-                priceFormat: { type: 'volume' },
-                priceScaleId: '',
-            });
-
-            volume.priceScale().applyOptions({
-                scaleMargins: { top: 0.80, bottom: 0 },
-            });
-
-            volume.setData(volumeRows.map((row) => ({
-                time: row.time,
-                value: row.volume,
-                color: row.close >= row.open
-                    ? 'rgba(16,185,129,.38)'
-                    : 'rgba(239,68,68,.38)',
-            })));
+            line(payload.current_price,'#06b6d4',payload.quote_status && payload.quote_status!=='fresh' ? 'Stale mark' : 'Live mark');
         }
-
-        const avgClose = rows.reduce((sum, row) => sum + row.close, 0) / rows.length;
-
-        const support = Number(payload.support || 0);
-        if (
-            Number.isFinite(support) &&
-            support > 0 &&
-            Math.abs(support - avgClose) / avgClose < 0.25
-        ) {
-            primarySeries.createPriceLine({
-                price: support,
-                color: '#ef4444',
-                lineWidth: 1,
-                lineStyle: 2,
-                axisLabelVisible: true,
-                title: 'Support',
-            });
+        // Shared live feed freshness: retain marks and show their real capture time.
+        if(payload.source==='twelve_data_shared') {
+            const live=payload.quote_status==='fresh';
+            primary.applyOptions({lastValueVisible:false,priceLineVisible:false});
+            if(!levelLines.length || !levelLines.some(l=>l.options().title==='Live mark'||l.options().title==='Stale mark'))
+                line(payload.current_price,live?'#06b6d4':'#f59e0b',live?'Live mark':'Stale mark');
+            legend.push((live?'Live feed':'Feed '+payload.quote_status)+' · '+payload.captured_at+' · '+payload.quote_age_seconds+'s old');
+            modeButtons.forEach(b=>{b.disabled=false;b.title='';});
         }
-
-        const resistance = Number(payload.resistance || 0);
-        if (
-            Number.isFinite(resistance) &&
-            resistance > 0 &&
-            Math.abs(resistance - avgClose) / avgClose < 0.25
-        ) {
-            primarySeries.createPriceLine({
-                price: resistance,
-                color: '#10b981',
-                lineWidth: 1,
-                lineStyle: 2,
-                axisLabelVisible: true,
-                title: 'Resistance',
-            });
-        }
-
-        chart.timeScale().fitContent();
-        RCENTZ_CHARTS.set(el, chart);
-        setButtonStates();
+        if(checked('levels')){line(payload.support,'#ef4444','Support');line(payload.resistance,'#10b981','Resistance');}
+        let trading={};try{trading=JSON.parse(el.closest('[data-trade-workstation]')?.dataset.tradeChartData||'{}');}catch(_){}
+        (trading.positions||[]).slice(0,50).forEach(position=>{
+            if(checked('positions'))line(position.entry,position.direction==='short'?'#f97316':'#3b82f6',(position.direction==='short'?'Short':'Long')+' #'+position.id);
+            if(checked('stop'))line(position.stop,'#ef4444','SL #'+position.id);
+            if(checked('target'))line(position.target,'#10b981','TP #'+position.id);
+        });
+        markers.setMarkers(checked('executions')?executionMarkers(rows,trading.executions||[]):[]);
+        const legendNode=wrapper?.querySelector('[data-chart-legend]');if(legendNode)legendNode.textContent=legend.join(' Â· ');
+        chart.timeScale().applyOptions({timeVisible:['5m','15m','1h','4h'].includes(frame)});
+        if(reset || !view){chart.priceScale('right').applyOptions({autoScale:true});chart.timeScale().fitContent();}
+        else {restore(view);chart.priceScale('right').applyOptions({autoScale:currentAuto});if(checked('follow',false))chart.timeScale().scrollToRealTime();}
+        const auto=controls?.querySelector('[data-chart-toggle="auto"]');if(auto)auto.checked=chart.priceScale('right').options().autoScale;
+        timeButtons.forEach(button=>{
+            button.disabled=(payload.timeframes?.[button.dataset.rcentzTimeframe]?.length||0)<2;
+            button.classList.toggle('opacity-35',button.disabled);
+            button.classList.toggle('bg-muted',button.dataset.rcentzTimeframe===frame);
+            button.setAttribute('aria-pressed',String(button.dataset.rcentzTimeframe===frame));
+        });
+        modeButtons.forEach(button=>{button.classList.toggle('bg-muted',button.dataset.rcentzChartMode===mode);button.setAttribute('aria-pressed',String(button.dataset.rcentzChartMode===mode));});
     };
-
-    const preferred = payload.timeframes?.[activeFrame]?.length >= 2
-        ? activeFrame
-        : ['1d','15m','5m','1h','4h','1w','1m','3m','1y']
-            .find((key) => (payload.timeframes?.[key]?.length || 0) >= 2);
-
-    if (preferred) {
-        activeFrame = preferred;
-        renderFrame(activeFrame, activeMode);
-    }
-
-    timeframeButtons.forEach((button) => {
-        if (button.disabled) return;
-
-        button.addEventListener('click', () => {
-            renderFrame(button.dataset.rcentzTimeframe, activeMode);
-        });
+    const selectFrame=()=>payload.timeframes?.[frame]?.length>=2?frame:['1d','15m','5m','1h','4h','1w','1m','3m','1y'].find(key=>(payload.timeframes?.[key]?.length||0)>=2);
+    frame=selectFrame()||frame;draw(true);
+    timeButtons.forEach(button=>button.addEventListener('click',()=>{if(!button.disabled){frame=button.dataset.rcentzTimeframe;draw(true);}}));
+    modeButtons.forEach(button=>button.addEventListener('click',()=>{mode=button.dataset.rcentzChartMode;localStorage.setItem('rcentz_stock_chart_mode',mode);draw(false,true);}));
+    controls?.addEventListener('change',event=>{
+        const input=event.target;
+        if(input.matches('[data-chart-period]'))input.value=period(Number(input.dataset.chartPeriod));
+        if(input.dataset.chartToggle==='auto')chart?.priceScale('right').applyOptions({autoScale:input.checked});
+        draw();
     });
-
-    modeButtons.forEach((button) => {
-        button.addEventListener('click', () => {
-            renderFrame(activeFrame, button.dataset.rcentzChartMode);
-        });
-    });
-
-    // V5.14.3: refresh the existing chart instance in place. Button listeners are
-    // installed once, so automatic market polling does not accumulate handlers.
-    el.__rcentzRefreshAnalysis = (nextPayload) => {
-        payload = parseAnalysis(JSON.stringify(nextPayload || {}));
-        el.dataset.analysis = JSON.stringify(nextPayload || {});
-
-        const nextPreferred = payload.timeframes?.[activeFrame]?.length >= 2
-            ? activeFrame
-            : ['1d','15m','5m','1h','4h','1w','1m','3m','1y']
-                .find((key) => (payload.timeframes?.[key]?.length || 0) >= 2);
-
-        if (!nextPreferred) return;
-
-        activeFrame = nextPreferred;
-        renderFrame(activeFrame, activeMode);
+    wrapper?.querySelectorAll('[data-chart-action]').forEach(button=>button.addEventListener('click',async()=>{
+        if(!chart)return;
+        const action=button.dataset.chartAction;
+        if(action==='reset'){draw(true);return;}
+        if(action==='in'||action==='out'){
+            const range=chart.timeScale().getVisibleLogicalRange();if(range)chart.timeScale().setVisibleLogicalRange(zoomRange(range,action==='in' ? 0.8 : 1.25));return;
+        }
+        if(action==='fullscreen'){
+            const note=controls?.querySelector('[data-chart-note]');
+            try{if(document.fullscreenElement===wrapper)await document.exitFullscreen();else await wrapper.requestFullscreen();}
+            catch(_){if(note)note.textContent='Fullscreen is unavailable in this browser.';}
+        }
+    }));
+    el.__rcentzRefreshAnalysis=next=>{
+        payload=parseAnalysis(JSON.stringify(next||{}));el.dataset.analysis=JSON.stringify(next||{});
+        const preferred=selectFrame();if(!preferred)return;const changed=preferred!==frame;frame=preferred;draw(changed);
     };
 };
 
 
 window.RcentzCharts = {
+    mount(root = document) {
+        for (const [node, chart] of RCENTZ_CHARTS) {
+            if (!node.isConnected) { chart.remove(); RCENTZ_CHARTS.delete(node); }
+        }
+        for (const [selector, render] of [['[data-rcentz-candles]', renderCandles], ['[data-rcentz-sparkline]', renderSparkline], ['[data-rcentz-analysis]', renderAnalysis]]) {
+            root.querySelectorAll(selector).forEach(node => { if (!RCENTZ_CHARTS.has(node)) render(node); });
+        }
+    },
     refreshAnalysis(el, payload) {
         if (el && typeof el.__rcentzRefreshAnalysis === 'function') {
             el.__rcentzRefreshAnalysis(payload);

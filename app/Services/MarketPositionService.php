@@ -200,6 +200,10 @@ final class MarketPositionService
             ->where('market_instrument_id', $execution->market_instrument_id)
             ->where('marketplace', $execution->marketplace ?: 'live')
             ->whereNull('stock_id')
+            ->where(function ($query) {
+                $query->whereNull('metadata->execution_model')
+                    ->orWhere('metadata->execution_model', '!=', 'paper_v1');
+            })
             ->whereIn('status', ['open', 'exit_queued'])
             ->where('open_quantity', '>', 0)
             ->orderBy('opened_at')
@@ -313,6 +317,10 @@ final class MarketPositionService
         TradePosition::query()
             ->with($with)
             ->whereNull('stock_id')
+            ->where(function ($query) {
+                $query->whereNull('metadata->execution_model')
+                    ->orWhere('metadata->execution_model', '!=', 'paper_v1');
+            })
             ->whereHas('marketInstrument', fn ($q) => $q->where('asset_class', $assetClass))
             ->whereIn('status', ['open', 'exit_queued'])
             ->where('open_quantity', '>', 0)

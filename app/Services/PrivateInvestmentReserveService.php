@@ -356,6 +356,8 @@ final class PrivateInvestmentReserveService
         PrivateInvestmentInstrument $instrument,
         bool $rebuildHistory = false
     ): PrivateInvestmentInstrument {
+        // Explicit basket investment binding: daily legacy sync cannot overwrite its source.
+        if (app(InvestmentBasketPricer::class)->bound((int)$instrument->id)) return app(InvestmentBasketPricer::class)->sync($instrument);
         $instrument = PrivateInvestmentInstrument::query()
             ->findOrFail($instrument->id);
 
@@ -511,6 +513,7 @@ final class PrivateInvestmentReserveService
     public function rebuildSingleBaseAssetHistory(
         PrivateInvestmentInstrument $instrument
     ): int {
+        if (app(InvestmentBasketPricer::class)->bound((int)$instrument->id)) return 0;
         $instrument = PrivateInvestmentInstrument::query()
             ->findOrFail($instrument->id);
 

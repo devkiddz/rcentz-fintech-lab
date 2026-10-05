@@ -85,6 +85,8 @@ final class MarketPriceRouter
         $marketplace = $this->normalizeMarketplace($marketplace ?: $this->activeMarketplace());
         $instrument = $this->instrument($asset);
 
+        $shared = app(SharedLiveFeed::class);
+        if ($marketplace === 'live' && $shared->applies($instrument)) return $shared->mark($instrument);
         return $marketplace === 'controlled'
             ? $this->controlled->price($instrument)
             : $this->live->price($instrument);

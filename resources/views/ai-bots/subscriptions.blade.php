@@ -1,5 +1,7 @@
 <x-user-layout>
 <x-slot name="header">Bot Subscriptions</x-slot>
+<div data-account-async-feedback role="status" aria-live="polite" hidden class="mx-4 my-3 rounded-xl border border-border p-3 text-sm"></div>
+<div data-account-async="ai-bots/subscriptions">
 <div class="ui-page max-w-[1440px]">
 <section class="ui-page-header">
     <div>
@@ -70,7 +72,7 @@
             </p>
 
             @if(!in_array($s->status,['cancelled','expired']))
-                <form method="POST" action="{{ route('ai-bots.cancel',$s) }}">
+                <form data-account-action method="POST" action="{{ route('ai-bots.cancel',$s) }}">
                     @csrf @method('DELETE')
                     <button class="ui-btn ui-btn-secondary !h-8 !px-3 !text-[11px]">Cancel</button>
                 </form>
@@ -83,5 +85,6 @@
 </div>
 
 <div class="mt-4">{{ $subscriptions->links() }}</div>
+</div>
 </div>
 </x-user-layout>

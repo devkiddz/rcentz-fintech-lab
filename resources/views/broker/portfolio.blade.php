@@ -1,5 +1,7 @@
 <x-user-layout>
 <x-slot name="header">Trading Portfolio</x-slot>
+<div data-account-async-feedback role="status" aria-live="polite" hidden class="mx-4 my-3 rounded-xl border border-border p-3 text-sm"></div>
+<div data-account-async="broker/portfolio">
 <div class="ui-page max-w-[1500px]">
     <section class="ui-page-header">
         <div>
@@ -21,11 +23,11 @@
 
     <section class="grid grid-cols-2 gap-3 lg:grid-cols-5">
         @foreach([
-            ['Holdings',$summary['holdings']],
-            ['Open positions',$summary['open_positions']],
-            ['Capital deployed',$walletCurrency.' '.number_format($summary['total_invested'],2)],
-            ['Mark value',$walletCurrency.' '.number_format($summary['mark_value'],2)],
-            ['P/L',($summary['profit_loss'] >= 0 ? '+' : '').$walletCurrency.' '.number_format($summary['profit_loss'],2).' · '.($summary['return_percent'] >= 0 ? '+' : '').number_format($summary['return_percent'],2).'%'],
+            ['Trading equity',$account['equity']!==null ? $walletCurrency.' '.number_format($account['equity'],2) : 'Unavailable'],
+            ['Balance',$walletCurrency.' '.number_format($account['balance'],2)],
+            ['Available funds',$walletCurrency.' '.number_format($account['available'],2)],
+            ['Reserved funds',$walletCurrency.' '.number_format($account['reserved'],2)],
+            ['Open position P/L',$account['unrealized_profit_loss']!==null ? ($account['unrealized_profit_loss']>=0?'+':'').$walletCurrency.' '.number_format($account['unrealized_profit_loss'],2) : 'Unavailable'],
         ] as [$label,$value])
             <div class="ui-panel p-4">
                 <p class="text-[10px] font-semibold uppercase tracking-[.11em] text-muted-foreground">{{ $label }}</p>
@@ -34,10 +36,16 @@
         @endforeach
     </section>
 
+    <p class="mt-3 text-[11px] leading-5 text-muted-foreground">Account totals include both marketplaces. Trading equity includes cash, open position P/L and existing liquid holdings. Reserved funds are already included in balance. Marks are indicative and may be stale.</p>
+    @unless($account['valuation_complete'])<p class="mt-2 text-xs text-amber-600">A market mark or currency conversion is unavailable. Equity and open P/L will appear when valuation is available.</p>@endunless
+    @if(config('paper_trading.enabled'))
+    <details class="mt-3 text-[11px] text-muted-foreground"><summary class="cursor-pointer">Account details</summary><p class="mt-2 leading-5">This is a simulated trading account using synthetic funds. Trades do not transfer real assets or place orders with an external broker.</p></details>
+    @endif
+
     <section class="ui-panel mt-5 overflow-hidden">
         <div class="border-b border-border/70 px-5 py-4">
             <p class="ui-kicker">Holdings</p>
-            <h2 class="mt-1 text-[15px] font-semibold">Owned liquid exposure</h2>
+            <h2 class="mt-1 text-[15px] font-semibold">Existing asset holdings</h2>
         </div>
         <div class="divide-y divide-border/70">
             @forelse($holdings as $item)
@@ -64,15 +72,35 @@
         </div>
     </section>
 
-    <div class="mt-5 grid gap-5 xl:grid-cols-2">
-        <section class="ui-panel overflow-hidden">
-            <div class="border-b border-border/70 px-5 py-4"><p class="ui-kicker">Positions</p><h2 class="mt-1 text-[15px] font-semibold">Open contracts</h2></div>
+    <div class="mt-5 space-y-4" data-portfolio-tabs x-data="{tab: 'positions'}"
+     x-init="try { const saved = sessionStorage.getItem('broker-portfolio-tab'); if (['positions','activity'].includes(saved)) tab = saved; } catch (_) {} $watch('tab', value => { try { sessionStorage.setItem('broker-portfolio-tab', value); } catch (_) {} });">
+    <div role="tablist" aria-label="Portfolio records" class="flex gap-2 overflow-x-auto rounded-xl border border-border bg-muted/20 p-2">
+        <button id="portfolio-positions-tab" type="button" role="tab" aria-controls="portfolio-positions-panel"
+                :aria-selected="tab === 'positions'" :tabindex="tab === 'positions' ? 0 : -1"
+                class="ui-btn whitespace-nowrap" :class="tab === 'positions' ? 'ui-btn-primary' : 'ui-btn-secondary'"
+                @click="tab = 'positions'" @keydown.arrow-right.prevent="tab = 'activity'; $el.nextElementSibling.focus()"
+                @keydown.arrow-left.prevent="tab = 'activity'; $el.nextElementSibling.focus()">Positions</button>
+        <button id="portfolio-activity-tab" type="button" role="tab" aria-controls="portfolio-activity-panel"
+                :aria-selected="tab === 'activity'" :tabindex="tab === 'activity' ? 0 : -1"
+                class="ui-btn whitespace-nowrap" :class="tab === 'activity' ? 'ui-btn-primary' : 'ui-btn-secondary'"
+                @click="tab = 'activity'" @keydown.arrow-right.prevent="tab = 'positions'; $el.previousElementSibling.focus()"
+                @keydown.arrow-left.prevent="tab = 'positions'; $el.previousElementSibling.focus()">Execution Activity</button>
+    </div>
+        <section id="portfolio-positions-panel" role="tabpanel" aria-labelledby="portfolio-positions-tab" tabindex="0" x-show="tab === 'positions'" class="ui-panel overflow-hidden"><div class="border-b border-border/70 px-5 py-4"><p class="ui-kicker">Positions</p><h2 class="mt-1 text-[15px] font-semibold">Open contracts</h2></div>
             <div class="divide-y divide-border/70">
                 @forelse($positions->take(6) as $position)
                     @php $instrument=$position->marketInstrument ?? $position->stock?->marketInstrument; @endphp
                     <div class="flex items-center justify-between gap-4 px-5 py-4">
-                        <div><p class="text-xs font-semibold">{{ $instrument?->display_symbol ?? $position->stock?->symbol ?? 'Instrument' }}</p><p class="mt-1 text-[10px] text-muted-foreground">{{ strtoupper($instrument?->asset_class ?? 'stock') }} · {{ number_format((float)$position->open_quantity,8) }} open units</p></div>
-                        <a class="ui-btn ui-btn-secondary" href="{{ route('broker.positions') }}">Manage</a>
+                        <div><p class="text-xs font-semibold">{{ \App\Services\BasketDisplay::recordSymbol($instrument, $position->marketplace, $position->created_at) }}</p><p class="mt-1 text-[10px] text-muted-foreground">{{ ucfirst($position->direction ?: 'long') }} · {{ strtoupper($position->marketplace) }} · {{ strtoupper($instrument?->asset_class ?? 'stock') }} · {{ number_format((float)$position->open_quantity,8) }} open units</p></div>
+                        <div class="flex flex-wrap justify-end gap-2" data-portfolio-instrument-link>
+    @if($instrument && in_array($instrument->asset_class, ['stock','forex','crypto','commodity'], true))
+        <a class="ui-btn ui-btn-secondary"
+           href="{{ route('broker.workstation', ['assetClass'=>$instrument->asset_class, 'symbol'=>$instrument->symbol]) }}">
+            View instrument
+        </a>
+    @endif
+    <a class="ui-btn ui-btn-secondary" href="{{ route('broker.positions') }}">Manage</a>
+</div>
                     </div>
                 @empty
                     <div class="px-5 py-8 text-center text-xs text-muted-foreground">No open positions.</div>
@@ -80,12 +108,11 @@
             </div>
         </section>
 
-        <section class="ui-panel overflow-hidden">
-            <div class="border-b border-border/70 px-5 py-4"><p class="ui-kicker">Execution Activity</p><h2 class="mt-1 text-[15px] font-semibold">Recent fills</h2></div>
+        <section id="portfolio-activity-panel" role="tabpanel" aria-labelledby="portfolio-activity-tab" tabindex="0" x-show="tab === 'activity'" class="ui-panel overflow-hidden"><div class="border-b border-border/70 px-5 py-4"><p class="ui-kicker">Execution Activity</p><h2 class="mt-1 text-[15px] font-semibold">Recent fills</h2></div>
             <div class="divide-y divide-border/70">
                 @forelse($recentExecutions as $execution)
                     <div class="flex items-center justify-between gap-4 px-5 py-4">
-                        <div><p class="text-xs font-semibold">{{ $execution->marketInstrument?->display_symbol }} · {{ strtoupper($execution->side) }}</p><p class="mt-1 text-[10px] text-muted-foreground">{{ number_format((float)$execution->quantity,8) }} @ {{ number_format((float)$execution->price,8) }}</p></div>
+                        <div><p class="text-xs font-semibold">{{ \App\Services\BasketDisplay::recordSymbol($execution->marketInstrument, $execution->marketplace, $execution->created_at) }} · {{ strtoupper($execution->side) }}</p><p class="mt-1 text-[10px] text-muted-foreground">{{ number_format((float)$execution->quantity,8) }} @ {{ number_format((float)$execution->price,8) }}</p></div>
                         <div class="text-right"><p class="text-xs font-semibold">{{ $execution->settlement_currency }} {{ number_format((float)($execution->settlement_amount ?? $execution->gross_value),2) }}</p><p class="mt-1 text-[9px] text-muted-foreground">{{ $execution->executed_at?->format('M j · H:i') }}</p></div>
                     </div>
                 @empty
@@ -94,5 +121,6 @@
             </div>
         </section>
     </div>
+</div>
 </div>
 </x-user-layout>

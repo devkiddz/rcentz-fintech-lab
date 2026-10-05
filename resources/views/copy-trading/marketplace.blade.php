@@ -1,5 +1,7 @@
 <x-user-layout>
 <x-slot name="header">{{ localize('ui.r2d.common.copy_trading', 'Copy Trading') }}</x-slot>
+<div data-account-async-feedback role="status" aria-live="polite" hidden class="mx-4 my-3 rounded-xl border border-border p-3 text-sm"></div>
+<div data-account-async="copy-trading/marketplace">
 <div class="ui-page max-w-[1440px]">
 <section class="ui-page-header">
     <div>
@@ -70,7 +72,7 @@
             @endforeach
         </div>
 
-        <form action="{{ route('copy-trading.follow',$strategy) }}" method="POST" class="mt-5 space-y-3 border-t border-border pt-5">
+        <form data-account-action action="{{ route('copy-trading.follow',$strategy) }}" method="POST" class="mt-5 space-y-3 border-t border-border pt-5">
             @csrf
             <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                 <div>
@@ -103,6 +105,7 @@
 @empty
 <div class="ui-panel p-8 text-center text-sm text-muted-foreground lg:col-span-2">{{ localize('ui.r2d.copy.no_strategies', 'No approved strategies available.') }}</div>
 @endforelse
+</div>
 </div>
 </div>
 </x-user-layout>

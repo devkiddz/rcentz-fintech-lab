@@ -100,6 +100,12 @@ final class CommodityAlphaVantageService
             ->all();
     }
 
+    public function metalExecutionPayload(string $symbol): array
+    {
+        if (!$this->isAvailable()) { throw new RuntimeException('Live metal provider is not configured.'); }
+        return $this->request(['function'=>'GOLD_SILVER_SPOT', 'symbol'=>strtoupper($symbol), 'apikey'=>$this->apiKey]);
+    }
+
     private function request(array $query): array
     {
         try {

@@ -1,5 +1,7 @@
 <x-user-layout>
 <x-slot name="header">Bot Execution</x-slot>
+<div data-account-async-feedback role="status" aria-live="polite" hidden class="mx-4 my-3 rounded-xl border border-border p-3 text-sm"></div>
+<div data-account-async="ai-bots/execution-show">
 <div class="ui-page max-w-5xl">
 <section class="ui-page-header">
     <div>
@@ -80,4 +82,5 @@
 
 
 @include('ai-bots.partials.lightweight-charts')
+</div>
 </x-user-layout>

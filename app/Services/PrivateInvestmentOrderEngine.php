@@ -62,6 +62,8 @@ class PrivateInvestmentOrderEngine
                 throw ValidationException::withMessages(['amount' => 'This investment is not currently accepting subscriptions.']);
             }
 
+            // Refresh bound NAV before settlement; idempotency replay returns before this point.
+            if(app(InvestmentBasketPricer::class)->bound((int)$instrument->id)) $instrument=app(InvestmentBasketPricer::class)->sync($instrument);
             $price = (float) $instrument->current_price;
             if ($price <= 0) {
                 throw ValidationException::withMessages(['amount' => 'The authoritative investment price is invalid.']);
@@ -258,6 +260,8 @@ class PrivateInvestmentOrderEngine
                 throw ValidationException::withMessages(['units' => 'Redemption units exceed the active holding.']);
             }
 
+            // Refresh bound NAV before settlement; idempotency replay returns before this point.
+            if(app(InvestmentBasketPricer::class)->bound((int)$instrument->id)) $instrument=app(InvestmentBasketPricer::class)->sync($instrument);
             $price = (float) $instrument->current_price;
             if ($price <= 0) {
                 throw ValidationException::withMessages(['units' => 'The authoritative investment price is invalid.']);

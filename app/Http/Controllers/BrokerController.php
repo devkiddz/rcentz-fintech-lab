@@ -31,6 +31,24 @@ final class BrokerController extends Controller
         MarketExecutionRouter $execution
     ) {
         $instrument = $this->resolveInstrument($assetClass, $symbol);
+        if (request()->query('entry_estimate') === '1') {
+            $input = request()->validate([
+                'side'=>'required|in:buy,sell', 'quantity'=>'required|numeric|gt:0|max:1000000000000',
+                'quantity_mode'=>'required|in:units,lots,settlement_amount',
+            ]);
+            try {
+                $estimate = app(\App\Services\PaperTrading\PaperBrokerService::class)->estimate(
+                    Auth::user(), $instrument, $input['side'], (float)$input['quantity'], $input['quantity_mode']);
+                return response()->json(['success'=>true,'estimate'=>$estimate])->header('Cache-Control','private, no-store');
+            } catch (\RuntimeException|\InvalidArgumentException $error) {
+                if ($error instanceof \Illuminate\Database\QueryException) { throw $error; }
+                return response()->json(['success'=>false,'message'=>$error->getMessage()],422)->header('Cache-Control','private, no-store');
+            }
+        }
+        $instrumentOptions = MarketInstrument::query()->where('is_active', true)
+            ->where('asset_class', $instrument->asset_class)
+            ->orderBy('display_symbol')
+            ->get(['id','asset_class','symbol','display_symbol','name']);
         $instrument->load([
             'stock',
             'forexPair',
@@ -45,6 +63,14 @@ final class BrokerController extends Controller
         $analysis = $this->safeAnalysis($instrument, $analysisService, $prices, $marketplace);
         $capabilities = $execution->capabilities($instrument);
         $executionReady = $execution->canExecute($instrument);
+        if (config('paper_trading.enabled')) {
+            try {
+                $quotes = app(\App\Services\PaperTrading\PaperQuoteService::class);
+                $quotes->execution($instrument, 'buy', $marketplace);
+                $quotes->execution($instrument, 'sell', $marketplace);
+                $executionReady = true;
+            } catch (\Throwable) { $executionReady = false; }
+        }
         $wallet = $user->wallet;
 
         $holding = $instrument->isStock()
@@ -59,7 +85,7 @@ final class BrokerController extends Controller
                 ->where('marketplace', $marketplace)
                 ->first();
 
-        $positions = TradePosition::query()
+        $positions = TradePosition::query()->with('entryMarketExecutionTransaction')
             ->where('user_id', $user->id)
             ->where('market_instrument_id', $instrument->id)
             ->where('marketplace', $marketplace)
@@ -67,6 +93,11 @@ final class BrokerController extends Controller
             ->where('open_quantity', '>', 0)
             ->latest('opened_at')
             ->get();
+
+        foreach ($positions as $position) {
+            $position->setAttribute('runtime_valuation', app(\App\Services\PaperTrading\PositionPresentationService::class)->describe($position));
+            $position->setAttribute('runtime_mark_price', $position->runtime_valuation['cmp']);
+        }
 
         $recentOrders = BrokerOrder::query()
             ->where('user_id', $user->id)
@@ -79,6 +110,7 @@ final class BrokerController extends Controller
             MarketInstrument::ASSET_STOCK => ['units' => 'Shares'],
             MarketInstrument::ASSET_FOREX => ['units' => 'Base units', 'lots' => 'Standard lots'],
             MarketInstrument::ASSET_CRYPTO => ['units' => 'Asset units', 'settlement_amount' => 'Account amount'],
+            MarketInstrument::ASSET_COMMODITY => ['units' => 'Troy ounces'],
             default => [],
         };
 
@@ -93,6 +125,7 @@ final class BrokerController extends Controller
 
         return view('broker.workstation', compact(
             'instrument',
+            'instrumentOptions',
             'analysis',
             'marketplace',
             'capabilities',
@@ -121,20 +154,24 @@ final class BrokerController extends Controller
             'quantity' => 'required|numeric|min:0.00000001|max:1000000000000',
             'quantity_mode' => 'required|in:units,lots,settlement_amount',
             'idempotency_key' => 'required|string|max:120',
-            'stop_loss_percent' => 'nullable|numeric|min:0.01|max:100',
-            'take_profit_percent' => 'nullable|numeric|min:0.01|max:100',
+            'stop_loss_price' => 'nullable|numeric|min:0.00000001|max:1000000000000',
+            'take_profit_price' => 'nullable|numeric|min:0.00000001|max:1000000000000',
+            'stop_loss_percent' => 'nullable|numeric|min:0.01|max:99.99',
+            'take_profit_percent' => 'nullable|numeric|min:0.01|max:99.99',
             'duration_minutes' => 'nullable|integer|min:1|max:43200',
             'copy_strategy_id' => 'nullable|integer|exists:copy_strategies,id',
         ]);
 
+        if (!config('paper_trading.enabled') && (isset($data['stop_loss_price']) || isset($data['take_profit_price']))) {
+            return $this->tradeFailure($request, 'order', 'Exact risk prices require the new position engine.');
+        }
+
         $strategy = $this->resolveCopyStrategy($user, isset($data['copy_strategy_id']) ? (int) $data['copy_strategy_id'] : null);
         $marketplace = app(MarketPriceRouter::class)->activeMarketplace();
 
-        if ($strategy && $data['side'] === 'sell') {
+        if (!config('paper_trading.enabled') && $strategy && $data['side'] === 'sell') {
             if ($data['quantity_mode'] !== 'units') {
-                return back()->withErrors([
-                    'order' => 'Copy-strategy exits use asset/base units so the sale cannot exceed strategy-attributed exposure.',
-                ])->withInput($request->except('idempotency_key'));
+                return $this->tradeFailure($request, 'order', 'Copy-strategy exits use asset/base units so the sale cannot exceed strategy-attributed exposure.');
             }
 
             $available = (float) TradePosition::query()
@@ -148,14 +185,14 @@ final class BrokerController extends Controller
                 ->sum('open_quantity');
 
             if ((float) $data['quantity'] > $available + 0.00000001) {
-                return back()->withErrors([
-                    'order' => 'Copy-strategy sell quantity exceeds the strategy-attributed open exposure.',
-                ])->withInput($request->except('idempotency_key'));
+                return $this->tradeFailure($request, 'order', 'Copy-strategy sell quantity exceeds the strategy-attributed open exposure.');
             }
         }
 
-        $risk = $data['side'] === 'buy'
+        $risk = (config('paper_trading.enabled') || $data['side'] === 'buy')
             ? array_filter([
+                'stop_loss_price' => $data['stop_loss_price'] ?? null,
+                'take_profit_price' => $data['take_profit_price'] ?? null,
                 'stop_loss_percent' => $data['stop_loss_percent'] ?? null,
                 'take_profit_percent' => $data['take_profit_percent'] ?? null,
                 'duration_minutes' => $data['duration_minutes'] ?? null,
@@ -197,9 +234,7 @@ final class BrokerController extends Controller
                 throw new RuntimeException($order->failure_message ?: 'The order failed closed. Submit a new order to retry.');
             }
         } catch (\Throwable $e) {
-            return back()
-                ->withErrors(['order' => $e->getMessage() ?: 'The order could not be executed. No partial customer action was accepted.'])
-                ->withInput($request->except('idempotency_key'));
+            return $this->tradeFailure($request, 'order', $this->publicFailure($e));
         }
 
         if ($strategy && $order->status === BrokerOrder::STATUS_FILLED) {
@@ -217,9 +252,12 @@ final class BrokerController extends Controller
             }
         }
 
+        if ($request->expectsJson()) { return $this->tradeResult($order, strtoupper($order->side).' order '.strtolower($order->status).'.'); }
+
         return redirect()
-            ->route('broker.orders.show', ['publicId' => $order->public_id])
-            ->with('success', 'Order '.$order->public_id.' completed with status '.strtoupper($order->status).'.');
+            ->route('broker.workstation', ['assetClass' => $instrument->asset_class, 'symbol' => $instrument->symbol])
+            ->with('success', strtoupper($order->side).' order '.strtolower($order->status).'.')
+            ->with('last_trade_order', $order->public_id);
     }
 
     public function portfolio(BrokerPortfolioService $portfolio)
@@ -230,7 +268,7 @@ final class BrokerController extends Controller
     public function orders()
     {
         $orders = BrokerOrder::query()
-            ->with(['marketInstrument', 'execution'])
+            ->with(['marketInstrument', 'execution.tradePosition'])
             ->where('user_id', Auth::id())
             ->latest('id')
             ->paginate(30);
@@ -278,16 +316,9 @@ final class BrokerController extends Controller
             ->paginate(25);
 
         foreach ($positions->getCollection() as $position) {
-            $instrument = $position->marketInstrument ?? $position->stock?->marketInstrument;
-            $mark = null;
-            if ($instrument && $position->is_open) {
-                try {
-                    $mark = (float) $prices->price($instrument, $position->marketplace ?: $marketplace);
-                } catch (\Throwable) {
-                    $mark = null;
-                }
-            }
-            $position->setAttribute('runtime_mark_price', $mark);
+            $row = app(\App\Services\PaperTrading\PositionPresentationService::class)->describe($position);
+            $position->setAttribute('runtime_valuation', $row);
+            $position->setAttribute('runtime_mark_price', $row['cmp']);
         }
 
         return view('broker.positions', compact('positions', 'marketplace'));
@@ -301,8 +332,10 @@ final class BrokerController extends Controller
         abort_unless((int) $position->user_id === (int) Auth::id(), 403);
 
         $data = $request->validate([
-            'stop_loss_percent' => 'nullable|numeric|min:0.01|max:100',
-            'take_profit_percent' => 'nullable|numeric|min:0.01|max:100',
+            'stop_loss_price' => 'nullable|numeric|min:0.00000001|max:1000000000000',
+            'take_profit_price' => 'nullable|numeric|min:0.00000001|max:1000000000000',
+            'stop_loss_percent' => 'nullable|numeric|min:0.01|max:99.99',
+            'take_profit_percent' => 'nullable|numeric|min:0.01|max:99.99',
             'duration_minutes' => 'nullable|integer|min:1|max:43200',
         ]);
 
@@ -312,11 +345,15 @@ final class BrokerController extends Controller
                 $position,
                 isset($data['stop_loss_percent']) ? (float) $data['stop_loss_percent'] : null,
                 isset($data['take_profit_percent']) ? (float) $data['take_profit_percent'] : null,
-                isset($data['duration_minutes']) ? (int) $data['duration_minutes'] : null
+                isset($data['duration_minutes']) ? (int) $data['duration_minutes'] : null,
+                isset($data['stop_loss_price']) ? (float)$data['stop_loss_price'] : null,
+                isset($data['take_profit_price']) ? (float)$data['take_profit_price'] : null
             );
         } catch (\Throwable $e) {
-            return back()->withErrors(['position' => $e->getMessage()]);
+            return $this->tradeFailure($request, 'position', $this->publicFailure($e));
         }
+
+        if ($request->expectsJson()) { return response()->json(['success'=>true,'message'=>'Position risk controls updated.']); }
 
         return back()->with('success', 'Position risk controls updated.');
     }
@@ -362,7 +399,7 @@ final class BrokerController extends Controller
                 throw new RuntimeException($order->failure_message ?: 'The position close failed closed.');
             }
         } catch (\Throwable $e) {
-            return back()->withErrors(['position' => $e->getMessage()]);
+            return $this->tradeFailure($request, 'position', $this->publicFailure($e));
         }
 
         if ($strategyId && $order->status === BrokerOrder::STATUS_FILLED) {
@@ -380,9 +417,38 @@ final class BrokerController extends Controller
             }
         }
 
-        return redirect()
-            ->route('broker.orders.show', ['publicId' => $order->public_id])
-            ->with('success', 'Position close order completed.');
+        if ($request->expectsJson()) { return $this->tradeResult($order, 'Position close order '.strtolower($order->status).'.'); }
+
+        return back()
+            ->with('success', 'Position close order '.strtolower($order->status).'.')
+            ->with('last_trade_order', $order->public_id);
+    }
+
+    private function tradeFailure(Request $request, string $field, string $message)
+    {
+        if ($request->expectsJson()) {
+            return response()->json(['success'=>false,'message'=>$message,'errors'=>[$field=>[$message]]],422);
+        }
+        return back()->withErrors([$field=>$message])->withInput($request->except('idempotency_key'));
+    }
+
+    private function tradeResult(BrokerOrder $order, string $message)
+    {
+        return response()->json([
+            'success'=>true, 'message'=>$message, 'status'=>$order->status,
+            'receipt_url'=>route('broker.orders.show',['publicId'=>$order->public_id]),
+            'next_idempotency_key'=>(string) Str::uuid(),
+        ]);
+    }
+
+    private function publicFailure(\Throwable $error): string
+    {
+        if ($error instanceof RuntimeException && !($error instanceof \Illuminate\Database\QueryException)
+            && !($error instanceof \PDOException)) {
+            return $error->getMessage() ?: 'The trade could not be completed.';
+        }
+        \Log::warning('Broker request failed', ['error_class'=>get_class($error)]);
+        return 'The trade could not be completed. Please retry or contact support.';
     }
 
     private function resolveCopyStrategy($user, ?int $strategyId): ?CopyStrategy
@@ -410,6 +476,7 @@ final class BrokerController extends Controller
             MarketInstrument::ASSET_STOCK,
             MarketInstrument::ASSET_FOREX,
             MarketInstrument::ASSET_CRYPTO,
+            MarketInstrument::ASSET_COMMODITY,
         ], true)) {
             abort(404);
         }

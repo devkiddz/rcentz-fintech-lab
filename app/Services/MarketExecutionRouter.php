@@ -15,7 +15,8 @@ final class MarketExecutionRouter
     public function __construct(
         private readonly StockExecutionAdapter $stocks,
         private readonly ForexExecutionAdapter $forex,
-        private readonly CryptoExecutionAdapter $crypto
+        private readonly CryptoExecutionAdapter $crypto,
+        private readonly \App\Services\Execution\CommodityExecutionAdapter $commodities
     ) {}
 
     public function adapterFor(MarketInstrument $instrument): MarketExecutionAdapter
@@ -24,6 +25,7 @@ final class MarketExecutionRouter
             MarketInstrument::ASSET_STOCK => $this->stocks,
             MarketInstrument::ASSET_FOREX => $this->forex,
             MarketInstrument::ASSET_CRYPTO => $this->crypto,
+            MarketInstrument::ASSET_COMMODITY => $this->commodities,
             default => throw new RuntimeException('No execution adapter is registered for asset class '.$instrument->asset_class.'.'),
         };
     }

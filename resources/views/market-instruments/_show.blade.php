@@ -48,7 +48,7 @@
             <div class="mt-1 flex flex-wrap items-center gap-2">
                 <h1 class="ui-heading !text-2xl">{{ $instrument->display_symbol }}</h1>
                 <span class="inline-flex rounded-full border border-border px-2 py-1 text-[10px] font-semibold uppercase tracking-[.11em]">{{ strtoupper($instrument->asset_class) }}</span>
-                <span class="inline-flex rounded-full border border-border bg-muted/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-[.11em] text-muted-foreground">{{ strtoupper($marketplace) }} PRICE</span>
+                <span class="inline-flex rounded-full border border-border bg-muted/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-[.11em] text-muted-foreground">{{ ($marketplace === 'controlled' ? 'Market' : 'Live market') }} PRICE</span>
             </div>
             <p class="ui-lead !max-w-3xl !text-[13px]">{{ $instrument->name }}</p>
         </div>
@@ -123,7 +123,7 @@
                     ['Risk / Reward',$analysis['risk_reward'] ?? '—'],
                     ['Analysis Source',$sourceName],
                     ['History Points',number_format($historyPoints)],
-                    ['Runtime Source',strtoupper($marketplace)],
+                    ['Runtime Source',($marketplace === 'controlled' ? 'Market' : 'Live market')],
                 ] as [$label,$value])
                     <div class="bg-card px-5 py-4">
                         <p class="text-[10px] font-semibold uppercase tracking-[.11em] text-muted-foreground">{{ $label }}</p>

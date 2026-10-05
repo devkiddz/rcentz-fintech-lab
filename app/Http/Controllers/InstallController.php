@@ -45,7 +45,7 @@ class InstallController extends Controller
         }
 
         if (! $this->allRequirementsMet()) {
-            return back()->withErrors(['install' => 'The server requirements are not satisfied yet.'])->withInput();
+            return back()->withErrors(['install' => 'The server requirements are not satisfied yet.'])->withInput($request->except(['alpha_vantage_api_key', 'twelve_data_api_key', 'coinmarketcap_api_key', 'db_password','admin_password','admin_password_confirmation','demo_password','demo_password_confirmation','alpha_vantage_api_key','twelve_data_api_key','coinmarketcap_api_key']));
         }
 
         // A fresh installation may run many migrations and seed the bundled
@@ -58,6 +58,9 @@ class InstallController extends Controller
         $languageCodes = array_keys(config('localization.languages', ['en' => []]));
 
         $validated = $request->validate([
+            'alpha_vantage_api_key' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'twelve_data_api_key' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9_-]+$/'],
+            'coinmarketcap_api_key' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9_-]+$/'],
             'app_name' => ['required', 'string', 'max:80'],
             'company_name' => ['required', 'string', 'max:120'],
             'legal_company_name' => ['nullable', 'string', 'max:160'],
@@ -92,7 +95,7 @@ class InstallController extends Controller
             return back()
                 ->withErrors(['app_url' => 'Production installation requires an HTTPS application URL.'])
                 ->withInput($request->except([
-                    'db_password',
+                    'alpha_vantage_api_key', 'twelve_data_api_key', 'coinmarketcap_api_key', 'db_password',
                     'admin_password',
                     'admin_password_confirmation',
                     'demo_password',
@@ -101,7 +104,7 @@ class InstallController extends Controller
         }
 
         if (! in_array($validated['default_locale'], $validated['enabled_locales'], true)) {
-            return back()->withErrors(['default_locale' => 'The default language must also be enabled.'])->withInput();
+            return back()->withErrors(['default_locale' => 'The default language must also be enabled.'])->withInput($request->except(['alpha_vantage_api_key', 'twelve_data_api_key', 'coinmarketcap_api_key', 'db_password','admin_password','admin_password_confirmation','demo_password','demo_password_confirmation','alpha_vantage_api_key','twelve_data_api_key','coinmarketcap_api_key']));
         }
 
         try {
@@ -114,7 +117,7 @@ class InstallController extends Controller
                         'db_database' => 'The selected database is not empty. Choose a new empty database for installation.',
                     ])
                     ->withInput($request->except([
-                        'db_password',
+                        'alpha_vantage_api_key', 'twelve_data_api_key', 'coinmarketcap_api_key', 'db_password',
                         'admin_password',
                         'admin_password_confirmation',
                         'demo_password',
@@ -175,6 +178,8 @@ class InstallController extends Controller
             config(['bootstrap.installation_demo.password' => $validated['demo_password']]);
             Artisan::call('db:seed', ['--class' => InstallationDemoSeeder::class, '--force' => true]);
 
+            app(\App\Services\InvestmentListingSetup::class)->run();
+
             $demoDomain = (Str::slug($validated['company_name']) ?: 'platform').'.test';
 
             $baselineInstaller->assertPersonalizedAuthority(
@@ -206,7 +211,7 @@ class InstallController extends Controller
             report($exception);
 
             return back()->withErrors(['install' => 'Installation could not be completed. Review the application logs for technical details.'])
-                ->withInput($request->except(['db_password', 'admin_password', 'admin_password_confirmation', 'demo_password', 'demo_password_confirmation']));
+                ->withInput($request->except(['alpha_vantage_api_key', 'twelve_data_api_key', 'coinmarketcap_api_key', 'db_password', 'admin_password', 'admin_password_confirmation', 'demo_password', 'demo_password_confirmation']));
         }
     }
 
@@ -276,6 +281,10 @@ class InstallController extends Controller
         if (! File::exists($envPath)) File::copy(base_path('.env.example'), $envPath);
 
         $replacements = [
+            'ALPHA_VANTAGE_API_KEY' => $values['alpha_vantage_api_key'] ?? '',
+            'TWELVE_DATA_API_KEY' => $values['twelve_data_api_key'] ?? '',
+            'COINMARKETCAP_API_KEY' => $values['coinmarketcap_api_key'] ?? '',
+            'BASKET_USD_FEED_ENABLED' => filled($values['coinmarketcap_api_key'] ?? '') ? 'true' : 'false',
             'APP_NAME' => $values['app_name'],
             'APP_ENV' => $values['app_env'],
             'APP_DEBUG' => $values['app_env'] === 'local' ? 'true' : 'false',

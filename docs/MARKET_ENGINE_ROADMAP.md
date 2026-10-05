@@ -73,3 +73,23 @@ A Next.js interface can provide a polished product experience while Laravel cont
 A full backend rewrite is a separate project. First document API contracts, authorization, price versions, receipts, idempotency and transaction guarantees. Port behaviour only with equivalent acceptance tests. Next.js itself does not provide an always-running price worker; worker hosting, database concurrency and job execution require deliberate design.
 
 Prioritize engine correctness and a consistent UI before framework migration. Preserve this roadmap in the repository and update its evidence and status with each delivery.
+
+
+## Stage 1: Basket engine pilot
+
+Packaged 5 October 2026. Local installation must pass its acceptance checks.
+
+- Persistent references import saved EUR/USD and Gold quotes and completed five-minute bar closes without provider requests.
+- Neutral uses decaying momentum, volatility and a bounded reference pull. Up/Down/Consolidate retain their existing controls.
+- Broad USD strength remains unavailable until three distinct fresh Forex counterparts have sufficient observations; it is not inferred from EUR/USD alone.
+- Configured instrument-page, picker and chart labels use basket names. New broker records use basket symbols; pre-installation records and live instruments retain their prior names.
+- Optional CoinMarketCap inspection is read-only. Automated broad-currency provider ingestion is the next stage.
+- Live feed quota and freshness restrictions remain in force. No production activation or release packaging is implied.
+
+## Scheduled USD strength feed
+
+CoinMarketCap USD-to-EUR, GBP and JPY conversions are requested separately every 15 minutes. UTC observations are committed as complete batches; the key is stored locally in .env. A local 360/day and 12,000/month reservation budget and cooldown prevent repeated requests. Provider failures retain observations and fade the strength signal; they do not stop the basket engine. Three observations per currency spanning at least 30 minutes are required. Log returns use common interpolated endpoints for comparable hourly momentum. This three-currency proxy is not the official DXY index. Live execution prices and customer settlement records are unchanged. Local automated checks use fake HTTP responses; provider runtime requires the installation preflight and subsequent schedule observation.
+
+## Investment basket NAV bridge
+
+An explicit investment binding fixes selected portfolios to persisted configured basket CMPs. A minute scheduler values reserve assets and divides their value by issued shares; the existing order engine refreshes NAV transactionally before subscription/redemption. Five-minute NAV bars feed the investment chart and holdings update without wallet payments. The daily legacy sync respects the binding and cannot rebuild native history over basket NAV. UKSG24 is a Sterling/Gold demonstration listing with a 24-hour redemption lock. Isolated subscription, lock, fee, idempotency, chart and partial/full redemption checks passed; local MySQL instrument/investment acceptance is rerun by the installer. Online deployment and the real elapsed 24-hour investment test remain pending.

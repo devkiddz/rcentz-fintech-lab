@@ -1,5 +1,7 @@
 <x-user-layout>
 <x-slot name="header">Provider Dashboard</x-slot>
+<div data-account-async-feedback role="status" aria-live="polite" hidden class="mx-4 my-3 rounded-xl border border-border p-3 text-sm"></div>
+<div data-account-async="copy-trading/provider-dashboard">
 <div class="ui-page max-w-[1440px]">
 <section class="ui-page-header">
     <div>
@@ -22,7 +24,7 @@
                 <h2 class="mt-2 text-base font-semibold">{{ $strategy->name }}</h2>
                 <p class="mt-1 text-xs text-muted-foreground">{{ $strategy->description }}</p>
             </div>
-            <form method="POST" action="{{ route('copy-trading.provider.strategy.toggle',$strategy) }}">
+            <form data-account-action method="POST" action="{{ route('copy-trading.provider.strategy.toggle',$strategy) }}">
                 @csrf @method('PATCH')
                 <button class="ui-btn ui-btn-secondary !h-8 !px-3 !text-[11px]">{{ $strategy->is_active ? 'Pause' : 'Activate' }}</button>
             </form>
@@ -64,5 +66,6 @@
         @endforelse
     </div>
 </section>
+</div>
 </div>
 </x-user-layout>

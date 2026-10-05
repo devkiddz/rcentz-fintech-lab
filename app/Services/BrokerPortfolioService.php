@@ -156,6 +156,7 @@ final class BrokerPortfolioService
             'positions' => $positions,
             'recentOrders' => $recentOrders,
             'recentExecutions' => $recentExecutions,
+            'account' => app(\App\Services\PaperTrading\TradingAccountSummaryService::class)->build($user),
             'summary' => [
                 'holdings' => $items->count(),
                 'open_positions' => $positions->count(),

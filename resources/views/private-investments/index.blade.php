@@ -3,6 +3,7 @@
 
 @php
     $categoryCards = [
+        ['Commodities','investments.commodities','gem','Commodity-linked investment instruments','commodities'],
         ['Stocks','investments.stocks','chart-candlestick','Stock-backed private instruments','stock_market'],
         ['Cryptocurrency','investments.crypto','coins','Digital asset baskets with internal valuation','cryptocurrency'],
         ['Real Estate','investments.real-estate','house','Property-backed private investment instruments','real_estate'],

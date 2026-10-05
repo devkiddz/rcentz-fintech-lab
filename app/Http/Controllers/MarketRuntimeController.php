@@ -22,7 +22,8 @@ class MarketRuntimeController extends Controller
         MarketInstrumentAnalysisService $instrumentAnalysis
     ) {
         $activeMarketplace = $prices->activeMarketplace();
-        $tick = $controlled->tickIfDue();
+        // Polling must not advance the market or run trading workers.
+        $tick = ['ticked' => false];
 
         $instrumentIds = collect(explode(',', (string) $request->query('instruments', '')))
             ->map(fn ($id) => (int) trim($id))
@@ -64,7 +65,7 @@ class MarketRuntimeController extends Controller
                 } catch (\Throwable $e) {
                     $instrumentPayload[$instrument->id][$marketplace] = [
                         'unavailable' => true,
-                        'message' => $e->getMessage(),
+                        'message' => 'Market mark is temporarily unavailable.',
                     ];
                 }
             }
@@ -117,7 +118,7 @@ class MarketRuntimeController extends Controller
             ->take(50)
             ->values();
 
-        $positionQuery = TradePosition::query()->with('stock')->whereIn('id', $positionIds);
+        $positionQuery = TradePosition::query()->with(['stock.marketInstrument', 'marketInstrument', 'user.wallet'])->whereIn('id', $positionIds);
         $viewer = $request->user();
         if (! $viewer?->isAdmin()) {
             $positionQuery->where('user_id', $viewer?->id);
@@ -125,26 +126,8 @@ class MarketRuntimeController extends Controller
 
         $positionPayload = [];
         foreach ($positionQuery->get() as $position) {
-            $isOpen = $position->is_open;
-            $cmp = $isOpen && $position->stock
-                ? $prices->price($position->stock, $position->marketplace ?: 'live')
-                : (float) ($position->average_exit_price ?: $position->lastExitTransaction?->price_per_share ?: $position->entry_price);
-            $pnl = $isOpen ? (float) $position->current_profit_loss : (float) $position->realized_profit_loss;
-            $return = $isOpen ? (float) $position->current_return_percent : (float) $position->realized_return_percent;
-            $difference = $cmp - (float) $position->entry_price;
-
-            $positionPayload[$position->id] = [
-                'label' => $isOpen ? 'Current Trade P/L' : 'Realized P/L',
-                'marketplace' => $position->marketplace ?: 'live',
-                'cmp' => $cmp,
-                'difference' => $difference,
-                'pnl' => $pnl,
-                'return_percent' => $return,
-                'formatted_cmp' => currency_symbol().number_format($cmp, 2),
-                'formatted_difference' => ($difference >= 0 ? '+' : '-').currency_symbol().number_format(abs($difference), 2),
-                'formatted_pnl' => ($pnl >= 0 ? '+' : '-').currency_symbol().number_format(abs($pnl), 2),
-                'formatted_return' => ($return >= 0 ? '+' : '').number_format($return, 2).'%',
-            ];
+            $positionPayload[$position->id] = app(\App\Services\PaperTrading\PositionPresentationService::class)
+                ->describe($position);
         }
 
         $instrumentAnalysisRequests = collect(explode(',', (string) $request->query('instrument_analysis', '')))
@@ -264,7 +247,7 @@ class MarketRuntimeController extends Controller
         $change = $current - $previous;
         $percent = $previous > 0 ? ($change / $previous) * 100 : 0;
         $precision = max(0, min(8, (int) $instrument->price_precision));
-        $prefix = $instrument->isStock() ? currency_symbol() : '';
+        $prefix = $instrument->isStock() ? 'USD ' : '';
 
         return [
             'price' => $current,
@@ -288,9 +271,9 @@ class MarketRuntimeController extends Controller
             'previous' => $previous,
             'change' => $change,
             'change_percent' => $percent,
-            'formatted_price' => currency_symbol().number_format($current, 2),
-            'formatted_previous' => currency_symbol().number_format($previous, 2),
-            'formatted_change' => ($change >= 0 ? '+' : '-').currency_symbol().number_format(abs($change), 2),
+            'formatted_price' => 'USD '.number_format($current, 2),
+            'formatted_previous' => 'USD '.number_format($previous, 2),
+            'formatted_change' => ($change >= 0 ? '+' : '-').'USD '.number_format(abs($change), 2),
             'formatted_change_percent' => ($percent >= 0 ? '+' : '').number_format($percent, 2).'%',
         ];
     }

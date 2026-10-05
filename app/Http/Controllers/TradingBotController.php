@@ -328,14 +328,15 @@ class TradingBotController extends Controller
         $bot=$subscription->bot;
 
         $data=$request->validate([
+            'paper_intent'=>'nullable|in:open_long,open_short,close',
             'amount_per_trade'=>'nullable|numeric|min:1|max:100000',
             'quantity_per_trade'=>'nullable|numeric|min:0.00000001|max:100000000',
             'trigger_price'=>'nullable|numeric|min:0.00000001',
             'interval_minutes'=>'required|integer|min:5|max:10080',
             'max_daily_trades'=>'required|integer|min:1|max:24',
             'max_total_spend'=>'nullable|numeric|min:1|max:1000000',
-            'stop_loss_percent'=>'nullable|numeric|min:0.01|max:100',
-            'take_profit_percent'=>'nullable|numeric|min:0.01|max:100',
+            'stop_loss_percent'=>'nullable|numeric|min:0.01|max:99.99',
+            'take_profit_percent'=>'nullable|numeric|min:0.01|max:99.99',
             'position_duration_minutes'=>'nullable|integer|min:1|max:43200',
         ]);
 
@@ -352,7 +353,27 @@ class TradingBotController extends Controller
         if($product->max_user_allocation!==null && isset($data['max_total_spend'])){
             $data['max_total_spend']=min((float)$data['max_total_spend'],(float)$product->max_user_allocation);
         }
-        $bot->update($data);
+        // A direction change must be deliberate and cannot race a running bot.
+        DB::transaction(function () use ($subscription, $bot, $data) {
+            \App\Models\User::whereKey(Auth::id())->lockForUpdate()->firstOrFail();
+            $lockedBot = TradingBot::whereKey($bot->id)->lockForUpdate()->firstOrFail();
+            $lockedSubscription = BotSubscription::whereKey($subscription->id)->lockForUpdate()->firstOrFail();
+            abort_unless($lockedSubscription->user_id === Auth::id() && $lockedBot->user_id === Auth::id()
+                && $lockedSubscription->trading_bot_id === $lockedBot->id, 403);
+            abort_unless($lockedSubscription->is_usable, 422, 'This bot subscription is not usable.');
+            $changes = $data;
+            if (array_key_exists('paper_intent', $changes)) {
+                abort_unless(is_string($changes['paper_intent']), 422, 'Choose a trade action.');
+                if ($changes['paper_intent'] !== $lockedBot->paper_intent) {
+                    abort_unless($lockedBot->status === 'paused' && $lockedSubscription->status === 'paused',
+                        422, 'Pause this bot before changing its trade action.');
+                }
+                if ($changes['paper_intent'] !== 'close') {
+                    $changes['action'] = $changes['paper_intent'] === 'open_long' ? 'buy' : 'sell';
+                }
+            }
+            $lockedBot->update($changes);
+        });
         return back()->with('success','Bot configuration updated.');
     }
 
@@ -361,6 +382,10 @@ class TradingBotController extends Controller
         $this->own($subscription);
         abort_unless($subscription->is_usable,422,'This bot subscription is not usable.');
         $new=$subscription->status==='active'?'paused':'active';
+        if ($new === 'active' && $subscription->bot?->paper_intent !== null) {
+            abort_unless(config('paper_trading.enabled') && config('paper_trading.bots_enabled'),
+                422, 'Automated position execution is not enabled yet.');
+        }
         if($new==='active') $access->require(Auth::user(), FeatureAccessService::BOT_TRADER);
         $subscription->update(['status'=>$new]);
         $subscription->bot->update(['status'=>$new,'next_run_at'=>$new==='active'?now():$subscription->bot->next_run_at]);
@@ -371,7 +396,13 @@ class TradingBotController extends Controller
     {
         $this->own($subscription);
         abort_unless($subscription->is_usable,422,'This bot subscription is not usable.');
-        if(($subscription->bot?->action ?? 'buy') !== 'sell') $access->require(Auth::user(), FeatureAccessService::BOT_TRADER);
+        $intent = $subscription->bot?->paper_intent
+            ?? (($subscription->bot?->action ?? 'buy') === 'sell' ? 'close' : 'open_long');
+        if ($subscription->bot?->paper_intent !== null) {
+            abort_unless(config('paper_trading.enabled') && config('paper_trading.bots_enabled'),
+                422, 'Automated position execution is not enabled yet.');
+        }
+        if($intent !== 'close') $access->require(Auth::user(), FeatureAccessService::BOT_TRADER);
         $execution=$service->run($subscription->bot,true);
         return back()->with($execution->status==='completed'?'success':'error',$execution->status==='completed'?'Bot execution completed.':($execution->reason?:'Bot did not execute.'));
     }

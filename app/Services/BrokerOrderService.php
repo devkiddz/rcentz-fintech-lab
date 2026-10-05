@@ -33,6 +33,11 @@ final class BrokerOrderService
         array $risk = [],
         array $context = []
     ): BrokerOrder {
+        if (config('paper_trading.enabled', false)) {
+            return app(\App\Services\PaperTrading\PaperBrokerService::class)->open(
+                $user, $instrument, $side, $quantity, $quantityMode, $idempotencyKey, $risk, $context
+            );
+        }
         $this->productionDemo->assertMutationAllowed($user, 'broker order');
 
         $side = strtolower(trim($side));
@@ -150,6 +155,11 @@ final class BrokerOrderService
         string $idempotencyKey,
         array $context = []
     ): BrokerOrder {
+        if (\App\Services\PaperTrading\PaperBrokerService::owns($position)) {
+            return app(\App\Services\PaperTrading\PaperBrokerService::class)->close(
+                $user, $position, $quantity, $idempotencyKey, $context
+            );
+        }
         $this->productionDemo->assertMutationAllowed($user, 'position close');
 
         $idempotencyKey = trim($idempotencyKey);

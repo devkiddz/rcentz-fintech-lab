@@ -146,6 +146,13 @@ final class BrokerTradeContractEngine
     ): MarketExecutionTransaction {
         $marketplace = $this->prices->normalizeMarketplace($order->marketplace ?: $this->prices->activeMarketplace());
         $ctx = $this->context($user, $order, $context);
+        // A Sell order has its own ID; existing positions belong to their entry orders.
+        // Ordinary broker sales reconcile broker-owned exposure FIFO across entry IDs.
+        // Explicit strategy/position attribution remains restricted to its context.
+        if ($ctx['context_type'] === 'broker_order' && ($context['context_id'] ?? null) === null) {
+            $ctx['context_id'] = null;
+        }
+
         $copyStrategyId = $this->copyStrategyId($ctx);
 
         if ($instrument->isStock()) {

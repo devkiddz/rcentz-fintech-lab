@@ -51,6 +51,11 @@ class TradePosition extends Model
 
     public function getCurrentProfitLossAttribute(): float
     {
+        if (\App\Services\PaperTrading\PaperBrokerService::owns($this)) {
+            if (!$this->is_open) return (float)$this->realized_profit_loss;
+            return (float)$this->realized_profit_loss
+                + app(\App\Services\PaperTrading\PaperBrokerService::class)->unrealized($this);
+        }
         $asset = $this->marketInstrument ?? $this->stock?->marketInstrument ?? $this->stock;
         if (! $asset) return (float)$this->realized_profit_loss;
 
@@ -70,7 +75,9 @@ class TradePosition extends Model
 
     public function getCurrentReturnPercentAttribute(): float
     {
-        $basis = (float)$this->entry_price * max((float)$this->initial_quantity, 0);
+        $basis = \App\Services\PaperTrading\PaperBrokerService::owns($this)
+            ? ((int)($this->metadata['initial_collateral_minor'] ?? 0))/100
+            : (float)$this->entry_price * max((float)$this->initial_quantity, 0);
         return $basis > 0 ? ($this->current_profit_loss / $basis) * 100 : 0;
     }
 }

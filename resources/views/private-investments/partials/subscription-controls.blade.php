@@ -16,7 +16,15 @@
             $actionStory = app(\App\Services\PrivateInvestmentProjectionService::class)->forInstrument($instrument, (float)$instrument->minimum_investment);
         @endphp
         <div class="mt-4 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
-            <div class="flex items-center justify-between gap-3"><span class="text-[9px] uppercase tracking-[.1em] text-zinc-400">Return cycle</span><strong class="text-[10px]">{{ $actionStory['cycle_return_label'] }} / {{ $actionStory['return_interval_label'] }}</strong></div>
+            @php
+                $basketReturnLabels = app(\App\Services\InvestmentBasketPricer::class)->bound((int)$instrument->id);
+            @endphp
+            @if($basketReturnLabels)
+                <div class="flex items-center justify-between gap-3"><span class="text-[9px] uppercase tracking-[.1em] text-zinc-400">Returns</span><strong class="text-[10px]">Share-price changes</strong></div>
+                <div class="mt-2 flex items-center justify-between gap-3"><span class="text-[9px] uppercase tracking-[.1em] text-zinc-400">Redemption lock</span><strong class="text-[10px]">{{ (int)$instrument->lock_period_days > 0 ? ((int)$instrument->lock_period_days * 24).' hours' : 'No lock' }}</strong></div>
+            @else
+                <div class="flex items-center justify-between gap-3"><span class="text-[9px] uppercase tracking-[.1em] text-zinc-400">Return cycle</span><strong class="text-[10px]">{{ $actionStory['cycle_return_label'] }} / {{ $actionStory['return_interval_label'] }}</strong></div>
+            @endif
             <div class="mt-2 flex items-center justify-between gap-3"><span class="text-[9px] uppercase tracking-[.1em] text-zinc-400">Duration</span><strong class="text-[10px]">{{ $actionStory['duration_label'] }}</strong></div>
             <div class="mt-2 flex items-center justify-between gap-3"><span class="text-[9px] uppercase tracking-[.1em] text-zinc-400">Subscription fee</span><strong class="text-[10px]">{{ number_format((float)$instrument->subscription_fee_percent,2) }}%</strong></div>
             <div class="mt-2 flex items-center justify-between gap-3"><span class="text-[9px] uppercase tracking-[.1em] text-zinc-400">Redemption fee</span><strong class="text-[10px]">{{ number_format((float)$instrument->redemption_fee_percent,2) }}%</strong></div>
@@ -43,7 +51,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('account.investments.subscribe',$instrument) }}" class="mt-4">
+        <form data-account-action method="POST" action="{{ route('account.investments.subscribe',$instrument) }}" class="mt-4">
             @csrf
             <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
             <label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-zinc-400">Investment amount</label>
@@ -54,7 +62,7 @@
         </form>
 
         @if($holdingUnits > 0)
-            <form method="POST" action="{{ route('account.investments.redeem',$instrument) }}" class="mt-3">
+            <form data-account-action method="POST" action="{{ route('account.investments.redeem',$instrument) }}" class="mt-3">
                 @csrf
                 <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
                 <label class="mb-1.5 block text-[9px] font-semibold uppercase tracking-[.1em] text-zinc-400">Redeem units</label>

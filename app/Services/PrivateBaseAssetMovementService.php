@@ -226,6 +226,11 @@ final class PrivateBaseAssetMovementService
             );
         }
 
+        // investment-base-basket-driver-v1
+        if (app(InvestmentBaseBasketDriver::class)->bound($reference->id)) {
+            return $this->recordValuation($reference, app(InvestmentBaseBasketDriver::class)->price($reference), 'Investment base basket valuation.', $userId);
+        }
+
         $current = (float) $reference->current_price;
 
         if ($current <= 0) {

@@ -26,6 +26,7 @@ class PrivateMarketReference extends Model
         'current_price' => 'decimal:8',
         'previous_price' => 'decimal:8',
         'last_valued_at' => 'datetime',
+        'movement_last_moved_at' => 'datetime',
     ];
 
     public function prices(): HasMany

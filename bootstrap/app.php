@@ -54,5 +54,5 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->dontFlash(['db_password', 'admin_password', 'admin_password_confirmation', 'demo_password', 'demo_password_confirmation', 'alpha_vantage_api_key', 'twelve_data_api_key', 'coinmarketcap_api_key']);
     })->create();

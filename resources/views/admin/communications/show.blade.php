@@ -1,4 +1,4 @@
-<x-admin-layout>
+﻿<x-admin-layout>
 <div class="ui-page max-w-[1750px]">
     @if(session('success'))<div class="mb-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-600">{{ session('success') }}</div>@endif
     @if($errors->any())<div class="mb-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs text-red-600">{{ $errors->first() }}</div>@endif
@@ -185,7 +185,7 @@
             <div id="admin-chat-scroll" class="relative z-0 min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-5 sm:px-5">
                 @foreach($conversation->messages as $message)
                     @php
-                        $mine=$message->sender_user_id===auth()->id();
+                        $mine = $message->sender_user_id !== null && auth()->id() !== null && (int) $message->sender_user_id === (int) auth()->id();
                         $images=$message->attachments->filter(fn($a)=>!$a->revoked_at&&$a->is_image);
                         $files=$message->attachments->filter(fn($a)=>!$a->revoked_at&&!$a->is_image);
                         $readByOther=$mine&&$conversation->participants->where('user_id','!=',auth()->id())->contains(fn($p)=>(int)($p->last_read_message_id??0)>=$message->id);
@@ -193,7 +193,7 @@
                     @endphp
                     <div id="message-{{ $message->id }}" data-message-mine="{{ $mine ? '1' : '0' }}" class="rcentz-message-row flex {{ $mine?'justify-end':'justify-start' }}">
                         <div class="relative max-w-[88%] sm:max-w-[76%]">
-                            <div class="rounded-2xl px-3.5 py-2.5 shadow-sm {{ $mine?'rounded-br-md bg-red-500/[.10] ring-1 ring-red-500/15':'rounded-bl-md bg-background ring-1 ring-border' }}">
+                            <div data-chat-bubble class="rounded-2xl px-3.5 py-2.5 shadow-sm {{ $mine?'rounded-br-md bg-red-500/[.10] ring-1 ring-red-500/15':'rounded-bl-md bg-background ring-1 ring-border' }}">
                                 @if($replyVisible)<button type="button" onclick="document.getElementById('message-{{ $message->replyTo->id }}')?.scrollIntoView({behavior:'smooth',block:'center'})" class="mb-2 block w-full rounded-lg border-l-2 border-red-500 bg-muted/35 px-3 py-2 text-left"><span class="block text-[9px] font-semibold text-red-600">{{ $message->replyTo->sender?->name??'Message' }}</span><span class="mt-0.5 block truncate text-[10px] text-muted-foreground">{{ $replyText }}</span></button>@endif
                                     @if($images->isNotEmpty())<div class="mb-2 grid gap-1 overflow-hidden rounded-xl {{ $images->count()>1?'grid-cols-2':'grid-cols-1' }}">@foreach($images as $attachment)<button type="button" class="overflow-hidden bg-muted" data-media-preview="{{ route($routeBase.'.attachments.preview',$attachment) }}" data-media-name="{{ $attachment->original_name }}"><img src="{{ route($routeBase.'.attachments.preview',$attachment) }}" alt="{{ $attachment->original_name }}" class="h-44 w-full object-cover sm:h-52"></button>@endforeach</div>@endif
                                     @if($message->body!=='')<p class="whitespace-pre-wrap break-words text-[13px] leading-5">{{ $message->body }}</p>@endif
@@ -1332,4 +1332,18 @@
 </style>
 {{-- /RCENTZ_R9_ADMIN_COMMUNICATION_ACTION_LAYER --}}
 
+<style id="rcentz-chat-bubble-sides-v2">
+#chat-scroll .rcentz-message-row[data-message-mine] { display:flex!important; flex-direction:column!important; width:100%!important; }
+#chat-scroll .rcentz-message-row[data-message-mine="1"] { align-items:flex-end!important; }
+#chat-scroll .rcentz-message-row[data-message-mine="0"] { align-items:flex-start!important; }
+#chat-scroll .rcentz-message-row[data-message-mine="1"] > div:first-child { align-self:flex-end!important; margin-left:auto!important; margin-right:0!important; }
+#chat-scroll .rcentz-message-row[data-message-mine="0"] > div:first-child { align-self:flex-start!important; margin-right:auto!important; margin-left:0!important; }
+#chat-scroll [data-chat-bubble] { overflow-wrap:anywhere; border:1px solid!important; box-shadow:none!important; }
+#chat-scroll .rcentz-message-row[data-message-mine="1"] [data-chat-bubble] { background:#dbeafe!important; color:#172554!important; border-color:#93c5fd!important; border-bottom-right-radius:.375rem!important; }
+#chat-scroll .rcentz-message-row[data-message-mine="0"] [data-chat-bubble] { background:#f1f5f9!important; color:#0f172a!important; border-color:#cbd5e1!important; border-bottom-left-radius:.375rem!important; }
+.dark #chat-scroll .rcentz-message-row[data-message-mine="1"] [data-chat-bubble] { background:#173b66!important; color:#eff6ff!important; border-color:#315e97!important; }
+.dark #chat-scroll .rcentz-message-row[data-message-mine="0"] [data-chat-bubble] { background:#242b36!important; color:#f1f5f9!important; border-color:#414c5c!important; }
+#chat-scroll [data-chat-bubble] .text-muted-foreground { color:inherit!important; opacity:.75; }
+
+</style>
 </x-admin-layout>

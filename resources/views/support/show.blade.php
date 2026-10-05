@@ -1,4 +1,4 @@
-<x-user-layout>
+﻿<x-user-layout>
     <x-slot name="header">{{ $workspace === 'messages' ? 'Messages' : 'Support' }}</x-slot>
 
     <div class="ui-page max-w-[1650px]">
@@ -136,7 +136,7 @@
                 <div id="chat-scroll" class="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-5 sm:px-5">
                     @foreach($conversation->messages as $message)
                         @php
-                            $mine = $message->sender_user_id === auth()->id();
+                            $mine = $message->sender_user_id !== null && auth()->id() !== null && (int) $message->sender_user_id === (int) auth()->id();
                             $images = $message->attachments->filter(fn($a) => !$a->revoked_at && $a->is_image);
                             $files = $message->attachments->filter(fn($a) => !$a->revoked_at && !$a->is_image);
                             $readByOther = $mine && $conversation->participants
@@ -147,7 +147,7 @@
                         @endphp
                         <div id="message-{{ $message->id }}" data-message-mine="{{ $mine ? '1' : '0' }}" class="rcentz-message-row flex {{ $mine ? 'justify-end' : 'justify-start' }}">
                             <div class="relative max-w-[88%] sm:max-w-[76%]">
-                                <div class="rounded-2xl px-3.5 py-2.5 shadow-sm {{ $mine ? 'rounded-br-md bg-red-500/[.10] ring-1 ring-red-500/15' : 'rounded-bl-md bg-background ring-1 ring-border' }}">
+                                <div data-chat-bubble class="rounded-2xl px-3.5 py-2.5 shadow-sm {{ $mine ? 'rounded-br-md bg-red-500/[.10] ring-1 ring-red-500/15' : 'rounded-bl-md bg-background ring-1 ring-border' }}">
                                     @if($replyVisible)
                                         <button type="button" onclick="document.getElementById('message-{{ $message->replyTo->id }}')?.scrollIntoView({behavior:'smooth',block:'center'})" class="mb-2 block w-full rounded-lg border-l-2 border-red-500 bg-muted/35 px-3 py-2 text-left">
                                             <span class="block text-[9px] font-semibold text-red-600">{{ $message->replyTo->sender?->name ?? 'Message' }}</span>
@@ -1433,4 +1433,18 @@
 
 {{-- /RCENTZ_MS7_R12_ASYNC_TELEGRAM_CHAT --}}
 \n{{-- RCENTZ_R8_COMMUNICATION_ACTION_LAYER --}}\n<style id="rcentz-r8-communication-action-layer">\n.rcentz-message-row{overflow:visible!important}.rcentz-message-tools,.rcentz-message-actions,.rcentz-r9-actions{position:relative!important;overflow:visible!important}.rcentz-r9-actions.rcentz-r9-open{z-index:260!important}.rcentz-r9-menu,.rcentz-message-action-menu{position:absolute!important;top:auto!important;bottom:calc(100% + .45rem)!important;z-index:270!important;min-width:12.5rem!important;width:max-content!important;max-width:min(18rem,calc(100vw - 2rem))!important;border:1px solid hsl(var(--border))!important;border-radius:.85rem!important;background:hsl(var(--popover))!important;box-shadow:0 18px 44px rgba(0,0,0,.24)!important}.rcentz-message-row[data-message-mine="1"] .rcentz-r9-menu,.rcentz-message-row[data-message-mine="1"] .rcentz-message-action-menu{right:0!important;left:auto!important}.rcentz-message-row[data-message-mine="0"] .rcentz-r9-menu,.rcentz-message-row[data-message-mine="0"] .rcentz-message-action-menu{left:0!important;right:auto!important}.rcentz-message-row[data-message-mine="1"]{align-items:flex-end!important}.rcentz-message-row[data-message-mine="0"]{align-items:flex-start!important}\n</style>\n{{-- /RCENTZ_R8_COMMUNICATION_ACTION_LAYER --}}\n
+<style id="rcentz-chat-bubble-sides-v2">
+#chat-scroll .rcentz-message-row[data-message-mine] { display:flex!important; flex-direction:column!important; width:100%!important; }
+#chat-scroll .rcentz-message-row[data-message-mine="1"] { align-items:flex-end!important; }
+#chat-scroll .rcentz-message-row[data-message-mine="0"] { align-items:flex-start!important; }
+#chat-scroll .rcentz-message-row[data-message-mine="1"] > div:first-child { align-self:flex-end!important; margin-left:auto!important; margin-right:0!important; }
+#chat-scroll .rcentz-message-row[data-message-mine="0"] > div:first-child { align-self:flex-start!important; margin-right:auto!important; margin-left:0!important; }
+#chat-scroll [data-chat-bubble] { overflow-wrap:anywhere; border:1px solid!important; box-shadow:none!important; }
+#chat-scroll .rcentz-message-row[data-message-mine="1"] [data-chat-bubble] { background:#dbeafe!important; color:#172554!important; border-color:#93c5fd!important; border-bottom-right-radius:.375rem!important; }
+#chat-scroll .rcentz-message-row[data-message-mine="0"] [data-chat-bubble] { background:#f1f5f9!important; color:#0f172a!important; border-color:#cbd5e1!important; border-bottom-left-radius:.375rem!important; }
+.dark #chat-scroll .rcentz-message-row[data-message-mine="1"] [data-chat-bubble] { background:#173b66!important; color:#eff6ff!important; border-color:#315e97!important; }
+.dark #chat-scroll .rcentz-message-row[data-message-mine="0"] [data-chat-bubble] { background:#242b36!important; color:#f1f5f9!important; border-color:#414c5c!important; }
+#chat-scroll [data-chat-bubble] .text-muted-foreground { color:inherit!important; opacity:.75; }
+
+</style>
 </x-user-layout>

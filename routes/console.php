@@ -166,3 +166,20 @@ Schedule::command('signals:run-autonomy --limit=25')
     ->everyFiveMinutes()
     ->withoutOverlapping()
     ->onOneServer();
+
+// Directional position lifecycle for both persisted live and controlled quotes.
+// Run separately from legacy holdings exits; failures remain retryable.
+Schedule::command('paper-positions:process')
+    ->everyFiveSeconds()
+    ->when(fn () => config('paper_trading.enabled') && config('paper_trading.lifecycle_enabled'))
+    ->withoutOverlapping(15)
+    ->onOneServer();
+
+// Live commodity spot quotes are independent of configured price movement.
+Schedule::command('commodities:refresh-spot')->everyFiveMinutes()->withoutOverlapping();
+
+// Basket USD strength schedule
+\Illuminate\Support\Facades\Schedule::command('basket-usd:refresh')->everyFifteenMinutes()->withoutOverlapping(5)->when(fn()=>config('basket_usd.enabled',false));
+
+// Investment basket NAV schedule: bindings opt in explicitly, no provider calls.
+\Illuminate\Support\Facades\Schedule::command('private-investments:sync-baskets')->everyMinute()->withoutOverlapping(5);

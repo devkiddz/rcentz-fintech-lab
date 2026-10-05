@@ -1,5 +1,7 @@
 <x-user-layout>
 <x-slot name="header">{{ localize('ui.r2d.portfolio.intelligence', 'Portfolio Intelligence') }}</x-slot>
+<div data-account-async-feedback role="status" aria-live="polite" hidden class="mx-4 my-3 rounded-xl border border-border p-3 text-sm"></div>
+<div data-account-async="private-investments/portfolio">
 
 @php
     $money = fn ($value) => currency_symbol().number_format(abs((float) $value), 2);
@@ -544,5 +546,6 @@
             @endif
         </section>
     @endif
+</div>
 </div>
 </x-user-layout>

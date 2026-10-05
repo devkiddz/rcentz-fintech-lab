@@ -9,7 +9,7 @@ class TradingBot extends Model
     use HasFactory;
 
     protected $fillable=[
-        'user_id','market_instrument_id','stock_id','name','strategy','action','amount_per_trade','quantity_per_trade',
+        'paper_intent','user_id','market_instrument_id','stock_id','name','strategy','action','amount_per_trade','quantity_per_trade',
         'trigger_price','stop_loss_percent','take_profit_percent','position_duration_minutes',
         'interval_minutes','max_daily_trades','max_total_spend','spent_total','status','last_run_at','next_run_at'
     ];

@@ -1,5 +1,7 @@
 <x-user-layout>
 <x-slot name="header">Configure Bot</x-slot>
+<div data-account-async-feedback role="status" aria-live="polite" hidden class="mx-4 my-3 rounded-xl border border-border p-3 text-sm"></div>
+<div data-account-async="ai-bots/configure">
 
 @php
     $product = $subscription->product;
@@ -8,6 +10,9 @@
     $isBelow = $product->strategy === 'price_below';
     $isAbove = $product->strategy === 'price_above';
     $symbol = $product->marketInstrument?->display_symbol ?? $product->stock?->symbol ?? '—';
+    $intent = $bot?->paper_intent ?? ($bot?->action === 'sell' ? 'close' : 'open_long');
+    $automationEnabled = config('paper_trading.enabled') && config('paper_trading.bots_enabled');
+    $canChangeIntent = $bot?->status === 'paused' && $subscription->status === 'paused';
     $assetClass = strtoupper($product->marketInstrument?->asset_class ?? 'stock');
 @endphp
 
@@ -22,7 +27,7 @@
     </section>
 
     <div class="grid gap-6 lg:grid-cols-[1.2fr_.8fr]">
-        <form method="POST" action="{{ route('ai-bots.update',$subscription) }}" class="ui-panel p-6 space-y-6">
+        <form data-account-action method="POST" action="{{ route('ai-bots.update',$subscription) }}" class="ui-panel p-6 space-y-6">
             @csrf
             @method('PATCH')
 
@@ -42,6 +47,19 @@
             </div>
 
             <div class="space-y-5">
+                <div class="rounded-xl border border-border bg-muted/10 p-4">
+                    <label for="bot-trade-intent" class="ui-label">Trade action</label>
+                    <select id="bot-trade-intent" name="paper_intent" class="ui-input" @disabled(!$canChangeIntent)>
+                        <option value="open_long" @selected(old('paper_intent',$intent) === 'open_long')>Open Long — benefit when the price rises</option>
+                        <option value="open_short" @selected(old('paper_intent',$intent) === 'open_short')>Open Short — benefit when the price falls</option>
+                        <option value="close" @selected(old('paper_intent',$intent) === 'close')>Close Position — reduce this bot’s existing exposure</option>
+                    </select>
+                    <p class="mt-2 text-xs text-muted-foreground">Close Position affects positions opened by this bot only. Pause the bot before changing its action. The product strategy and instrument remain fixed.</p>
+                    @unless($automationEnabled)
+                        <p class="mt-2 text-xs text-muted-foreground">You can prepare settings now. Position execution is awaiting activation; saving does not start the bot.</p>
+                    @endunless
+                    @error('paper_intent')<p class="mt-2 text-sm text-destructive">{{ $message }}</p>@enderror
+                </div>
                 <div>
                     <label class="ui-label">Trade Amount</label>
                     <input
@@ -62,7 +80,7 @@
                 @unless($isDca)
                     <div>
                         <label class="ui-label">
-                            {{ $isBelow ? 'Buy Below Price' : ($isAbove ? 'Buy Above Price' : 'Trigger Price') }}
+                            {{ $isBelow ? 'Execute Below Price' : ($isAbove ? 'Execute Above Price' : 'Trigger Price') }}
                         </label>
                         <input
                             name="trigger_price"
@@ -109,11 +127,11 @@
                     <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Position risk</p>
                     <h3 class="mt-1 text-sm font-semibold">Exit rules for bot-opened positions</h3>
                     <div class="mt-3 grid gap-3 sm:grid-cols-3">
-                        <div><label class="ui-label">Stop Loss %</label><input name="stop_loss_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input" value="{{ old('stop_loss_percent',$bot?->stop_loss_percent) }}"></div>
-                        <div><label class="ui-label">Take Profit %</label><input name="take_profit_percent" type="number" min="0.01" max="100" step="0.01" class="ui-input" value="{{ old('take_profit_percent',$bot?->take_profit_percent) }}"></div>
+                        <div><label class="ui-label">Stop Loss %</label><input name="stop_loss_percent" type="number" min="0.01" max="99.99" step="0.01" class="ui-input" value="{{ old('stop_loss_percent',$bot?->stop_loss_percent) }}"></div>
+                        <div><label class="ui-label">Take Profit %</label><input name="take_profit_percent" type="number" min="0.01" max="99.99" step="0.01" class="ui-input" value="{{ old('take_profit_percent',$bot?->take_profit_percent) }}"></div>
                         <div><label class="ui-label">Max Holding (min)</label><input name="position_duration_minutes" type="number" min="1" max="43200" class="ui-input" value="{{ old('position_duration_minutes',$bot?->position_duration_minutes) }}"></div>
                     </div>
-                    <p class="mt-2 text-xs text-muted-foreground">The first of stop loss, take profit or time expiry closes the bot-attributed position.</p>
+                    <p class="mt-2 text-xs text-muted-foreground">Exit rules apply to newly opened positions. Automatic exits require the position processor to be running.</p>
                 </div>
                 <div>
                     <label class="ui-label">Allocation Cap</label>
@@ -139,7 +157,7 @@
                     <p class="mt-2 text-sm leading-6 text-muted-foreground">
                         A DCA bot does not wait for a particular market price. Every
                         <strong class="text-foreground">{{ number_format((int)($bot?->interval_minutes ?? 0)) }} minutes</strong>,
-                        it attempts to invest <strong class="text-foreground">{{ format_currency($bot?->amount_per_trade ?? 0) }}</strong>.
+                        it attempts a trade sized at <strong class="text-foreground">{{ format_currency($bot?->amount_per_trade ?? 0) }}</strong>.
                     </p>
                     <div class="mt-4 rounded-xl border border-border bg-muted/25 p-4 text-sm">
                         <div class="flex items-center justify-between gap-4"><span class="text-muted-foreground">Decision</span><strong>Time reached?</strong></div>
@@ -172,12 +190,13 @@
                 <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">Runtime State</p>
                 <div class="mt-4 space-y-3 text-sm">
                     <div class="flex justify-between gap-4"><span class="text-muted-foreground">Subscription</span><strong>{{ ucfirst($subscription->status) }}</strong></div>
-                    <div class="flex justify-between gap-4"><span class="text-muted-foreground">Bot status</span><strong>{{ ucfirst($bot?->status ?? 'paused') }}</strong></div>
+                    <div class="flex justify-between gap-4"><span class="text-muted-foreground">Bot status</span><strong>{{ $automationEnabled ? ucfirst($bot?->status ?? 'paused') : 'Position execution awaiting activation' }}</strong></div>
                     <div class="flex justify-between gap-4"><span class="text-muted-foreground">Spent so far</span><strong>{{ format_currency($bot?->spent_total ?? 0) }}</strong></div>
                     <div class="flex justify-between gap-4"><span class="text-muted-foreground">Next run</span><strong>{{ optional($bot?->next_run_at)->format('M d · H:i') ?? '—' }}</strong></div>
                 </div>
             </div>
         </aside>
     </div>
+</div>
 </div>
 </x-user-layout>

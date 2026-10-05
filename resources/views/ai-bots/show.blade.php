@@ -1,5 +1,7 @@
 <x-user-layout>
 <x-slot name="header">{{ $product->name }}</x-slot>
+<div data-account-async-feedback role="status" aria-live="polite" hidden class="mx-4 my-3 rounded-xl border border-border p-3 text-sm"></div>
+<div data-account-async="ai-bots/show">
 <div class="ui-page max-w-[1300px]">
 @php
     $market = $market ?? [];
@@ -89,7 +91,7 @@
                 <div class="mt-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 text-xs">You already have access to this bot.</div>
                 <a class="ui-btn ui-btn-primary mt-3 w-full" href="{{ route('ai-bots.my-bots') }}">Open My Bots</a>
             @else
-                <form class="mt-4" method="POST" action="{{ route('ai-bots.subscribe',$product) }}">
+                <form data-account-action class="mt-4" method="POST" action="{{ route('ai-bots.subscribe',$product) }}">
                     @csrf
                     <button class="ui-btn ui-btn-primary w-full">Subscribe</button>
                 </form>
@@ -139,4 +141,5 @@
 
 
 @include('ai-bots.partials.lightweight-charts')
+</div>
 </x-user-layout>

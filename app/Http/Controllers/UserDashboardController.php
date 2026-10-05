@@ -54,6 +54,7 @@ class UserDashboardController extends Controller
             'activeMemberships' => $activeMemberships,
             'dashboardSignals' => $dashboardSignals,
             'signalSummary' => $signalSummary,
+            'tradingDesk' => app(\App\Services\CustomerTradingOverviewService::class)->build($user),
         ]));
     }
 

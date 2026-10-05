@@ -22,28 +22,14 @@ class MarketInstrumentController extends Controller
     public function show(MarketInstrument $instrument)
     {
         abort_unless($instrument->is_active, 404);
-        $instrument->loadMissing(['canonicalStock', 'stock']);
+        return redirect()->route('broker.workstation', ['assetClass'=>$instrument->asset_class,'symbol'=>$instrument->symbol]);
+    }
 
-        if ($instrument->isStock()) {
-            $stock = $instrument->canonicalStock ?: $instrument->stock;
-            if ($stock) {
-                return redirect()->route('instruments.stocks.show', ['stock' => $stock->symbol]);
-            }
-        }
-
-        if ($instrument->isForex()) {
-            return redirect()->route('instruments.forex.show', ['symbol' => $instrument->symbol]);
-        }
-
-        if ($instrument->asset_class === 'crypto') {
-            return redirect()->route('instruments.crypto.show', ['symbol' => $instrument->symbol]);
-        }
-
-        if ($instrument->isCommodity()) {
-            return redirect()->route('instruments.commodities.show', ['symbol' => $instrument->symbol]);
-        }
-
-        return redirect()->route('instruments.index');
+    public function showStock(\App\Models\Stock $stock)
+    {
+        $instrument=$stock->marketInstrument ?: MarketInstrument::where('stock_id',$stock->id)->firstOrFail();
+        abort_unless($instrument->is_active,404);
+        return redirect()->route('broker.workstation',['assetClass'=>'stock','symbol'=>$instrument->symbol]);
     }
 
     public function showForex(
@@ -82,20 +68,7 @@ class MarketInstrumentController extends Controller
             ->where('is_active', true)
             ->firstOrFail();
 
-        $instrument->load([
-            'stock',
-            'forexPair',
-            'canonicalStock',
-            'canonicalForexPair',
-            'canonicalCryptoPair',
-            'canonicalCommodityInstrument',
-            'controlledMarketInstrument',
-        ]);
-
-        $marketplace = $prices->activeMarketplace();
-        $analysis = $this->safeAnalysis($instrument, $analysisService, $prices, $marketplace);
-
-        return view('market-instruments.show', compact('instrument', 'analysis', 'marketplace'));
+        return redirect()->route('broker.workstation', ['assetClass'=>$instrument->asset_class,'symbol'=>$instrument->symbol]);
     }
 
     private function safeAnalysis(

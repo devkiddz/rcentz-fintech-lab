@@ -84,7 +84,7 @@ Route::get('/terms', [FrontendController::class, 'terms'])->name('terms');
 Route::get('/privacy', [FrontendController::class, 'privacy'])->name('privacy');
 
 // Authenticated User Routes
-Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.active', 'demo.readonly'])->group(function () {
+Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.active', 'demo.readonly', \App\Http\Middleware\AccountAjaxResponse::class])->group(function () {
     // Checkout Routes
     Route::get('/checkout/{car_id}', [CheckoutController::class, 'checkoutForm'])->name('checkout.form');
     Route::post('/checkout/{car_id}', [CheckoutController::class, 'processCheckout'])->name('checkout.process');
@@ -122,7 +122,7 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.act
     Route::prefix('instruments')->name('instruments.')->group(function () {
         Route::get('/', [\App\Http\Controllers\MarketInstrumentController::class, 'index'])->name('index');
         Route::get('/stocks', [\App\Http\Controllers\MarketInstrumentController::class, 'stocks'])->name('stocks');
-        Route::get('/stocks/{stock:symbol}', [\App\Http\Controllers\StockController::class, 'show'])->name('stocks.show');
+        Route::get('/stocks/{stock:symbol}', [\App\Http\Controllers\MarketInstrumentController::class, 'showStock'])->name('stocks.show');
         Route::get('/forex', [\App\Http\Controllers\MarketInstrumentController::class, 'forex'])->name('forex');
         Route::get('/forex/{symbol}', [\App\Http\Controllers\MarketInstrumentController::class, 'showForex'])->where('symbol', '[A-Za-z0-9.\\-]+')->name('forex.show');
         Route::get('/crypto', [\App\Http\Controllers\MarketInstrumentController::class, 'crypto'])->name('crypto');
@@ -143,11 +143,11 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.act
         Route::patch('/positions/{position}/risk', [\App\Http\Controllers\BrokerController::class, 'updatePositionRisk'])->name('positions.risk');
         Route::post('/positions/{position}/close', [\App\Http\Controllers\BrokerController::class, 'closePosition'])->name('positions.close');
         Route::get('/{assetClass}/{symbol}', [\App\Http\Controllers\BrokerController::class, 'workstation'])
-            ->where('assetClass', 'stock|forex|crypto')
+            ->where('assetClass', 'stock|forex|crypto|commodity')
             ->where('symbol', '[A-Za-z0-9.\\-]+')
             ->name('workstation');
         Route::post('/{assetClass}/{symbol}/orders', [\App\Http\Controllers\BrokerController::class, 'submitOrder'])
-            ->where('assetClass', 'stock|forex|crypto')
+            ->where('assetClass', 'stock|forex|crypto|commodity')
             ->where('symbol', '[A-Za-z0-9.\\-]+')
             ->name('orders.submit');
     });
@@ -248,6 +248,7 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.act
     Route::get('/investments/stocks', [PrivateInvestmentMarketController::class, 'stocks'])->name('investments.stocks');
     Route::get('/investments/forex', [PrivateInvestmentMarketController::class, 'forex'])->name('investments.forex');
     Route::get('/investments/crypto', [PrivateInvestmentMarketController::class, 'crypto'])->name('investments.crypto');
+    Route::get('/investments/commodities', [PrivateInvestmentMarketController::class, 'commodities'])->name('investments.commodities');
     Route::get('/investments/real-estate', [PrivateInvestmentMarketController::class, 'realEstate'])->name('investments.real-estate');
     Route::get('/investments/bonds', [PrivateInvestmentMarketController::class, 'bonds'])->name('investments.bonds');
     Route::get('/investments/hedges', [PrivateInvestmentMarketController::class, 'hedges'])->name('investments.hedges');
@@ -332,7 +333,7 @@ Route::middleware(['auth', 'verified', 'wallet', 'customer.access', 'account.act
     Route::get('/stocks/gainers', [StockController::class, 'gainers'])->name('stocks.gainers');
     Route::get('/stocks/losers', [StockController::class, 'losers'])->name('stocks.losers');
     Route::get('/stocks/most-active', [StockController::class, 'mostActive'])->name('stocks.most-active');
-    Route::get('/stocks/{stock}', [StockController::class, 'show'])->name('stocks.show');
+    Route::get('/stocks/{stock}', [\App\Http\Controllers\MarketInstrumentController::class, 'showStock'])->name('stocks.show');
     
     // Stock Trading Routes
     Route::middleware(['auth', 'kyc'])->group(function () {
@@ -805,6 +806,3 @@ Route::prefix('cron')->name('cron.')->group(function () {
     Route::get('/cleanup-old-data', [CronController::class, 'cleanupOldData'])->name('cleanup-old-data');
     Route::get('/status', [CronController::class, 'status'])->name('status');
 });
-
-
-

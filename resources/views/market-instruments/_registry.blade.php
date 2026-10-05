@@ -39,7 +39,7 @@
     <section class="ui-page-header">
         <div>
             <p class="ui-kicker text-[10px]">Markets</p>
-            <h1 class="ui-heading !text-2xl">{{ $title }}</h1>
+            <h1 class="ui-heading !text-2xl">{{ !$admin && $marketplace === 'controlled' ? 'Baskets & Indices' : $title }}</h1>
             <p class="ui-lead !max-w-3xl !text-[13px]">{{ $description }}</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
@@ -127,23 +127,20 @@
                                         <span class="rounded-full border border-border bg-muted/20 px-2 py-1 text-[9px] font-semibold uppercase tracking-[.1em]">{{ strtoupper($instrument->asset_class) }}</span>
                                         @if($instrument->is_featured)<span class="text-[9px] font-semibold uppercase tracking-[.1em] text-sky-500">Featured</span>@endif
                                     </div>
-                                    <p class="mt-1 text-[13px] font-semibold">{{ $instrument->display_symbol }}</p>
-                                    <p class="mt-0.5 truncate text-[10px] text-muted-foreground">{{ $instrument->name }}</p>
+                                    <p class="mt-1 text-[13px] font-semibold">{{ \App\Services\BasketDisplay::symbol($instrument, $admin ? 'live' : $marketplace) }}</p>
+                                    <p class="mt-0.5 truncate text-[10px] text-muted-foreground">{{ \App\Services\BasketDisplay::name($instrument, $admin ? 'live' : $marketplace) }}</p>
                                 </div>
                             </div>
 
-                            <div><p class="text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Market price</p><p class="mt-1 text-[13px] font-semibold tabular-nums" data-market-price-instrument="{{ $instrument->id }}" data-marketplace="{{ $marketplace }}">{{ $formatPrice($instrument,$current) }}</p><p class="mt-0.5 text-[9px] text-muted-foreground">{{ strtoupper($marketplace) }} mark</p></div>
+                            <div><p class="text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Market price</p><p class="mt-1 text-[13px] font-semibold tabular-nums" data-market-price-instrument="{{ $instrument->id }}" data-marketplace="{{ $marketplace }}">{{ $formatPrice($instrument,$current) }}</p><p class="mt-0.5 text-[9px] text-muted-foreground">{{ ($marketplace === 'controlled' ? 'Market' : 'Live market') }} mark</p></div>
                             <div><p class="text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Move</p><p class="mt-1 text-[13px] font-semibold {{ $movePct===null?'text-muted-foreground':($movePct>=0?'text-emerald-600':'text-red-600') }}">{{ $movePct===null?'—':(($movePct>=0?'+':'').number_format($movePct,2).'%') }}</p><p class="mt-0.5 text-[9px] text-muted-foreground">vs previous</p></div>
                             <div><p class="text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Market</p><p class="mt-1 text-[12px] font-semibold">{{ $instrument->market ?: 'Global' }}</p><p class="mt-0.5 text-[9px] text-muted-foreground">{{ $instrument->base_asset ?: '—' }}{{ $instrument->quote_asset ? ' / '.$instrument->quote_asset : '' }}</p></div>
                             <div><p class="text-[9px] font-semibold uppercase tracking-[.1em] text-muted-foreground">Trading</p><p class="mt-1 text-[11px] font-semibold {{ $ready?'text-emerald-600':'text-amber-600' }}">{{ $ready ? 'READY' : 'UNAVAILABLE' }}</p><p class="mt-0.5 truncate text-[9px] text-muted-foreground">{{ $ready ? 'Order routing available' : ($instrument->runtime_execution_reason ?: 'Execution adapter unavailable') }}</p></div>
                             <div class="flex flex-wrap gap-2 lg:justify-end">
-                                @if($viewRoute)
+                                @if($admin)
                                     <a href="{{ $viewRoute }}" class="ui-btn ui-btn-secondary ui-btn-sm whitespace-nowrap">View Asset</a>
                                 @else
-                                    <span class="ui-btn ui-btn-secondary ui-btn-sm cursor-default whitespace-nowrap">Market data</span>
-                                @endif
-                                @if(!$admin && $ready)
-                                    <a href="{{ route('broker.workstation',['assetClass'=>$instrument->asset_class,'symbol'=>$instrument->symbol]) }}" class="ui-btn ui-btn-ghost ui-btn-sm whitespace-nowrap">Trade<i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i></a>
+                                    <a href="{{ route('broker.workstation',['assetClass'=>$instrument->asset_class,'symbol'=>$instrument->symbol]) }}" class="ui-btn ui-btn-secondary ui-btn-sm whitespace-nowrap">Open Market<i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i></a>
                                 @endif
                             </div>
                         </div>

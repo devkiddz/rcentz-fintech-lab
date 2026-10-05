@@ -21,13 +21,22 @@
     $formatMarketPrice = fn ($value) => $pricePrefix.number_format((float)$value, $precision);
 @endphp
 
-<section class="ui-panel overflow-hidden" data-market-runtime>
+<style>
+.rcentz-chart-panel:fullscreen { background:hsl(var(--background)); color:hsl(var(--foreground)); overflow:auto; padding:1rem; }
+.rcentz-chart-panel:fullscreen [data-chart-canvas] { height:calc(100dvh - 15rem)!important; min-height:300px; }
+[data-chart-controls] input[data-chart-toggle] { appearance:none!important; -webkit-appearance:none!important; width:1rem!important; height:1rem!important; flex-shrink:0; margin:0!important; border:1px solid hsl(var(--border))!important; border-radius:.25rem!important; background-color:hsl(var(--background))!important; background-image:none!important; box-shadow:none!important; cursor:pointer; }
+[data-chart-controls] input[data-chart-toggle]:checked { border-color:hsl(var(--primary))!important; background-color:hsl(var(--primary))!important; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='m3.5 8 3 3 6-6' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important; background-size:100% 100%!important; }
+[data-chart-controls] input[data-chart-toggle]:focus-visible { outline:2px solid hsl(var(--ring)); outline-offset:3px; }
+[data-chart-controls] .chart-toggle-row { min-height:2.5rem; border:1px solid hsl(var(--border)); background:hsl(var(--muted)/.15); }
+[data-chart-controls] .chart-toggle-row:has(input:checked) { border-color:hsl(var(--primary)/.4); background:hsl(var(--primary)/.08); }
+</style>
+<section class="ui-panel overflow-hidden rcentz-chart-panel" data-market-runtime>
     <div class="flex flex-col gap-3 border-b border-border px-4 py-3 md:flex-row md:items-center md:justify-between">
         <div>
             <div class="flex flex-wrap items-center gap-2">
                 <p class="text-[9px] uppercase tracking-[.13em] text-muted-foreground">Price analysis</p>
                 <span class="rounded-full border border-border bg-muted/20 px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[.11em] text-muted-foreground">
-                    {{ strtoupper($analysisMarketplace) }} · {{ strtoupper($assetClass) }}
+                    {{ strtoupper($assetClass) }}
                 </span>
             </div>
             <div class="mt-1 flex flex-wrap items-baseline gap-2">
@@ -103,28 +112,36 @@
             <p class="text-[9px] text-muted-foreground">Grey timeframes unlock as enough stored observations accumulate.</p>
         </div>
 
-        <div class="border-b border-border px-4 py-2">
-            <div class="flex flex-wrap gap-x-4 gap-y-1 text-[9px] text-muted-foreground">
-                @if(!empty($analysis['sma20']))
-                    <span><i class="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-sky-500"></i>SMA 20 {{ $formatMarketPrice($analysis['sma20']) }}</span>
-                @endif
-                @if(!empty($analysis['sma50']))
-                    <span><i class="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-violet-500"></i>SMA 50 {{ $formatMarketPrice($analysis['sma50']) }}</span>
-                @endif
-                @if(!empty($analysis['sma200']))
-                    <span><i class="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-purple-500"></i>SMA 200 {{ $formatMarketPrice($analysis['sma200']) }}</span>
-                @endif
-                @if(!empty($analysis['support']))
-                    <span>Support {{ $formatMarketPrice($analysis['support']) }}</span>
-                @endif
-                @if(!empty($analysis['resistance']))
-                    <span>Resistance {{ $formatMarketPrice($analysis['resistance']) }}</span>
-                @endif
+        <div class="border-b border-border px-4 py-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" data-chart-action="in" class="ui-btn ui-btn-secondary ui-btn-sm" aria-label="Zoom in">+</button>
+                    <button type="button" data-chart-action="out" class="ui-btn ui-btn-secondary ui-btn-sm" aria-label="Zoom out">−</button>
+                    <button type="button" data-chart-action="reset" class="ui-btn ui-btn-secondary ui-btn-sm">Reset view</button>
+                    <button type="button" data-chart-action="fullscreen" class="ui-btn ui-btn-secondary ui-btn-sm">Fullscreen</button>
+                </div>
+                <p class="text-[10px] text-muted-foreground">Drag to pan · scroll to zoom · drag the price scale to resize</p>
             </div>
+            <details data-chart-controls class="mt-3">
+                <summary class="cursor-pointer text-xs font-semibold">Indicators &amp; display settings</summary>
+                <div class="mt-3 grid gap-3 sm:grid-cols-3">
+                    @foreach([20,50,200] as $index=>$period)
+                    <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 text-xs"><label class="inline-flex cursor-pointer items-center gap-2"><input type="checkbox" data-chart-toggle="ma{{ $index }}" checked> Moving average</label> <input type="number" data-chart-period="{{ $index }}" value="{{ $period }}" min="2" max="500" step="1" class="ui-input !h-8 !w-20" aria-label="Moving average {{ $index+1 }} period"></div>
+                    @endforeach
+                </div>
+                <div class="mt-3 grid grid-cols-2 gap-2 text-xs lg:grid-cols-4">
+                    @foreach(['auto'=>'Auto-scale','follow'=>'Follow latest','volume'=>'Volume','levels'=>'Support / resistance','positions'=>'Entries','stop'=>'Stop loss','target'=>'Take profit','executions'=>'Execution arrows'] as $key=>$label)
+                    <label class="chart-toggle-row flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2"><input type="checkbox" data-chart-toggle="{{ $key }}" @checked($key!=='follow')>{{ $label }}</label>
+                    @endforeach
+                </div>
+                <p data-chart-note class="mt-3 text-[10px] text-muted-foreground" role="status">Moving averages use the selected timeframe. Longer periods need enough stored history. Display switches do not change trade risk settings.</p>
+            </details>
         </div>
+        <div data-chart-legend class="border-b border-border px-4 py-2 text-[10px] text-muted-foreground" aria-live="off"></div>
 
-        <div class="{{ $chartHeight }} p-2 md:p-3">
+        <div data-chart-canvas class="{{ $chartHeight }} p-2 md:p-3">
             <div class="h-full w-full"
+                 data-price-precision="{{ $precision }}"
                  data-rcentz-analysis
                  @if($marketInstrument)
                      data-market-analysis-instrument="{{ $marketInstrument->id }}"
@@ -140,7 +157,7 @@
             <div class="max-w-sm rounded-2xl border border-border bg-muted/10 px-5 py-4 text-center">
                 <i data-lucide="chart-no-axes-combined" class="mx-auto h-5 w-5 text-sky-500"></i>
                 <p class="mt-3 text-xs font-medium">Building market history</p>
-                <p class="mt-1 text-[10px] leading-4 text-muted-foreground">The chart appears when enough stored market history or controlled observations are available.</p>
+                <p class="mt-1 text-[10px] leading-4 text-muted-foreground">The chart appears when enough price history is available.</p>
             </div>
         </div>
     @endif

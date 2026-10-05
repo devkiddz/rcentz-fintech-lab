@@ -1,4 +1,4 @@
-@php
+﻿@php
     $parentBase = 'flex items-center gap-3 rounded-xl px-3 py-2.5 text-[12px] font-semibold transition-colors';
     $parentIdle = 'text-foreground bg-transparent hover:bg-muted/70';
     $parentActive = 'text-foreground bg-red-500/[.07] ring-1 ring-red-500/15 shadow-sm';
@@ -38,6 +38,7 @@
             <a href="{{ route('instruments.stocks') }}" class="{{ $childBase }} {{ request()->routeIs('instruments.stocks','instruments.stocks.*','stocks.*') ? $childActive : $childIdle }}"><i data-lucide="chart-no-axes-combined" class="h-4 w-4"></i><span>{{ localize('ui.nav.stocks', 'Stocks') }}</span></a>
             <a href="{{ route('instruments.forex') }}" class="{{ $childBase }} {{ request()->routeIs('instruments.forex','instruments.forex.*') ? $childActive : $childIdle }}"><i data-lucide="arrow-left-right" class="h-4 w-4"></i><span>{{ localize('ui.nav.forex', 'Forex') }}</span></a>
             <a href="{{ route('instruments.crypto') }}" class="{{ $childBase }} {{ request()->routeIs('instruments.crypto','instruments.crypto.*') ? $childActive : $childIdle }}"><i data-lucide="bitcoin" class="h-4 w-4"></i><span>{{ localize('ui.nav.crypto', 'Crypto') }}</span></a>
+            <a href="{{ route('instruments.commodities') }}" class="{{ $childBase }} {{ request()->routeIs('instruments.commodities','instruments.commodities.*') ? $childActive : $childIdle }}"><i data-lucide="gem" class="h-4 w-4"></i><span>Commodities</span></a>
         </div>
     </details>
 
@@ -141,6 +142,7 @@
             <a href="{{ route('investments.stocks') }}" class="{{ $childBase }} {{ request()->routeIs('investments.stocks') ? $childActive : $childIdle }}"><i data-lucide="chart-no-axes-combined" class="h-4 w-4"></i><span>{{ localize('ui.nav.stocks', 'Stocks') }}</span></a>
             <a href="{{ route('investments.forex') }}" class="{{ $childBase }} {{ request()->routeIs('investments.forex') ? $childActive : $childIdle }}"><i data-lucide="landmark" class="h-4 w-4"></i><span>{{ localize('ui.nav.forex', 'Forex') }}</span></a>
             <a href="{{ route('investments.crypto') }}" class="{{ $childBase }} {{ request()->routeIs('investments.crypto') ? $childActive : $childIdle }}"><i data-lucide="coins" class="h-4 w-4"></i><span>{{ localize('ui.nav.cryptocurrency', 'Cryptocurrency') }}</span></a>
+            <a href="{{ route('investments.commodities') }}" class="{{ $childBase }} {{ request()->routeIs('investments.commodities') ? $childActive : $childIdle }}"><i data-lucide="gem" class="h-4 w-4"></i><span>Commodities</span></a>
             <a href="{{ route('investments.real-estate') }}" class="{{ $childBase }} {{ request()->routeIs('investments.real-estate') ? $childActive : $childIdle }}"><i data-lucide="house" class="h-4 w-4"></i><span>{{ localize('ui.nav.real_estate', 'Real Estate') }}</span></a>
             <a href="{{ route('investments.bonds') }}" class="{{ $childBase }} {{ request()->routeIs('investments.bonds') ? $childActive : $childIdle }}"><i data-lucide="landmark" class="h-4 w-4"></i><span>{{ localize('ui.nav.bonds_fixed_income', 'Bonds & Fixed Income') }}</span></a>
 

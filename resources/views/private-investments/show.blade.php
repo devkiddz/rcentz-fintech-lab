@@ -1,5 +1,7 @@
 <x-user-layout>
 <x-slot name="header">{{ $instrument->name }}</x-slot>
+<div data-account-async-feedback role="status" aria-live="polite" hidden class="mx-4 my-3 rounded-xl border border-border p-3 text-sm"></div>
+<div data-account-async="private-investments/show">
 
 @php
     $change = (float)$instrument->change_percent;
@@ -56,6 +58,7 @@
     </div>
 
     @php
+        $isBasketInvestment = app(\App\Services\InvestmentBasketPricer::class)->bound((int)$instrument->id);
         $story = app(\App\Services\PrivateInvestmentProjectionService::class)->forInstrument($instrument, (float)$instrument->minimum_investment);
         $watchItem = auth()->user()->isAdmin()
             ? null
@@ -69,7 +72,7 @@
         <div class="border-b border-zinc-200 px-5 py-4 dark:border-zinc-800">
             <p class="text-[10px] font-semibold uppercase tracking-[.16em] text-red-600">Investment Overview</p>
             <h2 class="mt-1 text-lg font-semibold text-zinc-950 dark:text-white">Terms, return model and access</h2>
-            <p class="mt-1 max-w-3xl text-[10px] leading-4 text-zinc-500">Projection values are illustrative and derived from configured terms, internal unit pricing and fees.</p>
+            <p class="mt-1 max-w-3xl text-[10px] leading-4 text-zinc-500">{{ $isBasketInvestment ? 'Share value follows portfolio assets. Redemption uses the current share price and applicable fees.' : 'Projection values are illustrative and derived from configured terms, internal unit pricing and fees.' }}</p>
         </div>
 
         <div class="grid divide-y divide-zinc-200 dark:divide-zinc-800 lg:grid-cols-3 lg:divide-x lg:divide-y-0">
@@ -95,10 +98,14 @@
                 <p class="text-[9px] font-semibold uppercase tracking-[.14em] text-zinc-400">Return Model</p>
                 <div class="mt-4 divide-y divide-zinc-100 text-xs dark:divide-zinc-900">
                     <div class="flex items-center justify-between gap-4 pb-3"><span class="text-zinc-500">Duration</span><strong>{{ $story['duration_label'] }}</strong></div>
+                    @if($isBasketInvestment)
+                    <div class="py-3 text-xs text-zinc-500">Returns follow share-price changes; redemption opens after the holding lock.</div>
+                    @else
                     <div class="flex items-center justify-between gap-4 py-3"><span class="text-zinc-500">Projected cycle</span><strong>{{ $story['cycle_return_label'] }}</strong></div>
                     <div class="flex items-center justify-between gap-4 py-3"><span class="text-zinc-500">Return interval</span><strong>Every {{ $story['return_interval_label'] }}</strong></div>
                     <div class="flex items-center justify-between gap-4 py-3"><span class="text-zinc-500">Profit on minimum</span><strong>{{ currency_symbol() }}{{ number_format($story['net_term_min_profit'],2) }} – {{ currency_symbol() }}{{ number_format($story['net_term_max_profit'],2) }}</strong></div>
                     <div class="flex items-center justify-between gap-4 pt-3"><span class="text-zinc-500">Daily equivalent</span><strong>{{ currency_symbol() }}{{ number_format($story['daily_min_profit'],2) }} – {{ currency_symbol() }}{{ number_format($story['daily_max_profit'],2) }}</strong></div>
+                    @endif
                 </div>
             </div>
 
@@ -108,8 +115,10 @@
                     <div class="flex items-center justify-between gap-4 pb-3"><span class="text-zinc-500">Subscription fee</span><strong>{{ number_format((float)$instrument->subscription_fee_percent,2) }}%</strong></div>
                     <div class="flex items-center justify-between gap-4 py-3"><span class="text-zinc-500">Management fee</span><strong>{{ number_format((float)$instrument->management_fee_percent,2) }}%</strong></div>
                     <div class="flex items-center justify-between gap-4 py-3"><span class="text-zinc-500">Redemption fee</span><strong>{{ number_format((float)$instrument->redemption_fee_percent,2) }}%</strong></div>
+                    @if(!$isBasketInvestment)
                     <div class="flex items-center justify-between gap-4 py-3"><span class="text-zinc-500">Min estimated maturity</span><strong>{{ currency_symbol() }}{{ number_format($story['minimum_maturity_value'],2) }}</strong></div>
                     <div class="flex items-center justify-between gap-4 pt-3"><span class="text-zinc-500">Max estimated maturity</span><strong>{{ currency_symbol() }}{{ number_format($story['maximum_maturity_value'],2) }}</strong></div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -170,7 +179,7 @@
                             <a href="{{ route('account.investments.watchlist') }}" class="text-xs font-semibold text-red-600">Manage watchlist</a>
                         </div>
                     @else
-                        <form method="POST" action="{{ route('account.investments.watchlist.store',$instrument) }}" class="grid gap-2 md:grid-cols-[1fr_180px_1.3fr_auto]">
+                        <form data-account-action method="POST" action="{{ route('account.investments.watchlist.store',$instrument) }}" class="grid gap-2 md:grid-cols-[1fr_180px_1.3fr_auto]">
                             @csrf
                             <input class="ui-input" type="number" step="0.000001" min="0.000001" name="target_price" placeholder="Optional target price">
                             <select class="ui-input" name="priority"><option value="normal">Normal priority</option><option value="high">High priority</option><option value="low">Low priority</option></select>
@@ -183,5 +192,6 @@
         </section>
     @endif
 
+</div>
 </div>
 </x-user-layout>

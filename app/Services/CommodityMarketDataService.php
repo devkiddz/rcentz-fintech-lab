@@ -80,6 +80,7 @@ final class CommodityMarketDataService
     {
         $points = $commodity->pricePoints()
             ->where('interval', '1d')
+            ->where('source', 'alpha_vantage')
             ->orderByDesc('timestamp')
             ->limit(220)
             ->get()
@@ -121,7 +122,28 @@ final class CommodityMarketDataService
             $trend = 'Bearish';
         }
 
-        $oneDay = $series;
+        // Spot observations retain their provider timestamps and their own source.
+        // They are price points, not exchange OHLC candles.
+        $spotPoints=$commodity->pricePoints()->where('interval','spot')
+            ->where('source','alpha_vantage_spot')->orderByDesc('timestamp')->limit(1440)
+            ->get()->sortBy('timestamp')->values();
+        $spot=$spotPoints->map(fn($point)=>[
+            'time'=>$point->timestamp?->toIso8601String(), 'price'=>(float)$point->price,
+            'open'=>(float)$point->price,'high'=>(float)$point->price,
+            'low'=>(float)$point->price,'close'=>(float)$point->price,
+            'volume'=>0,'point_series'=>true,
+        ])->filter(fn($row)=>$row['time'] && $row['price']>0)->values()->all();
+        $oneDay=$series;
+        $lastSpot=end($spot);
+        $lastDaily=end($series);
+        if($lastSpot && (!$lastDaily || strtotime($lastSpot['time'])>strtotime($lastDaily['time']))) {
+            $oneDay[]=$lastSpot;
+        }
+        $spotFrames=[];
+        foreach(['5m'=>300,'15m'=>900,'1h'=>3600,'4h'=>14400] as $frame=>$seconds) {
+            $spotFrames[$frame]=collect($spot)->groupBy(fn($row)=>intdiv(strtotime($row['time']),$seconds))
+                ->map(fn($rows)=>$rows->last())->values()->all();
+        }
 
         return [
             'asset_class' => 'commodity',
@@ -133,8 +155,8 @@ final class CommodityMarketDataService
             'current_price' => $current,
             'previous_close' => $previous,
             'analysis_source' => count($series) >= 2 ? 'commodity_daily_price_points' : 'commodity_spot_only',
-            'source' => count($series) >= 2 ? 'commodity_daily_price_points' : 'commodity_spot_only',
-            'has_chart' => count($series) >= 2,
+            'source' => count($spot)>=1 ? 'alpha_vantage_history_and_spot' : (count($series) >= 2 ? 'commodity_daily_price_points' : 'commodity_spot_only'),
+            'has_chart' => count($oneDay) >= 2,
             'point_series' => true,
             'trend' => $trend,
             'momentum_percent' => $momentum,
@@ -150,17 +172,17 @@ final class CommodityMarketDataService
             'volume_vs_average' => null,
             'series' => $oneDay,
             'timeframes' => [
-                '5m' => [],
-                '15m' => [],
-                '1h' => [],
-                '4h' => [],
+                '5m' => $spotFrames['5m'],
+                '15m' => $spotFrames['15m'],
+                '1h' => $spotFrames['1h'],
+                '4h' => $spotFrames['4h'],
                 '1d' => $oneDay,
                 '1w' => array_slice($oneDay, -5),
                 '1m' => array_slice($oneDay, -22),
                 '3m' => array_slice($oneDay, -66),
                 '1y' => $oneDay,
             ],
-            'default_timeframe' => '1d',
+            'default_timeframe' => count($spotFrames['5m'])>=2 ? '5m' : '1d',
             'market_session' => 'Global spot',
             'active_sessions' => [],
             'preferred_sessions' => [],

@@ -1,5 +1,7 @@
 <x-user-layout>
 <x-slot name="header">{{ localize('ui.r2d.bots.my_header', 'My AI Bots') }}</x-slot>
+<div data-account-async-feedback role="status" aria-live="polite" hidden class="mx-4 my-3 rounded-xl border border-border p-3 text-sm"></div>
+<div data-account-async="ai-bots/my-bots">
 <div class="ui-page max-w-[1440px]">
 <section class="ui-page-header">
     <div><p class="ui-kicker text-[10px]">{{ localize('ui.r2d.bots.ai_trading_bots', 'AI Trading Bots') }}</p><h1 class="ui-heading !text-xl">{{ localize('ui.r2d.bots.my_bots', 'My Bots') }}</h1><p class="ui-lead !text-[13px]">{{ localize('ui.r2d.bots.my_lead', 'Subscribed automation, runtime controls and live execution performance.') }}</p></div>
@@ -30,8 +32,8 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
             </summary>
             <div class="absolute right-0 z-40 mt-2 w-48 rounded-xl border border-border bg-background p-1.5 shadow-xl">
                 <a href="{{ route('ai-bots.configure',$subscription) }}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-muted"><i data-lucide="sliders-horizontal" class="h-3.5 w-3.5"></i> {{ localize('ui.r2d.bots.configure', 'Configure') }}</a>
-                <form method="POST" action="{{ route('ai-bots.toggle',$subscription) }}">@csrf<button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-muted"><i data-lucide="{{ $bot?->status==='active'?'pause':'play' }}" class="h-3.5 w-3.5"></i>{{ $bot?->status==='active' ? localize('ui.r2d.bots.pause', 'Pause Bot') : localize('ui.r2d.bots.activate', 'Activate Bot') }}</button></form>
-                <form method="POST" action="{{ route('ai-bots.run',$subscription) }}">@csrf<button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-muted"><i data-lucide="zap" class="h-3.5 w-3.5"></i> {{ localize('ui.r2d.bots.run_now', 'Run Now') }}</button></form>
+                <form data-account-action method="POST" action="{{ route('ai-bots.toggle',$subscription) }}">@csrf<button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-muted"><i data-lucide="{{ $bot?->status==='active'?'pause':'play' }}" class="h-3.5 w-3.5"></i>{{ $bot?->status==='active' ? localize('ui.r2d.bots.pause', 'Pause Bot') : localize('ui.r2d.bots.activate', 'Activate Bot') }}</button></form>
+                <form data-account-action method="POST" action="{{ route('ai-bots.run',$subscription) }}">@csrf<button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-muted"><i data-lucide="zap" class="h-3.5 w-3.5"></i> {{ localize('ui.r2d.bots.run_now', 'Run Now') }}</button></form>
                 <button type="button" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-medium hover:bg-muted" onclick="document.getElementById('allocation-dialog-{{ $subscription->id }}').showModal()"><i data-lucide="wallet-cards" class="h-3.5 w-3.5"></i> {{ localize('ui.r2d.bots.allocation_details', 'Allocation Details') }}</button>
                 <a href="{{ route('ai-bots.performance') }}" class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium hover:bg-muted"><i data-lucide="history" class="h-3.5 w-3.5"></i> {{ localize('ui.r2d.common.performance', 'Performance') }}</a>
             </div>
@@ -219,34 +221,7 @@ $chart=$subscription->price_chart ?? ['quotes'=>[],'executions'=>[],'current'=>0
 </div></div>
 
 @once
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('[data-bot-tabs]').forEach((tabs) => {
-        const buttons = tabs.querySelectorAll('[data-bot-tab-button]');
-        const panels = tabs.querySelectorAll('[data-bot-tab-panel]');
 
-        buttons.forEach((button) => {
-            button.addEventListener('click', () => {
-                const target = button.dataset.botTabButton;
-
-                buttons.forEach((item) => {
-                    const active = item === button;
-                    item.setAttribute('aria-selected', active ? 'true' : 'false');
-                    item.classList.toggle('border-border', active);
-                    item.classList.toggle('border-transparent', !active);
-                    item.classList.toggle('bg-background', active);
-                    item.classList.toggle('text-foreground', active);
-                    item.classList.toggle('text-muted-foreground', !active);
-                });
-
-                panels.forEach((panel) => {
-                    panel.classList.toggle('hidden', panel.dataset.botTabPanel !== target);
-                });
-            });
-        });
-    });
-});
-</script>
 @endonce
 
 @once
@@ -390,4 +365,5 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 @endonce
 
+</div>
 </x-user-layout>
